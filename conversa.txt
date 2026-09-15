@@ -810,3 +810,31 @@ O QUE FOI FEITO:
    - Build Vite validado com 0 erros.
    - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
 ==============================================================================
+
+------------------------------------------------------------------------------
+24. REMOÇÃO DA MOLDURA PRETA DE FOCO NATIVO AO CLICAR EM QUARTEIRÕES
+------------------------------------------------------------------------------
+Data/Hora: 15/09/2026 20:53
+De: GEMINI (Antigravity)
+Para: ALMIR & CLAUDE SONNET (Cursor / Claude Code)
+
+Instrução do Almir:
+"QUANDO SELECIOO UM QUARTEIRAO ESTA APARECENDO ESSA MULDURA PRETA" (com print comprovando moldura retangular preta de foco do navegador)
+
+CAUSA TÉCNICA IDENTIFICADA:
+- Ao clicar em um polígono vetorial do Leaflet (SVG <path>), o motor Chromium (Chrome/Edge) aplica por padrão um retângulo preto de foco de acessibilidade (:focus / :focus-visible outline) correspondente ao bounding box do elemento SVG.
+
+O QUE FOI FEITO:
+1. ELIMINAÇÃO DA MOLDURA DE FOCO EM CSS (src/styles/index.css):
+   - Adicionadas regras com `outline: none !important`, `box-shadow: none !important` e `-webkit-tap-highlight-color: transparent !important` para todos os elementos interativos, SVGs e paths de polígonos (.quarteirao-poly, .leaflet-interactive, .leaflet-container *:focus).
+   - Estilizado o tooltip de quarteirão com visual moderno, translúcido e elegante em harmonia com o tema clean.
+
+2. TRATAMENTO NO EVENTO DE CLIQUE DO POLÍGONO (src/maps/MapaGrandeOvitrampa.jsx):
+   - Adicionada classe `.quarteirao-poly` em cada polígono L.polygon.
+   - Adicionado disparador `leafPoly.on('click', e => e.originalEvent.target.blur())` para retirar o foco nativo do navegador imediatamente no toque/clique.
+   - Adicionado realce suave (hover) que ilumina o quarteirão sutilmente em verde claro sem bordas pesadas.
+
+3. BUILD E DEPLOY CONCLUÍDOS:
+   - Build Vite validado com 0 erros em 7.44s.
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://1e355506.gps-ovitrampas.pages.dev)
+==============================================================================

@@ -123,11 +123,41 @@ export function MapaGrandeOvitrampa({
         (polyName === currentNumOnly.toLowerCase() || polyName === `q-${currentNumOnly.toLowerCase()}`);
 
       const leafPoly = L.polygon(poly.coordinates, {
+        className: 'quarteirao-poly',
         color: isCurrent ? '#10b981' : '#475569',
         weight: isCurrent ? 2.5 : 1,
         fillColor: isCurrent ? '#059669' : '#334155',
         fillOpacity: isCurrent ? 0.3 : 0.08,
         dashArray: isCurrent ? null : '2, 3'
+      });
+
+      leafPoly.on('click', (e) => {
+        // Remove foco nativo do navegador para eliminar qualquer moldura preta de seleção
+        if (e?.originalEvent?.target?.blur) {
+          e.originalEvent.target.blur();
+        }
+      });
+
+      leafPoly.on('mouseover', function () {
+        if (!isCurrent) {
+          this.setStyle({
+            weight: 2,
+            color: '#10b981',
+            fillColor: '#10b981',
+            fillOpacity: 0.2
+          });
+        }
+      });
+
+      leafPoly.on('mouseout', function () {
+        if (!isCurrent) {
+          this.setStyle({
+            weight: 1,
+            color: '#475569',
+            fillColor: '#334155',
+            fillOpacity: 0.08
+          });
+        }
       });
 
       leafPoly.bindTooltip(`<b>${poly.folder || 'Carmo'}</b><br/>Quarteirão: ${poly.name}`, {

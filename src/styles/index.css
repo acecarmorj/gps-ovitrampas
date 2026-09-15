@@ -38,6 +38,51 @@ body {
   background: rgba(255, 255, 255, 0.96);
 }
 
+/* REMOVE TOTALMENTE A MOLDURA PRETA DE FOCO DO NAVEGADOR AO CLICAR EM QUARTEIRÕES */
+.leaflet-container *:focus,
+.leaflet-container *:focus-visible,
+.leaflet-container path:focus,
+.leaflet-container path:focus-visible,
+.leaflet-container svg:focus,
+.leaflet-container svg:focus-visible,
+.leaflet-interactive,
+.leaflet-interactive:focus,
+.leaflet-interactive:focus-visible,
+path.leaflet-interactive,
+path.leaflet-interactive:focus,
+path.leaflet-interactive:focus-visible,
+.quarteirao-poly,
+.quarteirao-poly:focus,
+.quarteirao-poly:focus-visible,
+.quarteirao-poly:active {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Tooltip elegante e clean para os Quarteirões */
+.leaflet-tooltip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.12) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  line-height: 1.35 !important;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  display: none !important;
+}
+
 @keyframes pulseLive {
   0% { transform: scale(0.95); opacity: 0.8; }
   50% { transform: scale(1.35); opacity: 0; }
