@@ -99,35 +99,45 @@ export function PainelAdminScreen({
       'Longitude',
       'Precisão GPS (m)',
       'Data Instalação',
+      'Hora Instalação',
       'Status',
-      'Ovos',
-      'Resultado'
+      'Quantidade Ovos',
+      'Resultado Lab',
+      'Observações'
     ];
 
-    const linhas = armadilhas.map((a) => [
-      `"ARM-${a.numero}"`,
-      `"${(a.moradorNome || '').replace(/"/g, '""')}"`,
-      `"${a.palheta || 'P-01'}"`,
-      `"${(a.rua || '').replace(/"/g, '""')}"`,
-      `"${(a.microarea || '').replace(/"/g, '""')}"`,
-      `"${a.quarteirao || ''}"`,
-      a.latitude || '',
-      a.longitude || '',
-      a.precisaoGps || '',
-      `"${new Date(a.instaladaEm).toLocaleString('pt-BR')}"`,
-      `"${a.status || ''}"`,
-      a.ultimosOvos ?? '',
-      `"${a.ultimosOvos > 0 ? 'Positiva' : a.status === 'analisada' ? 'Negativa' : 'Pendente'}"`
-    ]);
+    const linhas = armadilhas.map((a) => {
+      const dataInst = new Date(a.instaladaEm);
+      const dataStr = dataInst.toLocaleDateString('pt-BR');
+      const horaStr = dataInst.toLocaleTimeString('pt-BR');
+      const statusStr = a.status === 'analisada' ? 'Lida' : 'Em Campo';
+      const resultadoStr = a.status === 'analisada' ? (a.ultimosOvos > 0 ? 'Positiva' : 'Negativa') : 'Pendente';
 
-    const csvContent =
-      '\uFEFF' + [colunas.join(';'), ...linhas.map((l) => l.join(';'))].join('\r\n');
+      return [
+        `"OV-${a.numero}"`,
+        `"${(a.moradorNome || '').replace(/"/g, '""')}"`,
+        `"${a.palheta || 'P-01'}"`,
+        `"${(a.rua || '').replace(/"/g, '""')}"`,
+        `"${(a.microarea || '').replace(/"/g, '""')}"`,
+        `"${(a.quarteirao || '').replace(/"/g, '""')}"`,
+        a.latitude,
+        a.longitude,
+        a.precisaoGps || '',
+        `"${dataStr}"`,
+        `"${horaStr}"`,
+        `"${statusStr}"`,
+        a.ultimosOvos !== undefined ? a.ultimosOvos : '',
+        `"${resultadoStr}"`,
+        `"${(a.observacoes || '').replace(/"/g, '""')}"`
+      ].join(';');
+    });
 
+    const csvContent = '\uFEFF' + [colunas.join(';'), ...linhas].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `relatorio_ovitrampas_carmo_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ovitrampas_carmo_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -142,13 +152,13 @@ export function PainelAdminScreen({
   };
 
   return (
-    <div className="w-full h-full bg-slate-950 text-white flex flex-col font-sans select-none overflow-hidden">
+    <div className="w-full h-full bg-[#F1F2F5] text-slate-900 flex flex-col font-sans select-none overflow-hidden">
       
       {/* ALERTA DE NOVO REGISTRO EM TEMPO REAL */}
       {notificacaoNovo && (
-        <div className="bg-emerald-600 text-white px-4 py-3 shadow-2xl flex items-center justify-between gap-3 animate-in fade-in duration-300 z-50 shrink-0 border-b border-emerald-400">
+        <div className="bg-emerald-600 text-white px-4 py-3 shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-300 z-50 shrink-0 border-b border-emerald-500">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-black">
-            <BellRing className="w-5 h-5 animate-bounce text-emerald-200 shrink-0" />
+            <BellRing className="w-5 h-5 animate-bounce text-emerald-100 shrink-0" />
             <span>{notificacaoNovo}</span>
           </div>
           <button
@@ -160,39 +170,40 @@ export function PainelAdminScreen({
         </div>
       )}
 
-      {/* TOPO: DASHBOARD COM INDICADORES EPIDEMIOLÓGICOS NA HORA */}
-      <div className="bg-slate-900 border-b border-slate-800 p-3 sm:p-4 shrink-0 space-y-3">
+      {/* TOPO: DASHBOARD COM INDICADORES EPIDEMIOLÓGICOS (CLEAN & ADAPTADO PARA TABLET) */}
+      <div className="bg-white/95 border-b border-slate-200/90 p-3 sm:p-4 shrink-0 space-y-3 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
+              <ShieldCheck className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-black text-white">
-                  Painel de Controle do Administrador
+                <h1 className="text-sm sm:text-base font-black text-slate-900 leading-tight">
+                  Painel do Administrador
                 </h1>
-                <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   TEMPO REAL
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Monitoramento municipal de Ovitrampas em Carmo/RJ
+              <p className="text-xs text-slate-500 mt-0.5">
+                Monitoramento territorial de Ovitrampas em Carmo/RJ
               </p>
             </div>
           </div>
 
-          {/* BOTÕES DE VISUALIZAÇÃO E EXPORTAÇÃO */}
-          <div className="flex items-center gap-2">
-            <div className="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex items-center">
+          {/* BOTÕES DE VISUALIZAÇÃO E EXPORTAÇÃO (ADAPTADOS PARA TABLET & MOBILE) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200 flex items-center shadow-xs">
               <button
                 type="button"
                 onClick={() => setModoVisualizacao('dividido')}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                   modoVisualizacao === 'dividido'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir Mapa e Tabela juntos"
               >
@@ -204,8 +215,8 @@ export function PainelAdminScreen({
                 onClick={() => setModoVisualizacao('mapa')}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                   modoVisualizacao === 'mapa'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir somente o Mapa Geral"
               >
@@ -217,8 +228,8 @@ export function PainelAdminScreen({
                 onClick={() => setModoVisualizacao('tabela')}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                   modoVisualizacao === 'tabela'
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir somente a Tabela de Dados"
               >
@@ -230,7 +241,7 @@ export function PainelAdminScreen({
             <button
               type="button"
               onClick={handleExportarCsv}
-              className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950"
+              className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs"
               title="Baixar planilha CSV para Excel"
             >
               <Download className="w-4 h-4" />
@@ -239,48 +250,48 @@ export function PainelAdminScreen({
           </div>
         </div>
 
-        {/* CARDS DE INDICADORES: TOTAL, IPO, IDO, POSITIVAS */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-          <div className="bg-slate-950/70 border border-slate-800/80 p-2.5 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total OVs</span>
-            <span className="text-lg font-black text-white">{totalArmadilhas}</span>
+        {/* CARDS DE INDICADORES: GRADE 5 COLUNAS EM TABLET E DESKTOP */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center">
+          <div className="bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Total OVs</span>
+            <span className="text-lg font-black text-slate-900">{totalArmadilhas}</span>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800/80 p-2.5 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Lidas (Lab)</span>
-            <span className="text-lg font-black text-blue-400">{totalLidas}</span>
+          <div className="bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Lidas (Lab)</span>
+            <span className="text-lg font-black text-blue-600">{totalLidas}</span>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800/80 p-2.5 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Positivas</span>
-            <span className="text-lg font-black text-rose-400">{totalPositivas}</span>
+          <div className="bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Positivas</span>
+            <span className="text-lg font-black text-rose-600">{totalPositivas}</span>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800/80 p-2.5 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">IPO (% Posit.)</span>
-            <span className="text-lg font-black text-amber-400">{ipo}%</span>
+          <div className="bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">IPO (% Posit.)</span>
+            <span className="text-lg font-black text-amber-700">{ipo}%</span>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 bg-slate-950/70 border border-slate-800/80 p-2.5 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total de Ovos (IDO)</span>
-            <span className="text-lg font-black text-emerald-400">{totalOvos} <span className="text-xs text-slate-400 font-normal">({ido}/OV)</span></span>
+          <div className="col-span-2 sm:col-span-1 md:col-span-1 bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Total Ovos (IDO)</span>
+            <span className="text-lg font-black text-emerald-700">{totalOvos} <span className="text-xs text-slate-500 font-medium">({ido}/OV)</span></span>
           </div>
         </div>
 
         {/* BARRA DE FILTROS E BUSCA */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
-          <div className="flex-1 flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-2xl border border-slate-800">
+        <div className="flex flex-col sm:flex-row md:flex-row items-stretch sm:items-center gap-2 pt-1">
+          <div className="flex-1 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-2xl border border-slate-200">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="Pesquisar por Morador, OV, Rua ou Quarteirão..."
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
-              className="bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none w-full"
+              className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full font-medium"
             />
             {filtroTexto && (
               <button onClick={() => setFiltroTexto('')}>
-                <X className="w-3.5 h-3.5 text-slate-400" />
+                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
               </button>
             )}
           </div>
@@ -289,7 +300,7 @@ export function PainelAdminScreen({
             <select
               value={filtroMicroarea}
               onChange={(e) => setFiltroMicroarea(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs font-bold text-white px-3 py-2 rounded-2xl focus:outline-none"
+              className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-2xl focus:outline-none"
             >
               <option value="todas">Todas as Microáreas</option>
               {microareasDisponiveis.map((m) => (
@@ -300,7 +311,7 @@ export function PainelAdminScreen({
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs font-bold text-white px-3 py-2 rounded-2xl focus:outline-none"
+              className="bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-2xl focus:outline-none"
             >
               <option value="todos">Todos os Status</option>
               <option value="positivas">Positivas (com ovos)</option>
@@ -311,8 +322,8 @@ export function PainelAdminScreen({
         </div>
       </div>
 
-      {/* ÁREA DE CONTEÚDO: DIVIDIDO (MAPA + TABELA), SÓ MAPA OU SÓ TABELA */}
-      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
+      {/* ÁREA DE CONTEÚDO: DIVIDIDO (MAPA + TABELA LADO A LADO EM TABLET MD E DESKTOP LG) */}
+      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col md:flex-row">
         
         {/* MAPA GERAL DENTRO DO PAINEL DO ADMINISTRADOR */}
         {(modoVisualizacao === 'dividido' || modoVisualizacao === 'mapa') && (
@@ -320,7 +331,7 @@ export function PainelAdminScreen({
             className={`relative transition-all ${
               modoVisualizacao === 'mapa'
                 ? 'w-full h-full'
-                : 'w-full h-[38vh] sm:h-[44vh] lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-800 shrink-0'
+                : 'w-full h-[40vh] md:h-full md:w-1/2 border-b md:border-b-0 md:border-r border-slate-200 shrink-0'
             }`}
           >
             <MapaGrandeOvitrampa
@@ -333,41 +344,41 @@ export function PainelAdminScreen({
 
             {/* Badge flutuante sobre o mapa em modo dividido */}
             {modoVisualizacao === 'dividido' && (
-              <div className="absolute top-3 left-3 z-[1000] bg-slate-950/85 backdrop-blur-md border border-slate-800 text-white px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1.5 shadow-lg pointer-events-none">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 text-slate-800 px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1.5 shadow-sm pointer-events-none">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                 <span>Mapa de Carmo ({armadilhasFiltradas.length} OVs)</span>
               </div>
             )}
           </div>
         )}
 
-        {/* TABELA ADMINISTRATIVA COM DADOS E AÇÕES */}
+        {/* TABELA ADMINISTRATIVA COM DADOS E AÇÕES (CLEAN & TOUCH TABLET FRIENDLY) */}
         {(modoVisualizacao === 'dividido' || modoVisualizacao === 'tabela') && (
           <div
             className={`overflow-auto flex-1 p-2.5 sm:p-4 ${
               modoVisualizacao === 'dividido'
-                ? 'w-full lg:w-1/2 h-[62vh] sm:h-[56vh] lg:h-full'
+                ? 'w-full md:w-1/2 h-[60vh] md:h-full'
                 : 'w-full h-full'
             }`}
           >
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/90 text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10 backdrop-blur-sm">
+            <div className="bg-white border border-slate-200/90 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-200 sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="py-3 px-3">OV</th>
                     <th className="py-3 px-3">Morador</th>
                     <th className="py-3 px-3">Palheta</th>
-                    <th className="py-3 px-3">Endereço Oficial (GPS)</th>
+                    <th className="py-3 px-3">Endereço (GPS)</th>
                     <th className="py-3 px-3">Quarteirão</th>
-                    <th className="py-3 px-3">Instalada em</th>
+                    <th className="py-3 px-3">Data</th>
                     <th className="py-3 px-3">Resultado</th>
                     <th className="py-3 px-3 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80">
+                <tbody className="divide-y divide-slate-100">
                   {armadilhasFiltradas.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-slate-500 font-bold">
+                      <td colSpan={8} className="text-center py-10 text-slate-400 font-bold">
                         Nenhum registro encontrado.
                       </td>
                     </tr>
@@ -380,45 +391,45 @@ export function PainelAdminScreen({
                           onClick={() => setArmadilhaSelecionada(arm)}
                           className={`cursor-pointer transition-colors ${
                             isSelected
-                              ? 'bg-indigo-950/70 border-l-4 border-indigo-500'
-                              : 'hover:bg-slate-800/50'
+                              ? 'bg-emerald-50/70 border-l-4 border-emerald-500'
+                              : 'hover:bg-slate-50/80'
                           }`}
                           title="Clique para localizar e aproximar no mapa"
                         >
-                          <td className="py-3 px-3 font-black text-emerald-400">
+                          <td className="py-3 px-3 font-black text-emerald-700">
                             ARM-{arm.numero}
                           </td>
-                          <td className="py-3 px-3 font-extrabold text-white">
-                            {arm.moradorNome || <span className="text-slate-500 italic">Não informado</span>}
+                          <td className="py-3 px-3 font-extrabold text-slate-900">
+                            {arm.moradorNome || <span className="text-slate-400 italic">Não informado</span>}
                           </td>
-                          <td className="py-3 px-3 font-bold text-blue-400">
+                          <td className="py-3 px-3 font-bold text-blue-700">
                             {arm.palheta || 'P-01'}
                           </td>
                           <td className="py-3 px-3">
-                            <p className="font-bold text-slate-200">{arm.rua}</p>
-                            <span className="text-[10px] text-slate-400">{arm.microarea}</span>
+                            <p className="font-bold text-slate-900 leading-tight">{arm.rua}</p>
+                            <span className="text-[10px] text-slate-500">{arm.microarea}</span>
                           </td>
                           <td className="py-3 px-3">
-                            <span className="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-md text-[10px]">
+                            <span className="bg-slate-100 text-slate-700 font-extrabold px-2 py-0.5 rounded-md text-[10px] border border-slate-200">
                               {arm.quarteirao}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-[11px] text-slate-400">
-                            {new Date(arm.instaladaEm).toLocaleDateString('pt-BR')} {new Date(arm.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          <td className="py-3 px-3 text-[11px] text-slate-500">
+                            {new Date(arm.instaladaEm).toLocaleDateString('pt-BR')}
                           </td>
                           <td className="py-3 px-3">
                             {arm.status === 'analisada' ? (
                               arm.ultimosOvos > 0 ? (
-                                <span className="bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                <span className="bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-full">
                                   {arm.ultimosOvos} ovos (Positiva)
                                 </span>
                               ) : (
-                                <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
                                   Negativa (0)
                                 </span>
                               )
                             ) : (
-                              <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                              <span className="bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
                                 Em campo
                               </span>
                             )}
@@ -428,7 +439,7 @@ export function PainelAdminScreen({
                               <button
                                 type="button"
                                 onClick={() => setArmadilhaSelecionada(arm)}
-                                className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
+                                className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 transition-colors border border-slate-200"
                                 title="Ver detalhes da armadilha"
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -436,7 +447,7 @@ export function PainelAdminScreen({
                               <button
                                 type="button"
                                 onClick={() => handleExcluir(arm.id, arm.numero)}
-                                className="p-1.5 bg-rose-950/40 hover:bg-rose-900/60 rounded-xl text-rose-400 transition-colors"
+                                className="p-1.5 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 transition-colors border border-rose-200"
                                 title="Excluir armadilha"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -455,24 +466,24 @@ export function PainelAdminScreen({
 
       </div>
 
-      {/* MODAL DE DETALHES DA ARMADILHA */}
+      {/* MODAL DE DETALHES DA ARMADILHA (CLEAN & MODERNO) */}
       {armadilhaSelecionada && (
         <div
           onClick={() => setArmadilhaSelecionada(null)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-5 shadow-2xl space-y-4 text-white animate-in zoom-in-95 duration-200"
+            className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 shadow-2xl space-y-4 text-slate-900 animate-in zoom-in-95 duration-150"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Detalhes da Ovitrampa</span>
-                <h3 className="text-base font-black text-emerald-400">ARM-{armadilhaSelecionada.numero}</h3>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Detalhes da Ovitrampa</span>
+                <h3 className="text-base font-black text-emerald-700">ARM-{armadilhaSelecionada.numero}</h3>
               </div>
               <button
                 onClick={() => setArmadilhaSelecionada(null)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -480,50 +491,50 @@ export function PainelAdminScreen({
 
             {/* Informações */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/60">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Morador:</span>
-                <span className="font-extrabold text-white">{armadilhaSelecionada.moradorNome || 'Não informado'}</span>
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 block">Morador:</span>
+                <span className="font-extrabold text-slate-900">{armadilhaSelecionada.moradorNome || 'Não informado'}</span>
               </div>
 
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/60">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Palheta:</span>
-                <span className="font-extrabold text-blue-400">{armadilhaSelecionada.palheta || 'P-01'}</span>
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 block">Palheta:</span>
+                <span className="font-extrabold text-blue-700">{armadilhaSelecionada.palheta || 'P-01'}</span>
               </div>
 
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/60 col-span-2">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Endereço Detectado via GPS:</span>
-                <p className="font-extrabold text-white">{armadilhaSelecionada.rua}</p>
-                <p className="text-[11px] text-slate-400">{armadilhaSelecionada.microarea} • Quarteirão: <span className="text-emerald-400 font-bold">{armadilhaSelecionada.quarteirao}</span></p>
+              <div className="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 col-span-2">
+                <span className="text-[10px] uppercase font-bold text-emerald-800 block">Endereço Detectado via GPS:</span>
+                <p className="font-extrabold text-slate-900 text-sm mt-0.5">{armadilhaSelecionada.rua}</p>
+                <p className="text-[11px] text-slate-600 mt-0.5">{armadilhaSelecionada.microarea} • Quarteirão: <span className="text-emerald-700 font-extrabold">{armadilhaSelecionada.quarteirao}</span></p>
               </div>
 
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/60 col-span-2 flex items-center justify-between">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 col-span-2 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Data de Instalação:</span>
-                  <span className="font-bold text-slate-300">{new Date(armadilhaSelecionada.instaladaEm).toLocaleString('pt-BR')}</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Data de Instalação:</span>
+                  <span className="font-bold text-slate-800">{new Date(armadilhaSelecionada.instaladaEm).toLocaleString('pt-BR')}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block text-right">Resultado:</span>
-                  <span className="font-black text-emerald-400">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block text-right">Resultado:</span>
+                  <span className="font-black text-emerald-700">
                     {armadilhaSelecionada.ultimosOvos !== undefined ? `${armadilhaSelecionada.ultimosOvos} ovos` : 'Em campo'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${armadilhaSelecionada.latitude},${armadilhaSelecionada.longitude}`, '_blank')}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
               >
-                <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                <MapPin className="w-3.5 h-3.5" />
                 <span>Abrir Rota no Google Maps</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleExcluir(armadilhaSelecionada.id, armadilhaSelecionada.numero)}
-                className="bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1"
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1 border border-rose-200 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Excluir</span>

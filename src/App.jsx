@@ -104,7 +104,7 @@ export function App() {
   const chaveModulo = getChaveModulo();
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-slate-950 font-sans">
+    <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-[#F1F2F5] text-slate-900 font-sans">
       
       {/* O Guia possui seu próprio cabeçalho completo. Nas telas internas, exibe o Header com botão < Guia */}
       {chaveModulo !== 'guia' && (

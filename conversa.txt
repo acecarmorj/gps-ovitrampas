@@ -698,3 +698,40 @@ O QUE FOI FEITO:
    - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://84a7d3c9.gps-ovitrampas.pages.dev)
 ==============================================================================
 
+------------------------------------------------------------------------------
+21. UNIFICAÇÃO NO TEMA CLARO CLEAN (PALETA SUAVE) E ADAPTAÇÃO PARA TABLET
+------------------------------------------------------------------------------
+Data/Hora: 15/09/2026 20:30
+De: GEMINI (Antigravity)
+Para: ALMIR & CLAUDE SONNET (Cursor / Claude Code)
+
+Instruções do Almir:
+- "ESTA MUITO CARREGADO ESCURO DEMAIS NAO PODE SER TEMA CLARO IGUAL AO PAINEL FLUTUANTE DO APP DO AGENTE ?"
+- "GOSTO AS COISAS MAIS CLEAN"
+- "ADAPTE OS PAINEIS DE ADMINISTRACAO PARA TABLET TAMBEM"
+- "NESTE ESTILO DE COR ESTA TAO BONITO E LEVE COLOQUE TUDO NESTA PALETA INCLUSIVE O GUIA"
+
+O QUE FOI FEITO:
+1. UNIFICAÇÃO DE TODO O ECOSSISTEMA NO TEMA CLARO / ULTRA CLEAN:
+   - Fundo base: `#F1F2F5` / `#F8FAFC` suave, acabando com a sensação de aplicativo escuro e pesado.
+   - Tipografia de alto contraste: preto/ardósia escuro (`#0F172A`, `#334155`), com perfeita legibilidade sob luz solar intensa.
+   - Toques suaves de verde esmeralda institucional (`#059669`, `#10B981`, `bg-emerald-50`, `border-emerald-200`).
+   - Telas convertidas:
+     * `index.html` e `src/styles/index.css`: body e popups do Leaflet em fundo claro translúcido.
+     * `Header.jsx`: barra superior em branco translúcido (`bg-white/95 border-b border-slate-200/90 text-slate-900`), botão `< Guia` limpo e suave.
+     * `GuiaScreen.jsx`: Guia oficial (`/guia`) com cards brancos de sombra suave, tags coloridas suaves e rodapé claro.
+     * `LaboratorioScreen.jsx`: formulário em card branco com borda suave, contador de ovos clean e atalhos limpos.
+     * `PainelAdminScreen.jsx`: tabela com cabeçalho limpo, linhas suaves e modal de detalhes em branco fosco.
+
+2. ADAPTAÇÃO DO PAINEL DO ADMINISTRADOR PARA TABLETS (`md:`):
+   - Divisão inteligente: no tablet (`md:`, 768px a 1023px), o Mapa e a Tabela ficam perfeitamente lado a lado (`md:w-1/2 md:h-full`).
+   - Cards de métricas (Total OVs, Lidas, Positivas, IPO, IDO): grade de 5 colunas em tablet (`md:grid-cols-5`), sem quebras de linha indesejadas.
+   - Barra de filtros responsiva com touch targets confortáveis para dedos no tablet.
+   - Tabela administrativa com rolagem suave e tipografia legível.
+
+3. BUILD E DEPLOY CONCLUÍDOS:
+   - Build Vite validado com 0 erros em 8.66s.
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://f431c070.gps-ovitrampas.pages.dev)
+==============================================================================
+
+

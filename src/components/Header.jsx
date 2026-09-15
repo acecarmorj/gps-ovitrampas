@@ -35,27 +35,27 @@ export function Header({
   const modulo = INFO_MODULOS[abaAtual] || { titulo: 'GPS Ovitrampas', subtitulo: 'Carmo - RJ' };
 
   return (
-    <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 sm:px-4 shrink-0 z-30 select-none">
+    <header className="h-14 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs flex items-center justify-between px-3 sm:px-4 shrink-0 z-30 select-none text-slate-900">
       
       {/* BOTÃO VOLTAR AO GUIA (ESTILO MOTOJA /GUIA) */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={() => onMudarAba('guia')}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-white rounded-2xl border border-slate-700/80 text-xs font-black transition-all shadow-sm group"
+          className="flex items-center gap-1 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-2xl border border-slate-200/90 text-xs font-black transition-all shadow-xs group"
           title="Voltar ao Guia do Sistema"
         >
-          <ChevronLeft className="w-4 h-4 text-emerald-400 group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft className="w-4 h-4 text-emerald-600 group-hover:-translate-x-0.5 transition-transform" />
           <span>Guia</span>
         </button>
 
         {/* TÍTULO DA TELA ATIVA */}
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-xs sm:text-sm font-black text-white leading-tight">
+            <h1 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
               {modulo.titulo}
             </h1>
-            <span className="text-[9px] text-emerald-400 font-extrabold bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800 hidden sm:inline-block">
+            <span className="text-[9px] text-emerald-700 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 hidden sm:inline-block">
               CARMO RJ
             </span>
           </div>
@@ -66,22 +66,22 @@ export function Header({
             title="Toque para forçar envio em segundo plano"
           >
             {syncInfo.syncInProgress ? (
-              <span className="text-blue-400 flex items-center gap-1">
+              <span className="text-blue-600 flex items-center gap-1">
                 <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                 <span>Enviando em segundo plano...</span>
               </span>
             ) : syncInfo.totalPendentes > 0 ? (
-              <span className="text-amber-400 flex items-center gap-1 bg-amber-950/50 px-1.5 py-0.2 rounded border border-amber-800/60">
+              <span className="text-amber-700 flex items-center gap-1 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
                 <Cloud className="w-2.5 h-2.5" />
                 <span>{syncInfo.totalPendentes} pendente(s)</span>
               </span>
             ) : syncInfo.isOnline ? (
-              <span className="text-emerald-400 flex items-center gap-1">
-                <Check className="w-2.5 h-2.5" />
+              <span className="text-emerald-700 flex items-center gap-1">
+                <Check className="w-2.5 h-2.5 text-emerald-600" />
                 <span>Salvo e sincronizado</span>
               </span>
             ) : (
-              <span className="text-slate-400 flex items-center gap-1">
+              <span className="text-slate-500 flex items-center gap-1">
                 <CloudOff className="w-2.5 h-2.5" />
                 <span>Modo Offline</span>
               </span>
@@ -93,19 +93,19 @@ export function Header({
       {/* LADO DIREITO: TOTAL DE ARMADILHAS E CONTROLE DE SOM */}
       <div className="flex items-center gap-2">
         {totalArmadilhas > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800 text-[11px] font-bold text-slate-300">
+          <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
             <span>Armadilhas:</span>
-            <span className="text-emerald-400 font-extrabold">{totalArmadilhas}</span>
+            <span className="text-emerald-700 font-extrabold">{totalArmadilhas}</span>
           </div>
         )}
 
         <button
           type="button"
           onClick={onToggleMute}
-          className="p-2 text-slate-400 hover:text-white bg-slate-800/80 rounded-xl transition-colors border border-slate-700/50"
+          className="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
           title={isMuted ? 'Ativar som' : 'Silenciar som'}
         >
-          {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+          {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-emerald-600" />}
         </button>
       </div>
 
