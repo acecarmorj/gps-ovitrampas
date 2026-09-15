@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, CheckCircle2, RefreshCw,
-  X, Check, User
+  X, Check, User, AlertCircle
 } from 'lucide-react';
 import { resolveAddressFromGps } from '../../lib/geoDetection';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
@@ -71,48 +71,152 @@ export function InstalarArmadilhaScreen({
     isExact: false
   });
 
-  const [gpsStatus, setGpsStatus] = useState('buscando');
+  const [gpsStatus, setGpsStatus] = useState('buscando'); // 'buscando' | 'pronto' | 'erro'
+  const [gpsErrorMsg, setGpsErrorMsg] = useState('');
+  const lastGeocodedRef = useRef({ lat: 0, lng: 0, acc: 999, time: 0 });
+  const bestAccuracyRef = useRef(Infinity);
+  const watchIdRef = useRef(null);
 
-  // Captura do GPS (funciona 100% offline, sem necessidade de internet)
-  const capturarLocalizacao = () => {
-    setGpsStatus('buscando');
+  // Cálculo da distância geodésica em metros
+  const calcDistMeters = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 9999;
+    const R = 6371e3;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Processa leituras contínuas dos satélites GNSS
+  const processarNovaPosicao = async (pos, forcarGeocoding = false) => {
+    const { latitude, longitude, accuracy } = pos.coords;
+    const roundedAcc = Math.round(accuracy);
+
+    if (roundedAcc < bestAccuracyRef.current) {
+      bestAccuracyRef.current = roundedAcc;
+    }
+
+    const dist = calcDistMeters(
+      lastGeocodedRef.current.lat,
+      lastGeocodedRef.current.lng,
+      latitude,
+      longitude
+    );
+
+    // Re-resolve endereço e quarteirão oficial quando:
+    // 1. Forçado pelo usuário
+    // 2. Primeira inicialização (lat = 0)
+    // 3. O agente caminhou mais de 5 metros
+    // 4. A precisão do GPS melhorou significativamente (ex: de >20m para <=12m)
+    const precisaoMelhorouMuito = lastGeocodedRef.current.acc > 20 && roundedAcc <= 12;
+    const deveGeocodificar = forcarGeocoding || lastGeocodedRef.current.lat === 0 || dist > 5 || precisaoMelhorouMuito;
+
+    if (deveGeocodificar) {
+      lastGeocodedRef.current = { lat: latitude, lng: longitude, acc: roundedAcc, time: Date.now() };
+      try {
+        const det = await resolveAddressFromGps(latitude, longitude);
+        setLocalizacao({
+          rua: det.rua || 'Rua Principal',
+          numero: det.numero || '',
+          bairro: det.bairro || det.microarea || 'Centro',
+          microarea: det.microarea || 'Centro',
+          quarteirao: det.quarteirao || 'Q-01',
+          latitude,
+          longitude,
+          accuracy: roundedAcc,
+          isExact: det.isExactPolygon
+        });
+        setGpsStatus('pronto');
+        setGpsErrorMsg('');
+      } catch (e) {
+        setLocalizacao((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+          accuracy: roundedAcc
+        }));
+        setGpsStatus('pronto');
+      }
+    } else {
+      // Atualiza coordenadas em tempo real no mapa e halo de precisão
+      setLocalizacao((prev) => ({
+        ...prev,
+        latitude,
+        longitude,
+        accuracy: roundedAcc
+      }));
+      setGpsStatus('pronto');
+    }
+  };
+
+  // Monitoramento contínuo de satélites com enableHighAccuracy forçado e sem cache
+  const iniciarMonitoramentoGps = () => {
     if (!navigator.geolocation) {
       setGpsStatus('erro');
+      setGpsErrorMsg('Geolocalização não suportada no aparelho.');
       return;
     }
 
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
+    setGpsStatus('buscando');
+
+    const options = {
+      enableHighAccuracy: true, // Força chip GNSS / Satélites de alta precisão
+      maximumAge: 0,            // PROIBIDO cache: sempre leitura fresca do hardware
+      timeout: 20000            // Tempo suficiente para estabilizar conexão com múltiplos satélites
+    };
+
+    // 1. Tenta fix inicial imediato
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        try {
-          const det = await resolveAddressFromGps(latitude, longitude);
-          setLocalizacao({
-            rua: det.rua || 'Rua Principal',
-            numero: det.numero || '',
-            bairro: det.bairro || det.microarea || 'Centro',
-            microarea: det.microarea || 'Centro',
-            quarteirao: det.quarteirao || 'Q-01',
-            latitude,
-            longitude,
-            accuracy: Math.round(accuracy),
-            isExact: det.isExactPolygon
-          });
-          setGpsStatus('pronto');
-        } catch (e) {
-          setGpsStatus('pronto');
-        }
+      (pos) => processarNovaPosicao(pos, true),
+      (err) => console.warn('Aguardando satélites GNSS...', err),
+      options
+    );
+
+    // 2. Rastreamento contínuo de alta precisão em tempo real
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        processarNovaPosicao(pos, false);
       },
       (err) => {
-        console.warn('Falha GPS:', err);
-        setGpsStatus('erro');
+        console.warn('GPS watch warning:', err);
+        if (err.code === 1) {
+          setGpsStatus('erro');
+          setGpsErrorMsg('Permissão de GPS negada. Ative a localização no navegador.');
+        } else if (err.code === 2) {
+          setGpsStatus('erro');
+          setGpsErrorMsg('Sinal de satélites fraco. Fique sob céu aberto.');
+        } else if (err.code === 3) {
+          console.log('Buscando sinal de satélites...');
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+      options
     );
+
+    watchIdRef.current = id;
   };
 
   useEffect(() => {
-    capturarLocalizacao();
+    iniciarMonitoramentoGps();
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
   }, []);
+
+  const handleForcarRecalibracao = () => {
+    lastGeocodedRef.current = { lat: 0, lng: 0, acc: 999, time: 0 };
+    iniciarMonitoramentoGps();
+  };
 
   // Salvar registro (100% offline em IndexedDB + LocalStorage)
   const handleRegistrar = async (e) => {
@@ -126,6 +230,16 @@ export function InstalarArmadilhaScreen({
     if (!numeroArmadilha.trim()) {
       alert('Digite o número da OV.');
       return;
+    }
+
+    // Se a precisão do GPS estiver muito fraca (> 35 metros), avisa o agente
+    if (localizacao.accuracy && localizacao.accuracy > 35) {
+      const prosseguir = window.confirm(
+        `Atenção: O GPS ainda está buscando satélites (precisão atual: ±${localizacao.accuracy}m).\n\nPara garantir a localização e quarteirão exatos, recomendamos aguardar alguns segundos sob céu aberto até atingir menos de 15m.\n\nDeseja salvar com a precisão atual mesmo assim?`
+      );
+      if (!prosseguir) {
+        return;
+      }
     }
 
     setSalvando(true);
@@ -181,21 +295,63 @@ export function InstalarArmadilhaScreen({
         />
       </div>
 
-      {/* 2. BOTÃO GPS NO TOPO */}
-      <header className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto">
+      {/* 2. BARRA SUPERIOR DE ALTA PRECISÃO GPS */}
+      <header className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between pointer-events-none gap-2">
+        <div className="bg-white/92 backdrop-blur-md text-slate-900 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto shrink-0">
           <span>🪤 GPS Ovitrampa Carmo</span>
         </div>
 
-        <button
-          type="button"
-          onClick={capturarLocalizacao}
-          className="bg-white/90 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-[11px] font-black pointer-events-auto active:scale-95 transition-transform"
-          title="Recarregar GPS"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
-          <span>{localizacao.accuracy ? `±${localizacao.accuracy}m` : 'Buscando GPS...'}</span>
-        </button>
+        {/* Indicador de Precisão dos Satélites em Tempo Real */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          {localizacao.accuracy !== null ? (
+            <div
+              className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-[11px] font-black transition-all ${
+                localizacao.accuracy <= 10
+                  ? 'bg-emerald-50/95 border-emerald-300 text-emerald-800'
+                  : localizacao.accuracy <= 25
+                  ? 'bg-sky-50/95 border-sky-300 text-sky-800'
+                  : 'bg-amber-50/95 border-amber-300 text-amber-800'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  localizacao.accuracy <= 10
+                    ? 'bg-emerald-500 animate-pulse'
+                    : localizacao.accuracy <= 25
+                    ? 'bg-sky-500'
+                    : 'bg-amber-500 animate-ping'
+                }`}
+              />
+              <span>
+                {localizacao.accuracy <= 10
+                  ? `🎯 Alta Precisão (±${localizacao.accuracy}m)`
+                  : localizacao.accuracy <= 25
+                  ? `📡 Bom (±${localizacao.accuracy}m)`
+                  : `🛰️ Calibrando (±${localizacao.accuracy}m)`}
+              </span>
+            </div>
+          ) : gpsStatus === 'erro' ? (
+            <div className="bg-rose-50/95 backdrop-blur-md border border-rose-300 text-rose-800 px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-[11px] font-black">
+              <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sem Sinal GPS</span>
+            </div>
+          ) : (
+            <div className="bg-white/92 backdrop-blur-md border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-[11px] font-black">
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+              <span>Buscando Satélites...</span>
+            </div>
+          )}
+
+          {/* Botão de Recalibrar Satélites GNSS */}
+          <button
+            type="button"
+            onClick={handleForcarRecalibracao}
+            className="bg-white/92 hover:bg-white active:scale-90 backdrop-blur-md text-slate-700 hover:text-emerald-700 w-8 h-8 rounded-full border border-slate-200/90 shadow-md flex items-center justify-center transition-all shrink-0"
+            title="Recalibrar sinal de satélites agora"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </header>
 
       {/* 3. ALERTA DE SUCESSO */}
@@ -215,24 +371,57 @@ export function InstalarArmadilhaScreen({
           
           {/* ENDEREÇO E QUARTEIRÃO DETECTADOS 100% PELO GPS */}
           <div className="flex items-center gap-2.5 bg-emerald-50/85 backdrop-blur-xs px-3.5 py-2.5 rounded-2xl border border-emerald-200/80 shadow-xs">
-            <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-emerald-700" />
+            </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-black text-slate-900 truncate leading-tight">
                 {localizacao.rua} {localizacao.numero ? `Nº ${localizacao.numero}` : ''}
               </p>
-              <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
-                {localizacao.microarea} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span> <span className="text-slate-400 font-normal">(GPS Oficial)</span>
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="text-[11px] text-slate-600 font-medium">
+                  {localizacao.microarea} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span>
+                </span>
+                {localizacao.accuracy !== null && (
+                  <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md border ${
+                    localizacao.accuracy <= 10
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : localizacao.accuracy <= 25
+                      ? 'bg-sky-100 text-sky-800 border-sky-300'
+                      : 'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}>
+                    {localizacao.accuracy <= 10 ? '🎯 ' : '📡 '}±{localizacao.accuracy}m
+                  </span>
+                )}
+              </div>
             </div>
             <button
               type="button"
-              onClick={capturarLocalizacao}
-              className="text-slate-400 hover:text-emerald-600 p-1 transition-colors"
-              title="Atualizar endereço"
+              onClick={handleForcarRecalibracao}
+              className="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-emerald-100/50 transition-colors"
+              title="Recalibrar endereço e quarteirão com satélites"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${gpsStatus === 'buscando' ? 'animate-spin text-emerald-600' : ''}`} />
             </button>
           </div>
+
+          {/* Dica amigável se a precisão estiver em calibração (> 25 metros) */}
+          {localizacao.accuracy !== null && localizacao.accuracy > 25 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50/90 px-3 py-1.5 rounded-xl border border-amber-200">
+              <span className="shrink-0 text-xs">🛰️</span>
+              <span className="leading-tight">
+                Calibrando satélites (±{localizacao.accuracy}m). Sob céu aberto atinge precisão máxima (≤ 10m).
+              </span>
+            </div>
+          )}
+
+          {/* Alerta se o GPS estiver com erro ou sem sinal */}
+          {gpsErrorMsg && (
+            <div className="flex items-center gap-1.5 text-[11px] text-rose-800 bg-rose-50 px-3 py-2 rounded-xl border border-rose-200">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span className="leading-tight font-semibold">{gpsErrorMsg}</span>
+            </div>
+          )}
 
           {/* FORMULÁRIO RÁPIDO DO AGENTE: MORADOR + Nº DA OV + PALHETA */}
           <form onSubmit={handleRegistrar} className="space-y-2.5">

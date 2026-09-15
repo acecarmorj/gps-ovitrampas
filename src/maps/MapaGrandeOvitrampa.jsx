@@ -22,6 +22,7 @@ export function MapaGrandeOvitrampa({
   const layersRef = useRef({
     polygons: null,
     userMarker: null,
+    userAccuracyCircle: null,
     trapsLayer: null
   });
 
@@ -75,6 +76,9 @@ export function MapaGrandeOvitrampa({
       window.removeEventListener('resize', onResize);
       if (resizeObserver) resizeObserver.disconnect();
       try {
+        if (layersRef.current.userAccuracyCircle) {
+          map.removeLayer(layersRef.current.userAccuracyCircle);
+        }
         map.remove();
       } catch (e) {}
       mapInstanceRef.current = null;
@@ -135,7 +139,7 @@ export function MapaGrandeOvitrampa({
     });
   }, [microarea, quarteirao]);
 
-  // 4. Marcador do Agente (Você)
+  // 4. Marcador do Agente (Você) e Círculo de Precisão do Satélite
   useEffect(() => {
     const map = mapInstanceRef.current;
     const layers = layersRef.current;
@@ -149,6 +153,33 @@ export function MapaGrandeOvitrampa({
         }).addTo(map);
       } else {
         layers.userMarker.setLatLng([userPos.latitude, userPos.longitude]);
+      }
+
+      // Círculo visual de precisão de satélite (raio em metros real)
+      const acc = Number(userPos.accuracy) || 0;
+      if (acc > 0) {
+        // <= 10m: Verde esmeralda (Alta precisão / satélites travados)
+        // <= 25m: Azul (Boa precisão)
+        // > 25m: Âmbar com linha pontilhada (calibrando satélites)
+        const cor = acc <= 10 ? '#059669' : acc <= 25 ? '#2563eb' : '#d97706';
+        if (!layers.userAccuracyCircle) {
+          layers.userAccuracyCircle = L.circle([userPos.latitude, userPos.longitude], {
+            radius: acc,
+            color: cor,
+            weight: 1.5,
+            fillColor: cor,
+            fillOpacity: 0.12,
+            dashArray: acc > 20 ? '4, 4' : null
+          }).addTo(map);
+        } else {
+          layers.userAccuracyCircle.setLatLng([userPos.latitude, userPos.longitude]);
+          layers.userAccuracyCircle.setRadius(acc);
+          layers.userAccuracyCircle.setStyle({
+            color: cor,
+            fillColor: cor,
+            dashArray: acc > 20 ? '4, 4' : null
+          });
+        }
       }
     }
   }, [userPos]);
@@ -202,13 +233,13 @@ export function MapaGrandeOvitrampa({
     });
   }, [armadilhaSelecionada]);
 
-  // Função para centralizar novamente no agente
+  // Função para centralizar novamente no agente com zoom de alta precisão
   const handleRecenter = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
     const lat = userPos?.latitude || -21.9339;
     const lng = userPos?.longitude || -42.6089;
-    map.flyTo([lat, lng], 17, { duration: 0.8 });
+    map.flyTo([lat, lng], 18, { duration: 0.8 });
     if (autoFitRef.current) autoFitRef.current.resume();
   };
 
