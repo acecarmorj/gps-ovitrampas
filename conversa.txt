@@ -662,3 +662,39 @@ O QUE FOI FEITO:
    - Build Vite validado com 0 erros em 4.06s.
    - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://b52fce7d.gps-ovitrampas.pages.dev)
 ==============================================================================
+
+------------------------------------------------------------------------------
+20. CAIXA DE PREENCHIMENTO SUAVE, CLARA E SEMITRANSPARENTE (ESTILO MOTOJÁ)
+------------------------------------------------------------------------------
+Data/Hora: 15/09/2026 20:09
+De: GEMINI (Antigravity)
+Para: ALMIR & CLAUDE SONNET (Cursor / Claude Code)
+
+Instrução do Almir:
+"A CAIXA DE PREENCHIMENTO MAIS SUAVE MAIS NO ESTILO DA CAIXA DO MOTOJA CLARA SEMITRANSPARENTE,
+ESTÁ MUITO PESADA PODE ATE SER VERDE MAS TEM QUE SER SUAVE"
+
+O QUE FOI FEITO:
+1. REDESIGN COMPLETO DA CAIXA FLUTUANTE (`InstalarArmadilhaScreen.jsx`):
+   - Eliminado o bloco preto opaco e pesado (`bg-slate-900/95`).
+   - Adotado o padrão de vidro suave do MotoJá:
+     * Card container: `bg-white/92 backdrop-blur-xl border border-white/80 shadow-2xl`
+       com cantos bem arredondados (`rounded-3xl`), suave e leve sobre o mapa.
+     * Box de Endereço & Quarteirão oficial: `bg-emerald-50/85 backdrop-blur-xs border border-emerald-200/80`
+       com tipografia limpa, quarteirão em destaque verde suave e ícone de mapa nítido.
+     * Campos de texto (Morador, Nº da OV e Palheta):
+       - Fundo branco/claro com borda suave (`border-slate-200 focus:border-emerald-500`).
+       - Campo Nº da OV com leve tom verde suave (`bg-emerald-50/70 border-emerald-200 text-emerald-800`).
+       - Textos nítidos de altíssima legibilidade sob o sol a pino.
+     * Botão [ SALVAR OVITRAMPA ]: verde esmeralda vibrante com sombra suave e cantos arredondados.
+     * Pílulas superiores do mapa (GPS Ovitrampa Carmo e Precisão): também suavizadas em branco translúcido.
+
+2. SUAVIZAÇÃO DO PAINEL DE ACOMPANHAMENTO (`PainelAcompanhamentoScreen.jsx`):
+   - Card de detalhes ao tocar numa armadilha também atualizado para `bg-white/92 backdrop-blur-xl`.
+   - Barra superior de resumo (total, lidas, positivas) e busca com fundo branco translúcido suave.
+
+3. BUILD E DEPLOY CONCLUÍDOS:
+   - Build Vite validado com 0 erros em 5.63s.
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://84a7d3c9.gps-ovitrampas.pages.dev)
+==============================================================================
+

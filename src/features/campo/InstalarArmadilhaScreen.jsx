@@ -149,14 +149,14 @@ export function InstalarArmadilhaScreen({
 
       {/* 2. BOTÃO GPS NO TOPO */}
       <header className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        <div className="bg-slate-900/90 backdrop-blur-md text-emerald-400 px-3 py-1.5 rounded-full border border-slate-700 shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto">
+        <div className="bg-white/90 backdrop-blur-md text-slate-900 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto">
           <span>🪤 GPS Ovitrampa Carmo</span>
         </div>
 
         <button
           type="button"
           onClick={capturarLocalizacao}
-          className="bg-white/95 backdrop-blur-md text-slate-900 px-3 py-1.5 rounded-full border border-slate-300 shadow-sm flex items-center gap-1.5 text-[11px] font-black pointer-events-auto active:scale-95"
+          className="bg-white/90 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-[11px] font-black pointer-events-auto active:scale-95 transition-transform"
           title="Recarregar GPS"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
@@ -175,38 +175,38 @@ export function InstalarArmadilhaScreen({
         </div>
       )}
 
-      {/* 4. PAINEL FLUTUANTE SIMPLES (BOTTOM SHEET) */}
+      {/* 4. PAINEL FLUTUANTE SUAVE / CLARO SEMITRANSPARENTE (ESTILO MOTOJÁ) */}
       <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
-        <div className="bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-3.5 space-y-3 pointer-events-auto text-white">
+        <div className="bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-800">
           
           {/* ENDEREÇO E QUARTEIRÃO DETECTADOS 100% PELO GPS */}
-          <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-2 rounded-2xl border border-slate-700/60">
-            <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2.5 bg-emerald-50/85 backdrop-blur-xs px-3.5 py-2.5 rounded-2xl border border-emerald-200/80 shadow-xs">
+            <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-black text-white truncate">
+              <p className="text-xs sm:text-sm font-black text-slate-900 truncate leading-tight">
                 {localizacao.rua} {localizacao.numero ? `Nº ${localizacao.numero}` : ''}
               </p>
-              <p className="text-[10px] text-slate-400">
-                {localizacao.microarea} • <span className="text-emerald-400 font-bold">{localizacao.quarteirao}</span> (GPS Oficial)
+              <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                {localizacao.microarea} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span> <span className="text-slate-400 font-normal">(GPS Oficial)</span>
               </p>
             </div>
             <button
               type="button"
               onClick={capturarLocalizacao}
-              className="text-slate-400 hover:text-emerald-400 p-1"
+              className="text-slate-400 hover:text-emerald-600 p-1 transition-colors"
               title="Atualizar endereço"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${gpsStatus === 'buscando' ? 'animate-spin text-emerald-600' : ''}`} />
             </button>
           </div>
 
-          {/* FORMULÁRIO RÁPIDO DO AGENTE: MORADOR + Nº DA OV + PALHETA + FOTO */}
+          {/* FORMULÁRIO RÁPIDO DO AGENTE: MORADOR + Nº DA OV + PALHETA */}
           <form onSubmit={handleRegistrar} className="space-y-2.5">
             
             {/* 1. NOME DO MORADOR */}
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1 flex items-center gap-1">
-                <User className="w-3 h-3 text-emerald-400" />
+              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Nome do Morador *</span>
               </label>
               <input
@@ -215,15 +215,15 @@ export function InstalarArmadilhaScreen({
                 placeholder="Ex: Dona Maria / Seu José"
                 value={nomeMorador}
                 onChange={(e) => setNomeMorador(e.target.value)}
-                className="w-full bg-slate-800 border-2 border-slate-700 focus:border-emerald-500 rounded-2xl px-3 py-2 text-sm font-bold text-white placeholder:text-slate-500 focus:outline-none"
+                className="w-full bg-white/95 border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3.5 py-2.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
                 autoFocus
               />
             </div>
 
             {/* 2. NÚMERO DA OV + NÚMERO DA PALHETA */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
                   Nº da OV *
                 </label>
                 <input
@@ -232,12 +232,12 @@ export function InstalarArmadilhaScreen({
                   placeholder="Ex: 01, 14, 25"
                   value={numeroArmadilha}
                   onChange={(e) => setNumeroArmadilha(e.target.value)}
-                  className="w-full bg-slate-800 border-2 border-slate-700 focus:border-emerald-500 rounded-2xl px-3 py-2 text-sm font-black text-emerald-400 text-center placeholder:text-slate-500 focus:outline-none"
+                  className="w-full bg-emerald-50/70 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-emerald-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1">
+                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
                   Palheta *
                 </label>
                 <input
@@ -246,7 +246,7 @@ export function InstalarArmadilhaScreen({
                   placeholder="Ex: P-01"
                   value={numeroPalheta}
                   onChange={(e) => setNumeroPalheta(e.target.value)}
-                  className="w-full bg-slate-800 border-2 border-slate-700 focus:border-emerald-500 rounded-2xl px-3 py-2 text-sm font-black text-white text-center placeholder:text-slate-500 focus:outline-none"
+                  className="w-full bg-white/95 border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-slate-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -255,7 +255,7 @@ export function InstalarArmadilhaScreen({
             <button
               type="submit"
               disabled={salvando}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-50 text-white py-3 rounded-2xl font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-50 text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all mt-1"
             >
               {salvando ? (
                 <span>Salvando...</span>
