@@ -66,6 +66,7 @@ export function PainelAcompanhamentoScreen({
           armadilhaSelecionada={selecionada}
           onSelectArmadilha={(arm) => setSelecionada(arm)}
           mostrarTodosPontos={true}
+          controlTop={108}
         />
       </div>
 

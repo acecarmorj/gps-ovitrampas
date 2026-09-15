@@ -12,7 +12,8 @@ export function MapaGrandeOvitrampa({
   armadilhas = [],
   armadilhaSelecionada = null,
   onSelectArmadilha,
-  mostrarTodosPontos = false
+  mostrarTodosPontos = false,
+  controlTop = 60
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -218,7 +219,7 @@ export function MapaGrandeOvitrampa({
         onRecenter={handleRecenter}
         satellite={satellite}
         onToggleSatellite={() => setSatellite(!satellite)}
-        top={16}
+        top={controlTop}
         right={12}
       />
     </div>

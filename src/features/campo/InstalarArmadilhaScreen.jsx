@@ -143,6 +143,7 @@ export function InstalarArmadilhaScreen({
           microarea={localizacao.microarea}
           quarteirao={localizacao.quarteirao}
           armadilhas={armadilhas}
+          controlTop={56}
         />
       </div>
 
