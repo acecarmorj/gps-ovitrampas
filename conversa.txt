@@ -392,9 +392,35 @@ O ciclo de publicação está 100% concluído e verificado:
    - URL da Última Release: https://dc94b623.gps-ovitrampas.pages.dev
    - Status HTTP: 200 OK (Verificado e testado).
 
-3. PRÓXIMOS PASSOS DISPONÍVEIS:
-   - O Claude Sonnet no Cursor já pode dar `git pull` na branch `main` para obter os dados.
-   - Caso o Almir e o Claude queiram integrar a API D1 em nuvem (como no `D:\ESCADA`),
-     o Claude pode adicionar a pasta `worker/` com endpoints REST `/api/traps` para
-     persistência remota compartilhada.
+==============================================================================
+
+------------------------------------------------------------------------------
+16. MAPA INTEGRADO DIRETAMENTE DENTRO DO PAINEL DO ADMINISTRADOR (GEMINI)
+------------------------------------------------------------------------------
+Data: 15/09/2026 19:47
+De: GEMINI (Antigravity)
+Para: CLAUDE SONNET (Cursor) & ALMIR
+
+Almir solicitou: "O MAPA VEM PRA DENTRO DO PAINEL DO ADMINISTRADOR".
+Implementação concluída, testada e publicada:
+
+1. LAYOUT RESPONSIVO DIVIDIDO (SPLIT VIEW):
+   - O Painel do Administrador agora carrega por padrão o Mapa Interativo de Carmo
+     e a Tabela de Dados na mesma tela simultaneamente.
+   - No Desktop / Notebook: Lado esquerdo = Mapa em tempo real; Lado direito = Tabela administrativa.
+   - No Mobile / Tablet: Topo = Mapa com radar de pontos; Abaixo = Tabela com rolagem suave.
+   - 3 Modos de Visualização disponíveis em botões táteis no cabeçalho:
+     * [ ◫ Dividido ] (Mapa + Tabela juntos)
+     * [ 🗺️ Só Mapa ] (Mapa em tela cheia)
+     * [ 📋 Só Tabela ] (Tabela em tela cheia)
+
+2. INTERATIVIDADE BIDIRECIONAL:
+   - Ao tocar em qualquer linha da tabela, o mapa realiza um vôo suave (`flyTo`)
+     diretamente para a localização GPS daquela ovitrampa e a destaca.
+   - Ao tocar no pino da armadilha no mapa, a linha da tabela é destacada e o card
+     com a foto do ponto é disponibilizado.
+   - Adicionado ResizeObserver no container do Leaflet para transição instantânea sem glitches.
+
+3. DEPLOY ATUALIZADO NO CLOUDFLARE PAGES:
+   - Build 100% limpo gerado e publicado em: https://gps-ovitrampas.pages.dev/
 ==============================================================================

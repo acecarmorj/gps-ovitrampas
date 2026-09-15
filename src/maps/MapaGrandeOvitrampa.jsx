@@ -62,8 +62,17 @@ export function MapaGrandeOvitrampa({
     window.addEventListener('resize', onResize);
     requestAnimationFrame(onResize);
 
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        onResize();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
       window.removeEventListener('resize', onResize);
+      if (resizeObserver) resizeObserver.disconnect();
       try {
         map.remove();
       } catch (e) {}
@@ -182,6 +191,15 @@ export function MapaGrandeOvitrampa({
       }
     }
   }, [armadilhas, armadilhaSelecionada, mostrarTodosPontos, userPos, onSelectArmadilha]);
+
+  // Centraliza suavemente na armadilha quando for selecionada
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !armadilhaSelecionada?.latitude || !armadilhaSelecionada?.longitude) return;
+    map.flyTo([armadilhaSelecionada.latitude, armadilhaSelecionada.longitude], 17, {
+      duration: 0.8
+    });
+  }, [armadilhaSelecionada]);
 
   // Função para centralizar novamente no agente
   const handleRecenter = () => {

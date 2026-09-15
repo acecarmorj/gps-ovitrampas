@@ -15,7 +15,7 @@ export function PainelAdminScreen({
   userPos,
   onAtualizarArmadilhas
 }) {
-  const [abaVisualizacao, setAbaVisualizacao] = useState('tabela'); // 'tabela' | 'mapa'
+  const [modoVisualizacao, setModoVisualizacao] = useState('dividido'); // 'dividido' | 'mapa' | 'tabela'
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroMicroarea, setFiltroMicroarea] = useState('todas');
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -200,25 +200,42 @@ export function PainelAdminScreen({
             <div className="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex items-center">
               <button
                 type="button"
-                onClick={() => setAbaVisualizacao('tabela')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                  abaVisualizacao === 'tabela'
+                onClick={() => setModoVisualizacao('dividido')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  modoVisualizacao === 'dividido'
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                title="Exibir Mapa e Tabela juntos"
               >
-                Tabela
+                <Layers className="w-3.5 h-3.5" />
+                <span>Dividido</span>
               </button>
               <button
                 type="button"
-                onClick={() => setAbaVisualizacao('mapa')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                  abaVisualizacao === 'mapa'
+                onClick={() => setModoVisualizacao('mapa')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  modoVisualizacao === 'mapa'
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                title="Exibir somente o Mapa Geral"
               >
-                Mapa Geral
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Só Mapa</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoVisualizacao('tabela')}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  modoVisualizacao === 'tabela'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Exibir somente a Tabela de Dados"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Só Tabela</span>
               </button>
             </div>
 
@@ -306,15 +323,48 @@ export function PainelAdminScreen({
         </div>
       </div>
 
-      {/* ÁREA DE CONTEÚDO: TABELA OU MAPA */}
-      <div className="flex-1 relative w-full h-full overflow-hidden">
+      {/* ÁREA DE CONTEÚDO: DIVIDIDO (MAPA + TABELA), SÓ MAPA OU SÓ TABELA */}
+      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
         
-        {/* VISUALIZAÇÃO EM TABELA ADMINISTRATIVA */}
-        {abaVisualizacao === 'tabela' && (
-          <div className="w-full h-full overflow-auto p-3 sm:p-4">
+        {/* MAPA GERAL DENTRO DO PAINEL DO ADMINISTRADOR */}
+        {(modoVisualizacao === 'dividido' || modoVisualizacao === 'mapa') && (
+          <div
+            className={`relative transition-all ${
+              modoVisualizacao === 'mapa'
+                ? 'w-full h-full'
+                : 'w-full h-[38vh] sm:h-[44vh] lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-800 shrink-0'
+            }`}
+          >
+            <MapaGrandeOvitrampa
+              userPos={userPos}
+              armadilhas={armadilhasFiltradas}
+              armadilhaSelecionada={armadilhaSelecionada}
+              onSelectArmadilha={(arm) => setArmadilhaSelecionada(arm)}
+              mostrarTodosPontos={true}
+            />
+
+            {/* Badge flutuante sobre o mapa em modo dividido */}
+            {modoVisualizacao === 'dividido' && (
+              <div className="absolute top-3 left-3 z-[1000] bg-slate-950/85 backdrop-blur-md border border-slate-800 text-white px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1.5 shadow-lg pointer-events-none">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>Mapa de Carmo ({armadilhasFiltradas.length} OVs)</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TABELA ADMINISTRATIVA COM DADOS E AÇÕES */}
+        {(modoVisualizacao === 'dividido' || modoVisualizacao === 'tabela') && (
+          <div
+            className={`overflow-auto flex-1 p-2.5 sm:p-4 ${
+              modoVisualizacao === 'dividido'
+                ? 'w-full lg:w-1/2 h-[62vh] sm:h-[56vh] lg:h-full'
+                : 'w-full h-full'
+            }`}
+          >
             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
               <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/80 text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <thead className="bg-slate-950/90 text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-800 sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="py-3 px-3">OV</th>
                     <th className="py-3 px-3">Morador</th>
@@ -334,85 +384,84 @@ export function PainelAdminScreen({
                       </td>
                     </tr>
                   ) : (
-                    armadilhasFiltradas.map((arm) => (
-                      <tr key={arm.id} className="hover:bg-slate-800/50 transition-colors">
-                        <td className="py-3 px-3 font-black text-emerald-400">
-                          ARM-{arm.numero}
-                        </td>
-                        <td className="py-3 px-3 font-extrabold text-white">
-                          {arm.moradorNome || <span className="text-slate-500 italic">Não informado</span>}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-blue-400">
-                          {arm.palheta || 'P-01'}
-                        </td>
-                        <td className="py-3 px-3">
-                          <p className="font-bold text-slate-200">{arm.rua}</p>
-                          <span className="text-[10px] text-slate-400">{arm.microarea}</span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-md text-[10px]">
-                            {arm.quarteirao}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-[11px] text-slate-400">
-                          {new Date(arm.instaladaEm).toLocaleDateString('pt-BR')} {new Date(arm.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-3 px-3">
-                          {arm.status === 'analisada' ? (
-                            arm.ultimosOvos > 0 ? (
-                              <span className="bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-                                {arm.ultimosOvos} ovos (Positiva)
-                              </span>
-                            ) : (
-                              <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-                                Negativa (0)
-                              </span>
-                            )
-                          ) : (
-                            <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-                              Em campo
+                    armadilhasFiltradas.map((arm) => {
+                      const isSelected = armadilhaSelecionada?.id === arm.id;
+                      return (
+                        <tr
+                          key={arm.id}
+                          onClick={() => setArmadilhaSelecionada(arm)}
+                          className={`cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'bg-indigo-950/70 border-l-4 border-indigo-500'
+                              : 'hover:bg-slate-800/50'
+                          }`}
+                          title="Clique para localizar e aproximar no mapa"
+                        >
+                          <td className="py-3 px-3 font-black text-emerald-400">
+                            ARM-{arm.numero}
+                          </td>
+                          <td className="py-3 px-3 font-extrabold text-white">
+                            {arm.moradorNome || <span className="text-slate-500 italic">Não informado</span>}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-blue-400">
+                            {arm.palheta || 'P-01'}
+                          </td>
+                          <td className="py-3 px-3">
+                            <p className="font-bold text-slate-200">{arm.rua}</p>
+                            <span className="text-[10px] text-slate-400">{arm.microarea}</span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-md text-[10px]">
+                              {arm.quarteirao}
                             </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setArmadilhaSelecionada(arm)}
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
-                              title="Ver detalhes e foto"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleExcluir(arm.id, arm.numero)}
-                              className="p-1.5 bg-rose-950/40 hover:bg-rose-900/60 rounded-xl text-rose-400 transition-colors"
-                              title="Excluir armadilha"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="py-3 px-3 text-[11px] text-slate-400">
+                            {new Date(arm.instaladaEm).toLocaleDateString('pt-BR')} {new Date(arm.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="py-3 px-3">
+                            {arm.status === 'analisada' ? (
+                              arm.ultimosOvos > 0 ? (
+                                <span className="bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                  {arm.ultimosOvos} ovos (Positiva)
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                  Negativa (0)
+                                </span>
+                              )
+                            ) : (
+                              <span className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                Em campo
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setArmadilhaSelecionada(arm)}
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
+                                title="Ver detalhes e foto"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleExcluir(arm.id, arm.numero)}
+                                className="p-1.5 bg-rose-950/40 hover:bg-rose-900/60 rounded-xl text-rose-400 transition-colors"
+                                title="Excluir armadilha"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {/* VISUALIZAÇÃO EM MAPA GERAL */}
-        {abaVisualizacao === 'mapa' && (
-          <div className="w-full h-full">
-            <MapaGrandeOvitrampa
-              userPos={userPos}
-              armadilhas={armadilhasFiltradas}
-              armadilhaSelecionada={armadilhaSelecionada}
-              onSelectArmadilha={(arm) => setArmadilhaSelecionada(arm)}
-              mostrarTodosPontos={true}
-            />
           </div>
         )}
 
