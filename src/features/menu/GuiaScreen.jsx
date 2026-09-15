@@ -2,7 +2,8 @@ import React from 'react';
 import {
   PlusCircle, Map as MapIcon, FlaskConical,
   ShieldCheck, RefreshCw, Volume2, VolumeX,
-  ChevronRight, Check, Cloud, CloudOff
+  ChevronRight, Check, Cloud, CloudOff,
+  MessageCircle, Share2
 } from 'lucide-react';
 import { DevCredit } from '../../components/DevCredit';
 
@@ -22,6 +23,26 @@ export function GuiaScreen({
   onToggleMute
 }) {
   const saudacao = greetingNow();
+
+  const handleCompartilharWhatsApp = (e) => {
+    e.stopPropagation();
+    const urlBase = typeof window !== 'undefined' ? window.location.origin : 'https://gps-ovitrampas.pages.dev';
+    const urlCampo = `${urlBase}/campo`;
+    const texto = [
+      `🪤 *GPS OVITRAMPAS - CARMO/RJ*`,
+      ``,
+      `Olá, Agente! Segue o link direto para instalação e cadastro de armadilhas no seu celular:`,
+      ``,
+      `👉 ${urlCampo}`,
+      ``,
+      `✅ Endereço e quarteirão 100% automáticos via GPS`,
+      `✅ Sem necessidade de fotos e sem burocracia`,
+      `✅ Funciona mesmo sem sinal de internet (Offline)`
+    ].join('\n');
+
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const SECOES = [
     {
@@ -194,33 +215,51 @@ export function GuiaScreen({
                   <div
                     key={item.rota}
                     onClick={() => onNavegar(item.rota)}
-                    className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all active:scale-[0.98] flex items-center justify-between gap-4 group shadow-xs hover:shadow-md ${
+                    className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all active:scale-[0.98] flex flex-col justify-between gap-3 group shadow-xs hover:shadow-md ${
                       item.destaque
                         ? 'bg-gradient-to-r from-emerald-50/70 via-white to-white border-emerald-200/90 hover:border-emerald-400'
                         : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`w-13 h-13 rounded-2xl border flex items-center justify-center shrink-0 ${item.iconeBg}`}>
-                        <Icone className="w-6 h-6" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${item.iconeBg}`}>
+                          <Icone className="w-6 h-6" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-block mb-0.5 ${item.tagCor}`}>
+                            {item.tag}
+                          </span>
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                            {item.titulo}
+                          </h3>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-block mb-1 ${item.tagCor}`}>
-                          {item.tag}
-                        </span>
-                        <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">
-                          {item.titulo}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1 leading-snug line-clamp-2">
-                          {item.descricao}
-                        </p>
+                      <div className="w-8 h-8 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-slate-800 group-hover:bg-slate-200 transition-all shrink-0">
+                        <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
 
-                    <div className="w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-slate-800 group-hover:bg-slate-200 transition-all shrink-0">
-                      <ChevronRight className="w-5 h-5" />
-                    </div>
+                    <p className="text-xs text-slate-500 leading-snug">
+                      {item.descricao}
+                    </p>
+
+                    {/* BOTÃO COMPARTILHAR APP COM AGENTE VIA WHATSAPP */}
+                    {item.rota === '/campo' && (
+                      <div className="pt-2.5 border-t border-emerald-100 mt-1 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={handleCompartilharWhatsApp}
+                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-[11px] px-3 py-1.5 rounded-xl shadow-xs transition-all"
+                          title="Compartilhar link de campo no WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Enviar link para o Agente (WhatsApp)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

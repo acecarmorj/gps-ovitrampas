@@ -735,3 +735,37 @@ O QUE FOI FEITO:
 ==============================================================================
 
 
+
+------------------------------------------------------------------------------
+22. SINCRONIZAÇÃO AUTOMÁTICA DA NUMERAÇÃO (OV-XX / PL-XX) E COMPARTILHAMENTO VIA WHATSAPP
+------------------------------------------------------------------------------
+Data/Hora: 15/09/2026 20:38
+De: GEMINI (Antigravity)
+Para: ALMIR & CLAUDE SONNET (Cursor / Claude Code)
+
+Instruções do Almir:
+1. "AQUI POR ENQUANTO PODE COLOCAR A OIRAMA E APLAHETA SEGUE A NUMERAÇÃO AUTOMATICO EX O QUE ESCREVE NA OVITRAMPAS JA APARECE NA PALHETA SE SE COLOCAR 01 VIRA OV-01 E PL-01"
+2. "PERFEITO SO QUE NO BOTAO INSTALAR OVITRAMPAS QUE ABRE O APP PARA O AGENTE TERIA QUE TER UM BOTAO COMPARTILHAR APP QUE ABRISSE O WHATSAPP COM UMA MENSAGEM COM O LINK PARA ENVIAR PARA O AGENTE"
+
+O QUE FOI FEITO:
+1. SINCRONIZAÇÃO AUTOMÁTICA DE NUMERAÇÃO (InstalarArmadilhaScreen.jsx):
+   - Ao digitar no campo "Nº da Ovitrampa":
+     * O sistema extrai o número digitado e padroniza com o prefixo oficial OV-.
+     * O campo "Palheta" acompanha em tempo real com o prefixo oficial PL- (ex: digitou "01" -> OV vira OV-01 e Palheta vira PL-01; digitou "14" -> OV-14 e PL-14).
+     * Ao sair do campo (onBlur), se o agente digitou um único dígito (ex: "1" até "9"), o sistema auto-completa com zero à esquerda para 2 dígitos (OV-01 e PL-01).
+     * O campo Palheta continua editável caso seja necessário ajuste ou sufixo manual.
+     * Após salvar o cadastro, ambos os campos são resetados para a próxima armadilha.
+
+2. BOTÃO COMPARTILHAR LINK DE CAMPO VIA WHATSAPP (GuiaScreen.jsx):
+   - No card principal "Instalar Ovitrampa" do Guia (/guia), foi adicionado o botão:
+     [ 💬 Enviar link para o Agente (WhatsApp) ].
+   - Ao clicar, abre o WhatsApp (Web ou App móvel) com mensagem pronta e formatada:
+     * Título: 🪤 *GPS OVITRAMPAS - CARMO/RJ*
+     * Mensagem amigável com instruções e o link direto para o app do agente (/campo).
+     * Destaques: GPS 100% automático para endereço e quarteirão, sem fotos, funciona offline.
+   - O clique possui stopPropagation() para disparar o WhatsApp sem abrir a tela de campo ao mesmo tempo.
+
+3. BUILD E DEPLOY CONCLUÍDOS:
+   - Build Vite validado com 0 erros.
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://44c74ad5.gps-ovitrampas.pages.dev)
+==============================================================================

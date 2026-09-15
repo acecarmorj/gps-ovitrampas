@@ -20,9 +20,43 @@ export function InstalarArmadilhaScreen({
   // Endereço, Microárea e Quarteirão são 100% automáticos pelo GPS!
   const [nomeMorador, setNomeMorador] = useState('');
   const [numeroArmadilha, setNumeroArmadilha] = useState('');
-  const [numeroPalheta, setNumeroPalheta] = useState('P-01');
+  const [numeroPalheta, setNumeroPalheta] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
+
+  // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
+  const handleNumeroArmadilhaChange = (e) => {
+    const val = e.target.value;
+    if (!val) {
+      setNumeroArmadilha('');
+      setNumeroPalheta('');
+      return;
+    }
+
+    // Extrai o núcleo digitado removendo prefixo OV- se houver
+    let core = val.toUpperCase().replace(/^OV[-_ ]*/i, '');
+    if (!core) {
+      setNumeroArmadilha('');
+      setNumeroPalheta('');
+      return;
+    }
+
+    const ov = `OV-${core}`;
+    const pl = `PL-${core}`;
+    setNumeroArmadilha(ov);
+    setNumeroPalheta(pl);
+  };
+
+  const handleNumeroArmadilhaBlur = () => {
+    if (!numeroArmadilha) return;
+    const core = numeroArmadilha.replace(/^OV[-_ ]*/i, '').trim();
+    // Se digitou apenas 1 dígito (ex: 1 até 9), formata para dois dígitos (ex: 01 até 09)
+    if (/^\d$/.test(core)) {
+      const pad = core.padStart(2, '0');
+      setNumeroArmadilha(`OV-${pad}`);
+      setNumeroPalheta(`PL-${pad}`);
+    }
+  };
 
   // Localização e endereço capturados automaticamente pelo GPS de Carmo
   const [localizacao, setLocalizacao] = useState({
@@ -99,7 +133,7 @@ export function InstalarArmadilhaScreen({
       const nova = await cadastrarArmadilha({
         moradorNome: nomeMorador.trim(),
         numero: numeroArmadilha.trim(),
-        palheta: numeroPalheta.trim() || 'P-01',
+        palheta: numeroPalheta.trim() || 'PL-01',
         rua: localizacao.rua,
         numeroImovel: localizacao.numero,
         bairro: localizacao.bairro,
@@ -113,12 +147,12 @@ export function InstalarArmadilhaScreen({
 
       playSuccessSound();
       const situacao = calcularSituacaoArmadilha(nova);
-      setSucessoMsg(`OV-${nova.numero} de ${nova.moradorNome} registrada! Situação: ${situacao.titulo} (Recolher até ${situacao.dataPrevistaFormatada || '5 dias'}).`);
+      setSucessoMsg(`${nova.numero} (${nova.palheta}) de ${nova.moradorNome} registrada com sucesso!`);
 
       // Limpar campos para o próximo registro
       setNomeMorador('');
       setNumeroArmadilha('');
-      setNumeroPalheta('P-01');
+      setNumeroPalheta('');
 
       if (onArmadilhaCadastrada) {
         onArmadilhaCadastrada(nova);
@@ -220,7 +254,7 @@ export function InstalarArmadilhaScreen({
               />
             </div>
 
-            {/* 2. NÚMERO DA OV + NÚMERO DA PALHETA */}
+            {/* 2. NÚMERO DA OV + NÚMERO DA PALHETA (SINCRONIZADOS AUTOMATICAMENTE) */}
             <div className="grid grid-cols-2 gap-2.5">
               <div>
                 <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
@@ -229,9 +263,10 @@ export function InstalarArmadilhaScreen({
                 <input
                   type="text"
                   required
-                  placeholder="Ex: 01, 14, 25"
+                  placeholder="Ex: 01"
                   value={numeroArmadilha}
-                  onChange={(e) => setNumeroArmadilha(e.target.value)}
+                  onChange={handleNumeroArmadilhaChange}
+                  onBlur={handleNumeroArmadilhaBlur}
                   className="w-full bg-emerald-50/70 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-emerald-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
                 />
               </div>
@@ -243,7 +278,7 @@ export function InstalarArmadilhaScreen({
                 <input
                   type="text"
                   required
-                  placeholder="Ex: P-01"
+                  placeholder="Ex: PL-01"
                   value={numeroPalheta}
                   onChange={(e) => setNumeroPalheta(e.target.value)}
                   className="w-full bg-white/95 border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-slate-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
