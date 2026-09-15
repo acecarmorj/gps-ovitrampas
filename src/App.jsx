@@ -10,7 +10,8 @@ import {
   iniciarMonitoramentoConectividade,
   onSyncStatusChange,
   getStatusSincronizacao,
-  tentarSincronizarEmSegundoPlano
+  tentarSincronizarEmSegundoPlano,
+  sincronizarDadosDoServidor
 } from './lib/storage';
 import { setMuted } from './lib/soundAlert';
 
@@ -97,7 +98,11 @@ export function App() {
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         syncInfo={syncInfo}
-        onForcarSync={() => tentarSincronizarEmSegundoPlano()}
+        onForcarSync={async () => {
+          await tentarSincronizarEmSegundoPlano();
+          await sincronizarDadosDoServidor();
+          recarregarArmadilhas();
+        }}
       />
 
       <main className="flex-1 relative w-full h-full overflow-hidden">

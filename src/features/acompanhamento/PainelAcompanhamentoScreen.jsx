@@ -5,7 +5,7 @@ import {
   ExternalLink, Layers, Eye, FlaskConical, Clock
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
-import { obterFotoArmadilha, excluirArmadilha } from '../../lib/storage';
+import { excluirArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 
 export function PainelAcompanhamentoScreen({
@@ -15,26 +15,9 @@ export function PainelAcompanhamentoScreen({
   onIrParaLaboratorio
 }) {
   const [selecionada, setSelecionada] = useState(null);
-  const [fotoUrl, setFotoUrl] = useState(null);
-  const [fotoExpandida, setFotoExpandida] = useState(false);
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todas'); // 'todas' | 'instalada' | 'analisada'
   const [mostrarLista, setMostrarLista] = useState(false);
-
-  // Carrega foto da armadilha selecionada do IndexedDB
-  useEffect(() => {
-    let active = true;
-    if (selecionada?.id) {
-      obterFotoArmadilha(selecionada.id).then((foto) => {
-        if (active) setFotoUrl(foto);
-      });
-    } else {
-      setFotoUrl(null);
-    }
-    return () => {
-      active = false;
-    };
-  }, [selecionada]);
 
   // Filtragem
   const armadilhasFiltradas = armadilhas.filter((arm) => {
@@ -232,75 +215,47 @@ export function PainelAcompanhamentoScreen({
               </button>
             </div>
 
-            {/* Foto e Endereço */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Miniatura da Foto */}
-              {fotoUrl ? (
-                <div
-                  onClick={() => setFotoExpandida(true)}
-                  className="sm:col-span-1 relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-800 h-28 cursor-pointer group"
-                  title="Toque para ampliar a foto"
-                >
-                  <img
-                    src={fotoUrl}
-                    alt={`Armadilha ${selecionada.numero}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <Eye className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="absolute bottom-1 right-1 bg-black/70 text-[9px] font-bold text-white px-1.5 py-0.5 rounded">
-                    Ampliar
-                  </span>
-                </div>
-              ) : (
-                <div className="sm:col-span-1 rounded-2xl border border-dashed border-slate-700 bg-slate-800/40 h-28 flex flex-col items-center justify-center text-slate-500 text-[10px]">
-                  <span>Sem foto</span>
+            {/* Informações de Localização */}
+            <div className="space-y-2 text-xs">
+              {selecionada.moradorNome && (
+                <div className="bg-slate-800/90 px-3 py-2 rounded-xl border border-slate-700/80 flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Morador(a):</span>
+                  <span className="text-xs font-black text-emerald-300">{selecionada.moradorNome}</span>
                 </div>
               )}
 
-              {/* Informações de Localização */}
-              <div className="sm:col-span-2 space-y-1.5 text-xs">
-                {selecionada.moradorNome && (
-                  <div className="bg-slate-800/90 px-2.5 py-1.5 rounded-xl border border-slate-700/80">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Morador(a):</span>
-                    <span className="text-xs font-black text-emerald-300">{selecionada.moradorNome}</span>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-1.5 text-slate-300">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold text-white">
-                      {selecionada.rua} {selecionada.numeroImovel ? `Nº ${selecionada.numeroImovel}` : ''}
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      {selecionada.microarea} • Quarteirão: <span className="text-emerald-400 font-bold">{selecionada.quarteirao}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                  <span>Instalada em: {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</span>
-                </div>
-
-                {(() => {
-                  const sit = calcularSituacaoArmadilha(selecionada);
-                  return (
-                    <div className={`p-2 rounded-xl border ${sit.corBorda} ${sit.corBg} text-[11px]`}>
-                      <span className={`font-black ${sit.corTexto} block mb-0.5`}>Situação da OV: {sit.titulo}</span>
-                      <p className="text-slate-200 text-[10px] leading-relaxed">{sit.descricao}</p>
-                    </div>
-                  );
-                })()}
-
-                {selecionada.observacoes && (
-                  <p className="text-[11px] text-slate-300 bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
-                    <span className="text-slate-400 font-bold">Obs:</span> {selecionada.observacoes}
+              <div className="flex items-start gap-2 text-slate-300 bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
+                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-white text-xs">
+                    {selecionada.rua} {selecionada.numeroImovel ? `Nº ${selecionada.numeroImovel}` : ''}
                   </p>
-                )}
+                  <p className="text-[11px] text-slate-400">
+                    {selecionada.microarea} • Quarteirão: <span className="text-emerald-400 font-bold">{selecionada.quarteirao}</span>
+                  </p>
+                </div>
               </div>
+
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 px-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Instalada em: {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</span>
+              </div>
+
+              {(() => {
+                const sit = calcularSituacaoArmadilha(selecionada);
+                return (
+                  <div className={`p-2.5 rounded-xl border ${sit.corBorda} ${sit.corBg} text-[11px]`}>
+                    <span className={`font-black ${sit.corTexto} block mb-0.5`}>Situação da OV: {sit.titulo}</span>
+                    <p className="text-slate-200 text-[10px] leading-relaxed">{sit.descricao}</p>
+                  </div>
+                );
+              })()}
+
+              {selecionada.observacoes && (
+                <p className="text-[11px] text-slate-300 bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+                  <span className="text-slate-400 font-bold">Obs:</span> {selecionada.observacoes}
+                </p>
+              )}
             </div>
 
             {/* BOTÕES DE AÇÃO: ROTA NO MAPS, WAZE, LABORATÓRIO E EXCLUIR */}
@@ -344,31 +299,6 @@ export function PainelAcompanhamentoScreen({
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* 5. MODAL DE FOTO EXPANDIDA */}
-      {fotoExpandida && fotoUrl && (
-        <div
-          onClick={() => setFotoExpandida(false)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-        >
-          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center">
-            <button
-              onClick={() => setFotoExpandida(false)}
-              className="absolute -top-10 right-0 text-white p-2 hover:bg-white/20 rounded-full"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <img
-              src={fotoUrl}
-              alt="Foto do local de instalação"
-              className="max-h-[80vh] w-auto object-contain rounded-2xl shadow-2xl border border-slate-700"
-            />
-            <p className="text-white text-xs mt-3 font-bold bg-slate-900/80 px-4 py-1.5 rounded-full">
-              Ponto de Instalação: ARM-{selecionada?.numero} • {selecionada?.microarea}
-            </p>
           </div>
         </div>
       )}

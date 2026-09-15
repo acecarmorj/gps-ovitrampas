@@ -7,7 +7,7 @@ import {
   PieChart, Activity, User
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
-import { obterFotoArmadilha, excluirArmadilha } from '../../lib/storage';
+import { excluirArmadilha } from '../../lib/storage';
 import { playNewRequestSound } from '../../lib/soundAlert';
 
 export function PainelAdminScreen({
@@ -20,7 +20,6 @@ export function PainelAdminScreen({
   const [filtroMicroarea, setFiltroMicroarea] = useState('todas');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [armadilhaSelecionada, setArmadilhaSelecionada] = useState(null);
-  const [fotoModal, setFotoModal] = useState(null);
   const [notificacaoNovo, setNotificacaoNovo] = useState(null);
 
   const prevCountRef = useRef(armadilhas.length);
@@ -40,17 +39,6 @@ export function PainelAdminScreen({
     }
     prevCountRef.current = armadilhas.length;
   }, [armadilhas]);
-
-  // Carrega foto da armadilha selecionada
-  useEffect(() => {
-    if (armadilhaSelecionada?.id) {
-      obterFotoArmadilha(armadilhaSelecionada.id).then((foto) => {
-        setFotoModal(foto);
-      });
-    } else {
-      setFotoModal(null);
-    }
-  }, [armadilhaSelecionada]);
 
   // Cálculos epidemiológicos oficiais
   const totalArmadilhas = armadilhas.length;
@@ -441,7 +429,7 @@ export function PainelAdminScreen({
                                 type="button"
                                 onClick={() => setArmadilhaSelecionada(arm)}
                                 className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
-                                title="Ver detalhes e foto"
+                                title="Ver detalhes da armadilha"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
@@ -467,7 +455,7 @@ export function PainelAdminScreen({
 
       </div>
 
-      {/* MODAL DE DETALHES E FOTO */}
+      {/* MODAL DE DETALHES DA ARMADILHA */}
       {armadilhaSelecionada && (
         <div
           onClick={() => setArmadilhaSelecionada(null)}
@@ -489,20 +477,6 @@ export function PainelAdminScreen({
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Foto do Local */}
-            {fotoModal ? (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 max-h-56 flex items-center justify-center">
-                <img src={fotoModal} alt="Foto da instalação" className="w-full h-56 object-cover" />
-                <span className="absolute bottom-2 left-2 bg-black/80 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Foto do Ponto de Instalação
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-950 p-6 text-center text-xs text-slate-500 font-bold">
-                Sem foto anexada para esta armadilha.
-              </div>
-            )}
 
             {/* Informações */}
             <div className="grid grid-cols-2 gap-3 text-xs">

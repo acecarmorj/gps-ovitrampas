@@ -1,30 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  MapPin, Camera, CheckCircle2, RefreshCw,
+  MapPin, CheckCircle2, RefreshCw,
   X, Check, User
 } from 'lucide-react';
 import { resolveAddressFromGps } from '../../lib/geoDetection';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { playSuccessSound } from '../../lib/soundAlert';
-import { cadastrarArmadilha, compressImage } from '../../lib/storage';
+import { cadastrarArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 
 export function InstalarArmadilhaScreen({
   armadilhas = [],
   onArmadilhaCadastrada
 }) {
-  const fileInputRef = useRef(null);
-
-  // Campos exatos conforme orientação do Almir:
+  // Campos ultra simplificados:
   // 1. Nome do Morador
   // 2. Número da OV
   // 3. Número da Palheta
-  // 4. Foto do Local
   // Endereço, Microárea e Quarteirão são 100% automáticos pelo GPS!
   const [nomeMorador, setNomeMorador] = useState('');
   const [numeroArmadilha, setNumeroArmadilha] = useState('');
   const [numeroPalheta, setNumeroPalheta] = useState('P-01');
-  const [fotoPreview, setFotoPreview] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
 
@@ -84,24 +80,6 @@ export function InstalarArmadilhaScreen({
     capturarLocalizacao();
   }, []);
 
-  // Foto (aciona câmera nativa do smartphone e comprime localmente)
-  const handleFotoChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const compressedDataUrl = await compressImage(file, 1200, 0.8);
-      setFotoPreview(compressedDataUrl);
-    } catch (err) {
-      alert('Erro ao carregar a foto.');
-    }
-  };
-
-  const handleRemoverFoto = () => {
-    setFotoPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   // Salvar registro (100% offline em IndexedDB + LocalStorage)
   const handleRegistrar = async (e) => {
     e.preventDefault();
@@ -130,18 +108,17 @@ export function InstalarArmadilhaScreen({
         latitude: localizacao.latitude,
         longitude: localizacao.longitude,
         precisaoGps: localizacao.accuracy,
-        fotoDataUrl: fotoPreview
+        fotoDataUrl: null
       });
 
       playSuccessSound();
       const situacao = calcularSituacaoArmadilha(nova);
       setSucessoMsg(`OV-${nova.numero} de ${nova.moradorNome} registrada! Situação: ${situacao.titulo} (Recolher até ${situacao.dataPrevistaFormatada || '5 dias'}).`);
 
-      // Limpar campos
+      // Limpar campos para o próximo registro
       setNomeMorador('');
       setNumeroArmadilha('');
       setNumeroPalheta('P-01');
-      handleRemoverFoto();
 
       if (onArmadilhaCadastrada) {
         onArmadilhaCadastrada(nova);
@@ -273,50 +250,7 @@ export function InstalarArmadilhaScreen({
               </div>
             </div>
 
-            {/* 3. BOTÃO DA CÂMERA / FOTO */}
-            <div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                capture="environment"
-                onChange={handleFotoChange}
-                className="hidden"
-              />
-
-              {!fotoPreview ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/40 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-black text-emerald-300 transition-all active:scale-98"
-                >
-                  <Camera className="w-4 h-4 text-emerald-400" />
-                  <span>TIRAR FOTO DO LOCAL (CÂMERA)</span>
-                </button>
-              ) : (
-                <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500/60 bg-slate-800 h-24 flex items-center justify-center">
-                  <img
-                    src={fotoPreview}
-                    alt="Foto do local"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-between px-3">
-                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1">
-                      <Check className="w-4 h-4 text-emerald-400" /> Foto Anexada
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleRemoverFoto}
-                      className="bg-rose-600 text-white px-2 py-1 rounded-xl text-xs font-bold"
-                    >
-                      Trocar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 4. BOTÃO SALVAR (1 TOQUE) */}
+            {/* BOTÃO SALVAR (1 TOQUE) */}
             <button
               type="submit"
               disabled={salvando}

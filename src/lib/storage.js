@@ -19,10 +19,14 @@ const broadcast = typeof window !== 'undefined' && window.BroadcastChannel
   ? new BroadcastChannel('gps_ovitrampas_sync')
   : null;
 
-// Endpoint da API de sincronização (Cloudflare Worker ou mock local)
-const API_SYNC_ENDPOINT = typeof window !== 'undefined' && window.VITE_API_SYNC_URL
-  ? window.VITE_API_SYNC_URL
-  : 'https://ovitrampas-api.acecarmorj.workers.dev/api/sync';
+// Endpoints da API de sincronização (Cloudflare Worker + D1)
+const API_BASE_URL = typeof window !== 'undefined' && window.VITE_API_BASE_URL
+  ? window.VITE_API_BASE_URL
+  : 'https://ovitrampas-api.acecarmorj.workers.dev';
+
+const API_SYNC_ENDPOINT = `${API_BASE_URL}/api/sync`;
+const API_TRAPS_ENDPOINT = `${API_BASE_URL}/api/traps`;
+const API_READINGS_ENDPOINT = `${API_BASE_URL}/api/readings`;
 
 // Solicita persistência garantida no navegador (evita limpeza automática do cache)
 export async function solicitarArmazenamentoPermanente() {
@@ -473,6 +477,72 @@ export async function tentarSincronizarEmSegundoPlano() {
   }
 }
 
+function mapD1TrapToLocal(row) {
+  return {
+    id: row.id,
+    numero: String(row.numero),
+    palheta: row.palheta || 'P-01',
+    moradorNome: row.morador_nome || '',
+    rua: row.rua || '',
+    numeroImovel: row.numero_imovel || '',
+    bairro: row.bairro || 'Carmo',
+    microarea: row.microarea || '',
+    quarteirao: row.quarteirao || '',
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    precisaoGps: row.precisao_gps != null ? Number(row.precisao_gps) : 10,
+    temFoto: Boolean(row.tem_foto),
+    status: row.status || 'instalada',
+    instaladaEm: row.instalada_em,
+    atualizadaEm: row.atualizada_em || row.instalada_em,
+    ultimosOvos: row.ultimos_ovos != null ? Number(row.ultimos_ovos) : undefined,
+    ultimaPalheta: row.ultima_palheta || undefined,
+    ultimaLeituraEm: row.ultima_leitura_em || undefined,
+    syncStatus: 'sincronizado'
+  };
+}
+
+/**
+ * Puxa armadilhas cadastradas por OUTROS aparelhos/agentes na central via D1
+ */
+export async function sincronizarDadosDoServidor() {
+  if (typeof navigator === 'undefined' || !navigator.onLine) return;
+  try {
+    const res = await fetch(API_TRAPS_ENDPOINT);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.traps)) return;
+
+    const armadilhasLocais = getArmadilhas();
+    const map = new Map();
+
+    // 1. Carrega dados vindos do servidor D1
+    data.traps.forEach((row) => {
+      const parsed = mapD1TrapToLocal(row);
+      map.set(parsed.id, parsed);
+    });
+
+    // 2. Preserva registros locais que ainda estejam pendentes de envio
+    armadilhasLocais.forEach((loc) => {
+      if (loc.syncStatus === 'pendente' || !map.has(loc.id)) {
+        map.set(loc.id, loc);
+      }
+    });
+
+    const final = Array.from(map.values()).sort(
+      (a, b) => new Date(b.instaladaEm).getTime() - new Date(a.instaladaEm).getTime()
+    );
+
+    // Se houve alteração de tamanho ou novo registro, persiste
+    if (final.length !== armadilhasLocais.length || data.traps.length > 0) {
+      await salvarArmadilhas(final);
+    }
+    return final;
+  } catch (err) {
+    console.warn('Falha ao sincronizar dados do servidor D1:', err);
+  }
+}
+
 /**
  * Inicia os observadores automáticos de reconexão de rede (Online Event + Heartbeat)
  */
@@ -485,9 +555,16 @@ export function iniciarMonitoramentoConectividade() {
   // 2. Carrega dados do IndexedDB caso o LocalStorage tenha sido limpo
   carregarArmadilhasDoIndexedDB();
 
-  // 3. Dispara sincronização assim que o dispositivo ficar online
+  // 3. Sincronização inicial ao abrir
+  if (navigator.onLine) {
+    sincronizarDadosDoServidor();
+    tentarSincronizarEmSegundoPlano();
+  }
+
+  // 4. Dispara sincronização assim que o dispositivo ficar online
   window.addEventListener('online', () => {
-    console.log('Dispositivo conectou à internet. Disparando envio em segundo plano...');
+    console.log('Dispositivo conectou à internet. Sincronizando com D1...');
+    sincronizarDadosDoServidor();
     tentarSincronizarEmSegundoPlano();
   });
 
@@ -495,12 +572,13 @@ export function iniciarMonitoramentoConectividade() {
     notificarStatusSync(getStatusSincronizacao());
   });
 
-  // 4. Heartbeat silencioso a cada 30 segundos para enviar pendências
+  // 5. Polling a cada 10 segundos para receber registros feitos por outros agentes na rua
   setInterval(() => {
     if (navigator.onLine) {
+      sincronizarDadosDoServidor();
       tentarSincronizarEmSegundoPlano();
     }
-  }, 30000);
+  }, 10000);
 }
 
 export function onStorageUpdate(callback) {
