@@ -5,4 +5,4 @@ compatibility_date = "2026-07-29"
 [[d1_databases]]
 binding = "DB"
 database_name = "ovitrampas-gps-db"
-database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"
+database_id = "7f230c39-789f-416d-95fd-4e22e7fd5d69"
