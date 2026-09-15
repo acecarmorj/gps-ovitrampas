@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useAppPath } from './lib/routing';
 import { Header } from './components/Header';
+import { GuiaScreen } from './features/menu/GuiaScreen';
 import { InstalarArmadilhaScreen } from './features/campo/InstalarArmadilhaScreen';
 import { PainelAcompanhamentoScreen } from './features/acompanhamento/PainelAcompanhamentoScreen';
 import { LaboratorioScreen } from './features/laboratorio/LaboratorioScreen';
@@ -16,7 +18,7 @@ import {
 import { setMuted } from './lib/soundAlert';
 
 export function App() {
-  const [abaAtual, setAbaAtual] = useState('campo'); // 'campo' | 'mapa' | 'laboratorio'
+  const { path, navigate } = useAppPath();
   const [armadilhas, setArmadilhas] = useState([]);
   const [armadilhaParaLab, setArmadilhaParaLab] = useState(null);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('ovitrampa_muted') === 'true');
@@ -26,7 +28,7 @@ export function App() {
     longitude: -42.6089
   });
 
-  // Inicializa a persistência do banco e o monitoramento em segundo plano
+  // Inicializa persistência e sincronização em segundo plano
   useEffect(() => {
     iniciarMonitoramentoConectividade();
 
@@ -50,7 +52,7 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // GPS Contínuo do Agente
+  // GPS Contínuo do Agente em Campo
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -79,42 +81,72 @@ export function App() {
     });
   };
 
+  const handleForcarSync = async () => {
+    await tentarSincronizarEmSegundoPlano();
+    await sincronizarDadosDoServidor();
+    recarregarArmadilhas();
+  };
+
   const handleIrParaLaboratorio = (armadilha) => {
     setArmadilhaParaLab(armadilha);
-    setAbaAtual('laboratorio');
+    navigate('/laboratorio');
   };
+
+  // Mapeia caminho atual para a chave de aba do Header
+  const getChaveModulo = () => {
+    if (path === '/campo') return 'campo';
+    if (path === '/mapa') return 'mapa';
+    if (path === '/laboratorio') return 'laboratorio';
+    if (path === '/admin') return 'admin';
+    return 'guia';
+  };
+
+  const chaveModulo = getChaveModulo();
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-slate-950 font-sans">
-      <Header
-        abaAtual={abaAtual}
-        onMudarAba={(novaAba) => {
-          setAbaAtual(novaAba);
-          if (novaAba !== 'laboratorio') {
-            setArmadilhaParaLab(null);
-          }
-        }}
-        totalArmadilhas={armadilhas.length}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
-        syncInfo={syncInfo}
-        onForcarSync={async () => {
-          await tentarSincronizarEmSegundoPlano();
-          await sincronizarDadosDoServidor();
-          recarregarArmadilhas();
-        }}
-      />
+      
+      {/* O Guia possui seu próprio cabeçalho completo. Nas telas internas, exibe o Header com botão < Guia */}
+      {chaveModulo !== 'guia' && (
+        <Header
+          abaAtual={chaveModulo}
+          onMudarAba={(destino) => {
+            if (destino === 'guia') {
+              setArmadilhaParaLab(null);
+              navigate('/guia');
+            } else {
+              navigate(`/${destino}`);
+            }
+          }}
+          totalArmadilhas={armadilhas.length}
+          isMuted={isMuted}
+          onToggleMute={handleToggleMute}
+          syncInfo={syncInfo}
+          onForcarSync={handleForcarSync}
+        />
+      )}
 
       <main className="flex-1 relative w-full h-full overflow-hidden">
-        {abaAtual === 'campo' && (
-          <InstalarArmadilhaScreen
-            armadilhas={armadilhas}
-            onArmadilhaCadastrada={() => recarregarArmadilhas()}
-            onVerMapaGeral={() => setAbaAtual('mapa')}
+        {chaveModulo === 'guia' && (
+          <GuiaScreen
+            onNavegar={(rota) => navigate(rota)}
+            totalArmadilhas={armadilhas.length}
+            syncInfo={syncInfo}
+            onForcarSync={handleForcarSync}
+            isMuted={isMuted}
+            onToggleMute={handleToggleMute}
           />
         )}
 
-        {abaAtual === 'mapa' && (
+        {chaveModulo === 'campo' && (
+          <InstalarArmadilhaScreen
+            armadilhas={armadilhas}
+            onArmadilhaCadastrada={() => recarregarArmadilhas()}
+            onVerMapaGeral={() => navigate('/mapa')}
+          />
+        )}
+
+        {chaveModulo === 'mapa' && (
           <PainelAcompanhamentoScreen
             armadilhas={armadilhas}
             userPos={userPos}
@@ -123,7 +155,7 @@ export function App() {
           />
         )}
 
-        {abaAtual === 'laboratorio' && (
+        {chaveModulo === 'laboratorio' && (
           <LaboratorioScreen
             armadilhas={armadilhas}
             armadilhaPreSelecionada={armadilhaParaLab}
@@ -131,7 +163,7 @@ export function App() {
           />
         )}
 
-        {abaAtual === 'admin' && (
+        {chaveModulo === 'admin' && (
           <PainelAdminScreen
             armadilhas={armadilhas}
             userPos={userPos}

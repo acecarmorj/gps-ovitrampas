@@ -620,3 +620,45 @@ SIM! A decisão foi excelente e simplificou o sistema em múltiplos níveis:
    - Publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
 ==============================================================================
 
+------------------------------------------------------------------------------
+19. MENU INICIAL / HUB COM CARDS SEPARADOS E ROTA /GUIA (ESTILO MOTOJÁ)
+------------------------------------------------------------------------------
+Data/Hora: 15/09/2026 20:05
+De: GEMINI (Antigravity)
+Para: ALMIR & CLAUDE SONNET (Cursor / Claude Code)
+
+Instrução do Almir:
+"NO APP DO AGENTE NÃO PODE APARECER ESTES BOTÕES TEM QUE TER UM MENU INICIAL COM ELES SEPARADO"
+"IGUAL O MOTOJA TEM /GUIA"
+
+O QUE FOI FEITO:
+1. ROTA E SISTEMA DE NAVEGAÇÃO SPA (`src/lib/routing.js`):
+   - Hook `useAppPath()` idêntico ao padrão robusto do MotoJá.
+   - Sincroniza a rota na URL via History API (`/guia`, `/campo`, `/mapa`, `/laboratorio`, `/admin`).
+   - `public/_redirects` com regra `/* /index.html 200` garantindo carregamento direto de qualquer URL no Cloudflare Pages.
+   - Ao acessar a raiz `/` ou `/guia`, abre diretamente o Guia do Sistema.
+
+2. NOVA TELA GUIA DO SISTEMA (`src/features/menu/GuiaScreen.jsx`):
+   - Estilo fiel ao `IndexLanding` do MotoJá, adaptado com design moderno em Tailwind:
+     * Saudação horária dinâmica ("Bom dia", "Boa tarde", "Boa noite").
+     * Indicador em tempo real de conectividade e sincronização nuvem (D1).
+     * Contador do total de armadilhas cadastradas no município de Carmo.
+     * Botão para silenciar ou ativar efeitos sonoros.
+     * Cards grandes, separados por categoria (Operação em Campo, Entomologia & Leitura, Coordenação & Gestão):
+       - [ Instalar Ovitrampa ]: Agente em Campo (5s, GPS automático, sem fotos, offline).
+       - [ Mapa de Armadilhas ]: Visualização de Carmo, status de 5 dias e rotas.
+       - [ Laboratório de Ovos ]: Contagem de palhetas (+/-) e positividade imediata.
+       - [ Painel do Administrador ]: Mapa + Tabela, cálculo de IPO/IDO e exportação Excel.
+     * Rodapé institucional com assinatura "desenvolvido por almir.lk".
+
+3. LIMPEZA TOTAL DA TELA DO AGENTE E DEMAIS MÓDULOS (`src/components/Header.jsx`):
+   - Eliminada a barra com os 4 botões de abas aglomerados no topo (`[ Campo ] [ Mapa ] [ Lab ] [ Adm ]`).
+   - Substituída por um botão limpo e intuitivo `< Guia` no canto esquerdo.
+   - No centro: título do módulo em execução (ex: "Instalar Ovitrampa", "Mapa de Armadilhas", etc.).
+   - Na direita: status de sincronização e botão de som mudo.
+   - O agente em campo tem foco 100% no trabalho, sem botões irrelevantes na tela.
+
+4. BUILD E DEPLOY CONCLUÍDOS:
+   - Build Vite validado com 0 erros em 4.06s.
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://b52fce7d.gps-ovitrampas.pages.dev)
+==============================================================================
