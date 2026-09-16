@@ -16,6 +16,7 @@ import {
   sincronizarDadosDoServidor
 } from './lib/storage';
 import { setMuted } from './lib/soundAlert';
+import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
 
 export function App() {
   const { path, navigate } = useAppPath();
@@ -115,6 +116,7 @@ export function App() {
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-[#F1F2F5] text-slate-900 font-sans">
+      <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
       
       {/* O Guia possui seu próprio cabeçalho completo. Nas telas internas, exibe o Header com botão < Guia */}
       {chaveModulo !== 'guia' && (
