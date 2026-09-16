@@ -1272,3 +1272,27 @@ Para: ALMIR
    - Build Vite 100% limpo em 6.00s.
    - Publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
 ==============================================================================
+
+==============================================================================
+36. DIRETRIZ FUNDAMENTAL: SIMPLICIDADE MÁXIMA E SEM REDUNDÂNCIAS
+==============================================================================
+Data/Hora: 15/09/2026 ~23:20
+Autor: GEMINI (Antigravity)
+Para: ALMIR
+
+1. FEEDBACK DO USUÁRIO:
+   - "ISSO MELHOROU BASTANTE TUDO NESTE APP TEM QUE SER SIMPLES"
+
+2. REGRA DE OURO CONSOLIDADA PARA O GPS OVITRAMPAS:
+   - Toda funcionalidade, tela e botão deve priorizar a simplicidade máxima.
+   - Zero poluição visual, zero links repetidos ou caixas de código desnecessárias.
+   - Apenas 1 clique para executar a ação que o usuário ou o agente precisa.
+   - Agente no campo: 5 segundos para cadastrar com GPS automático.
+   - Tela Inicial: 4 cards objetivos e apenas 1 botão verde para despachar o app
+     ao agente via WhatsApp.
+   - Painel Admin: mapa, tabela, indicadores, edição rápida e PDF consolidado.
+
+3. STATUS:
+   - Totalmente aprovado por Almir.
+   - Aplicação em produção e 100% pronta para a operação de campo amanhã!
+==============================================================================
