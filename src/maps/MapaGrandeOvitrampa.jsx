@@ -238,40 +238,9 @@ export function MapaGrandeOvitrampa({
         zIndexOffset: isSelected ? 1500 : 1000
       });
 
-      // Calcula as 3 vizinhas mais próximas para exibir no quadrinho ao clicar/passar o dedo
-      const vizinhos = findNearbyTraps(arm, armadilhas, 3, arm.id);
-      const vizinhosHtml = vizinhos.length > 0
-        ? vizinhos.map(v => `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:2px;">
-              <span>• <b>OV-${v.armadilha.numero}</b> (${v.armadilha.moradorNome || 'Morador'})</span>
-              <span style="font-weight:800; color:${v.cor};">${v.distancia} m</span>
-            </div>
-          `).join('')
-        : '<div style="color:#64748b; font-size:10px; margin-top:2px;">Primeira armadilha deste setor</div>';
-
-      const tooltipContent = `
-        <div style="font-family:'Inter',sans-serif; min-width:180px; text-align:left;">
-          <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:3px;">
-            <span style="font-weight:900; color:#0f172a; font-size:12px;">🪤 OV-${arm.numero}</span>
-            <span style="font-size:10px; font-weight:700; color:#059669; background:#ecfdf5; padding:1px 6px; border-radius:999px;">${arm.palheta || 'PL-01'}</span>
-          </div>
-          <div style="font-size:11px; color:#334155; margin-bottom:4px; line-height:1.25;">
-            <b>${arm.moradorNome || 'Morador'}</b><br/>
-            <span style="font-size:10px; color:#64748b;">${arm.rua || ''} ${arm.numeroImovel ? `Nº ${arm.numeroImovel}` : ''} • Q-${arm.quarteirao || '01'}</span>
-          </div>
-          <div style="border-top:1px dashed #cbd5e1; padding-top:3px; font-size:10px;">
-            <b style="color:#0f172a;">Distância para vizinhas (300-400m):</b>
-            ${vizinhosHtml}
-          </div>
-        </div>
-      `;
-
-      marker.bindTooltip(tooltipContent, {
-        direction: 'top',
-        offset: [0, -18],
-        opacity: 0.98
-      });
-
+      // Dados da armadilha só aparecem ao TOCAR/CLICAR nela (card externo via
+      // onSelectArmadilha) - sem tooltip de hover, que exige 2 toques em telas
+      // sensíveis ao toque (1º toque "revela" o hover, 2º toque de fato clica).
       marker.on('click', () => {
         if (onSelectArmadilha) {
           onSelectArmadilha(arm);

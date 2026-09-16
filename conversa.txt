@@ -838,3 +838,75 @@ O QUE FOI FEITO:
    - Build Vite validado com 0 erros em 7.44s.
    - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/ (e https://1e355506.gps-ovitrampas.pages.dev)
 ==============================================================================
+
+==============================================================================
+25. [CLAUDE ASSUME O FRONTEND] — CLAUDE (Sonnet 5, Claude Code), 15/09/2026 ~21:45
+==============================================================================
+De: Claude (Sonnet 5, via Claude Code)
+Para: GEMINI (Antigravity) & ALMIR
+
+Almir avisou que a Gemini ficou sem crédito (quota da Antigravity, reset em
+~1h22min) no meio da implementação de georreferenciamento de distância e do
+relatório PDF. Ordem do Almir: "PODE FAZER TUDO QUE PEDI A ELA E ELA NAO
+CONSEGUIU (...) MAS O FRONTEND TEM QUE SER TODO SEU" - assumindo o frontend
+a partir de agora.
+
+DIAGNÓSTICO DO QUE A GEMINI JÁ TINHA FEITO (antes de ficar sem crédito):
+Build local rodou limpo (0 erros) - nada estava quebrado. Auditei os
+arquivos com `git diff` e encontrei:
+  - COMPLETO: geoDistance.js (Haversine + regra 300-400m), cartão de
+    distância no app do agente, linhas/tooltips de distância no mapa
+    Leaflet (MapaGrandeOvitrampa.jsx), CSS das pílulas de distância,
+    tablet parcial em PainelAcompanhamentoScreen.jsx (/mapa).
+  - INCOMPLETO: pdfRelatorioConsolidado.js existia e estava correto, mas
+    SEM nenhum botão ligado a ele. PainelAdminScreen.jsx só tinha o
+    import de findNearbyTraps, sem uso. Tablet do /admin não tinha sido
+    tocado ainda.
+
+O QUE EU COMPLETEI (commit 72c9243):
+  - Botão "Relatório PDF" no Painel do Administrador, ao lado do Excel.
+  - Cartão "OVs Mais Próximas" no modal de detalhes do admin (mesmo
+    padrão visual já usado em PainelAcompanhamentoScreen).
+  - Ajuste de tablet no cabeçalho do admin: título/botões agora empilham
+    até telas `lg` (1024px) em vez de `sm` (640px) - testei em 800x500 e
+    1024x600 (pesquisei: Galaxy Tab A11 8.7" = SM-X130/X135, 1340x800px,
+    179ppi) e a quebra de linha dos botões sumiu.
+  - NÃO alterei cores/paleta - só espaçamento/empilhamento responsivo e
+    reaproveitamento das classes de cor já existentes no projeto.
+
+O QUE EU ADICIONEI (pedido novo do Almir, commit 0158dfc):
+  - src/lib/heatmapCanvas.js: dois mapas estáticos gerados via canvas
+    (sem depender de tiles externos - evita problema de CORS ao capturar
+    mapa Leaflet+OSM):
+    * Mapa de calor: densidade/risco de ovos por armadilha, com legenda.
+    * Mapa de distâncias: linhas metrificadas ligando armadilhas
+      vizinhas (mesma regra 300-400m e mesma função
+      buildTrapDistanceNetwork do mapa ao vivo), com legenda.
+    Ambos desenham o contorno dos quarteirões usando os mesmos polígonos
+    territoriais do geoDetection.js (getAllPolygons).
+  - Inseridos como 2 páginas cheias no relatório PDF (seções 2 e 3, antes
+    da tabela individualizada).
+  - ACHADO E CORRIGIDO: a primeira versão enquadrava pelo território
+    INTEIRO do município (todos os polígonos), deixando o mapa minúsculo
+    no meio de muito espaço vazio quando as armadilhas ficam concentradas
+    numa área menor. Corrigi para enquadrar SEMPRE pelas armadilhas do
+    filtro atual (com padding generoso), e só desenhar os polígonos que
+    caem dentro dessa área - confirmado visualmente gerando um PDF de
+    teste com 40 armadilhas sintéticas espalhadas pela cidade.
+
+TESTES REALIZADOS: build de produção limpo, teste manual no navegador
+(wrangler dev local + npm run dev) com dados injetados via localStorage,
+geração real de PDF com 3 e depois 40 armadilhas de teste, inspeção visual
+das páginas geradas (usando PyMuPDF para rasterizar e o usuário também
+abriu no Foxit Reader e confirmou print). Nenhum dado de teste foi enviado
+ao worker/D1 de produção (ficou só no localStorage do navegador de teste).
+
+DEPLOY: commit 72c9243 (PDF button + tablet admin) e commit 0158dfc (mapa
+de calor + mapa de distâncias no PDF) enviados ao GitHub
+(github.com/acecarmorj/gps-ovitrampas) e publicados no Cloudflare Pages
+(https://gps-ovitrampas.pages.dev/), confirmados no ar (200 OK em /admin
+e /mapa) após cada deploy.
+
+Gemini: quando voltar, pode conferir o relatório PDF pelo botão no
+/admin - o contrato do worker/API não foi tocado por mim nesta rodada.
+==============================================================================
