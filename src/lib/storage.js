@@ -290,7 +290,66 @@ export async function cadastrarArmadilha({
   return novaArmadilha;
 }
 
+const DELETED_TRAPS_KEY = 'gps_ovitrampas_deleted_traps_v1';
+
+function getDeletedTrapIds() {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(DELETED_TRAPS_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function marcarTrapComoDeletada(id) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const ids = getDeletedTrapIds();
+    ids.add(id);
+    localStorage.setItem(DELETED_TRAPS_KEY, JSON.stringify(Array.from(ids)));
+  } catch (e) {}
+}
+
+export async function atualizarArmadilha(id, dadosAtualizados) {
+  if (!id) return null;
+  const todas = getArmadilhas();
+  const index = todas.findIndex((a) => a.id === id);
+  if (index === -1) return null;
+
+  const anterior = todas[index];
+
+  const armadilhaAtualizada = {
+    ...anterior,
+    numero: dadosAtualizados.numero !== undefined ? normalizarNumeroArmadilha(dadosAtualizados.numero) : anterior.numero,
+    palheta: dadosAtualizados.palheta !== undefined ? String(dadosAtualizados.palheta).trim() : anterior.palheta,
+    moradorNome: dadosAtualizados.moradorNome !== undefined ? String(dadosAtualizados.moradorNome).trim() : anterior.moradorNome,
+    rua: dadosAtualizados.rua !== undefined ? String(dadosAtualizados.rua).trim() : anterior.rua,
+    numeroImovel: dadosAtualizados.numeroImovel !== undefined ? String(dadosAtualizados.numeroImovel).trim() : (anterior.numeroImovel || ''),
+    bairro: dadosAtualizados.bairro !== undefined ? String(dadosAtualizados.bairro).trim() : (anterior.bairro || 'Carmo'),
+    microarea: dadosAtualizados.microarea !== undefined ? String(dadosAtualizados.microarea).trim() : anterior.microarea,
+    quarteirao: dadosAtualizados.quarteirao !== undefined ? String(dadosAtualizados.quarteirao).trim() : anterior.quarteirao,
+    observacoes: dadosAtualizados.observacoes !== undefined ? String(dadosAtualizados.observacoes).trim() : (anterior.observacoes || ''),
+    status: dadosAtualizados.status !== undefined ? dadosAtualizados.status : anterior.status,
+    ultimosOvos: dadosAtualizados.ultimosOvos !== undefined
+      ? (dadosAtualizados.ultimosOvos === '' || dadosAtualizados.ultimosOvos === null ? null : Math.max(0, parseInt(dadosAtualizados.ultimosOvos, 10) || 0))
+      : anterior.ultimosOvos,
+    atualizadaEm: new Date().toISOString(),
+    syncStatus: 'pendente'
+  };
+
+  todas[index] = armadilhaAtualizada;
+  await salvarArmadilhas(todas);
+
+  // Sincroniza em segundo plano com o D1
+  tentarSincronizarEmSegundoPlano();
+
+  return armadilhaAtualizada;
+}
+
 export async function excluirArmadilha(id) {
+  if (!id) return;
+  marcarTrapComoDeletada(id);
   await excluirFotoArmadilha(id);
   const todas = getArmadilhas().filter((a) => a.id !== id);
   await salvarArmadilhas(todas);
@@ -300,6 +359,47 @@ export async function excluirArmadilha(id) {
     const tx = db.transaction(TRAPS_STORE, 'readwrite');
     tx.objectStore(TRAPS_STORE).delete(id);
   } catch (e) {}
+
+  // Exclui imediatamente no Cloudflare D1 se houver conexão
+  if (typeof navigator !== 'undefined' && navigator.onLine) {
+    try {
+      await fetch(`${API_TRAPS_ENDPOINT}?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+    } catch (e) {
+      console.warn('Exclusão remota falhou (permanece deletada localmente):', e);
+    }
+  }
+}
+
+export async function limparTodasArmadilhas() {
+  try {
+    localStorage.removeItem(TRAPS_STORAGE_KEY);
+    localStorage.removeItem(LAB_STORAGE_KEY);
+    localStorage.removeItem(DELETED_TRAPS_KEY);
+
+    const db = await openOvitrampasDB();
+    const tx = db.transaction([TRAPS_STORE, LAB_STORE, PHOTO_STORE], 'readwrite');
+    tx.objectStore(TRAPS_STORE).clear();
+    tx.objectStore(LAB_STORE).clear();
+    tx.objectStore(PHOTO_STORE).clear();
+
+    if (broadcast) {
+      broadcast.postMessage({ type: 'TRAPS_UPDATE', traps: [] });
+      broadcast.postMessage({ type: 'LAB_UPDATE', readings: [] });
+    }
+
+    // Chama endpoint remoto de limpeza total se online
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      try {
+        await fetch(`${API_BASE_URL}/api/traps/clear`, { method: 'POST' });
+      } catch (e) {
+        console.warn('Limpeza remota D1 falhou:', e);
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao limpar todas as armadilhas:', e);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -531,10 +631,12 @@ export async function sincronizarDadosDoServidor() {
     if (!data || !Array.isArray(data.traps)) return;
 
     const armadilhasLocais = getArmadilhas();
+    const deletedIds = getDeletedTrapIds();
     const map = new Map();
 
-    // 1. Carrega dados vindos do servidor D1
+    // 1. Carrega dados vindos do servidor D1 (exceto as deletadas)
     data.traps.forEach((row) => {
+      if (deletedIds.has(row.id)) return;
       const parsed = mapD1TrapToLocal(row);
       map.set(parsed.id, parsed);
     });

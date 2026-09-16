@@ -2,15 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   ShieldCheck, Download, Search, Filter,
   MapPin, Eye, Calendar, RefreshCw,
-  FlaskConical, CheckCircle2, AlertTriangle,
+  FlaskConical, CheckCircle2, AlertTriangle, AlertCircle,
   X, Layers, ExternalLink, Trash2, BellRing,
-  PieChart, Activity, User, FileText
+  PieChart, Activity, User, FileText, Pencil, RotateCcw,
+  Save, Check, Info
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
-import { excluirArmadilha } from '../../lib/storage';
+import { excluirArmadilha, atualizarArmadilha, limparTodasArmadilhas } from '../../lib/storage';
 import { playNewRequestSound } from '../../lib/soundAlert';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
+
+// Bairros e microáreas oficiais de Carmo - RJ
+const MICROAREAS_CARMO_OFICIAIS = [
+  'Centro',
+  'Val Paraíso',
+  'Progresso',
+  'Morro do Estado',
+  'Jardim Centenário',
+  "Caixa d'Água",
+  'Boa Ideia',
+  'Botafogo',
+  'DISTRITOS'
+];
 
 export function PainelAdminScreen({
   armadilhas = [],
@@ -24,7 +38,56 @@ export function PainelAdminScreen({
   const [armadilhaSelecionada, setArmadilhaSelecionada] = useState(null);
   const [notificacaoNovo, setNotificacaoNovo] = useState(null);
 
+  // Modais de Edição, Exclusão e Limpeza Total
+  const [armadilhaEmEdicao, setArmadilhaEmEdicao] = useState(null);
+  const [armadilhaParaExcluir, setArmadilhaParaExcluir] = useState(null);
+  const [modalLimparTudoAberto, setModalLimparTudoAberto] = useState(false);
+  const [toastMensagem, setToastMensagem] = useState(null);
+
+  // Estado do formulário de edição
+  const [editForm, setEditForm] = useState({
+    numero: '',
+    palheta: '',
+    moradorNome: '',
+    rua: '',
+    numeroImovel: '',
+    bairro: '',
+    microarea: '',
+    quarteirao: '',
+    status: 'instalada',
+    ultimosOvos: '',
+    observacoes: ''
+  });
+
   const prevCountRef = useRef(armadilhas.length);
+
+  // Carrega dados no formulário ao abrir edição
+  useEffect(() => {
+    if (armadilhaEmEdicao) {
+      setEditForm({
+        numero: armadilhaEmEdicao.numero || '',
+        palheta: armadilhaEmEdicao.palheta || 'P-01',
+        moradorNome: armadilhaEmEdicao.moradorNome || '',
+        rua: armadilhaEmEdicao.rua || '',
+        numeroImovel: armadilhaEmEdicao.numeroImovel || '',
+        bairro: armadilhaEmEdicao.bairro || 'Carmo',
+        microarea: armadilhaEmEdicao.microarea || 'Centro',
+        quarteirao: armadilhaEmEdicao.quarteirao || 'Q-01',
+        status: armadilhaEmEdicao.status || 'instalada',
+        ultimosOvos: armadilhaEmEdicao.ultimosOvos !== undefined && armadilhaEmEdicao.ultimosOvos !== null
+          ? String(armadilhaEmEdicao.ultimosOvos)
+          : '',
+        observacoes: armadilhaEmEdicao.observacoes || ''
+      });
+    }
+  }, [armadilhaEmEdicao]);
+
+  const mostrarToast = (texto, tipo = 'sucesso') => {
+    setToastMensagem({ texto, tipo });
+    setTimeout(() => {
+      setToastMensagem(null);
+    }, 4500);
+  };
 
   // Monitora chegada de novos registros em tempo real
   useEffect(() => {
@@ -59,7 +122,7 @@ export function PainelAdminScreen({
 
   // Lista de microáreas distintas encontradas
   const microareasDisponiveis = Array.from(
-    new Set(armadilhas.map((a) => a.microarea).filter(Boolean))
+    new Set([...MICROAREAS_CARMO_OFICIAIS, ...armadilhas.map((a) => a.microarea).filter(Boolean)])
   );
 
   // Filtragem dos dados
@@ -82,6 +145,46 @@ export function PainelAdminScreen({
 
     return matchTexto && matchMicroarea && matchStatus;
   });
+
+  // Salvar Edição
+  const handleSalvarEdicao = async (e) => {
+    if (e) e.preventDefault();
+    if (!armadilhaEmEdicao) return;
+
+    const armAtualizada = await atualizarArmadilha(armadilhaEmEdicao.id, editForm);
+    if (armAtualizada) {
+      if (armadilhaSelecionada?.id === armadilhaEmEdicao.id) {
+        setArmadilhaSelecionada(armAtualizada);
+      }
+      setArmadilhaEmEdicao(null);
+      mostrarToast(`Ovitrampa ARM-${armAtualizada.numero} atualizada com sucesso!`, 'sucesso');
+      if (onAtualizarArmadilhas) onAtualizarArmadilhas();
+    }
+  };
+
+  // Confirmar Exclusão Individual
+  const handleConfirmarExclusao = async () => {
+    if (!armadilhaParaExcluir) return;
+    const num = armadilhaParaExcluir.numero;
+    await excluirArmadilha(armadilhaParaExcluir.id);
+    if (armadilhaSelecionada?.id === armadilhaParaExcluir.id) {
+      setArmadilhaSelecionada(null);
+    }
+    setArmadilhaParaExcluir(null);
+    mostrarToast(`Ovitrampa ARM-${num} removida com sucesso.`, 'info');
+    if (onAtualizarArmadilhas) onAtualizarArmadilhas();
+  };
+
+  // Confirmar Limpeza Total (Zerar ciclo para novo dia)
+  const handleConfirmarLimpezaTotal = async () => {
+    await limparTodasArmadilhas();
+    setArmadilhaSelecionada(null);
+    setArmadilhaEmEdicao(null);
+    setArmadilhaParaExcluir(null);
+    setModalLimparTudoAberto(false);
+    mostrarToast('Banco de dados zerado com sucesso! Pronto para a nova jornada.', 'sucesso');
+    if (onAtualizarArmadilhas) onAtualizarArmadilhas();
+  };
 
   // Exportação para CSV / Excel
   const handleExportarCsv = () => {
@@ -158,17 +261,33 @@ export function PainelAdminScreen({
     await gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
   };
 
-  const handleExcluir = async (id, numero) => {
-    if (window.confirm(`Tem certeza que deseja remover a armadilha ARM-${numero}?`)) {
-      await excluirArmadilha(id);
-      if (armadilhaSelecionada?.id === id) setArmadilhaSelecionada(null);
-      if (onAtualizarArmadilhas) onAtualizarArmadilhas();
-    }
-  };
-
   return (
     <div className="w-full h-full bg-[#F1F2F5] text-slate-900 flex flex-col font-sans select-none overflow-hidden">
       
+      {/* TOAST DE FEEDBACK DE AÇÕES */}
+      {toastMensagem && (
+        <div className="fixed top-4 right-4 z-[9999] max-w-sm animate-in slide-in-from-top-2 duration-200">
+          <div className={`p-3.5 rounded-2xl shadow-xl border flex items-center gap-2.5 text-xs font-black ${
+            toastMensagem.tipo === 'sucesso'
+              ? 'bg-emerald-600 text-white border-emerald-500'
+              : toastMensagem.tipo === 'info'
+              ? 'bg-slate-800 text-white border-slate-700'
+              : 'bg-rose-600 text-white border-rose-500'
+          }`}>
+            {toastMensagem.tipo === 'sucesso' && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+            {toastMensagem.tipo === 'info' && <Info className="w-4 h-4 shrink-0" />}
+            {toastMensagem.tipo === 'erro' && <AlertCircle className="w-4 h-4 shrink-0" />}
+            <span className="flex-1">{toastMensagem.texto}</span>
+            <button
+              onClick={() => setToastMensagem(null)}
+              className="p-1 hover:opacity-80 rounded-lg"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ALERTA DE NOVO REGISTRO EM TEMPO REAL */}
       {notificacaoNovo && (
         <div className="bg-emerald-600 text-white px-4 py-3 shadow-md flex items-center justify-between gap-3 animate-in fade-in duration-300 z-50 shrink-0 border-b border-emerald-500">
@@ -204,12 +323,12 @@ export function PainelAdminScreen({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Monitoramento territorial de Ovitrampas em Carmo/RJ
+                Monitoramento territorial, edição e gestão de Ovitrampas • Carmo/RJ
               </p>
             </div>
           </div>
 
-          {/* BOTÕES DE VISUALIZAÇÃO E EXPORTAÇÃO (ADAPTADOS PARA TABLET & MOBILE) */}
+          {/* BOTÕES DE VISUALIZAÇÃO E AÇÕES GERAIS */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200 flex items-center shadow-xs">
               <button
@@ -271,6 +390,17 @@ export function PainelAdminScreen({
             >
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Relatório PDF</span>
+            </button>
+
+            {/* BOTÃO PARA ZERAR DADOS DE TESTE / INICIAR NOVO CICLO */}
+            <button
+              type="button"
+              onClick={() => setModalLimparTudoAberto(true)}
+              className="bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs"
+              title="Zerar dados de teste e começar ciclo limpo"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Zerar Dados</span>
             </button>
           </div>
         </div>
@@ -403,8 +533,9 @@ export function PainelAdminScreen({
                 <tbody className="divide-y divide-slate-100">
                   {armadilhasFiltradas.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-slate-400 font-bold">
-                        Nenhum registro encontrado.
+                      <td colSpan={8} className="text-center py-12 text-slate-400 font-bold space-y-1">
+                        <p className="text-sm text-slate-500">Nenhum registro encontrado no sistema.</p>
+                        <p className="text-[11px] text-slate-400">As armadilhas cadastradas pelos agentes aparecerão aqui automaticamente.</p>
                       </td>
                     </tr>
                   ) : (
@@ -464,15 +595,23 @@ export function PainelAdminScreen({
                               <button
                                 type="button"
                                 onClick={() => setArmadilhaSelecionada(arm)}
-                                className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 transition-colors border border-slate-200"
+                                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 transition-colors border border-slate-200 active:scale-95"
                                 title="Ver detalhes da armadilha"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleExcluir(arm.id, arm.numero)}
-                                className="p-1.5 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 transition-colors border border-rose-200"
+                                onClick={() => setArmadilhaEmEdicao(arm)}
+                                className="p-2 bg-amber-50 hover:bg-amber-100 rounded-xl text-amber-700 transition-colors border border-amber-200 active:scale-95"
+                                title="Editar dados da ovitrampa"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setArmadilhaParaExcluir(arm)}
+                                className="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 transition-colors border border-rose-200 active:scale-95"
                                 title="Excluir armadilha"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -495,11 +634,11 @@ export function PainelAdminScreen({
       {armadilhaSelecionada && (
         <div
           onClick={() => setArmadilhaSelecionada(null)}
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 shadow-2xl space-y-4 text-slate-900 animate-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 shadow-2xl space-y-4 text-slate-900 animate-in zoom-in-95 duration-150 my-auto"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -544,6 +683,14 @@ export function PainelAdminScreen({
                   </span>
                 </div>
               </div>
+
+              {/* Observações, se houver */}
+              {armadilhaSelecionada.observacoes && (
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 col-span-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">Observações Técnicas:</span>
+                  <p className="font-medium text-slate-700 mt-0.5 text-xs">{armadilhaSelecionada.observacoes}</p>
+                </div>
+              )}
 
               {/* DISTÂNCIAS DAS OVs VIZINHAS MAIS PRÓXIMAS (DIRETRIZ 300m - 400m) */}
               {(() => {
@@ -598,23 +745,363 @@ export function PainelAdminScreen({
               })()}
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${armadilhaSelecionada.latitude},${armadilhaSelecionada.longitude}`, '_blank')}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95"
               >
                 <MapPin className="w-3.5 h-3.5" />
-                <span>Abrir Rota no Google Maps</span>
+                <span>Rota no Maps</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleExcluir(armadilhaSelecionada.id, armadilhaSelecionada.numero)}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1 border border-rose-200 transition-colors"
+                onClick={() => {
+                  setArmadilhaEmEdicao(armadilhaSelecionada);
+                }}
+                className="bg-amber-50 hover:bg-amber-100 text-amber-800 px-3.5 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border border-amber-200 transition-colors active:scale-95"
+                title="Editar dados da ovitrampa"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Editar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setArmadilhaParaExcluir(armadilhaSelecionada)}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3.5 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border border-rose-200 transition-colors active:scale-95"
+                title="Excluir armadilha"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Excluir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDIÇÃO DE DADOS DA OVITRAMPA */}
+      {armadilhaEmEdicao && (
+        <div
+          onClick={() => setArmadilhaEmEdicao(null)}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-4 text-slate-900 animate-in zoom-in-95 duration-150 my-auto max-h-[92vh] flex flex-col"
+          >
+            {/* Cabeçalho do modal */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Correção Cadastral
+                  </span>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">
+                    Editar ARM-{armadilhaEmEdicao.numero}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setArmadilhaEmEdicao(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Formulário com scroll suave */}
+            <form onSubmit={handleSalvarEdicao} className="overflow-y-auto space-y-3.5 pr-1 flex-1">
+              
+              {/* Grupo 1: Identificação */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/90 space-y-2.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-slate-500 block">
+                  1. Identificação Operacional
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Nº da Ovitrampa:
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.numero}
+                      onChange={(e) => setEditForm({ ...editForm, numero: e.target.value })}
+                      placeholder="Ex: 01, 14"
+                      required
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black text-slate-900 focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-[9px] text-slate-400 block mt-0.5">Sem prefixo OV (ex: 01)</span>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Nº da Palheta:
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.palheta}
+                      onChange={(e) => setEditForm({ ...editForm, palheta: e.target.value })}
+                      placeholder="Ex: P-01, PL-01"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black text-blue-700 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 2: Morador & Endereço */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/90 space-y-2.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-slate-500 block">
+                  2. Morador & Localização
+                </span>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Nome do Morador:
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.moradorNome}
+                    onChange={(e) => setEditForm({ ...editForm, moradorNome: e.target.value })}
+                    placeholder="Nome completo ou 'Não informado'"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Logradouro / Rua:
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.rua}
+                      onChange={(e) => setEditForm({ ...editForm, rua: e.target.value })}
+                      placeholder="Rua, Travessa ou Praça"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Nº Imóvel:
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.numeroImovel}
+                      onChange={(e) => setEditForm({ ...editForm, numeroImovel: e.target.value })}
+                      placeholder="Ex: 125, S/N"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Microárea / Bairro:
+                    </label>
+                    <select
+                      value={editForm.microarea}
+                      onChange={(e) => setEditForm({ ...editForm, microarea: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500"
+                    >
+                      {microareasDisponiveis.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Quarteirão:
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.quarteirao}
+                      onChange={(e) => setEditForm({ ...editForm, quarteirao: e.target.value })}
+                      placeholder="Ex: Q-01, Q-05"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 3: Leitura e Laboratório */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/90 space-y-2.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-slate-500 block">
+                  3. Situação de Campo & Laboratório
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Status da Armadilha:
+                    </label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="instalada">Em campo (Pendente)</option>
+                      <option value="analisada">Lida (Laboratório)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Qtd de Ovos (se lida):
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editForm.ultimosOvos}
+                      onChange={(e) => setEditForm({ ...editForm, ultimosOvos: e.target.value })}
+                      placeholder="0 para negativa"
+                      disabled={editForm.status !== 'analisada'}
+                      className={`w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-black focus:outline-none focus:border-emerald-500 ${
+                        editForm.status !== 'analisada' ? 'opacity-50 bg-slate-100 cursor-not-allowed' : 'text-emerald-700'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Grupo 4: Observações Técnicas */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Observações Técnicas / Ponto de Referência:
+                </label>
+                <textarea
+                  rows={2}
+                  value={editForm.observacoes}
+                  onChange={(e) => setEditForm({ ...editForm, observacoes: e.target.value })}
+                  placeholder="Local de fixação no quintal, permissão do morador, recomendações..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-2xl p-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 resize-none"
+                />
+              </div>
+
+              {/* Botões do Rodapé */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setArmadilhaEmEdicao(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Salvar Alterações</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO INDIVIDUAL */}
+      {armadilhaParaExcluir && (
+        <div
+          onClick={() => setArmadilhaParaExcluir(null)}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-slate-900 animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900">
+                  Excluir ARM-{armadilhaParaExcluir.numero}?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Morador: {armadilhaParaExcluir.moradorNome || 'Não informado'}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              Esta ação removerá a armadilha do mapa, do relatório consolidado e da sincronização com os tablets de todos os agentes.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setArmadilhaParaExcluir(null)}
+                className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarExclusao}
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-2xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Sim, Excluir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA TOTAL (ZERAR BANCO PARA AMANHÃ) */}
+      {modalLimparTudoAberto && (
+        <div
+          onClick={() => setModalLimparTudoAberto(false)}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-4 text-slate-900 animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">
+                  Zerar Dados para Novo Ciclo?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Limpeza total para início de trabalho em campo
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/80 border border-amber-200/90 p-3.5 rounded-2xl text-xs text-amber-900 space-y-1.5">
+              <p className="font-bold flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                Atenção: Limpeza completa do banco
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Todas as armadilhas e leituras de teste serão apagadas da memória do aparelho e do servidor em nuvem (Cloudflare D1). O aplicativo começará totalmente zerado e pronto para a instalação oficial das armadilhas pelos agentes.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalLimparTudoAberto(false)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarLimpezaTotal}
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-2xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Sim, Limpar e Zerar</span>
               </button>
             </div>
           </div>

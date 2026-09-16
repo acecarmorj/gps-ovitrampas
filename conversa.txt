@@ -1114,3 +1114,58 @@ Para: ALMIR
    - Build Vite validado com 0 erros (tempo: 6.13s).
    - Deploy ativo e sincronizado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
 ==============================================================================
+
+==============================================================================
+32. EDIÇÃO E REMOÇÃO DE OVITRAMPAS NO PAINEL ADMIN E LIMPEZA TOTAL DE TESTES
+==============================================================================
+Data/Hora: 15/09/2026 ~23:00
+Autor: GEMINI (Antigravity)
+Para: ALMIR
+
+1. SOLICITAÇÃO DO USUÁRIO:
+   - "NO PAINEL DO ADM TEM QUE TER UM LUGAR PRA EDITAR, REMOVE A OVITRAMPA SE FO REGISTRADA ERRADA"
+   - "LIMPE TUDO PRA AMANHA EU INSTALEI UMA PA TESTAR E DEU CERTINHO INSTAEI UMA ELO TABLET EOUTRA PELO COMPUTADOR DEU CERTO"
+   - "AMANHA SERAO NO MAXIMO 5 APPS AO MESMO TEMPO DA CONTA NAO DA? 5 AGENTES USANDO"
+
+2. CAPACIDADE E CONCORRÊNCIA PARA 5 AGENTES SIMULTÂNEOS:
+   - O sistema é 100% serverless no Cloudflare Edge (Pages + Workers + D1) com CDN no Rio de Janeiro e São Paulo.
+   - Limite gratuito do Cloudflare: 100.000 requisições/dia no Worker e 5.000.000 de leituras/dia no D1.
+   - 5 Agentes de Combate às Endemias rodando em campo consomem ~14.000 requisições num dia inteiro de 8 horas (menos de 15% do limite diário).
+   - O aplicativo é offline-first (IndexedDB + LocalStorage): grava instantaneamente no aparelho mesmo sem sinal de internet e sincroniza sozinho assim que reconectar.
+   - Resposta: Suporta 5 agentes com extrema folga, velocidade e estabilidade total!
+
+3. RECURSO DE EDIÇÃO NO PAINEL DO ADMINISTRADOR (PainelAdminScreen.jsx):
+   - Botão de Edição (Pencil) adicionado em cada linha da tabela de armadilhas.
+   - Botão "Editar" adicionado também no modal de detalhes da armadilha selecionada.
+   - Novo Modal de Edição (ModalEditarArmadilha) com ergonomia touch para Tablet Samsung:
+     * Campo de Nº da Armadilha com normalização automática (sem duplicar prefixo "OV-").
+     * Nº da Palheta (ex: P-01).
+     * Nome do Morador (ou "Não informado").
+     * Endereço / Rua e Nº do Imóvel.
+     * Seleção rápida de Microárea oficial de Carmo (Centro, Val Paraíso, Progresso, Morro do Estado, etc.).
+     * Quarteirão oficial (ex: Q-01, Q-10).
+     * Situação e Laboratório (Em campo vs Lida, com contagem de ovos).
+     * Observações técnicas de campo / ponto de referência.
+     * Alvos de toque amplos (>= 44px) confortáveis para o tablet.
+
+4. RECURSO DE REMOÇÃO / EXCLUSÃO COM PROTEÇÃO DE RESSURREIÇÃO:
+   - Botão de exclusão (Trash2) com modal de confirmação claro e seguro.
+   - Exclusão imediata no localStorage, IndexedDB e chamada remota DELETE no Cloudflare D1.
+   - Sistema de tombstone (DELETED_TRAPS_KEY) para garantir que uma armadilha excluída
+     nunca "ressuscite" via sincronização de 10 segundos.
+
+5. BOTÃO "ZERAR DADOS" / LIMPEZA COMPLETA:
+   - Botão na barra de ferramentas do Admin para zerar dados de teste e iniciar novo ciclo.
+   - Modal com alerta explicativo e confirmação protegida.
+   - Chamada para /api/traps/clear que limpa o D1 em nuvem e a base local em todas as abas.
+
+6. LIMPEZA REALIZADA DOS TESTES DE HOJE:
+   - Executada limpeza remota no banco Cloudflare D1 (ovitrampas-gps-db).
+   - Os 2 registros de teste de Almir (um via tablet e um via PC) foram limpos.
+   - Banco 100% zerado e pronto para o início do trabalho de campo amanhã!
+
+7. STATUS E DEPLOY:
+   - Worker API atualizado e implantado via Wrangler (https://ovitrampas-api.acecarmorj.workers.dev).
+   - Frontend compilado com 0 erros (vite build) e publicado no Cloudflare Pages:
+     https://gps-ovitrampas.pages.dev/
+==============================================================================

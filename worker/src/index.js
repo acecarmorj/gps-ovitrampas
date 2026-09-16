@@ -6,7 +6,7 @@
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -232,6 +232,18 @@ export default {
       }
       if (path === "/api/traps" && request.method === "GET") {
         return await listTraps(env);
+      }
+      if (path === "/api/traps" && request.method === "DELETE") {
+        const id = url.searchParams.get("id");
+        if (!id) return badRequest("sem id da armadilha");
+        await env.DB.prepare("DELETE FROM traps WHERE id = ?").bind(id).run();
+        await env.DB.prepare("DELETE FROM readings WHERE armadilha_id = ?").bind(id).run();
+        return json({ ok: true, deletedId: id });
+      }
+      if (path === "/api/traps/clear" && request.method === "POST") {
+        await env.DB.prepare("DELETE FROM traps").run();
+        await env.DB.prepare("DELETE FROM readings").run();
+        return json({ ok: true, message: "Todas as armadilhas e leituras foram limpas." });
       }
       if (path === "/api/readings" && request.method === "GET") {
         return await listReadings(request, env);
