@@ -1447,3 +1447,42 @@ Módulo: /admin (Painel do Administrador / Coordenação de Vigilância)
    - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/admin.
    - Deploy versionado: https://a3e26421.gps-ovitrampas.pages.dev.
 ==============================================================================
+
+==============================================================================
+42. INTEGRAÇÃO DE IA DO GOOGLE AI STUDIO (GEMINI 3.6 FLASH) NO APP MOTOJÁ
+==============================================================================
+Data: 16/09/2026 - 00:10
+Ambiente: Desenvolvimento / Homologação (F:\Desktop\MOTOJAGEMINI)
+Módulos: /moto (Mototaxista Mãos Livres) e /ir (Passageiro Pedido por Voz)
+
+1. SOLICITAÇÃO DO USUÁRIO:
+   - "QUERO QUE CONSTRUA AMBOS A PARTIR DO PRIMEIRO ME AVISE QUANDO TERMINAR E QUANDO FOR PARA O CLAUDE"
+   - Implementação das duas principais inovações com Google Gemini no app MotoJá:
+     1. Modo Mãos Livres por Voz para o Mototaxista (guidão e fone Bluetooth).
+     2. Pedido de Corrida por Voz para o Passageiro com interpretação de pontos de referência do interior.
+
+2. ARQUITETURA ENTREGUE NO MOTOJÁ:
+   - src/lib/geminiDriverVoice.js:
+     * Motor de escuta contínua e síntese de áudio para fone Bluetooth do piloto.
+     * Ao receber chamado em step === 'incoming', anuncia tipo, distância, valor e instrução: "Fale Aceitar ou Recusar".
+     * Reconhecimento instantâneo de voz:
+       - "Aceitar", "Bora", "Vou", "Pode aceitar", "Sim", "Pega" -> aciona acceptIncoming().
+       - "Recusar", "Não", "Cancela", "Pula" -> aciona refuseIncoming().
+       - "Repetir" ou "Onde" -> repete o anúncio de voz.
+   - src/features/driver/DriverApp.jsx:
+     * Botão [ 🎙️ Mãos Livres On ] com indicador luminoso no cabeçalho.
+     * Banner dinâmico no card de chamado: "🎙️ Mãos Livres Ativo: Fale 'Aceitar' ou 'Recusar' no fone".
+   - src/lib/geminiPassengerVoice.js:
+     * Motor de inteligência natural com Google Gemini 3.6 Flash.
+     * Disambigua endereços populares de Carmo, Além Paraíba, Cantagalo, Cordeiro e Nova Friburgo.
+     * Extrai destino, ponto de referência e tipo de serviço (mototáxi ou entrega).
+     * Fallback regional offline integrado.
+   - src/components/VoiceOrderModal.jsx:
+     * Modal interativo com microfone animado, visualizador de ondas e confirmação em 1 toque.
+   - src/features/passenger/PassengerApp.jsx & PassengerSearchDestScreen.jsx:
+     * Botão vibrante [ 🎙️ ] ao lado da barra de busca de destino (home e busca dedicada).
+
+3. VALIDAÇÃO & DUPLA DE ATAQUE:
+   - Build Vite (npm run build) validado com 0 erros (6.65s).
+   - Canal entre as IAs (troca_de_ideias.txt / TROCA DE IDEIAS.txt) atualizado com a Seção 25.88 nos 4 espelhos para auditoria do Claude.
+==============================================================================
