@@ -7,7 +7,7 @@
 // origem) - tiles de mapa e fontes de CDN externos passam direto, sem cache
 // (nao sao essenciais pra abrir a tela e cadastrar uma armadilha).
 
-const CACHE_NAME = 'ovitrampas-shell-v1';
+const CACHE_NAME = 'ovitrampas-shell-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -17,7 +17,15 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((k) => {
+          if (k !== CACHE_NAME) return caches.delete(k);
+        })
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
