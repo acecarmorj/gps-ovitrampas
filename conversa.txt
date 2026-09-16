@@ -1375,3 +1375,40 @@ Módulo: /laboratorio (Laboratório de Entomologia - Carmo RJ)
    - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/laboratorio.
    - Git sincronizado na branch main.
 ==============================================================================
+
+==============================================================================
+40. BÚSSOLA TÁTICA DE CAMPO & ORIENTAÇÃO CARDEAL (300M MINISTÉRIO DA SAÚDE)
+==============================================================================
+Data: 15/09/2026 - 23:40
+Ambiente: Produção (Cloudflare Pages https://gps-ovitrampas.pages.dev)
+Módulo: /campo (Instalar Ovitrampa - Agente Comunitário de Endemias)
+
+1. OBJETIVO ATINGIDO:
+   - Implantação de um sistema de orientação tática por satélite GPS com bússola cardeal (N, S, L, O) para orientar o agente em campo no cumprimento da norma oficial de espaçamento de ~300 metros entre ovitrampas.
+   - 100% OFFLINE: Todo o cálculo trigonométrico (azimute, rumo esférico e distância geodésica) roda localmente por satélite GNSS sem necessidade de internet.
+   - SEM FOTO DE TERRENO: Conforme solicitado pelo usuário, o fluxo de campo não exige foto do imóvel/terreno neste momento, mantendo a instalação ultra-rápida (menos de 1 minuto).
+
+2. FUNCIONALIDADES ENTREGUES:
+   - Motor de Rumo Geodésico (src/lib/geoBearing.js):
+     * Calcula o azimute em graus (0º a 360º) para a armadilha vizinha mais próxima.
+     * Converte para pontos cardeais em português (Norte, Sul, Leste, Oeste, Nordeste, etc.).
+     * Calcula o vetor de afastamento diametralmente oposto (+180º).
+   - Componente Bússola Tática (src/maps/BussolaOrientacao.jsx):
+     * Rosa dos ventos SVG com marcações cardeais N (vermelho), S (azul), L, O.
+     * Seta pulsante apontando a direção recomendada de caminhada.
+     * Suporte a sensor giroscópico do celular (DeviceOrientation) para apontar ao Norte magnético real em movimento.
+     * Três estados visuais:
+       1. 🔴 MUITO PRÓXIMO (< 280m): Alerta vermelho indicando a distância e a direção exata para caminhar (ex: 'OV-02 a 85m ao Sul. Caminhe +215m ao NORTE ↑').
+       2. 🟢 PONTO IDEAL (280m a 420m): Destaque verde esmeralda confirmando atendimento à norma oficial do Ministério da Saúde.
+       3. 🔵 ÁREA LIVRE (> 420m ou 1ª armadilha): Confirmação de novo ponto para expansão da malha.
+   - Integração na Tela de Campo (src/features/campo/InstalarArmadilhaScreen.jsx):
+     * Botão flutuante 'Bússola' no topo do mapa.
+     * Card tático embutido no painel de instalação.
+     * Pílula compacta de rumo visível mesmo quando o painel do mapa estiver recolhido.
+     * Trava preventiva de segurança: alerta amigável antes de salvar caso o agente tente registrar a menos de 280m de outra armadilha.
+
+3. STATUS DE PUBLICAÇÃO:
+   - Build Vite aprovado (6.26s).
+   - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/campo.
+   - Repositório GitHub sincronizado.
+==============================================================================

@@ -10,6 +10,9 @@ import { playSuccessSound } from '../../lib/soundAlert';
 import { cadastrarArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
+import { BussolaOrientacao } from '../../maps/BussolaOrientacao';
+import { calculateNavigationGuidance } from '../../lib/geoBearing';
+import { Compass } from 'lucide-react';
 
 export function InstalarArmadilhaScreen({
   armadilhas = [],
@@ -28,6 +31,7 @@ export function InstalarArmadilhaScreen({
   // No celular o painel cobre quase todo o mapa; recolher deixa o agente ver
   // as armadilhas e as linhas de distância antes de escolher o ponto.
   const [painelAberto, setPainelAberto] = useState(true);
+  const [mostrarBussolaFlutuante, setMostrarBussolaFlutuante] = useState(false);
 
   // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
   const handleNumeroArmadilhaChange = (e) => {
@@ -241,6 +245,17 @@ export function InstalarArmadilhaScreen({
       return;
     }
 
+    // Validação entomológica de espaçamento de 300m entre armadilhas
+    const guiaNavegacao = calculateNavigationGuidance(localizacao, armadilhas);
+    if (guiaNavegacao.status === 'afastar') {
+      const prosseguirEspacamento = window.confirm(
+        `⚠️ ATENÇÃO - ESPAÇAMENTO INFERIOR A 300M:\n\n${guiaNavegacao.orientacao}\n${guiaNavegacao.acao}\n\nA norma do Ministério da Saúde preconiza espaçamento de 300m a 400m.\nDeseja instalar neste ponto mesmo assim?`
+      );
+      if (!prosseguirEspacamento) {
+        return;
+      }
+    }
+
     // Se a precisão do GPS estiver muito fraca (> 35 metros), avisa o agente
     if (localizacao.accuracy && localizacao.accuracy > 35) {
       const prosseguir = window.confirm(
@@ -361,7 +376,33 @@ export function InstalarArmadilhaScreen({
             <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
           </button>
         </div>
+
+        {/* Botão de Bússola e Rumo Tático */}
+        <button
+          type="button"
+          onClick={() => setMostrarBussolaFlutuante((v) => !v)}
+          className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto transition-all ${
+            mostrarBussolaFlutuante
+              ? 'bg-sky-600 text-white border-sky-400'
+              : 'bg-white/92 text-slate-800 border-slate-200/90 hover:bg-white'
+          }`}
+          title="Abrir bússola e orientação cardeal"
+        >
+          <Compass className={`w-3.5 h-3.5 ${mostrarBussolaFlutuante ? 'text-white' : 'text-sky-600'}`} />
+          <span>Bússola</span>
+        </button>
       </header>
+
+      {/* MODAL / CARD FLUTUANTE DE BÚSSOLA NO MAPA */}
+      {mostrarBussolaFlutuante && (
+        <div className="absolute top-14 left-3 right-3 z-30 max-w-sm mx-auto pointer-events-auto animate-in fade-in">
+          <BussolaOrientacao
+            userPos={localizacao}
+            armadilhas={armadilhas}
+            onFechar={() => setMostrarBussolaFlutuante(false)}
+          />
+        </div>
+      )}
 
       {/* 3. ALERTA DE SUCESSO */}
       {sucessoMsg && (
@@ -378,6 +419,15 @@ export function InstalarArmadilhaScreen({
       {/* Recolhível: no celular ele cobre quase todo o mapa, então o agente
           pode ocultar para enxergar as armadilhas e as linhas de distância. */}
       <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
+        {!painelAberto && (
+          <div className="mb-2 pointer-events-auto">
+            <BussolaOrientacao
+              userPos={localizacao}
+              armadilhas={armadilhas}
+              compacto={true}
+            />
+          </div>
+        )}
         {!painelAberto && (
           <button
             type="button"
@@ -478,6 +528,12 @@ export function InstalarArmadilhaScreen({
               <span className="leading-tight font-semibold">{gpsErrorMsg}</span>
             </div>
           )}
+
+          {/* BÚSSOLA E GUIA CARDEAL DE DESLOCAMENTO (NORTE / SUL / LESTE / OESTE) */}
+          <BussolaOrientacao
+            userPos={localizacao}
+            armadilhas={armadilhas}
+          />
 
           {/* ASSISTENTE DE GEORREFERENCIAMENTO: DISTÂNCIA DAS OVs MAIS PRÓXIMAS (REGRA 300M - 400M) */}
           {vizinhasProximas && vizinhasProximas.length > 0 ? (
