@@ -4,7 +4,7 @@ import {
   AlertTriangle, ArrowRight, Share2, Copy, Check,
   FileText, ExternalLink, Filter, Search, ChevronRight,
   ShieldAlert, Info, Layers, RefreshCw, X, Zap, Sliders,
-  RotateCcw
+  RotateCcw, Eye, Navigation, User
 } from 'lucide-react';
 import { MapaCenarioIdeal } from './MapaCenarioIdeal';
 import {
@@ -20,6 +20,9 @@ export function CenarioIdealScreen({
   armadilhas = [],
   onVoltar
 }) {
+  // Modo de visualização do cenário: 'atual' (Realidade do Campo) | 'ideal' (Grade do Zero) | 'comparar' (Comparativo)
+  const [modoCenario, setModoCenario] = useState('atual'); // Começa mostrando a REALIDADE como o usuário pediu!
+
   // Estado da grade ativa (padrão 35 pontos ou gerada dinamicamente do zero)
   const [gradeCustomizada, setGradeCustomizada] = useState(null);
   const [tipoGradeAtiva, setTipoGradeAtiva] = useState('padrao'); // 'padrao' | 'denso' | 'amplo' | 'custom'
@@ -57,6 +60,7 @@ export function CenarioIdealScreen({
     const novaGrade = gerarGradeIdealDinamica(tipo, tipo === 'custom' ? qtd : null);
     setGradeCustomizada(novaGrade);
     setTipoGradeAtiva(tipo);
+    setModoCenario('ideal'); // Ao gerar do zero, pula automaticamente para o modo ideal
     setPontoSelecionado(null);
     setArmadilhaSelecionada(null);
     setModalGeradorAberto(false);
@@ -72,12 +76,6 @@ export function CenarioIdealScreen({
     setModalGeradorAberto(false);
     showToast(`✅ Grade padrão do Ministério da Saúde restaurada (35 pontos).`);
   };
-
-  // Lista única de bairros
-  const bairrosDisponiveis = useMemo(() => {
-    const setB = new Set(pontosIdeais.map((p) => p.bairro));
-    return ['todos', ...Array.from(setB).sort()];
-  }, [pontosIdeais]);
 
   // Filtragem dos pontos ideais
   const pontosFiltrados = useMemo(() => {
@@ -107,8 +105,26 @@ export function CenarioIdealScreen({
     });
   }, [diagnostico, bairroFiltro, statusFiltro, busca]);
 
+  // Filtragem das armadilhas reais (para modo 'atual')
+  const armadilhasFiltradas = useMemo(() => {
+    return armadilhas.filter((t) => {
+      const matchBairro = bairroFiltro === 'todos' || (t.bairro && t.bairro === bairroFiltro);
+      const matchBusca =
+        !busca.trim() ||
+        String(t.numero).includes(busca) ||
+        (t.bairro && t.bairro.toLowerCase().includes(busca.toLowerCase())) ||
+        (t.rua && t.rua.toLowerCase().includes(busca.toLowerCase())) ||
+        (t.moradorNome && t.moradorNome.toLowerCase().includes(busca.toLowerCase())) ||
+        (t.quarteirao && t.quarteirao.toLowerCase().includes(busca.toLowerCase()));
+
+      return matchBairro && matchBusca;
+    });
+  }, [armadilhas, bairroFiltro, busca]);
+
   const handleCopiarWhatsApp = () => {
-    const titulo = tipoGradeAtiva === 'padrao' ? 'Grade Padrão ~300m' : `Grade Dinâmica (${pontosIdeais.length} OVs)`;
+    const titulo = modoCenario === 'atual'
+      ? 'Cenário Atual de Campo'
+      : tipoGradeAtiva === 'padrao' ? 'Grade Padrão ~300m' : `Grade Dinâmica (${pontosIdeais.length} OVs)`;
     const texto = gerarGuiaWhatsApp(armadilhas, pontosIdeais, titulo);
     navigator.clipboard.writeText(texto);
     setCopiadoWhatsapp(true);
@@ -116,7 +132,9 @@ export function CenarioIdealScreen({
   };
 
   const handleCompartilharWhatsApp = () => {
-    const titulo = tipoGradeAtiva === 'padrao' ? 'Grade Padrão ~300m' : `Grade Dinâmica (${pontosIdeais.length} OVs)`;
+    const titulo = modoCenario === 'atual'
+      ? 'Cenário Atual de Campo'
+      : tipoGradeAtiva === 'padrao' ? 'Grade Padrão ~300m' : `Grade Dinâmica (${pontosIdeais.length} OVs)`;
     const texto = gerarGuiaWhatsApp(armadilhas, pontosIdeais, titulo);
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
   };
@@ -157,25 +175,37 @@ export function CenarioIdealScreen({
         </div>
       )}
 
-      {/* 1. BARRA SUPERIOR DE MÉTRICAS E AÇÕES RÁPIDAS */}
+      {/* 1. BARRA SUPERIOR DE CONTROLE E VISUALIZAÇÃO */}
       <header className="bg-white/95 border-b border-slate-200/90 backdrop-blur-md px-3 sm:px-5 py-2.5 shrink-0 shadow-xs z-10">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
           
-          {/* Título & Badge de Status da Grade */}
+          {/* Título & Badge de Modo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center shrink-0 shadow-xs">
-              <Compass className="w-4 h-4" />
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+              modoCenario === 'atual'
+                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                : modoCenario === 'ideal'
+                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'bg-amber-100 text-amber-800 border border-amber-200'
+            }`}>
+              {modoCenario === 'atual' ? <MapPin className="w-4 h-4" /> : modoCenario === 'ideal' ? <Target className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
             </div>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h2 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
-                  Cenário Ideal de Ovitrampas
+                  {modoCenario === 'atual' ? 'Cenário Atual (Realidade no Campo)' : modoCenario === 'ideal' ? 'Cenário Ideal (Grade do Zero)' : 'Comparativo: Realidade vs Ideal'}
                 </h2>
-                <span className="text-[9px] font-black bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border ${
+                  modoCenario === 'atual'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : modoCenario === 'ideal'
+                    ? 'bg-purple-50 text-purple-800 border-purple-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}>
                   <Sparkles className="w-2.5 h-2.5" />
-                  {gradeCustomizada ? `Grade Nova (${pontosIdeais.length} OVs)` : 'Grade Oficial (35 OVs ~300m)'}
+                  {modoCenario === 'atual' ? `${armadilhas.length} Armadilhas Ativas` : `${pontosIdeais.length} Pontos Calculados`}
                 </span>
-                {gradeCustomizada && (
+                {gradeCustomizada && modoCenario !== 'atual' && (
                   <button
                     type="button"
                     onClick={handleRestaurarPadrao}
@@ -183,47 +213,65 @@ export function CenarioIdealScreen({
                     title="Voltar para a grade padrão de 35 pontos"
                   >
                     <RotateCcw className="w-2.5 h-2.5" />
-                    Restaurar Padrão
+                    Restaurar 35 Padrão
                   </button>
                 )}
               </div>
               <p className="text-[10px] text-slate-500 font-medium">
-                Planejamento geoespacial otimizado sobre a malha de 119 quarteirões habitados de Carmo-RJ
+                {modoCenario === 'atual'
+                  ? 'Visualização da distribuição real das armadilhas instaladas hoje em Carmo-RJ'
+                  : 'Planejamento geoespacial otimizado sobre a malha de 119 quarteirões habitados de Carmo'}
               </p>
             </div>
           </div>
 
-          {/* Cards Rápidos de Indicadores (KPIs) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-            <div className="bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl shrink-0">
-              <div className="text-[9px] font-black text-purple-800 uppercase">Pontos Ideais</div>
-              <div className="text-sm font-black text-purple-900">{diagnostico.totalIdeais}</div>
-            </div>
+          {/* SELETOR PRINCIPAL DE CENÁRIO (ATUAL vs IDEAL vs COMPARAR) */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-300 text-xs font-black shadow-inner">
+            <button
+              type="button"
+              onClick={() => setModoCenario('atual')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 ${
+                modoCenario === 'atual'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/70'
+              }`}
+              title="Ver o Cenário Atual (a realidade das 35 armadilhas que estão hoje no campo)"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Mostrar Atual ({armadilhas.length})</span>
+            </button>
 
-            <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shrink-0">
-              <div className="text-[9px] font-black text-emerald-800 uppercase">Manter (≤60m)</div>
-              <div className="text-sm font-black text-emerald-900">{diagnostico.excelentes}</div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setModoCenario('ideal')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 ${
+                modoCenario === 'ideal'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/70'
+              }`}
+              title="Ver o Cenário Ideal Puro (grade regular calculada do zero)"
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>Cenário Ideal ({pontosIdeais.length})</span>
+            </button>
 
-            <div className="bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl shrink-0">
-              <div className="text-[9px] font-black text-amber-800 uppercase">Ajuste Leve</div>
-              <div className="text-sm font-black text-amber-900">{diagnostico.ajustesLeves}</div>
-            </div>
-
-            <div className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl shrink-0">
-              <div className="text-[9px] font-black text-rose-800 uppercase">Remanejar</div>
-              <div className="text-sm font-black text-rose-900">{diagnostico.remanejamentos}</div>
-            </div>
-
-            <div className="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl shrink-0">
-              <div className="text-[9px] font-black text-indigo-800 uppercase">Cobertura Urbana</div>
-              <div className="text-sm font-black text-indigo-900">{diagnostico.coberturaPercentual}%</div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setModoCenario('comparar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 ${
+                modoCenario === 'comparar'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-white/70'
+              }`}
+              title="Comparar o Cenário Atual com o Cenário Ideal (mostra as linhas de deslocamento)"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Comparar</span>
+            </button>
           </div>
 
           {/* Botões de Ação: Gerar do Zero, WhatsApp & Parecer Técnico */}
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-            {/* BOTÃO PRINCIPAL: GERAR CENÁRIO IDEAL DO ZERO */}
             <button
               type="button"
               onClick={() => setModalGeradorAberto(true)}
@@ -238,20 +286,10 @@ export function CenarioIdealScreen({
               type="button"
               onClick={handleCompartilharWhatsApp}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black transition-all shadow-xs"
-              title="Compartilhar roteiro de instalação via WhatsApp"
+              title="Compartilhar roteiro via WhatsApp"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">WhatsApp</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCopiarWhatsApp}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all border border-slate-200"
-              title="Copiar texto do roteiro"
-            >
-              {copiadoWhatsapp ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{copiadoWhatsapp ? 'Copiado!' : 'Copiar'}</span>
             </button>
 
             <button
@@ -267,9 +305,66 @@ export function CenarioIdealScreen({
 
         </div>
 
-        {/* BARRA DE FILTROS E ABAS DE VISUALIZAÇÃO */}
-        <div className="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          {/* Alternador de Modo: Mapa vs Lista Comparativa */}
+        {/* 2. LINHA DE KPIS E FILTROS */}
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+          
+          {/* Indicadores Conforme o Modo Ativo */}
+          {modoCenario === 'atual' ? (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-emerald-800 uppercase">Armadilhas no Campo</div>
+                <div className="text-sm font-black text-emerald-900">{armadilhas.length} OVs</div>
+              </div>
+              <div className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-rose-800 uppercase">Sobreposições (&lt;160m)</div>
+                <div className="text-sm font-black text-rose-900">{diagnostico.sobreposicoes.length} pares</div>
+              </div>
+              <div className="bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-purple-800 uppercase">Vácuos Descobertos</div>
+                <div className="text-sm font-black text-purple-900">{diagnostico.gaps.length} setores</div>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-indigo-800 uppercase">Cobertura Urbana</div>
+                <div className="text-sm font-black text-indigo-900">{diagnostico.coberturaPercentual}%</div>
+              </div>
+            </div>
+          ) : modoCenario === 'ideal' ? (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <div className="bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-purple-800 uppercase">Pontos Calculados</div>
+                <div className="text-sm font-black text-purple-900">{diagnostico.totalIdeais}</div>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-emerald-800 uppercase">Cobertura Projetada</div>
+                <div className="text-sm font-black text-emerald-900">100% Habitada</div>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-indigo-800 uppercase">Espaçamento Regular</div>
+                <div className="text-sm font-black text-indigo-900">~300m regular</div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-emerald-800 uppercase">Manter (≤60m)</div>
+                <div className="text-sm font-black text-emerald-900">{diagnostico.excelentes}</div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-amber-800 uppercase">Ajuste Leve</div>
+                <div className="text-sm font-black text-amber-900">{diagnostico.ajustesLeves}</div>
+              </div>
+              <div className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-rose-800 uppercase">Remanejar</div>
+                <div className="text-sm font-black text-rose-900">{diagnostico.remanejamentos}</div>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl shrink-0">
+                <div className="text-[9px] font-black text-indigo-800 uppercase">Cobertura</div>
+                <div className="text-sm font-black text-indigo-900">{diagnostico.coberturaPercentual}%</div>
+              </div>
+            </div>
+          )}
+
+          {/* Alternador de Modo: Mapa vs Lista */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-black">
             <button
               type="button"
@@ -280,7 +375,7 @@ export function CenarioIdealScreen({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🗺️ Mapa Interativo
+              🗺️ Mapa
             </button>
             <button
               type="button"
@@ -291,69 +386,8 @@ export function CenarioIdealScreen({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              📋 Roteiro de Pontos ({pontosFiltrados.length})
+              📋 Lista ({modoCenario === 'atual' ? armadilhasFiltradas.length : pontosFiltrados.length})
             </button>
-          </div>
-
-          {/* Filtros Rápidos de Status */}
-          <div className="flex items-center gap-1 overflow-x-auto text-[11px] font-bold scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setStatusFiltro('todos')}
-              className={`px-2 py-0.5 rounded-lg border transition-all ${
-                statusFiltro === 'todos'
-                  ? 'bg-slate-800 text-white border-slate-800'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              Todos ({diagnostico.totalIdeais})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFiltro('alinhados')}
-              className={`px-2 py-0.5 rounded-lg border transition-all ${
-                statusFiltro === 'alinhados'
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-              }`}
-            >
-              Manter ({diagnostico.excelentes})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFiltro('ajuste_leve')}
-              className={`px-2 py-0.5 rounded-lg border transition-all ${
-                statusFiltro === 'ajuste_leve'
-                  ? 'bg-amber-600 text-white border-amber-600'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              Leve Ajuste ({diagnostico.ajustesLeves})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFiltro('remanejar')}
-              className={`px-2 py-0.5 rounded-lg border transition-all ${
-                statusFiltro === 'remanejar'
-                  ? 'bg-rose-600 text-white border-rose-600'
-                  : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
-              }`}
-            >
-              Remanejar ({diagnostico.remanejamentos})
-            </button>
-            {diagnostico.gaps.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setStatusFiltro('vacuo')}
-                className={`px-2 py-0.5 rounded-lg border transition-all ${
-                  statusFiltro === 'vacuo'
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
-                }`}
-              >
-                Vácuos ({diagnostico.gaps.length})
-              </button>
-            )}
           </div>
 
           {/* Campo de Busca Rápida */}
@@ -363,7 +397,7 @@ export function CenarioIdealScreen({
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar ponto..."
+              placeholder="Buscar ponto / rua..."
               className="w-full bg-slate-100 hover:bg-slate-200/70 focus:bg-white text-slate-800 text-[11px] font-bold pl-8 pr-2.5 py-1 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 transition-all"
             />
             {busca && (
@@ -378,7 +412,7 @@ export function CenarioIdealScreen({
         </div>
       </header>
 
-      {/* 2. ÁREA DE CONTEÚDO PRINCIPAL (MAPA OU TABELA) */}
+      {/* 3. ÁREA DE CONTEÚDO PRINCIPAL (MAPA OU TABELA) */}
       <div className="flex-1 relative w-full h-full overflow-hidden">
         
         {/* ABA: MAPA INTERATIVO */}
@@ -394,10 +428,77 @@ export function CenarioIdealScreen({
               onSelectArmadilha={(t) => setArmadilhaSelecionada(t)}
               showLabels={showLabels}
               onToggleLabels={() => setShowLabels((prev) => !prev)}
+              modoCenario={modoCenario}
+              onChangeModoCenario={(m) => setModoCenario(m)}
             />
 
-            {/* CARD FLUTUANTE DE DETALHE DO PONTO SELECIONADO */}
-            {pontoSelecionado && (
+            {/* CARD FLUTUANTE DE DETALHE DE ARMADILHA REAL SELECIONADA (MODO ATUAL) */}
+            {armadilhaSelecionada && modoCenario === 'atual' && (
+              <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-white/95 backdrop-blur-md rounded-2xl border border-emerald-200 shadow-2xl p-4 z-30 animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs">
+                      ARM-{armadilhaSelecionada.numero}
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 leading-tight">
+                        {armadilhaSelecionada.bairro || 'Carmo'}
+                      </h4>
+                      <p className="text-[11px] text-emerald-700 font-bold">
+                        {armadilhaSelecionada.quarteirao || 'Quarteirão não informado'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setArmadilhaSelecionada(null)}
+                    className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-1 text-xs text-slate-700">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-500">Endereço:</span>
+                    <span className="font-extrabold text-slate-900">{armadilhaSelecionada.rua || 'S/N'}</span>
+                  </div>
+                  {armadilhaSelecionada.moradorNome && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-500">Morador:</span>
+                      <span className="font-bold text-slate-800">{armadilhaSelecionada.moradorNome}</span>
+                    </div>
+                  )}
+                  <div className="font-mono text-[10px] text-slate-500">
+                    GPS: {Number(armadilhaSelecionada.latitude).toFixed(6)}, {Number(armadilhaSelecionada.longitude).toFixed(6)}
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${armadilhaSelecionada.latitude}, ${armadilhaSelecionada.longitude}`);
+                      showToast('GPS da armadilha copiado!');
+                    }}
+                    className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[11px] font-black text-center transition-all"
+                  >
+                    Copiar GPS
+                  </button>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${armadilhaSelecionada.latitude},${armadilhaSelecionada.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black text-center flex items-center justify-center gap-1 transition-all"
+                  >
+                    <span>Como Chegar</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* CARD FLUTUANTE DE DETALHE DO PONTO SELECIONADO (MODO IDEAL OU COMPARAR) */}
+            {pontoSelecionado && modoCenario !== 'atual' && (
               <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-white/95 backdrop-blur-md rounded-2xl border border-purple-200 shadow-2xl p-4 z-30 animate-in fade-in slide-in-from-bottom-2">
                 <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5 mb-2.5">
                   <div className="flex items-center gap-2">
@@ -431,8 +532,8 @@ export function CenarioIdealScreen({
                   </div>
                 </div>
 
-                {/* Armadilha mais próxima */}
-                {(() => {
+                {/* Armadilha mais próxima no modo Comparar */}
+                {modoCenario === 'comparar' && (() => {
                   const comp = diagnostico.detalheIdeais.find((i) => i.pontoIdeal.codigo === pontoSelecionado.codigo);
                   if (!comp || !comp.armadilhaMaisProxima) return null;
                   const d = comp.distanciaRealMetros;
@@ -491,116 +592,176 @@ export function CenarioIdealScreen({
           </div>
         )}
 
-        {/* ABA: LISTA COMPARATIVA & ROTEIRO TÉCNICO */}
+        {/* ABA: LISTA TABELAR (CONFORME O MODO SELECIONADO) */}
         {abaVisualizacao === 'tabela' && (
           <div className="w-full h-full overflow-y-auto p-3 sm:p-5 space-y-3">
             <div className="max-w-4xl mx-auto space-y-3">
               
-              {/* Resumo de Cobertura */}
+              {/* Header da Lista */}
               <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-black text-slate-900">
-                      Roteiro de Otimização da Malha ({pontosFiltrados.length} pontos exibidos)
+                      {modoCenario === 'atual'
+                        ? `Armadilhas em Campo (${armadilhasFiltradas.length} OVs exibidas)`
+                        : `Grade Ideal de Vigilância (${pontosFiltrados.length} pontos exibidos)`}
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
-                      Diretrizes para redistribuição no próximo ciclo de instalação em Carmo-RJ
+                      {modoCenario === 'atual'
+                        ? 'Lista de armadilhas atualmente instaladas e ativas nos bairros de Carmo'
+                        : 'Diretrizes geoespaciais e logradouros calculados para cobertura equilibrada'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCopiarWhatsApp}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-all border border-slate-200"
-                    >
-                      {copiadoWhatsapp ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiadoWhatsapp ? 'Roteiro Copiado!' : 'Copiar Roteiro'}</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopiarWhatsApp}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-all border border-slate-200"
+                  >
+                    {copiadoWhatsapp ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiadoWhatsapp ? 'Copiado!' : 'Copiar Roteiro'}</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Lista dos Pontos Ideais */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {pontosFiltrados.map((item) => {
-                  const p = item.pontoIdeal;
-                  const t = item.armadilhaMaisProxima;
-                  const d = item.distanciaRealMetros;
-                  const isOk = d != null && d <= 60;
-                  const isMid = d != null && d > 60 && d <= 120;
-                  const isGap = !item.coberto;
-
-                  return (
+              {/* LISTA NO MODO ATUAL (ARMADILHAS REAIS) */}
+              {modoCenario === 'atual' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {armadilhasFiltradas.map((t) => (
                     <div
-                      key={p.codigo}
+                      key={t.id}
                       onClick={() => {
-                        setPontoSelecionado(p);
+                        setArmadilhaSelecionada(t);
                         setAbaVisualizacao('mapa');
                       }}
-                      className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex flex-col justify-between gap-2.5"
+                      className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex flex-col justify-between gap-2.5"
                     >
                       <div>
-                        {/* Topo do Card */}
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="w-7 h-7 rounded-xl bg-purple-100 text-purple-800 font-black text-xs flex items-center justify-center border border-purple-200">
-                              {p.codigo}
+                            <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center border border-emerald-200">
+                              ARM-{t.numero}
                             </span>
                             <div>
                               <h4 className="text-xs font-black text-slate-900 leading-tight">
-                                {p.bairro}
+                                {t.bairro || 'Carmo'}
                               </h4>
-                              <span className="text-[10px] font-bold text-purple-700">
-                                {p.quarteirao}
+                              <span className="text-[10px] font-bold text-emerald-700">
+                                {t.quarteirao || 'S/Q'}
                               </span>
                             </div>
                           </div>
-
-                          {/* Badge de Alinhamento */}
-                          {isOk && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
-                              ✅ Manter ({d}m)
-                            </span>
-                          )}
-                          {isMid && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
-                              ⚠️ Ajuste Leve ({d}m)
-                            </span>
-                          )}
-                          {!isOk && !isMid && !isGap && (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-black">
-                              🔄 Deslocar ({d}m)
-                            </span>
-                          )}
-                          {isGap && (
-                            <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-black">
-                              🚨 Vácuo ({d ? `${d}m` : 'Sem OV'})
-                            </span>
-                          )}
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
+                            📦 Ativa
+                          </span>
                         </div>
 
-                        {/* Endereço Oficial */}
                         <p className="text-xs font-bold text-slate-800 line-clamp-1">
-                          📍 {p.rua}
+                          📍 {t.rua || 'Logradouro não informado'}
                         </p>
+                        {t.moradorNome && (
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            👤 {t.moradorNome}
+                          </p>
+                        )}
                         <p className="text-[10px] font-mono text-slate-400 mt-0.5">
-                          {p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}
+                          {Number(t.latitude).toFixed(6)}, {Number(t.longitude).toFixed(6)}
                         </p>
                       </div>
 
-                      {/* Status Atual do Campo */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span className="text-[11px] font-medium">
-                          {t ? `Mais próxima: ARM-${t.numero}` : 'Nenhuma OV próxima'}
-                        </span>
-                        <span className="text-purple-600 font-bold text-[11px] flex items-center gap-1 hover:underline">
+                        <span className="text-[10px] text-slate-400">Instalada no campo</span>
+                        <span className="text-emerald-600 font-bold text-[11px] flex items-center gap-1 hover:underline">
                           Ver no Mapa <ChevronRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
+
+              {/* LISTA NO MODO IDEAL OU COMPARAR */}
+              {modoCenario !== 'atual' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pontosFiltrados.map((item) => {
+                    const p = item.pontoIdeal;
+                    const t = item.armadilhaMaisProxima;
+                    const d = item.distanciaRealMetros;
+                    const isOk = d != null && d <= 60;
+                    const isMid = d != null && d > 60 && d <= 120;
+                    const isGap = !item.coberto;
+
+                    return (
+                      <div
+                        key={p.codigo}
+                        onClick={() => {
+                          setPontoSelecionado(p);
+                          setAbaVisualizacao('mapa');
+                        }}
+                        className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex flex-col justify-between gap-2.5"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-7 h-7 rounded-xl bg-purple-100 text-purple-800 font-black text-xs flex items-center justify-center border border-purple-200">
+                                {p.codigo}
+                              </span>
+                              <div>
+                                <h4 className="text-xs font-black text-slate-900 leading-tight">
+                                  {p.bairro}
+                                </h4>
+                                <span className="text-[10px] font-bold text-purple-700">
+                                  {p.quarteirao}
+                                </span>
+                              </div>
+                            </div>
+
+                            {modoCenario === 'comparar' && (
+                              <>
+                                {isOk && (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
+                                    ✅ Manter ({d}m)
+                                  </span>
+                                )}
+                                {isMid && (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
+                                    ⚠️ Ajuste ({d}m)
+                                  </span>
+                                )}
+                                {!isOk && !isMid && !isGap && (
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-black">
+                                    🔄 Deslocar ({d}m)
+                                  </span>
+                                )}
+                                {isGap && (
+                                  <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-black">
+                                    🚨 Vácuo
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          <p className="text-xs font-bold text-slate-800 line-clamp-1">
+                            📍 {p.rua}
+                          </p>
+                          <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+                            {p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                          <span className="text-[11px] font-medium">
+                            {t ? `Mais próxima: ARM-${t.numero}` : 'Nenhuma OV próxima'}
+                          </span>
+                          <span className="text-purple-600 font-bold text-[11px] flex items-center gap-1 hover:underline">
+                            Ver no Mapa <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
             </div>
           </div>
@@ -608,12 +769,11 @@ export function CenarioIdealScreen({
 
       </div>
 
-      {/* 3. MODAL: GERADOR DINÂMICO DE GRADE DO ZERO */}
+      {/* 4. MODAL: GERADOR DINÂMICO DE GRADE DO ZERO */}
       {modalGeradorAberto && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95">
             
-            {/* Topo do Modal */}
             <div className="bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-800 text-white p-4 sm:p-5 flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] font-black text-purple-200 uppercase tracking-wider block mb-1">
@@ -636,14 +796,12 @@ export function CenarioIdealScreen({
               </button>
             </div>
 
-            {/* Corpo com Opções */}
             <div className="p-4 sm:p-6 space-y-4 text-xs text-slate-700">
               <p className="font-bold text-slate-800">
                 Selecione o modelo de cobertura desejado para o recálculo dos 119 quarteirões urbanos habitados:
               </p>
 
               <div className="space-y-2.5">
-                {/* Opção 1: Padrão SUS (~300m) */}
                 <div
                   onClick={() => setGeradorTipo('padrao')}
                   className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
@@ -668,7 +826,6 @@ export function CenarioIdealScreen({
                   </div>
                 </div>
 
-                {/* Opção 2: Alta Densidade (~240m) */}
                 <div
                   onClick={() => setGeradorTipo('denso')}
                   className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
@@ -692,7 +849,6 @@ export function CenarioIdealScreen({
                   </div>
                 </div>
 
-                {/* Opção 3: Cobertura Ampla (~350m) */}
                 <div
                   onClick={() => setGeradorTipo('amplo')}
                   className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
@@ -716,7 +872,6 @@ export function CenarioIdealScreen({
                   </div>
                 </div>
 
-                {/* Opção 4: Personalizada */}
                 <div
                   onClick={() => setGeradorTipo('custom')}
                   className={`p-3 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
@@ -758,7 +913,6 @@ export function CenarioIdealScreen({
               </div>
             </div>
 
-            {/* Rodapé do Modal com Botões de Ação */}
             <div className="bg-slate-50 border-t border-slate-200 p-4 flex items-center justify-between gap-2">
               <button
                 type="button"
@@ -792,12 +946,11 @@ export function CenarioIdealScreen({
         </div>
       )}
 
-      {/* 4. MODAL: PARECER TÉCNICO OFICIAL PARA GESTÃO / SUS */}
+      {/* 5. MODAL: PARECER TÉCNICO OFICIAL PARA GESTÃO / SUS */}
       {modalParecerAberto && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             
-            {/* Header do Modal */}
             <div className="bg-purple-900 text-white p-4 sm:p-6 flex items-start justify-between gap-3 shrink-0">
               <div>
                 <span className="text-[10px] font-black text-purple-300 uppercase tracking-wider block mb-1">
@@ -819,7 +972,6 @@ export function CenarioIdealScreen({
               </button>
             </div>
 
-            {/* Conteúdo do Parecer */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed font-sans">
               
               <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3.5">
@@ -871,7 +1023,6 @@ export function CenarioIdealScreen({
               </div>
             </div>
 
-            {/* Rodapé do Modal */}
             <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
