@@ -240,9 +240,42 @@ export function InstalarArmadilhaScreen({
       return;
     }
 
-    if (!numeroArmadilha.trim()) {
+    // Valida o NUCLEO do numero (sem o prefixo OV-), nao o texto cru: digitar
+    // so um espaco produz "OV- ", que passa no .trim() mas normaliza pra
+    // string vazia - a armadilha era gravada sem numero e ficava invisivel
+    // pro laboratorio.
+    const numeroNucleo = numeroArmadilha.replace(/^OV[-_ ]*/i, '').trim();
+    if (!numeroNucleo) {
       alert('Digite o número da OV.');
       return;
+    }
+
+    // Nunca deixa salvar com a posicao padrao (centro fixo de Carmo) que o
+    // componente usa antes do primeiro fix de GPS - sem isso, GPS negado ou
+    // sem sinal grava a armadilha no lugar errado, sem nenhum aviso, e o erro
+    // so aparece dias depois olhando o mapa.
+    if (localizacao.accuracy == null) {
+      alert(
+        gpsErrorMsg
+          ? `Não é possível salvar sem a localização real do GPS.\n\n${gpsErrorMsg}\n\nAtive a permissão de localização e tente novamente.`
+          : 'Aguardando o primeiro sinal de GPS. Espere a barra parar de "Buscando Satélites..." antes de salvar, para não gravar uma posição errada.'
+      );
+      return;
+    }
+
+    // Numero duplicado: dois agentes (ou o mesmo, duas vezes) podem cadastrar
+    // a mesma OV em locais diferentes sem nenhum aviso hoje - a leitura de
+    // laboratorio depois vai pra armadilha errada (a primeira da lista).
+    const numeroJaExiste = armadilhas.some(
+      (a) => a.numero && a.numero.toLowerCase() === numeroNucleo.toLowerCase()
+    );
+    if (numeroJaExiste) {
+      const prosseguirDuplicado = window.confirm(
+        `⚠️ JÁ EXISTE UMA OV-${numeroNucleo} CADASTRADA.\n\nSalvar mesmo assim vai deixar dois registros com o mesmo número, e a leitura do laboratório pode ir pra armadilha errada.\n\nConfirme se não é engano antes de continuar. Deseja salvar assim mesmo?`
+      );
+      if (!prosseguirDuplicado) {
+        return;
+      }
     }
 
     // Validação entomológica de espaçamento de 300m entre armadilhas

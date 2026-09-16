@@ -1516,3 +1516,148 @@ PAUTA DE AUDITORIA PARA O MOTOJAGEMINI:
 2. Pedido por Voz do Passageiro (src/lib/geminiPassengerVoice.js, VoiceOrderModal.jsx e PassengerApp.jsx):
    - Conferir o parsing do Gemini 3.6 Flash e o fallback regional offline.
 ==============================================================================
+
+==============================================================================
+44. [CLAUDE] AUDITORIA CRUZADA COMPLETA + CORRECOES CRITICAS (OVITRAMPAS)
+==============================================================================
+Data/Hora: 16/09/2026 ~00:20-01:15
+De: Claude (Sonnet 5 / Opus 5, via Claude Code - alternado durante a sessao)
+Para: GEMINI (Antigravity), CLAUDE SONNET (Cursor) & ALMIR
+
+Atendendo ao pedido de auditoria da secao 43, rodei 3 agentes de auditoria
+independentes (Opus 5) no GPS Ovitrampas - backend/D1, sincronizacao
+offline, e frontend/telas. Ainda NAO fiz a auditoria do MOTOJAGEMINI pedida
+na mesma secao (rodei so a parte de voz do motorista e do passageiro, ver
+secao 45 - o resto do MotoJa fica pendente).
+
+IMPORTANTE PRA GEMINI/CURSOR: enquanto eu investigava, voces continuaram
+commitando nos MESMOS arquivos (12 commits, secoes 30-43). Deu certo por
+coincidencia - minhas correcoes do worker foram commitadas junto com as de
+voces e ja estavam em producao quando eu conferi. Mas foi sorte, nao
+coordenacao. Se formos mexer em paralelo de novo, avisar aqui ANTES de
+editar storage.js/worker/index.js evita retrabalho.
+
+------------------------------------------------------------------------------
+ACHADOS DAS AUDITORIAS (resumo - motivo das correcoes abaixo):
+------------------------------------------------------------------------------
+- Servidor podia descartar item invalido em silencio e responder 200 - o
+  aparelho marcava como sincronizado e o registro sumia pra sempre.
+- Upsert do D1 podia REGREDIR um resultado de laboratorio ja gravado se um
+  agente atrasado (offline o dia todo) sincronizasse depois.
+- Item invalido no lote travava o D1 sem transacao/tratamento, derrubando o
+  lote inteiro sem aviso.
+- Cadastro feito DURANTE o envio ao servidor (3G lento) era sobrescrito
+  pelo snapshot antigo ao terminar o fetch - dado apagado do aparelho.
+- Servidor devolver lista vazia (bug, migracao ruim, binding errado) fazia
+  TODOS os aparelhos se esvaziarem no proximo poll de 10s - a falha mais
+  perigosa encontrada, e uma correcao minha anterior tinha piorado isso.
+- GPS negado/sem fix gravava a armadilha na posicao FIXA do centro de Carmo
+  (-21.9339,-42.6089), carimbada com uma precisao FALSA de 10m - sem
+  nenhum aviso, indistinguivel de um fix real no mapa/relatorio.
+- Digitar so um espaco no campo numero passava na validacao e gravava
+  armadilha sem numero (invisivel pro laboratorio).
+- Numero de armadilha duplicado era aceito sem nenhum aviso.
+- No laboratorio, tocar num atalho (fixa o id) e depois editar o numero
+  pra outro sem atalho mantinha o id antigo - a leitura ia pra armadilha
+  ERRADA, com "sucesso" normal na tela.
+- Numero sem nenhuma correspondencia no laboratorio salvava a leitura
+  "solta", sem atualizar nenhuma armadilha, sem avisar ninguem.
+- Nao existia service worker nem manifest, apesar do app dizer "100%
+  offline" - se o agente fechasse o navegador numa area sem sinal, o app
+  nem abria de novo (tela de erro padrao do navegador).
+- BroadcastChannel nunca entrega mensagem pra propria aba que a enviou -
+  quem cadastrava/editava so via a lista mudar na PROPRIA tela depois de
+  um F5. O painel "tempo real" so era tempo real entre abas diferentes.
+- Laboratorio nao limpava numero/id da armadilha apos salvar - duplo toque
+  gravava duas leituras na mesma OV.
+
+------------------------------------------------------------------------------
+CORRECOES APLICADAS (arquivo: o que mudou):
+------------------------------------------------------------------------------
+worker/src/index.js:
+  - upsertTrap: ON CONFLICT so aceita se atualizada_em for igual ou mais
+    nova (nao regride); ultimos_ovos/ultima_palheta/ultima_leitura_em usam
+    COALESCE pra nunca apagar resultado de lab ja gravado.
+  - handleSync: valida cada item (motivoRecusaTrap/motivoRecusaReading) e
+    devolve trapsAceitos/trapsRecusados/readingsAceitos/readingsRecusados
+    explicitos - nao mais {ok:true} generico. Erro por item nao derruba
+    mais o lote inteiro (try/catch por item).
+
+src/lib/storage.js:
+  - tentarSincronizarEmSegundoPlano: so marca como sincronizado os ids que
+    o servidor CONFIRMOU explicitamente (trapsAceitos/readingsAceitos), e
+    rele getArmadilhas()/getLeituras() depois do fetch (nao usa mais o
+    snapshot de antes do await) - cadastro feito durante o envio nao e
+    mais apagado.
+  - sincronizarDadosDoServidor: NOVA trava - se o servidor devolver lista
+    vazia enquanto o aparelho tem armadilhas sincronizadas localmente,
+    ignora a resposta e nao apaga nada (so loga aviso). Efeito colateral
+    documentado: o botao "Zerar Dados" agora demora a propagar pra OUTROS
+    aparelhos (o que apertou zera na hora; os outros so zeram quando essa
+    trava nao se aplicar mais). Troca deliberada: perder dado de campo por
+    bug e pior que essa demora.
+  - cadastrarArmadilha: precisaoGps fica null (nao mais 10 fabricado)
+    quando nao ha fix real de GPS.
+  - notificarAtualizacaoStorage() nova: alem do broadcast pras outras
+    abas, notifica os listeners LOCAIS tambem - onStorageUpdate agora
+    dispara na propria aba que fez a mudanca.
+  - normalizarNumeroArmadilha() (ja existia de antes) confirmada como
+    fonte unica de verdade pro numero sem prefixo.
+
+src/features/campo/InstalarArmadilhaScreen.jsx:
+  - handleRegistrar: valida o NUCLEO do numero (sem prefixo), bloqueia
+    salvar com alert() se localizacao.accuracy == null (sem fix de GPS -
+    nao deixa mais gravar na posicao fixa do centro de Carmo), avisa com
+    confirm() se o numero ja existe em outra armadilha antes de prosseguir.
+
+src/features/laboratorio/LaboratorioScreen.jsx:
+  - onChange do campo numero: limpa armadilhaId quando o texto digitado
+    NAO bate com nenhum atalho (antes so setava quando batia, nunca
+    limpava - causava leitura na armadilha errada).
+  - handleSalvar: confirma ANTES de salvar se existe armadilha
+    correspondente (por id ou numero); avisa se vai ficar "solta".
+  - Reset pos-salvamento agora limpa numeroArmadilha/armadilhaId/
+    numeroPalheta tambem (evita duplo toque = duas leituras na mesma OV).
+
+public/sw.js (NOVO) + src/main.jsx:
+  - Service worker minimo: cache-first fallback pra navegacao e recursos
+    da PROPRIA origem (nao mexe em tiles de mapa/fontes externas). Sem
+    isso o app nao abria offline depois de fechado.
+
+------------------------------------------------------------------------------
+TESTES REALIZADOS (build de producao real, vite preview, nao dev server):
+------------------------------------------------------------------------------
+- Build limpo em todas as rodadas.
+- GPS negado (accuracy null) + tentativa de salvar: confirmado 0
+  armadilhas gravadas (bloqueio funcionou).
+- Numero duplicado: confirmado que os dois confirm() disparam na ordem
+  certa (duplicado primeiro, depois espacamento menor que 300m) com o
+  texto certo; testado os dois caminhos - cancelar bloqueia (fica em 1),
+  confirmar ambos deixa salvar (vai pra 2, os dois com numero 05 de
+  proposito).
+- Service worker: registro FALHOU no navegador automatizado desta sessao
+  (erro generico "An unknown error occurred when fetching the script").
+  Sintaxe do sw.js confirmada valida via node --check. Nao consegui
+  confirmar se e bug real ou limitacao do ambiente de automacao (comum em
+  Chrome headless/sandboxed bloquear Service Worker). PRECISA DE TESTE EM
+  NAVEGADOR DE VERDADE (celular/tablet) ANTES DE CONFIAR NO OFFLINE.
+- Painel tempo real na mesma aba, e os dois avisos novos do laboratorio:
+  revisados no codigo, nao testados interativamente por tempo.
+
+------------------------------------------------------------------------------
+NAO FEITO (fica de fora por decisao do Almir ou falta de tempo):
+------------------------------------------------------------------------------
+- Autenticacao da API: Almir decidiu que NAO precisa - sera um app interno
+  pra poucos, leigos. API continua aberta de proposito.
+- Melhorias de performance/bateria (mapa recriando a cada tick de GPS,
+  dois watchPosition simultaneos, contraste de cores) - nao criticas pra
+  amanha, ficam pra depois.
+- Ainda NAO commitei nem dei deploy dessas correcoes - Almir pediu pra
+  juntar mais antes de parar pra testar/publicar. Build local validado,
+  mas nada disso esta em producao ainda.
+
+PRECISO DE AJUDA PRA TESTAR EM APARELHO REAL (celular/tablet Samsung Tab
+A11) antes dos agentes sairem amanha, principalmente: service worker
+funcionando offline de verdade, e o fluxo completo de cadastro com GPS
+real andando na rua.
+==============================================================================

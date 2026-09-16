@@ -81,6 +81,24 @@ export function LaboratorioScreen({
       return;
     }
 
+    // Confirma ANTES de salvar que existe uma armadilha de verdade pra
+    // receber essa leitura. Sem isso, digitar um numero que nao bate com
+    // nenhuma OV cadastrada salvava a leitura "solta" - o tecnico via
+    // "sucesso" na tela, mas nenhuma armadilha tinha a contagem de ovos
+    // atualizada, e ninguem percebia ate o relatorio sair errado.
+    const numeroDigitadoNucleo = numeroArmadilha.trim().replace(/^OV[-_ ]*/i, '').trim().toLowerCase();
+    const armadilhaEncontrada = armadilhas.some(
+      (a) => a.id === armadilhaId || (a.numero && a.numero.toLowerCase() === numeroDigitadoNucleo)
+    );
+    if (!armadilhaEncontrada) {
+      const prosseguirSemMatch = window.confirm(
+        `⚠️ Não encontrei nenhuma OV-${numeroArmadilha.trim().replace(/^OV[-_ ]*/i, '')} cadastrada.\n\nSe salvar assim mesmo, esta leitura NÃO vai atualizar a contagem de ovos de nenhuma armadilha - vai ficar "solta".\n\nConfira o número antes de continuar. Deseja salvar mesmo assim?`
+      );
+      if (!prosseguirSemMatch) {
+        return;
+      }
+    }
+
     setSalvando(true);
     try {
       const nova = await registrarLeituraLaboratorio({
@@ -98,7 +116,12 @@ export function LaboratorioScreen({
       setSucessoMsg(`Leitura salva! OV-${nova.numeroArmadilha} (${nova.numeroPalheta}): ${nova.ovos} ovos (${nova.positiva ? 'Positiva' : 'Negativa'}).`);
       setHistoricoLeituras(getLeituras());
 
-      // Reset
+      // Reset. Limpa TAMBEM numero/id da armadilha e da palheta - sem isso,
+      // apertar salvar de novo por engano (ou duplo toque) grava outra
+      // leitura na MESMA armadilha que acabou de ser salva.
+      setNumeroArmadilha('');
+      setArmadilhaId('');
+      setNumeroPalheta('P-01');
       setQtdOvos(0);
       setFotoPalheta(null);
       setLaudoAuditoria(null);
@@ -203,6 +226,13 @@ export function LaboratorioScreen({
                       if (match) {
                         setArmadilhaId(match.id);
                         if (match.palheta) setNumeroPalheta(match.palheta);
+                      } else {
+                        // SEM ISSO: tocar num atalho (fixa armadilhaId) e depois
+                        // editar o numero pra outro que nao tem atalho mantinha o
+                        // id antigo - a leitura salvava na armadilha ERRADA (a
+                        // do atalho), com "sucesso" normal na tela, sem o
+                        // tecnico perceber. Agora so casa pelo numero digitado.
+                        setArmadilhaId('');
                       }
                     }}
                     className="w-full bg-slate-50 border-2 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl px-3 py-2 text-base font-black text-slate-900 text-center placeholder:text-slate-400 focus:outline-none transition-all"

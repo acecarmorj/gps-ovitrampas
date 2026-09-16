@@ -19,6 +19,24 @@ const broadcast = typeof window !== 'undefined' && window.BroadcastChannel
   ? new BroadcastChannel('gps_ovitrampas_sync')
   : null;
 
+// BroadcastChannel NUNCA entrega mensagem pra propria aba que a enviou (e
+// especificacao do navegador, nao bug). Sem isso, o painel "tempo real" so
+// atualizava quando OUTRA aba/aparelho mudava algo - quem acabou de
+// cadastrar/editar/excluir na PROPRIA tela so via a lista mudar depois de
+// um F5 manual.
+const localUpdateListeners = new Set();
+
+function notificarAtualizacaoStorage(payload) {
+  if (broadcast) {
+    broadcast.postMessage(payload);
+  }
+  localUpdateListeners.forEach((cb) => {
+    try {
+      cb();
+    } catch (e) {}
+  });
+}
+
 /**
  * O campo `numero` guarda SEMPRE o numero cru ("02"), sem prefixo.
  * Todas as telas montam o rotulo adicionando o prefixo na hora de exibir
@@ -188,9 +206,7 @@ export async function salvarArmadilhas(lista) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(TRAPS_STORAGE_KEY, JSON.stringify(lista));
-    if (broadcast) {
-      broadcast.postMessage({ type: 'TRAPS_UPDATE', traps: lista });
-    }
+    notificarAtualizacaoStorage({ type: 'TRAPS_UPDATE', traps: lista });
 
     // Grava também no IndexedDB para redundância total.
     // Limpa antes de regravar: o IndexedDB precisa ser um espelho fiel da
@@ -265,7 +281,10 @@ export async function cadastrarArmadilha({
     quarteirao: quarteirao || 'Q-01',
     latitude: Number(latitude),
     longitude: Number(longitude),
-    precisaoGps: precisaoGps ? Math.round(precisaoGps) : 10,
+    // Nunca inventa precisao: se nao veio fix real de GPS, fica null (visivel
+    // como "sem GPS" nos relatorios) em vez de fingir 10m - um valor de 10m
+    // fabricado é indistinguivel de um fix bom de verdade.
+    precisaoGps: precisaoGps != null ? Math.round(precisaoGps) : null,
     temFoto: Boolean(fotoDataUrl),
     status: 'instalada',
     syncStatus: 'pendente', // 'pendente' | 'sincronizado'
@@ -384,10 +403,8 @@ export async function limparTodasArmadilhas() {
     tx.objectStore(LAB_STORE).clear();
     tx.objectStore(PHOTO_STORE).clear();
 
-    if (broadcast) {
-      broadcast.postMessage({ type: 'TRAPS_UPDATE', traps: [] });
-      broadcast.postMessage({ type: 'LAB_UPDATE', readings: [] });
-    }
+    notificarAtualizacaoStorage({ type: 'TRAPS_UPDATE', traps: [] });
+    notificarAtualizacaoStorage({ type: 'LAB_UPDATE', readings: [] });
 
     // Chama endpoint remoto de limpeza total se online
     if (typeof navigator !== 'undefined' && navigator.onLine) {
@@ -420,9 +437,7 @@ export async function salvarLeituras(lista) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LAB_STORAGE_KEY, JSON.stringify(lista));
-    if (broadcast) {
-      broadcast.postMessage({ type: 'LAB_UPDATE', readings: lista });
-    }
+    notificarAtualizacaoStorage({ type: 'LAB_UPDATE', readings: lista });
 
     const db = await openOvitrampasDB();
     const tx = db.transaction(LAB_STORE, 'readwrite');
@@ -556,7 +571,14 @@ export async function tentarSincronizarEmSegundoPlano() {
       syncedAt: new Date().toISOString()
     };
 
-    let sucessoEnvio = false;
+    // Ids realmente enviados neste lote. Registro que o agente cadastrar
+    // DURANTE o fetch (3G lento = 10s ou mais) nao esta aqui e nao pode ser
+    // marcado como sincronizado.
+    const idsArmEnviados = new Set(pendentesArm.map((a) => a.id));
+    const idsLeitEnviados = new Set(pendentesLeit.map((l) => l.id));
+
+    let armAceitos = null;
+    let leitAceitos = null;
 
     try {
       const res = await fetch(API_SYNC_ENDPOINT, {
@@ -564,8 +586,26 @@ export async function tentarSincronizarEmSegundoPlano() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
       if (res.ok) {
-        sucessoEnvio = true;
+        const data = await res.json().catch(() => null);
+        // So confia na confirmacao explicita do servidor (lista de ids
+        // gravados). Antes bastava res.ok - mas o servidor podia descartar
+        // itens em silencio, e portal de wi-fi publico tambem responde 200.
+        // O registro era marcado como sincronizado, saia da fila e depois era
+        // apagado do aparelho pelo proximo poll: dado perdido de vez.
+        if (data && data.ok === true && Array.isArray(data.trapsAceitos)) {
+          armAceitos = new Set(data.trapsAceitos);
+          leitAceitos = new Set(Array.isArray(data.readingsAceitos) ? data.readingsAceitos : []);
+
+          const recusados = [
+            ...(Array.isArray(data.trapsRecusados) ? data.trapsRecusados : []),
+            ...(Array.isArray(data.readingsRecusados) ? data.readingsRecusados : [])
+          ];
+          if (recusados.length > 0) {
+            console.warn('Registros recusados pelo servidor (continuam pendentes):', recusados);
+          }
+        }
       }
     } catch (netErr) {
       // Se a rota remota ainda não estiver no ar ou falhar a rede,
@@ -573,13 +613,19 @@ export async function tentarSincronizarEmSegundoPlano() {
       console.log('Servidor remoto inacessível no momento. Dados mantidos salvos localmente.');
     }
 
-    if (sucessoEnvio) {
-      // Marca como sincronizado no LocalStorage e IndexedDB
-      const armadilhasAtualizadas = armadilhas.map((a) =>
-        a.syncStatus === 'pendente' ? { ...a, syncStatus: 'sincronizado' } : a
+    if (armAceitos) {
+      // Rele a lista AGORA: entre o snapshot e a resposta o agente pode ter
+      // cadastrado outra armadilha. Gravar o snapshot antigo apagava esse
+      // cadastro do localStorage e do IndexedDB.
+      const armadilhasAtualizadas = getArmadilhas().map((a) =>
+        a.syncStatus === 'pendente' && idsArmEnviados.has(a.id) && armAceitos.has(a.id)
+          ? { ...a, syncStatus: 'sincronizado' }
+          : a
       );
-      const leiturasAtualizadas = leituras.map((l) =>
-        l.syncStatus === 'pendente' ? { ...l, syncStatus: 'sincronizado' } : l
+      const leiturasAtualizadas = getLeituras().map((l) =>
+        l.syncStatus === 'pendente' && idsLeitEnviados.has(l.id) && leitAceitos.has(l.id)
+          ? { ...l, syncStatus: 'sincronizado' }
+          : l
       );
 
       await salvarArmadilhas(armadilhasAtualizadas);
@@ -632,6 +678,19 @@ export async function sincronizarDadosDoServidor() {
 
     const armadilhasLocais = getArmadilhas();
     const deletedIds = getDeletedTrapIds();
+
+    // TRAVA DE SEGURANCA: servidor devolver lista vazia enquanto o aparelho
+    // tem registros sincronizados nao pode apagar nada. Sem isso, um D1
+    // zerado por engano, uma migracao mal feita ou um binding errado
+    // apagaria o trabalho de TODOS os celulares em ate 10 segundos (o
+    // proximo poll), inclusive o IndexedDB. So confia em lista vazia se o
+    // aparelho tambem ja estiver vazio (ex: acabou de dar "zerar dados").
+    const localizadosSincronizados = armadilhasLocais.filter((a) => a.syncStatus === 'sincronizado');
+    if (data.traps.length === 0 && localizadosSincronizados.length > 0) {
+      console.warn('Servidor devolveu lista vazia com dados locais sincronizados presentes - nada foi apagado.');
+      return armadilhasLocais;
+    }
+
     const map = new Map();
 
     // 1. Carrega dados vindos do servidor D1 (exceto as deletadas)
@@ -706,16 +765,23 @@ export function iniciarMonitoramentoConectividade() {
 }
 
 export function onStorageUpdate(callback) {
-  if (!broadcast) return () => {};
+  // Listener local: dispara pra atualizacoes feitas NESTA propria aba
+  // (BroadcastChannel nao entrega mensagem pra quem a enviou).
+  localUpdateListeners.add(callback);
 
   const handleMessage = (evt) => {
     if (evt.data && (evt.data.type === 'TRAPS_UPDATE' || evt.data.type === 'LAB_UPDATE')) {
       callback();
     }
   };
+  if (broadcast) {
+    broadcast.addEventListener('message', handleMessage);
+  }
 
-  broadcast.addEventListener('message', handleMessage);
   return () => {
-    broadcast.removeEventListener('message', handleMessage);
+    localUpdateListeners.delete(callback);
+    if (broadcast) {
+      broadcast.removeEventListener('message', handleMessage);
+    }
   };
 }
