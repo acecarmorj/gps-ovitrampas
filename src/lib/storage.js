@@ -57,6 +57,44 @@ const API_SYNC_ENDPOINT = `${API_BASE_URL}/api/sync`;
 const API_TRAPS_ENDPOINT = `${API_BASE_URL}/api/traps`;
 const API_READINGS_ENDPOINT = `${API_BASE_URL}/api/readings`;
 
+/**
+ * Executa fetch com timeout resiliente (padrão 8s).
+ * Evita travamentos em redes 3G/Edge oscilantes que mantêm socket TCP aberto sem transmitir dados.
+ */
+export async function fetchComTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+const SYNC_ERRORS_KEY = 'ovitrampas_sync_errors';
+
+export function getSyncErrors() {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem(SYNC_ERRORS_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+export function setSyncErrors(errors) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SYNC_ERRORS_KEY, JSON.stringify(errors));
+    notificarAtualizacaoStorage({ type: 'SYNC_ERRORS_UPDATE', errors });
+  } catch (e) {}
+}
+
+export function limparSyncErrors() {
+  setSyncErrors([]);
+}
+
 // Solicita persistência garantida no navegador (evita limpeza automática do cache)
 export async function solicitarArmazenamentoPermanente() {
   if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
@@ -219,6 +257,12 @@ export async function salvarArmadilhas(lista) {
     store.clear();
     lista.forEach((item) => store.put(item));
   } catch (e) {
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+      console.error('ALERTA: Limite de armazenamento (quota) do navegador atingido!', e);
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('ovitrampas_quota_exceeded', { detail: { error: e } }));
+      }
+    }
     console.warn('Erro ao persistir armadilhas:', e);
   }
 }
@@ -382,9 +426,9 @@ export async function excluirArmadilha(id) {
   // Exclui imediatamente no Cloudflare D1 se houver conexão
   if (typeof navigator !== 'undefined' && navigator.onLine) {
     try {
-      await fetch(`${API_TRAPS_ENDPOINT}?id=${encodeURIComponent(id)}`, {
+      await fetchComTimeout(`${API_TRAPS_ENDPOINT}?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
-      });
+      }, 8000);
     } catch (e) {
       console.warn('Exclusão remota falhou (permanece deletada localmente):', e);
     }
@@ -396,6 +440,7 @@ export async function limparTodasArmadilhas() {
     localStorage.removeItem(TRAPS_STORAGE_KEY);
     localStorage.removeItem(LAB_STORAGE_KEY);
     localStorage.removeItem(DELETED_TRAPS_KEY);
+    limparSyncErrors();
 
     const db = await openOvitrampasDB();
     const tx = db.transaction([TRAPS_STORE, LAB_STORE, PHOTO_STORE], 'readwrite');
@@ -409,7 +454,7 @@ export async function limparTodasArmadilhas() {
     // Chama endpoint remoto de limpeza total se online
     if (typeof navigator !== 'undefined' && navigator.onLine) {
       try {
-        await fetch(`${API_BASE_URL}/api/traps/clear`, { method: 'POST' });
+        await fetchComTimeout(`${API_BASE_URL}/api/traps/clear`, { method: 'POST' }, 8000);
       } catch (e) {
         console.warn('Limpeza remota D1 falhou:', e);
       }
@@ -442,8 +487,17 @@ export async function salvarLeituras(lista) {
     const db = await openOvitrampasDB();
     const tx = db.transaction(LAB_STORE, 'readwrite');
     const store = tx.objectStore(LAB_STORE);
+    store.clear();
     lista.forEach((item) => store.put(item));
-  } catch (e) {}
+  } catch (e) {
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+      console.error('ALERTA: Limite de armazenamento (quota) do navegador atingido ao salvar leituras!', e);
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('ovitrampas_quota_exceeded', { detail: { error: e } }));
+      }
+    }
+    console.warn('Erro ao persistir leituras:', e);
+  }
 }
 
 export async function registrarLeituraLaboratorio({
@@ -531,13 +585,15 @@ export function getStatusSincronizacao() {
   const pendentesArm = armadilhas.filter((a) => a.syncStatus === 'pendente').length;
   const pendentesLeit = leituras.filter((l) => l.syncStatus === 'pendente').length;
   const totalPendentes = pendentesArm + pendentesLeit;
+  const syncErrors = getSyncErrors();
 
   return {
     isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     syncInProgress,
     totalPendentes,
     pendentesArm,
-    pendentesLeit
+    pendentesLeit,
+    syncErrors: syncErrors.length
   };
 }
 
@@ -581,11 +637,11 @@ export async function tentarSincronizarEmSegundoPlano() {
     let leitAceitos = null;
 
     try {
-      const res = await fetch(API_SYNC_ENDPOINT, {
+      const res = await fetchComTimeout(API_SYNC_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }, 8000);
 
       if (res.ok) {
         const data = await res.json().catch(() => null);
@@ -604,6 +660,9 @@ export async function tentarSincronizarEmSegundoPlano() {
           ];
           if (recusados.length > 0) {
             console.warn('Registros recusados pelo servidor (continuam pendentes):', recusados);
+            setSyncErrors(recusados);
+          } else {
+            limparSyncErrors();
           }
         }
       }
@@ -668,10 +727,92 @@ function mapD1TrapToLocal(row) {
 /**
  * Puxa armadilhas cadastradas por OUTROS aparelhos/agentes na central via D1
  */
+function mapD1ReadingToLocal(row) {
+  let laudo = null;
+  if (row.laudo_auditoria) {
+    if (typeof row.laudo_auditoria === 'string') {
+      try {
+        laudo = JSON.parse(row.laudo_auditoria);
+      } catch (e) {
+        laudo = null;
+      }
+    } else {
+      laudo = row.laudo_auditoria;
+    }
+  }
+
+  return {
+    id: row.id,
+    armadilhaId: row.armadilha_id,
+    numeroArmadilha: normalizarNumeroArmadilha(row.numero_armadilha),
+    numeroPalheta: String(row.numero_palheta || 'P-01').trim(),
+    ovos: Number(row.ovos || 0),
+    positiva: Boolean(row.positiva),
+    tecnicoNome: row.lida_por || 'Laboratório Carmo',
+    observacao: row.observacao || '',
+    fotoPalheta: row.foto_palheta || null,
+    lidaEm: row.lida_em,
+    laudoAuditoria: laudo,
+    syncStatus: 'sincronizado'
+  };
+}
+
+/**
+ * Puxa leituras de laboratório cadastradas por OUTROS aparelhos/agentes na central via D1
+ */
+export async function sincronizarLeiturasDoServidor() {
+  if (typeof navigator === 'undefined' || !navigator.onLine) return;
+  try {
+    const res = await fetchComTimeout(API_READINGS_ENDPOINT, {}, 8000);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.readings)) return;
+
+    const leiturasLocais = getLeituras();
+    const localizadasSincronizadas = leiturasLocais.filter((l) => l.syncStatus === 'sincronizado');
+
+    // Trava de seguranca: servidor devolver lista vazia com leituras ja sincronizadas
+    // no aparelho nao apaga nada.
+    if (data.readings.length === 0 && localizadasSincronizadas.length > 0) {
+      console.warn('Servidor devolveu lista de leituras vazia com dados locais presentes - nada apagado.');
+      return leiturasLocais;
+    }
+
+    const map = new Map();
+
+    // 1. Carrega dados vindos do servidor D1
+    data.readings.forEach((row) => {
+      const parsed = mapD1ReadingToLocal(row);
+      map.set(parsed.id, parsed);
+    });
+
+    // 2. Preserva registros locais ainda pendentes de envio
+    leiturasLocais.forEach((loc) => {
+      if (loc.syncStatus === 'pendente') {
+        map.set(loc.id, loc);
+      }
+    });
+
+    const final = Array.from(map.values()).sort(
+      (a, b) => new Date(b.lidaEm || 0).getTime() - new Date(a.lidaEm || 0).getTime()
+    );
+
+    if (final.length !== leiturasLocais.length || data.readings.length > 0) {
+      await salvarLeituras(final);
+    }
+    return final;
+  } catch (err) {
+    console.warn('Falha ao sincronizar leituras do servidor D1:', err);
+  }
+}
+
+/**
+ * Puxa armadilhas cadastradas por OUTROS aparelhos/agentes na central via D1
+ */
 export async function sincronizarDadosDoServidor() {
   if (typeof navigator === 'undefined' || !navigator.onLine) return;
   try {
-    const res = await fetch(API_TRAPS_ENDPOINT);
+    const res = await fetchComTimeout(API_TRAPS_ENDPOINT, {}, 8000);
     if (!res.ok) return;
     const data = await res.json();
     if (!data || !Array.isArray(data.traps)) return;
@@ -720,6 +861,10 @@ export async function sincronizarDadosDoServidor() {
     if (final.length !== armadilhasLocais.length || data.traps.length > 0) {
       await salvarArmadilhas(final);
     }
+
+    // Sincroniza também as leituras de laboratório feitas por outros aparelhos
+    await sincronizarLeiturasDoServidor();
+
     return final;
   } catch (err) {
     console.warn('Falha ao sincronizar dados do servidor D1:', err);

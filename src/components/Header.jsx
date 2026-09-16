@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   ChevronLeft, Volume2, VolumeX,
-  Cloud, CloudOff, RefreshCw, Check
+  Cloud, CloudOff, RefreshCw, Check, AlertTriangle
 } from 'lucide-react';
 
 const INFO_MODULOS = {
@@ -65,7 +65,12 @@ export function Header({
             className="cursor-pointer flex items-center gap-1 text-[10px] font-bold mt-0.5"
             title="Toque para forçar envio em segundo plano"
           >
-            {syncInfo.syncInProgress ? (
+            {syncInfo.syncErrors > 0 ? (
+              <span className="text-rose-700 flex items-center gap-1 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
+                <span>{syncInfo.syncErrors} recusado(s) pelo servidor</span>
+              </span>
+            ) : syncInfo.syncInProgress ? (
               <span className="text-blue-600 flex items-center gap-1">
                 <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                 <span>Enviando em segundo plano...</span>

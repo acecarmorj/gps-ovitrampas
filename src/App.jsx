@@ -20,6 +20,13 @@ import { setMuted } from './lib/soundAlert';
 export function App() {
   const { path, navigate } = useAppPath();
   const [armadilhas, setArmadilhas] = useState([]);
+  const [quotaAviso, setQuotaAviso] = useState(false);
+
+  useEffect(() => {
+    const handleQuota = () => setQuotaAviso(true);
+    window.addEventListener('ovitrampas_quota_exceeded', handleQuota);
+    return () => window.removeEventListener('ovitrampas_quota_exceeded', handleQuota);
+  }, []);
   const [armadilhaParaLab, setArmadilhaParaLab] = useState(null);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('ovitrampa_muted') === 'true');
   const [syncInfo, setSyncInfo] = useState(getStatusSincronizacao);
@@ -52,9 +59,12 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // GPS Contínuo do Agente em Campo
+  // GPS Inteligente e Econômico (apenas quando necessário e sem concorrência)
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    // Na tela /campo, a própria tela gerencia o rastreamento entomológico com máxima precisão.
+    // Em telas sem mapa (como /laboratorio e /guia), desliga o sensor para poupar bateria.
+    const precisaGpsNoRoot = path === '/mapa' || path === '/admin';
+    if (!precisaGpsNoRoot || !navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
@@ -65,11 +75,11 @@ export function App() {
         });
       },
       (err) => console.warn('Falha watchPosition:', err),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [path]);
 
   // Controle de Som Mudo
   const handleToggleMute = () => {
@@ -126,6 +136,13 @@ export function App() {
         />
       )}
 
+      {quotaAviso && (
+        <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between z-40 shadow-md">
+          <span>⚠️ Armazenamento local do navegador cheio! Libere espaço no aparelho para continuar salvando.</span>
+          <button onClick={() => setQuotaAviso(false)} className="underline ml-2 hover:text-rose-200">Fechar</button>
+        </div>
+      )}
+
       <main className="flex-1 relative w-full h-full overflow-hidden">
         {chaveModulo === 'guia' && (
           <GuiaScreen
@@ -143,6 +160,7 @@ export function App() {
             armadilhas={armadilhas}
             onArmadilhaCadastrada={() => recarregarArmadilhas()}
             onVerMapaGeral={() => navigate('/mapa')}
+            onPosicaoAtualizada={(pos) => setUserPos(pos)}
           />
         )}
 

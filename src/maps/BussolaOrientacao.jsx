@@ -33,7 +33,13 @@ export function BussolaOrientacao({
     };
   }, []);
 
-  const guia = calculateNavigationGuidance(userPos, armadilhas);
+  const guia = React.useMemo(() => {
+    return calculateNavigationGuidance(userPos, armadilhas);
+  }, [
+    userPos?.latitude ? Math.round(userPos.latitude * 50000) : 0,
+    userPos?.longitude ? Math.round(userPos.longitude * 50000) : 0,
+    armadilhas
+  ]);
 
   // Modo Compacto (exibido como pílula / badge discreto na tela de campo)
   if (compacto) {

@@ -16,7 +16,9 @@ import { Compass } from 'lucide-react';
 
 export function InstalarArmadilhaScreen({
   armadilhas = [],
-  onArmadilhaCadastrada
+  onArmadilhaCadastrada,
+  onVerMapaGeral,
+  onPosicaoAtualizada
 }) {
   // Campos ultra simplificados:
   // 1. Nome do Morador
@@ -43,9 +45,9 @@ export function InstalarArmadilhaScreen({
     }
 
     // Extrai o núcleo digitado removendo prefixo OV- se houver
-    let core = val.toUpperCase().replace(/^OV[-_ ]*/i, '');
+    const core = val.replace(/^OV[-_ ]*/i, '').trim();
     if (!core) {
-      setNumeroArmadilha('');
+      setNumeroArmadilha(val);
       setNumeroPalheta('');
       return;
     }
@@ -81,7 +83,14 @@ export function InstalarArmadilhaScreen({
   });
 
   // Assistente de espaçamento (Regra de 300m a 400m entre armadilhas)
-  const vizinhasProximas = findNearbyTraps(localizacao, armadilhas, 3);
+  // Memoizado com resolução de ~2 metros para poupar CPU e bateria em repouso
+  const vizinhasProximas = React.useMemo(() => {
+    return findNearbyTraps(localizacao, armadilhas, 3);
+  }, [
+    Math.round((localizacao?.latitude || 0) * 50000),
+    Math.round((localizacao?.longitude || 0) * 50000),
+    armadilhas
+  ]);
   const vizinhaMaisProxima = vizinhasProximas.length > 0 ? vizinhasProximas[0] : null;
 
   const [gpsStatus, setGpsStatus] = useState('buscando'); // 'buscando' | 'pronto' | 'erro'
@@ -118,6 +127,20 @@ export function InstalarArmadilhaScreen({
       latitude,
       longitude
     );
+
+    // Comunica a posição unificada para o restante do app
+    onPosicaoAtualizada?.({
+      latitude,
+      longitude,
+      accuracy: roundedAcc
+    });
+
+    // Throttling de repouso: se o agente está parado (deslocamento < 1.5m) e a precisão não variou,
+    // não re-renderiza o componente nem o mapa para poupar bateria e evitar aquecimento
+    const estaParado = !forcarGeocoding && lastGeocodedRef.current.lat !== 0 && dist < 1.5 && Math.abs(roundedAcc - (localizacao.accuracy || 0)) < 3;
+    if (estaParado) {
+      return;
+    }
 
     // Re-resolve endereço e quarteirão oficial quando:
     // 1. Forçado pelo usuário
@@ -494,7 +517,7 @@ export function InstalarArmadilhaScreen({
         )}
 
         <div
-          className={`bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-800 max-h-[82dvh] overflow-y-auto ${
+          className={`bg-white/98 sm:bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/20 border border-slate-300 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-900 max-h-[82dvh] overflow-y-auto ${
             painelAberto ? '' : 'hidden'
           }`}
         >
@@ -502,14 +525,14 @@ export function InstalarArmadilhaScreen({
           <button
             type="button"
             onClick={() => setPainelAberto(false)}
-            className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-700 active:scale-95 transition-all"
+            className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 active:scale-95 transition-all"
           >
             <ChevronDown className="w-4 h-4" />
             <span>Ocultar e ver o mapa</span>
           </button>
 
           {/* ENDEREÇO E QUARTEIRÃO DETECTADOS 100% PELO GPS */}
-          <div className="flex items-center gap-2.5 bg-emerald-50/85 backdrop-blur-xs px-3.5 py-2.5 rounded-2xl border border-emerald-200/80 shadow-xs">
+          <div className="flex items-center gap-2.5 bg-emerald-50 px-3.5 py-2.5 rounded-2xl border border-emerald-300 shadow-xs">
             <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4 text-emerald-700" />
             </div>
