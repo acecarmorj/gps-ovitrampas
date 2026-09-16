@@ -1974,3 +1974,59 @@ STATUS: APROVADO, CONCLUÍDO E HOMOLOGADO EM PRODUÇÃO
    - Commit e push efetuados para GitHub `main`.
    - Deploy automático atualizado no Cloudflare Pages: https://gps-ovitrampas.pages.dev
 ==============================================================================
+
+==============================================================================
+SEÇÃO 50 - FILTROS DE VISUALIZAÇÃO LIMPA DO MAPA: OCULTAR RÓTULOS E JANELA FLUTUANTE
+DATA: 16/09/2026
+AUTOR: GEMINI (via Antigravity)
+SOLICITANTE: ALMIR LK
+STATUS: APROVADO, CONCLUÍDO E HOMOLOGADO EM PRODUÇÃO
+==============================================================================
+
+1. CONTEXTO E SOLICITAÇÃO DO USUÁRIO:
+   - "nosso planejament antecidado sem ajuda do app nao deu muito ceto porque nao
+     tinhamos como medir as distancias com exatidao antes de implantar entao
+     ficou assim https://gps-ovitrampas.pages.dev/mapa. Quero que vc coloque um
+     filtro pra ocultar os rotulos das armadilhas e janela de dados flutuante e
+     deixe so as linhas assim como tem um botao para ocultar as linhas, depois vou
+     te pedir outra coisa mas faça isso primeiro"
+   - "no mapa do painel adm tambem e do agente tambem"
+
+2. MOTIVO TÉCNICO:
+   - Com as 35 armadilhas ativas em Carmo-RJ, ao visualizar a malha municipal
+     completa com zoom panorâmico, os balões de texto das armadilhas ([ 🪤 ARM-25 5d ])
+     e o cabeçalho flutuante cobriam a visualização das retas geodésicas de 300m/400m.
+
+3. RECURSOS IMPLEMENTADOS:
+   a) Modo Sem Rótulos (Pontos Discretos de Alta Definição):
+      - Em `src/maps/leafletIcons.js`, a função `ovitrampaIcon(armadilha, semRotulo)`
+        agora suporta renderizar um ponto circular ultranítido (13px de diâmetro) com
+        aro branco e sombra, respeitando a cor da situação biológica da armadilha.
+      - Elimina o balão largo de 120px e desobstrui 100% da visualização das linhas
+        de distância e da topografia da cidade.
+      - Ao tocar/passar o mouse sobre o ponto, exibe micro-tooltip identificador
+        (`ARM-xx - Bairro`) e o clique continua abrindo o card de detalhes normal.
+   b) Controle de Janela de Dados Flutuante:
+      - Permite recolher/ocultar a janela superior de indicadores e pesquisa, liberando
+        a tela cheia do mapa tanto no Mapa do Agente (`/mapa`) quanto no Painel do
+        Administrador (`/admin`).
+      - Quando oculto, exibe uma mini-pílula flutuante superior com atalhos rápidos
+        para reabrir o painel ou alternar entre "Rótulos Ativos" e "Só Linhas e Pontos".
+   c) Botões Integrados em `src/maps/MapControlButtons.jsx`:
+      - Adicionado botão `<Tag />` (Azul quando ativo) para alternar balões de rótulo.
+      - Adicionado botão `<EyeOff /> / <Eye />` para alternar janela flutuante.
+      - Ficam posicionados na coluna lateral flutuante junto com o Recentralizar,
+        a Régua de Distâncias (300m) e o Satélite.
+
+4. COMPONENTES ATUALIZADOS:
+   - `src/maps/leafletIcons.js`
+   - `src/maps/MapControlButtons.jsx`
+   - `src/maps/MapaGrandeOvitrampa.jsx`
+   - `src/features/acompanhamento/PainelAcompanhamentoScreen.jsx`
+   - `src/features/admin/PainelAdminScreen.jsx`
+
+5. BUILD E DEPLOY:
+   - `npm run build` aprovado sem erros (16.73s).
+   - Commit e push efetuados para GitHub `main`.
+   - Deploy automático no Cloudflare Pages: https://gps-ovitrampas.pages.dev
+==============================================================================

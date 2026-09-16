@@ -18,8 +18,15 @@ export function MapaGrandeOvitrampa({
   controlTop = 60,
   outrosAgentes = [],
   agenteSelecionado = null,
-  onSelectAgente
+  onSelectAgente,
+  showLabels,
+  onToggleLabels,
+  showPanel,
+  onTogglePanel
 }) {
+  const [internalShowLabels, setInternalShowLabels] = useState(true);
+  const effectiveShowLabels = showLabels !== undefined ? showLabels : internalShowLabels;
+  const handleToggleLabels = onToggleLabels || (() => setInternalShowLabels((prev) => !prev));
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
@@ -243,9 +250,16 @@ export function MapaGrandeOvitrampa({
 
       const isSelected = armadilhaSelecionada && armadilhaSelecionada.id === arm.id;
       const marker = L.marker([arm.latitude, arm.longitude], {
-        icon: ovitrampaIcon(arm),
+        icon: ovitrampaIcon(arm, !effectiveShowLabels),
         zIndexOffset: isSelected ? 1500 : 1000
       });
+
+      if (!effectiveShowLabels) {
+        marker.bindTooltip(`ARM-${arm.numero} (${arm.bairro || 'Carmo'})`, {
+          direction: 'top',
+          offset: [0, -8]
+        });
+      }
 
       // Dados da armadilha só aparecem ao TOCAR/CLICAR nela (card externo via
       // onSelectArmadilha) - sem tooltip de hover, que exige 2 toques em telas
@@ -271,7 +285,7 @@ export function MapaGrandeOvitrampa({
         autoFitRef.current.fit(bounds, { maxZoom: 16 });
       }
     }
-  }, [armadilhas, armadilhaSelecionada, mostrarTodosPontos, userPos, onSelectArmadilha]);
+  }, [armadilhas, armadilhaSelecionada, mostrarTodosPontos, userPos, onSelectArmadilha, effectiveShowLabels]);
 
 
   // 5.1. Renderização de Outros Agentes em Campo (Colegas em Tempo Real)

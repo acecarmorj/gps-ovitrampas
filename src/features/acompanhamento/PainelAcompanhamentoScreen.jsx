@@ -7,7 +7,7 @@ import {
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
-import { Users, User, Radio } from 'lucide-react';
+import { Users, User, Radio, Tag, EyeOff } from 'lucide-react';
 import { excluirArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
@@ -25,6 +25,8 @@ export function PainelAcompanhamentoScreen({
   const [filtroStatus, setFiltroStatus] = useState('todas'); // 'todas' | 'instalada' | 'analisada'
   const [mostrarLista, setMostrarLista] = useState(false);
   const [mostrarColegas, setMostrarColegas] = useState(false);
+  const [mostrarRotulos, setMostrarRotulos] = useState(true);
+  const [mostrarPainelFlutuante, setMostrarPainelFlutuante] = useState(true);
   const [modalSeletorAberto, setModalSeletorAberto] = useState(false);
   const [meuAgente, setMeuAgenteState] = useState(getMeuAgente);
 
@@ -86,7 +88,11 @@ export function PainelAcompanhamentoScreen({
             setAgenteSelecionado(null);
           }}
           mostrarTodosPontos={true}
-          controlTop={108}
+          controlTop={mostrarPainelFlutuante ? 108 : 16}
+          showLabels={mostrarRotulos}
+          onToggleLabels={() => setMostrarRotulos((prev) => !prev)}
+          showPanel={mostrarPainelFlutuante}
+          onTogglePanel={() => setMostrarPainelFlutuante((prev) => !prev)}
           outrosAgentes={outrosAgentes}
           agenteSelecionado={agenteSelecionado}
           onSelectAgente={(ag) => {
@@ -96,7 +102,37 @@ export function PainelAcompanhamentoScreen({
         />
       </div>
 
+      {/* 2. BARRA MINIMALISTA QUANDO JANELA ESTIVER OCULTA */}
+      {!mostrarPainelFlutuante && (
+        <div className="absolute top-2.5 left-3 z-20 flex items-center gap-2 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setMostrarPainelFlutuante(true)}
+            className="bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200 text-slate-800 text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 hover:bg-slate-50 transition-all"
+            title="Mostrar janela de dados flutuante"
+          >
+            <Eye className="w-3.5 h-3.5 text-blue-600" />
+            <span>Janela de Dados ({totalArmadilhas} OVs)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMostrarRotulos(!mostrarRotulos)}
+            className={`backdrop-blur-md px-3 py-2 rounded-2xl border text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 transition-all ${
+              mostrarRotulos
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Alternar rótulos das armadilhas"
+          >
+            <Tag className="w-3.5 h-3.5" />
+            <span>{mostrarRotulos ? 'Rótulos Ativos' : 'Só Linhas e Pontos'}</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. TOPO FLUTUANTE: RESUMO E BUSCA (OTIMIZADO PARA TABLET SAMSUNG E MOBILE) */}
+      {mostrarPainelFlutuante && (
       <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none max-w-lg md:max-w-2xl mx-auto">
         {/* Resumo Rápido */}
         <div className="bg-white/95 backdrop-blur-md text-slate-800 px-3.5 py-2.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center justify-between pointer-events-auto text-xs">
@@ -145,6 +181,32 @@ export function PainelAcompanhamentoScreen({
               <span>{outrosAgentes.length}</span>
             </button>
 
+            {/* Alternar rótulos das armadilhas */}
+            <button
+              type="button"
+              onClick={() => setMostrarRotulos(!mostrarRotulos)}
+              className={`font-black text-xs px-2 sm:px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition-all shadow-xs active:scale-95 ${
+                mostrarRotulos
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  : 'bg-amber-100 border border-amber-300 text-amber-800'
+              }`}
+              title={mostrarRotulos ? "Ocultar balões (deixar apenas pontos e linhas limpos)" : "Mostrar rótulos das armadilhas"}
+            >
+              <Tag className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">{mostrarRotulos ? 'Sem Rótulo' : 'Com Rótulo'}</span>
+            </button>
+
+            {/* Ocultar janela flutuante */}
+            <button
+              type="button"
+              onClick={() => setMostrarPainelFlutuante(false)}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-xs px-2 py-1.5 rounded-xl flex items-center gap-1 transition-all shadow-xs active:scale-95"
+              title="Ocultar janela flutuante para ver o mapa limpo"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Ocultar</span>
+            </button>
+
             {/* Ver lista de armadilhas */}
             <button
               type="button"
@@ -186,6 +248,7 @@ export function PainelAcompanhamentoScreen({
           </select>
         </div>
       </div>
+      )}
 
       {/* 3. MODAL DE LISTA DE ARMADILHAS (LADO DIREITO NO TABLET / CENTRAL NO MOBILE) */}
       {mostrarLista && (

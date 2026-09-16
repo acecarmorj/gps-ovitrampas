@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocateFixed, Satellite, Ruler } from 'lucide-react';
+import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff } from 'lucide-react';
 
 /**
  * Botões flutuantes para controle de mapa adaptados do MOTOJAGEMINI.
@@ -10,6 +10,10 @@ export function MapControlButtons({
   onToggleSatellite,
   showDistances = true,
   onToggleDistances,
+  showLabels = true,
+  onToggleLabels,
+  showPanel = true,
+  onTogglePanel,
   top = 64,
   right = 12
 }) {
@@ -43,6 +47,7 @@ export function MapControlButtons({
         pointerEvents: 'auto'
       }}
     >
+      {/* 1. Centralizar GPS */}
       <button
         type="button"
         onClick={onRecenter}
@@ -54,6 +59,7 @@ export function MapControlButtons({
         <LocateFixed size={20} color="#0f172a" />
       </button>
 
+      {/* 2. Linhas de Distância (300m) */}
       {onToggleDistances && (
         <button
           type="button"
@@ -67,6 +73,35 @@ export function MapControlButtons({
         </button>
       )}
 
+      {/* 3. Rótulos das Armadilhas (Balões ARM-xx vs Pontos limpos) */}
+      {onToggleLabels && (
+        <button
+          type="button"
+          onClick={onToggleLabels}
+          aria-label={showLabels ? "Ocultar rótulos (deixar só pontos e linhas)" : "Mostrar rótulos das armadilhas"}
+          style={btnStyle(showLabels, '#2563eb', '#ffffff')}
+          className="active:scale-90"
+          title={showLabels ? "Ocultar balões/rótulos (deixar apenas pontos e linhas limpos)" : "Mostrar balões e rótulos das armadilhas"}
+        >
+          <Tag size={19} color={showLabels ? "#ffffff" : "#0f172a"} />
+        </button>
+      )}
+
+      {/* 4. Janela / Painel Flutuante de Dados */}
+      {onTogglePanel && (
+        <button
+          type="button"
+          onClick={onTogglePanel}
+          aria-label={showPanel ? "Ocultar janela flutuante de dados" : "Mostrar janela flutuante de dados"}
+          style={btnStyle(showPanel, '#475569', '#ffffff')}
+          className="active:scale-90"
+          title={showPanel ? "Ocultar janela de dados superior" : "Mostrar janela de dados superior"}
+        >
+          {showPanel ? <EyeOff size={19} color="#ffffff" /> : <Eye size={19} color="#0f172a" />}
+        </button>
+      )}
+
+      {/* 5. Alternar Satélite */}
       <button
         type="button"
         onClick={onToggleSatellite}

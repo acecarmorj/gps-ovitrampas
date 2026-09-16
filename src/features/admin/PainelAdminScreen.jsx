@@ -15,7 +15,7 @@ import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado'
 import { PainelInteligenciaIA } from './PainelInteligenciaIA';
 import { PainelResumoGpsCampo } from './PainelResumoGpsCampo';
 import { Satellite } from 'lucide-react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Tag, EyeOff } from 'lucide-react';
 
 // Bairros e microáreas oficiais de Carmo - RJ
 const MICROAREAS_CARMO_OFICIAIS = [
@@ -50,6 +50,8 @@ export function PainelAdminScreen({
   const [nomeResponsavelLimpeza, setNomeResponsavelLimpeza] = useState('');
   const [textoConfirmacaoZerar, setTextoConfirmacaoZerar] = useState('');
   const [toastMensagem, setToastMensagem] = useState(null);
+  const [mostrarRotulosAdmin, setMostrarRotulosAdmin] = useState(true);
+  const [mostrarPainelAdmin, setMostrarPainelAdmin] = useState(true);
 
   // Estado do formulário de edição
   const [editForm, setEditForm] = useState({
@@ -416,6 +418,34 @@ export function PainelAdminScreen({
               </button>
             </div>
 
+              {/* Alternar rótulos das armadilhas */}
+              <button
+                type="button"
+                onClick={() => setMostrarRotulosAdmin(!mostrarRotulosAdmin)}
+                className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
+                  mostrarRotulosAdmin
+                    ? 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+                    : 'bg-amber-100 border border-amber-300 text-amber-800'
+                }`}
+                title={mostrarRotulosAdmin ? "Ocultar rótulos (deixar só pontos e linhas no mapa)" : "Mostrar rótulos das armadilhas"}
+              >
+                <Tag className="w-4 h-4" />
+                <span className="hidden sm:inline">{mostrarRotulosAdmin ? 'Ocultar Rótulos' : 'Mostrar Rótulos'}</span>
+              </button>
+
+              {/* Ocultar/Mostrar painel superior no modo mapa */}
+              {modoVisualizacao === 'mapa' && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarPainelAdmin(!mostrarPainelAdmin)}
+                  className="px-3 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  title="Ocultar/mostrar painel de filtros para tela cheia do mapa"
+                >
+                  {mostrarPainelAdmin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-blue-600" />}
+                  <span className="hidden sm:inline">{mostrarPainelAdmin ? 'Ocultar Topo' : 'Mostrar Topo'}</span>
+                </button>
+              )}
+
             <button
               type="button"
               onClick={handleExportarCsv}
@@ -450,7 +480,9 @@ export function PainelAdminScreen({
         </div>
 
         {/* CARDS DE INDICADORES: GRADE 5 COLUNAS EM TABLET E DESKTOP */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center">
+        {mostrarPainelAdmin && (
+          <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center">
           <div className="bg-slate-50 border border-slate-200/90 p-2.5 rounded-2xl shadow-xs">
             <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">Total OVs</span>
             <span className="text-lg font-black text-slate-900">{totalArmadilhas}</span>
@@ -519,6 +551,8 @@ export function PainelAdminScreen({
             </select>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* ÁREA DE CONTEÚDO */}
@@ -549,6 +583,10 @@ export function PainelAdminScreen({
               onSelectArmadilha={(arm) => setArmadilhaSelecionada(arm)}
               mostrarTodosPontos={true}
               outrosAgentes={outrosAgentes}
+              showLabels={mostrarRotulosAdmin}
+              onToggleLabels={() => setMostrarRotulosAdmin((prev) => !prev)}
+              showPanel={mostrarPainelAdmin}
+              onTogglePanel={() => setMostrarPainelAdmin((prev) => !prev)}
             />
 
             {/* Badge flutuante sobre o mapa em modo dividido */}

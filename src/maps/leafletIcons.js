@@ -65,9 +65,30 @@ export function otherAgentDotIcon(label = "ACE 2", isRecent = true) {
 /**
  * Marcador de Armadilha Ovitrampa no Mapa com Situação em Tempo Real
  */
-export function ovitrampaIcon(armadilha) {
+export function ovitrampaIcon(armadilha, semRotulo = false) {
   const situacao = calcularSituacaoArmadilha(armadilha);
   const bgColor = situacao.pinCor || '#10b981';
+
+  // Modo discreto: apenas ponto circular colorido com aro branco, sem balão de texto (visão limpa das linhas)
+  if (semRotulo) {
+    const isLida = situacao.fase === 'lida';
+    const dotInner = isLida && armadilha.ultimosOvos > 0
+      ? '<div style="width:5px;height:5px;border-radius:999px;background:#ffffff;"></div>'
+      : '';
+
+    return L.divIcon({
+      className: '',
+      html: `
+        <div style="display:flex;align-items:center;justify-content:center;cursor:pointer;width:18px;height:18px;">
+          <div style="width:13px;height:13px;border-radius:999px;background:${bgColor};border:2.5px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+            ${dotInner}
+          </div>
+        </div>
+      `,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+  }
   const label = armadilha?.numero ? `ARM-${armadilha.numero}` : 'ARM';
 
   let emoji = '🪤';
