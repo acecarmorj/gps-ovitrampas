@@ -1,6 +1,20 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { findNearbyTraps } from './geoDistance';
+import { gerarCanvasMapaCalor, gerarCanvasMapaDistancias } from './heatmapCanvas';
+
+// Insere uma imagem (canvas) centralizada, respeitando a proporção original,
+// dentro de uma área máxima em mm do PDF.
+function desenharImagemAjustada(doc, canvas, areaX, areaY, areaMaxW, areaMaxH) {
+  const dataUrl = canvas.toDataURL('image/png');
+  const escala = Math.min(areaMaxW / canvas.width, areaMaxH / canvas.height);
+  const w = canvas.width * escala;
+  const h = canvas.height * escala;
+  const x = areaX + (areaMaxW - w) / 2;
+  const y = areaY + (areaMaxH - h) / 2;
+  doc.addImage(dataUrl, 'PNG', x, y, w, h);
+  return { x, y, w, h };
+}
 
 /**
  * Gera e baixa o Relatório Consolidado Oficial em PDF (Documento Único)
@@ -214,24 +228,44 @@ export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
     }
   });
 
-  // 8. Tabela 2: Tabela Completa de Ovitrampas Cadastradas
-  const yPosTabelaOvs = doc.lastAutoTable.finalY + 6;
+  // 8. Páginas de Mapas: Calor (densidade/risco) e Distâncias (espaçamento 300-400m)
+  // Sempre enquadram TODAS as armadilhas do filtro atual (bounding box automático).
+  const areaMapaX = 10, areaMapaY = 42, areaMapaMaxW = 277, areaMapaMaxH = 150;
 
-  let startYTable2 = yPosTabelaOvs + 3;
-  if (yPosTabelaOvs > 155) {
-    doc.addPage();
-    desenharCabecalho();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
-    doc.text('2. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 38);
-    startYTable2 = 42;
-  } else {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(15, 23, 42);
-    doc.text('2. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, yPosTabelaOvs);
-  }
+  doc.addPage();
+  desenharCabecalho();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('2. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO DAS OVITRAMPAS', 10, 38);
+  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1700, height: 1050 });
+  desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Intensidade proporcional à contagem de ovos da última leitura (armadilhas ainda sem leitura aparecem em tom discreto).', 10, areaMapaY + areaMapaMaxH + 6);
+
+  doc.addPage();
+  desenharCabecalho();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('3. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 38);
+  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1700, height: 1050 });
+  desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas, com a distância em metros de cada trecho.`, 10, areaMapaY + areaMapaMaxH + 6);
+
+  // 9. Tabela 2: Tabela Completa de Ovitrampas Cadastradas
+  doc.addPage();
+  desenharCabecalho();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('4. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 38);
+  const startYTable2 = 42;
 
   // Prepara as linhas de armadilhas com o cálculo das vizinhas mais próximas
   const linhasArmadilhas = armadilhas.map((arm) => {
