@@ -1,0 +1,282 @@
+[
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-05",
+    "rua": "Rua José Cabral Filho",
+    "latitude": -21.94024,
+    "longitude": -42.602342,
+    "codigo": "P-01"
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-09",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.938002,
+    "longitude": -42.602781,
+    "codigo": "P-02"
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-13",
+    "rua": "Rua Izauna Maia de Souza",
+    "latitude": -21.93905,
+    "longitude": -42.601268,
+    "codigo": "P-03"
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-13/1",
+    "rua": "Rua Paraisópolis",
+    "latitude": -21.940467,
+    "longitude": -42.600705,
+    "codigo": "P-04"
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-15",
+    "rua": "Rua Henrique José do Carmo",
+    "latitude": -21.94193,
+    "longitude": -42.6019,
+    "codigo": "P-05"
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-03",
+    "rua": "Rua Armando Chaves Monteiro",
+    "latitude": -21.940453,
+    "longitude": -42.605172,
+    "codigo": "P-06"
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-03",
+    "rua": "Rua Maria Enelina Cunha Rabello",
+    "latitude": -21.939456,
+    "longitude": -42.606493,
+    "codigo": "P-07"
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-07",
+    "rua": "Rua Lizair Vidal Ribeiro",
+    "latitude": -21.93761,
+    "longitude": -42.607475,
+    "codigo": "P-08"
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-10",
+    "rua": "Rua Soares Brandão",
+    "latitude": -21.936597,
+    "longitude": -42.605835,
+    "codigo": "P-09"
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-14",
+    "rua": "Rua Capitão Jorge Soares",
+    "latitude": -21.934576,
+    "longitude": -42.604867,
+    "codigo": "P-10"
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-17",
+    "rua": "Rua José Marciano de Carvalho",
+    "latitude": -21.933249,
+    "longitude": -42.605219,
+    "codigo": "P-11"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-01",
+    "rua": "Rua Antônio Braga Monteiro",
+    "latitude": -21.936243,
+    "longitude": -42.609958,
+    "codigo": "P-12"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-05",
+    "rua": "Rua Mário Mesquita",
+    "latitude": -21.935742,
+    "longitude": -42.608426,
+    "codigo": "P-13"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-09",
+    "rua": "Rua Luis de Moura Pinheiro",
+    "latitude": -21.934444,
+    "longitude": -42.607133,
+    "codigo": "P-14"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-11",
+    "rua": "Praça Getúlio Vargas",
+    "latitude": -21.933487,
+    "longitude": -42.608819,
+    "codigo": "P-15"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-15",
+    "rua": "Rua Princesa Izabel",
+    "latitude": -21.932475,
+    "longitude": -42.610069,
+    "codigo": "P-16"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-20",
+    "rua": "Rua Ulisses Lemgruber de Andrade",
+    "latitude": -21.932251,
+    "longitude": -42.607354,
+    "codigo": "P-17"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-22",
+    "rua": "Rua Doutor Alves Costa",
+    "latitude": -21.930487,
+    "longitude": -42.607977,
+    "codigo": "P-18"
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-23",
+    "rua": "Rua Adão Costa",
+    "latitude": -21.928832,
+    "longitude": -42.604214,
+    "codigo": "P-19"
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-03",
+    "rua": "Rua Geraldo Mariano",
+    "latitude": -21.928643,
+    "longitude": -42.609841,
+    "codigo": "P-20"
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-07",
+    "rua": "Rua Alaide Ferreira Braga Monteiro",
+    "latitude": -21.927062,
+    "longitude": -42.6094,
+    "codigo": "P-21"
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-15",
+    "rua": "Rua José Medeiros Ferreira",
+    "latitude": -21.924143,
+    "longitude": -42.612198,
+    "codigo": "P-22"
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-17",
+    "rua": "Rua Carolina França",
+    "latitude": -21.925497,
+    "longitude": -42.609975,
+    "codigo": "P-23"
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-6/1",
+    "rua": "Rua Ulisses Brito",
+    "latitude": -21.925927,
+    "longitude": -42.611646,
+    "codigo": "P-24"
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-02",
+    "rua": "Rua Joaquim Mesquita Soares",
+    "latitude": -21.942647,
+    "longitude": -42.609381,
+    "codigo": "P-25"
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-05",
+    "rua": "Rua Geraldo de Souza Câmara",
+    "latitude": -21.942252,
+    "longitude": -42.607759,
+    "codigo": "P-26"
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-09",
+    "rua": "Rua Antônio César da Silva",
+    "latitude": -21.940739,
+    "longitude": -42.608196,
+    "codigo": "P-27"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-02",
+    "rua": "Rua Dalmo José Gonçalves",
+    "latitude": -21.933526,
+    "longitude": -42.613055,
+    "codigo": "P-28"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-03",
+    "rua": "Rua Ermance Dias Ferreira",
+    "latitude": -21.931682,
+    "longitude": -42.612121,
+    "codigo": "P-29"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-06",
+    "rua": "Rua Luiz José Bento Vieira Ferreira",
+    "latitude": -21.93046,
+    "longitude": -42.614353,
+    "codigo": "P-30"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-09",
+    "rua": "Rua Irmã Zélia",
+    "latitude": -21.927075,
+    "longitude": -42.615035,
+    "codigo": "P-31"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-10",
+    "rua": "Rua Silvio Geraldo França",
+    "latitude": -21.92933,
+    "longitude": -42.613095,
+    "codigo": "P-32"
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-11",
+    "rua": "Rua José Cassane",
+    "latitude": -21.925393,
+    "longitude": -42.615237,
+    "codigo": "P-33"
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-01",
+    "rua": "Rua José Fernandes",
+    "latitude": -21.941248,
+    "longitude": -42.613679,
+    "codigo": "P-34"
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-05",
+    "rua": "Rua Roberto Simões de Araujo",
+    "latitude": -21.94122,
+    "longitude": -42.612333,
+    "codigo": "P-35"
+  }
+]

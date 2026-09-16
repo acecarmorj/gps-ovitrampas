@@ -124,3 +124,46 @@ export function ovitrampaIcon(armadilha, semRotulo = false) {
     iconAnchor: [60, 34]
   });
 }
+
+/**
+ * Marcador do Ponto Ideal de Ovitrampa (Cenário de Planejamento Geoespacial)
+ */
+export function pontoIdealIcon(ponto, semRotulo = false, selecionado = false) {
+  const bgCor = selecionado ? '#4c1d95' : '#7c3aed'; // Roxo vibrante institucional
+  const cod = ponto?.codigo || 'P-00';
+
+  if (semRotulo) {
+    return L.divIcon({
+      className: '',
+      html: `
+        <div style="display:flex;align-items:center;justify-content:center;cursor:pointer;width:20px;height:20px;">
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;width:20px;height:20px;">
+            <div style="position:absolute;width:18px;height:18px;border-radius:999px;background:rgba(124,58,237,0.3);animation:pulseLive 2.5s ease-out infinite;"></div>
+            <div style="width:13px;height:13px;border-radius:999px;background:${bgCor};border:2.5px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+              <div style="width:4px;height:4px;border-radius:999px;background:#ffffff;"></div>
+            </div>
+          </div>
+        </div>
+      `,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+  }
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:center;transform:translateY(-6px);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:${bgCor};border:2px solid #ffffff;color:#ffffff;font-family:Inter,system-ui,sans-serif;font-size:11px;font-weight:900;box-shadow:0 4px 14px rgba(124,58,237,0.45);letter-spacing:0.02em;">
+          <span>🎯</span>
+          <span>${cod}</span>
+          <span style="font-size:9px;background:rgba(255,255,255,0.25);padding:1px 4px;border-radius:4px;">${ponto?.quarteirao || ''}</span>
+        </div>
+        <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid ${bgCor};margin-top:-1px"></div>
+      </div>
+    `,
+    iconSize: [110, 36],
+    iconAnchor: [55, 34]
+  });
+}
+

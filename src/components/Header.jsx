@@ -20,6 +20,10 @@ const INFO_MODULOS = {
   admin: {
     titulo: 'Painel do Administrador',
     subtitulo: 'Gestão Municipal & Indicadores'
+  },
+  'cenario-ideal': {
+    titulo: 'Cenário Ideal de Ovitrampas',
+    subtitulo: 'Planejamento Geoespacial • Próximo Ciclo'
   }
 };
 

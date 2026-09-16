@@ -32,6 +32,11 @@ export function normalizePath(pathname) {
     return '/admin';
   }
 
+  // Cenário Ideal de Ovitrampas (Planejamento Geoespacial)
+  if (clean === '/cenario-ideal' || clean === '/ideal' || clean === '/planejamento') {
+    return '/cenario-ideal';
+  }
+
   // Rota desconhecida volta ao Guia
   return '/guia';
 }

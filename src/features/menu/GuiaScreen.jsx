@@ -3,7 +3,7 @@ import {
   PlusCircle, Map as MapIcon, FlaskConical,
   ShieldCheck, RefreshCw, Volume2, VolumeX,
   ChevronRight, Check, Cloud, CloudOff,
-  MessageCircle
+  MessageCircle, Compass
 } from 'lucide-react';
 import { DevCredit } from '../../components/DevCredit';
 
@@ -79,6 +79,15 @@ export function GuiaScreen({
       iconeBg: 'bg-amber-100 text-amber-700 border-amber-200',
       titulo: 'Painel do Administrador',
       descricao: 'Mapa + Tabela integrados, edição e remoção de armadilhas, IPO/IDO e relatório oficial em PDF.'
+    },
+    {
+      rota: '/cenario-ideal',
+      tag: 'Planejamento Geoespacial',
+      tagCor: 'bg-purple-50 text-purple-800 border-purple-200',
+      icone: Compass,
+      iconeBg: 'bg-purple-100 text-purple-700 border-purple-200',
+      titulo: 'Cenário Ideal de Ovitrampas',
+      descricao: 'Distribuição matemática e entomológica otimizada (~300m) nos 119 quarteirões habitados de Carmo-RJ para a próxima implantação.'
     }
   ];
 

@@ -6,6 +6,7 @@ import { InstalarArmadilhaScreen } from './features/campo/InstalarArmadilhaScree
 import { PainelAcompanhamentoScreen } from './features/acompanhamento/PainelAcompanhamentoScreen';
 import { LaboratorioScreen } from './features/laboratorio/LaboratorioScreen';
 import { PainelAdminScreen } from './features/admin/PainelAdminScreen';
+import { CenarioIdealScreen } from './features/planejamento/CenarioIdealScreen';
 import {
   getArmadilhas,
   onStorageUpdate,
@@ -75,7 +76,7 @@ export function App() {
   useEffect(() => {
     // Na tela /campo, a própria tela gerencia o rastreamento entomológico com máxima precisão.
     // Em telas sem mapa (como /laboratorio e /guia), desliga o sensor para poupar bateria.
-    const precisaGpsNoRoot = path === '/mapa' || path === '/admin';
+    const precisaGpsNoRoot = path === '/mapa' || path === '/admin' || path === '/cenario-ideal';
     if (!precisaGpsNoRoot || !navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -120,6 +121,7 @@ export function App() {
     if (path === '/mapa') return 'mapa';
     if (path === '/laboratorio') return 'laboratorio';
     if (path === '/admin') return 'admin';
+    if (path === '/cenario-ideal') return 'cenario-ideal';
     return 'guia';
   };
 
@@ -201,6 +203,13 @@ export function App() {
             userPos={userPos}
             outrosAgentes={outrosAgentes}
             onAtualizarArmadilhas={() => recarregarArmadilhas()}
+          />
+        )}
+
+        {chaveModulo === 'cenario-ideal' && (
+          <CenarioIdealScreen
+            armadilhas={armadilhas}
+            onVoltar={() => navigate('/guia')}
           />
         )}
       </main>

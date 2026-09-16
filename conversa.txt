@@ -2030,3 +2030,64 @@ STATUS: APROVADO, CONCLUÍDO E HOMOLOGADO EM PRODUÇÃO
    - Commit e push efetuados para GitHub `main`.
    - Deploy automático no Cloudflare Pages: https://gps-ovitrampas.pages.dev
 ==============================================================================
+
+==============================================================================
+SEÇÃO 51 - MÓDULO CENÁRIO IDEAL DE OVITRAMPAS: GRADE GEOESPACIAL OTIMIZADA (~300M)
+DATA: 16/09/2026 - 16/09/2026 19:15
+AUTOR: ANTIGRAVITY (via Google DeepMind / Pair Programming)
+STATUS: CONCLUÍDO E PUBLICADO (Cloudflare Pages)
+==============================================================================
+
+1. CONTEXTO E DEMANDA DO USUÁRIO:
+   - "agore preciso de um auxilio, vc vio que as distribuições nao ficaram muito boas
+     eu queri aque vc usasse a ia do google studio se necessario para calcular a posição
+     ais ideal das ovitrampaos dentro da cidade, no caso seria mais uma pagina que
+     ficaria com link no guia de links .dev com o nome cenario ideal orara tenatarmos
+     fazer esta distribuição da proxima vez que formos implantar as ovitrampas"
+   - Esclarecimento fundamental do usuário:
+     "Verificar que todos os 35 pontos ideais gerados caem dentro da malha urbana habitada,
+     podem ser mais ou menos pontos nao necessariamente ser 35, ok?"
+
+2. MODELAGEM MATEMÁTICA E ENTOMOLÓGICA:
+   - Base territorial auditada: `public/data/carmo-territorios-data.js` com 119 quarteirões
+     habitados da malha urbana de Carmo-RJ (excluindo os 5 distritos rurais remotos).
+   - Base de logradouros: `public/data/ruas-carmo-data.js` com 167 vias oficiais com coordenadas.
+   - Diretriz do Ministério da Saúde / PNCA:
+     * Espaçamento recomendado entre estações de monitoramento: 300m a 400m.
+     * Raio de atração / amostragem por ovitrampa: ~175m (diâmetro de ~350m).
+   - Otimização espacial por Farthest-First Traversal e relaxação proporcional por bairro:
+     * Centro: 8 pontos
+     * Progresso: 6 pontos
+     * Caixa d'Água: 5 pontos
+     * Boa Ideia: 5 pontos
+     * Jardim Centenário: 5 pontos
+     * Morro do Estado: 3 pontos
+     * Val Paraíso: 2 pontos
+     * Botafogo: 1 ponto
+     * Total: 35 pontos ideais (P-01 a P-35), cobrindo 100% dos quarteirões urbanos habitados.
+
+3. DIAGNÓSTICO COMPARATIVO COM A MALHA REAL DO CAMPO:
+   - 35 armadilhas reais instaladas no D1 auditadas:
+     * Excelente alinhamento (manter na posição atual, dist <= 60m): 4 armadilhas (OV-02, OV-03, OV-18, OV-27).
+     * Bom alinhamento (necessita apenas calibração leve de 60m a 120m): 14 armadilhas.
+     * Remanejamento estratégico (>120m ou sobreposição/cluster): 17 armadilhas.
+     * Vácuos amostrais na malha atual: 2 setores críticos (>180m de qualquer OV real, ex: P-24 em Jardim Centenário Q-6/1 e P-27 em Morro do Estado Q-09).
+
+4. ENTREGÁVEIS IMPLEMENTADOS:
+   - `src/lib/pontosIdeaisCarmo.json`: Banco com os 35 pontos ideais georreferenciados com quarteirão, logradouro e bairro.
+   - `src/lib/geoIdealGrid.js`: Motor matemático com Haversine, Bearing, cálculo de cobertura, gerador de texto formatado para WhatsApp dos ACEs e Parecer Técnico IA para a Gestão do SUS.
+   - `src/maps/leafletIcons.js`: Novo marcador `pontoIdealIcon` roxo (#7c3aed) com opções com/sem rótulo e pulso tático.
+   - `src/features/planejamento/MapaCenarioIdeal.jsx`: Mapa interativo completo com camadas de pontos ideais, círculos de cobertura de 175m, armadilhas reais, vetores de deslocamento tracejados e alternador satélite/vetores/rótulos.
+   - `src/features/planejamento/CenarioIdealScreen.jsx`: Tela principal de planejamento com KPIs, barra de filtros por bairro e status, mapa interativo, lista detalhada com cards e modal de Parecer Técnico Oficial para a Gestão.
+   - `src/lib/routing.js`: Nova rota canônica `/cenario-ideal` (e `/ideal`, `/planejamento`).
+   - `src/components/Header.jsx`: Módulo `cenario-ideal` adicionado ao cabeçalho.
+   - `src/features/menu/GuiaScreen.jsx`: Novo card "Cenário Ideal de Ovitrampas" no menu principal.
+   - `src/App.jsx`: Integração e roteamento da nova tela.
+   - `public/sw.js`: Atualização do Service Worker para `v3` com cache busting.
+
+5. BUILD E DEPLOY:
+   - `npm run build` executado com sucesso (9.04s).
+   - Deploy realizado com sucesso no Cloudflare Pages:
+     URL oficial: https://gps-ovitrampas.pages.dev
+     URL direta: https://1136cf23.gps-ovitrampas.pages.dev
+==============================================================================
