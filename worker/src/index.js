@@ -214,6 +214,57 @@ async function listReadings(request, env) {
   return json({ readings: results });
 }
 
+
+async function handleAgentHeartbeat(request, env) {
+  const body = await request.json().catch(() => null);
+  if (!body) return badRequest("json invalido");
+  const { agentId, deviceId, label, latitude, longitude, accuracy, bairro } = body;
+  if (!agentId || !Number.isFinite(Number(latitude)) || !Number.isFinite(Number(longitude))) {
+    return badRequest("dados de localizacao do agente invalidos");
+  }
+
+  const agentLabel = label || agentId.toUpperCase();
+
+  await env.DB.prepare(
+    `INSERT INTO agent_locations (
+       agent_id, device_id, label, latitude, longitude, accuracy, bairro, updated_at
+     ) VALUES (?,?,?,?,?,?,?, datetime('now'))
+     ON CONFLICT(agent_id) DO UPDATE SET
+       device_id = excluded.device_id,
+       label = excluded.label,
+       latitude = excluded.latitude,
+       longitude = excluded.longitude,
+       accuracy = excluded.accuracy,
+       bairro = excluded.bairro,
+       updated_at = datetime('now')`
+  ).bind(
+    agentId,
+    deviceId ?? null,
+    agentLabel,
+    Number(latitude),
+    Number(longitude),
+    accuracy != null ? Number(accuracy) : null,
+    bairro ?? null
+  ).run();
+
+  // Limpeza de agentes inativos há mais de 1 hora
+  try {
+    await env.DB.prepare("DELETE FROM agent_locations WHERE updated_at < datetime('now', '-60 minutes')").run();
+  } catch (e) {}
+
+  return json({ ok: true, agentId, label: agentLabel });
+}
+
+async function listActiveAgents(env) {
+  const { results } = await env.DB.prepare(
+    `SELECT agent_id as agentId, device_id as deviceId, label, latitude, longitude, accuracy, bairro, updated_at as updatedAt
+     FROM agent_locations
+     WHERE updated_at >= datetime('now', '-15 minutes')
+     ORDER BY label ASC`
+  ).all();
+  return json({ agents: results || [] });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
@@ -224,6 +275,12 @@ export default {
     const path = url.pathname;
 
     try {
+      if (path === "/api/agents/heartbeat" && request.method === "POST") {
+        return await handleAgentHeartbeat(request, env);
+      }
+      if (path === "/api/agents/locations" && request.method === "GET") {
+        return await listActiveAgents(env);
+      }
       if (path === "/api/health") {
         return json({ ok: true, service: "ovitrampas-api" });
       }

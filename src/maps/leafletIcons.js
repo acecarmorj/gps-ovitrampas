@@ -36,6 +36,33 @@ export function youDotIcon(label = "Você (ACE)") {
 }
 
 /**
+ * Marcador de Outro Agente em Campo (Colega ACE) com anel azul pulsante
+ */
+export function otherAgentDotIcon(label = "ACE 2", isRecent = true) {
+  const pulseColor = isRecent ? 'rgba(59,130,246,0.35)' : 'rgba(100,116,139,0.2)';
+  const dotColor = isRecent ? '#3b82f6' : '#64748b';
+  const badgeBorder = isRecent ? '#3b82f6' : '#64748b';
+  const textColor = isRecent ? '#93c5fd' : '#cbd5e1';
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;width:24px;height:24px;">
+          \${isRecent ? \`<div style="position:absolute;width:24px;height:24px;border-radius:999px;background:\${pulseColor};animation:pulseLive 2s ease-out infinite;"></div>\` : ''}
+          <div style="width:14px;height:14px;border-radius:999px;background:\${dotColor};border:3px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>
+        </div>
+        <span style="margin-top:2px;background:#0f172a;color:\${textColor};font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.4);border:1px solid \${badgeBorder};">
+          \${label}
+        </span>
+      </div>
+    `,
+    iconSize: [40, 44],
+    iconAnchor: [20, 12]
+  });
+}
+
+/**
  * Marcador de Armadilha Ovitrampa no Mapa com Situação em Tempo Real
  */
 export function ovitrampaIcon(armadilha) {

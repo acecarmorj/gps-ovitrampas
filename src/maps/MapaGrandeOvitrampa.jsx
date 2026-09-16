@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { getAllPolygons } from '../lib/geoDetection';
-import { MAP_TILE_STANDARD, MAP_TILE_SATELLITE, youDotIcon, ovitrampaIcon } from './leafletIcons';
+import { MAP_TILE_STANDARD, MAP_TILE_SATELLITE, youDotIcon, otherAgentDotIcon, ovitrampaIcon } from './leafletIcons';
+import { calcDistanceMeters } from '../lib/geoDistance';
 import { makeAutoFit } from './mapFit';
 import { MapControlButtons } from './MapControlButtons';
 import { buildTrapDistanceNetwork, findNearbyTraps } from '../lib/geoDistance';
@@ -14,7 +15,10 @@ export function MapaGrandeOvitrampa({
   armadilhaSelecionada = null,
   onSelectArmadilha,
   mostrarTodosPontos = false,
-  controlTop = 60
+  controlTop = 60,
+  outrosAgentes = [],
+  agenteSelecionado = null,
+  onSelectAgente
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -25,7 +29,8 @@ export function MapaGrandeOvitrampa({
     userMarker: null,
     userAccuracyCircle: null,
     distanceLinesLayer: null,
-    trapsLayer: null
+    trapsLayer: null,
+    otherAgentsLayer: null
   });
 
   const [satellite, setSatellite] = useState(false);
@@ -56,6 +61,7 @@ export function MapaGrandeOvitrampa({
     layersRef.current.polygons = L.layerGroup().addTo(map);
     layersRef.current.distanceLinesLayer = L.layerGroup().addTo(map);
     layersRef.current.trapsLayer = L.layerGroup().addTo(map);
+    layersRef.current.otherAgentsLayer = L.layerGroup().addTo(map);
 
     const onResize = () => {
       try {
@@ -85,6 +91,9 @@ export function MapaGrandeOvitrampa({
         }
         if (layersRef.current.distanceLinesLayer) {
           map.removeLayer(layersRef.current.distanceLinesLayer);
+        }
+        if (layersRef.current.otherAgentsLayer) {
+          map.removeLayer(layersRef.current.otherAgentsLayer);
         }
         map.remove();
       } catch (e) {}
@@ -264,6 +273,57 @@ export function MapaGrandeOvitrampa({
     }
   }, [armadilhas, armadilhaSelecionada, mostrarTodosPontos, userPos, onSelectArmadilha]);
 
+
+  // 5.1. Renderização de Outros Agentes em Campo (Colegas em Tempo Real)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const otherAgentsLayer = layersRef.current.otherAgentsLayer;
+    if (!map || !otherAgentsLayer) return;
+
+    otherAgentsLayer.clearLayers();
+
+    if (!outrosAgentes || outrosAgentes.length === 0) return;
+
+    outrosAgentes.forEach((agente) => {
+      if (!agente.latitude || !agente.longitude) return;
+
+      const isRecente = (agente.segundosAtras == null || agente.segundosAtras < 120);
+      const isSelected = agenteSelecionado && agenteSelecionado.agentId === agente.agentId;
+
+      const marker = L.marker([agente.latitude, agente.longitude], {
+        icon: otherAgentDotIcon(agente.label, isRecente),
+        zIndexOffset: isSelected ? 1600 : 1100
+      });
+
+      const distTexto = agente.distanciaMetros != null
+        ? `<div style="font-weight:900;color:#0284c7;font-size:12px;margin-top:2px;">📏 ${agente.distanciaMetros}m de você</div>`
+        : '';
+
+      const tempoTexto = isRecente
+        ? 'Online agora'
+        : `há ${Math.round((agente.segundosAtras || 0) / 60)} min`;
+
+      marker.bindPopup(`
+        <div style="font-family:system-ui,sans-serif;padding:3px 4px;min-width:140px;">
+          <div style="font-weight:900;font-size:13px;color:#0f172a;display:flex;align-items:center;gap:4px;">
+            <span>👤</span> <span>${agente.label}</span>
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">Bairro: <b>${agente.bairro || 'Carmo-RJ'}</b></div>
+          ${distTexto}
+          <div style="font-size:10px;color:#94a3b8;margin-top:4px;">Sinal: ${tempoTexto}</div>
+        </div>
+      `, { closeButton: true });
+
+      marker.on('click', () => {
+        if (onSelectAgente) {
+          onSelectAgente(agente);
+        }
+      });
+
+      marker.addTo(otherAgentsLayer);
+    });
+  }, [outrosAgentes, agenteSelecionado, onSelectAgente]);
+
   // 6. Renderização da Malha de Distâncias entre Ovitrampas (Regra 300m - 400m)
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -349,7 +409,47 @@ export function MapaGrandeOvitrampa({
         agentBadge.addTo(distanceLayer);
       }
     }
-  }, [armadilhas, showDistances, userPos]);
+
+    // 6.3. Linha direta até o colega de campo selecionado
+    if (agenteSelecionado?.latitude && agenteSelecionado?.longitude && userPos?.latitude && userPos?.longitude) {
+      const colegaLine = L.polyline(
+        [
+          [userPos.latitude, userPos.longitude],
+          [agenteSelecionado.latitude, agenteSelecionado.longitude]
+        ],
+        {
+          color: '#0284c7',
+          weight: 4,
+          dashArray: '5, 6',
+          opacity: 0.95
+        }
+      );
+      colegaLine.addTo(distanceLayer);
+
+      const midLat = (Number(userPos.latitude) + Number(agenteSelecionado.latitude)) / 2;
+      const midLng = (Number(userPos.longitude) + Number(agenteSelecionado.longitude)) / 2;
+      const dist = calcDistanceMeters(
+        userPos.latitude,
+        userPos.longitude,
+        agenteSelecionado.latitude,
+        agenteSelecionado.longitude
+      );
+
+      const colegaBadgeIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#0284c7;color:#ffffff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:999px;border:1.5px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.3);white-space:nowrap;">Você ➔ ${agenteSelecionado.label}: ${dist}m</div>`,
+        iconSize: [140, 22],
+        iconAnchor: [70, 11]
+      });
+
+      const colegaBadge = L.marker([midLat, midLng], {
+        icon: colegaBadgeIcon,
+        interactive: false,
+        zIndexOffset: 1500
+      });
+      colegaBadge.addTo(distanceLayer);
+    }
+  }, [armadilhas, showDistances, userPos, agenteSelecionado]);
 
   // Centraliza suavemente na armadilha quando for selecionada
   useEffect(() => {

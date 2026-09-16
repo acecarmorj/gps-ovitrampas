@@ -1914,3 +1914,63 @@ STATUS: APROVADO, CONCLUÍDO E HOMOLOGADO EM PRODUÇÃO
    - `npm run build` executado com 0 erros de compilação.
    - NENHUM dado de armadilha foi apagado ou alterado.
 ==============================================================================
+
+==============================================================================
+SEÇÃO 49 - RASTREAMENTO EM TEMPO REAL DE MÚLTIPLOS AGENTES EM CAMPO (ACE 1, ACE 2...)
+DATA: 16/09/2026
+AUTOR: GEMINI (via Antigravity)
+SOLICITANTE: ALMIR LK
+STATUS: APROVADO, CONCLUÍDO E HOMOLOGADO EM PRODUÇÃO
+==============================================================================
+
+1. SOLICITAÇÃO DO USUÁRIO:
+   - "outra coisa que queria: aparece ali a minha posição no gps mas tem mais agentes
+     na área ao mesmo tempo. Queria que todos aparecessem com a localização em tempo
+     real no app, no mapa de agentes, etc para saber aonde o outro está caso precise
+     ir falar com ele ok? Pode usar ace1, ace2, não precisa pedir o nome do agente"
+   - "ao terminar faça commit e deploy"
+
+2. ARQUITETURA BACKEND (CLOUDFLARE WORKERS + D1):
+   - Criada tabela `agent_locations` no banco D1 remoto (`ovitrampas-gps-db`):
+     * `agent_id` (TEXT PRIMARY KEY): 'ace1', 'ace2', etc.
+     * `device_id` (TEXT): identificador único e persistente do aparelho.
+     * `label` (TEXT): 'ACE 1', 'ACE 2', 'Coordenação', etc.
+     * `latitude` / `longitude` (REAL): coordenadas do sensor GNSS/GPS.
+     * `accuracy` (REAL): precisão em metros.
+     * `bairro` (TEXT): geocodificação ou microárea.
+     * `updated_at` (TEXT): data/hora da última atualização.
+   - Criados endpoints no Worker (`worker/src/index.js`):
+     * `POST /api/agents/heartbeat`: recebe batimento a cada 7-10s e faz upsert.
+       Faz limpeza automática de registros inativos há mais de 60 minutos.
+     * `GET /api/agents/locations`: lista todos os agentes ativos nos últimos 15 min.
+   - Worker publicado e ativo em produção:
+     `https://ovitrampas-api.acecarmorj.workers.dev` (Version ID: f9e55960)
+
+3. SERVIÇO DE RASTREAMENTO CLIENT-SIDE (`src/lib/agentLiveTracking.js`):
+   - Gerencia identidade de cada agente (`ACE 1` a `ACE 8` e `Coordenação`).
+   - Salva em localStorage e permite troca instantânea com 1 toque (sem digitação).
+   - Envia batimentos de GPS em segundo plano e busca colegas ativos.
+   - Calcula distância geodésica em metros (Haversine) entre o usuário e cada colega.
+
+4. RENDERIZAÇÃO NO MAPA (`src/maps/MapaGrandeOvitrampa.jsx` & `leafletIcons.js`):
+   - Criado `otherAgentDotIcon`: marcador com pino azul pulsante e crachá do agente.
+   - Tooltip/Popup com informações do colega:
+     * Crachá (ex: ACE 2)
+     * Bairro (ex: Progresso)
+     * Distância exata até você (ex: 140m)
+     * Status do sinal (Online agora / há X min)
+   - Ao tocar no colega, traça uma **linha reta azul pontilhada direta** entre Você e ele:
+     `Você ➔ ACE 2: 140m` com pílula de distância centralizada, permitindo saber
+     imediatamente em que direção caminhar para falar com o outro agente.
+
+5. INTERFACE DO USUÁRIO (`PainelAcompanhamentoScreen.jsx` e `SeletorAgenteModal.jsx`):
+   - Botão de Crachá no topo: `[ 👤 ACE 1 ▾ ]` abre modal em grade com seleção rápida.
+   - Botão contador de colegas: `[ 👥 2 ]` exibe gaveta/card com todos os colegas ativos,
+     distância de cada um e atalho para focar no mapa.
+   - Conectado em `App.jsx` e no mapa do `PainelAdminScreen.jsx`.
+
+6. VALIDAÇÃO, COMMIT E DEPLOY:
+   - `npm run build` aprovado (0 erros, 10s).
+   - Commit e push efetuados para GitHub `main`.
+   - Deploy automático atualizado no Cloudflare Pages: https://gps-ovitrampas.pages.dev
+==============================================================================

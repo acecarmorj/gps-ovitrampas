@@ -33,6 +33,7 @@ const MICROAREAS_CARMO_OFICIAIS = [
 export function PainelAdminScreen({
   armadilhas = [],
   userPos,
+  outrosAgentes = [],
   onAtualizarArmadilhas
 }) {
   const [modoVisualizacao, setModoVisualizacao] = useState('dividido'); // 'dividido' | 'mapa' | 'tabela'
@@ -547,6 +548,7 @@ export function PainelAdminScreen({
               armadilhaSelecionada={armadilhaSelecionada}
               onSelectArmadilha={(arm) => setArmadilhaSelecionada(arm)}
               mostrarTodosPontos={true}
+              outrosAgentes={outrosAgentes}
             />
 
             {/* Badge flutuante sobre o mapa em modo dividido */}

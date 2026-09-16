@@ -16,6 +16,7 @@ import {
   sincronizarDadosDoServidor
 } from './lib/storage';
 import { setMuted } from './lib/soundAlert';
+import { iniciarMonitoramentoOutrosAgentes } from './lib/agentLiveTracking';
 import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
   const [armadilhaParaLab, setArmadilhaParaLab] = useState(null);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('ovitrampa_muted') === 'true');
   const [syncInfo, setSyncInfo] = useState(getStatusSincronizacao);
+  const [outrosAgentes, setOutrosAgentes] = useState([]);
   const [userPos, setUserPos] = useState({
     latitude: -21.9339,
     longitude: -42.6089
@@ -59,6 +61,15 @@ export function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Monitoramento em tempo real de múltiplos agentes em campo (Carmo-RJ)
+  useEffect(() => {
+    const unsubscribe = iniciarMonitoramentoOutrosAgentes(
+      () => userPos,
+      (lista) => setOutrosAgentes(lista)
+    );
+    return () => unsubscribe();
+  }, [userPos]);
 
   // GPS Inteligente e Econômico (apenas quando necessário e sem concorrência)
   useEffect(() => {
@@ -170,6 +181,7 @@ export function App() {
           <PainelAcompanhamentoScreen
             armadilhas={armadilhas}
             userPos={userPos}
+            outrosAgentes={outrosAgentes}
             onExcluirArmadilha={() => recarregarArmadilhas()}
             onIrParaLaboratorio={handleIrParaLaboratorio}
           />
@@ -187,6 +199,7 @@ export function App() {
           <PainelAdminScreen
             armadilhas={armadilhas}
             userPos={userPos}
+            outrosAgentes={outrosAgentes}
             onAtualizarArmadilhas={() => recarregarArmadilhas()}
           />
         )}
