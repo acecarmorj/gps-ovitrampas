@@ -76,7 +76,7 @@ export function App() {
   useEffect(() => {
     // Na tela /campo, a própria tela gerencia o rastreamento entomológico com máxima precisão.
     // Em telas sem mapa (como /laboratorio e /guia), desliga o sensor para poupar bateria.
-    const precisaGpsNoRoot = path === '/mapa' || path === '/admin' || path === '/cenario-ideal';
+    const precisaGpsNoRoot = path === '/mapa' || path === '/admin' || path === '/planejamento' || path === '/cenario-ideal';
     if (!precisaGpsNoRoot || !navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -121,7 +121,7 @@ export function App() {
     if (path === '/mapa') return 'mapa';
     if (path === '/laboratorio') return 'laboratorio';
     if (path === '/admin') return 'admin';
-    if (path === '/cenario-ideal') return 'cenario-ideal';
+    if (path === '/planejamento' || path === '/cenario-ideal') return 'planejamento';
     return 'guia';
   };
 
@@ -206,7 +206,7 @@ export function App() {
           />
         )}
 
-        {chaveModulo === 'cenario-ideal' && (
+        {(chaveModulo === 'planejamento' || chaveModulo === 'cenario-ideal') && (
           <CenarioIdealScreen
             armadilhas={armadilhas}
             onVoltar={() => navigate('/guia')}

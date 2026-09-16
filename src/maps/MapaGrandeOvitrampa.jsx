@@ -36,12 +36,14 @@ export function MapaGrandeOvitrampa({
     userMarker: null,
     userAccuracyCircle: null,
     distanceLinesLayer: null,
+    circlesLayer: null,
     trapsLayer: null,
     otherAgentsLayer: null
   });
 
   const [satellite, setSatellite] = useState(false);
   const [showDistances, setShowDistances] = useState(true);
+  const [showCircles, setShowCircles] = useState(false);
 
   // 1. Inicialização do Mapa Leaflet
   useEffect(() => {
@@ -67,6 +69,7 @@ export function MapaGrandeOvitrampa({
 
     layersRef.current.polygons = L.layerGroup().addTo(map);
     layersRef.current.distanceLinesLayer = L.layerGroup().addTo(map);
+    layersRef.current.circlesLayer = L.layerGroup().addTo(map);
     layersRef.current.trapsLayer = L.layerGroup().addTo(map);
     layersRef.current.otherAgentsLayer = L.layerGroup().addTo(map);
 
@@ -98,6 +101,9 @@ export function MapaGrandeOvitrampa({
         }
         if (layersRef.current.distanceLinesLayer) {
           map.removeLayer(layersRef.current.distanceLinesLayer);
+        }
+        if (layersRef.current.circlesLayer) {
+          map.removeLayer(layersRef.current.circlesLayer);
         }
         if (layersRef.current.otherAgentsLayer) {
           map.removeLayer(layersRef.current.otherAgentsLayer);
@@ -465,6 +471,30 @@ export function MapaGrandeOvitrampa({
     }
   }, [armadilhas, showDistances, userPos, agenteSelecionado]);
 
+  // 6.5. Renderização dos Círculos de Raio de Cobertura (175m)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const circlesLayer = layersRef.current.circlesLayer;
+    if (!map || !circlesLayer) return;
+
+    circlesLayer.clearLayers();
+    if (!showCircles || !armadilhas || armadilhas.length === 0) return;
+
+    armadilhas.forEach((t) => {
+      if (!t.latitude || !t.longitude) return;
+      const circle = L.circle([Number(t.latitude), Number(t.longitude)], {
+        radius: 175,
+        color: '#7c3aed',
+        weight: 1.5,
+        opacity: 0.65,
+        fillColor: '#8b5cf6',
+        fillOpacity: 0.12,
+        dashArray: '4, 6'
+      });
+      circle.addTo(circlesLayer);
+    });
+  }, [armadilhas, showCircles]);
+
   // Centraliza suavemente na armadilha quando for selecionada
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -493,6 +523,8 @@ export function MapaGrandeOvitrampa({
         onToggleSatellite={() => setSatellite(!satellite)}
         showDistances={showDistances}
         onToggleDistances={() => setShowDistances(!showDistances)}
+        showCircles={showCircles}
+        onToggleCircles={() => setShowCircles(!showCircles)}
         showLabels={effectiveShowLabels}
         onToggleLabels={handleToggleLabels}
         showPanel={showPanel}

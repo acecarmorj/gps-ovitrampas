@@ -436,23 +436,8 @@ export function InstalarArmadilhaScreen({
           </button>
         </div>
 
-        {/* Botão de Rótulos Limpos */}
+        {/* Botão de Bússola e Rumo Tático */}
         <div className="flex items-center gap-1.5 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => setMostrarRotulos(!mostrarRotulos)}
-            className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black transition-all ${
-              mostrarRotulos
-                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
-                : 'bg-white/92 hover:bg-white text-slate-800 border-slate-200/90'
-            }`}
-            title={mostrarRotulos ? "Remover rótulos das armadilhas para ver o mapa limpo" : "Mostrar rótulos das armadilhas"}
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>{mostrarRotulos ? 'Remover Rótulo' : 'Mostrar Rótulos'}</span>
-          </button>
-
-          {/* Botão de Bússola e Rumo Tático */}
           <button
             type="button"
             onClick={() => setMostrarBussolaFlutuante((v) => !v)}

@@ -21,9 +21,13 @@ const INFO_MODULOS = {
     titulo: 'Painel do Administrador',
     subtitulo: 'Gestão Municipal & Indicadores'
   },
+  planejamento: {
+    titulo: 'Mapa de Planejamento das Ações',
+    subtitulo: 'Planejamento Geoespacial & Otimização de Rotas'
+  },
   'cenario-ideal': {
-    titulo: 'Cenário Ideal de Ovitrampas',
-    subtitulo: 'Planejamento Geoespacial • Próximo Ciclo'
+    titulo: 'Mapa de Planejamento das Ações',
+    subtitulo: 'Planejamento Geoespacial & Otimização de Rotas'
   }
 };
 

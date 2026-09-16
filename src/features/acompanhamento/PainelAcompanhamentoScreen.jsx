@@ -114,20 +114,6 @@ export function PainelAcompanhamentoScreen({
             <Eye className="w-3.5 h-3.5 text-blue-600" />
             <span>Janela de Dados ({totalArmadilhas} OVs)</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setMostrarRotulos(!mostrarRotulos)}
-            className={`backdrop-blur-md px-3 py-2 rounded-2xl border text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 transition-all ${
-              mostrarRotulos
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-            title="Alternar rótulos das armadilhas"
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>{mostrarRotulos ? 'Rótulos Ativos' : 'Só Linhas e Pontos'}</span>
-          </button>
         </div>
       )}
 
@@ -179,21 +165,6 @@ export function PainelAcompanhamentoScreen({
             >
               <Users className="w-3.5 h-3.5" />
               <span>{outrosAgentes.length}</span>
-            </button>
-
-            {/* Alternar rótulos das armadilhas */}
-            <button
-              type="button"
-              onClick={() => setMostrarRotulos(!mostrarRotulos)}
-              className={`font-black text-xs px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-xs active:scale-95 ${
-                mostrarRotulos
-                  ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-              }`}
-              title={mostrarRotulos ? "Remover rótulos (deixar apenas pontos e linhas limpos)" : "Mostrar rótulos das armadilhas"}
-            >
-              <Tag className="w-3.5 h-3.5" />
-              <span>{mostrarRotulos ? 'Remover Rótulos' : 'Mostrar Rótulos'}</span>
             </button>
 
             {/* Ocultar janela flutuante */}

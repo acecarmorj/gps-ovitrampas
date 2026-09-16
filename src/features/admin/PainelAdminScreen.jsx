@@ -418,21 +418,6 @@ export function PainelAdminScreen({
               </button>
             </div>
 
-              {/* Alternar rótulos das armadilhas */}
-              <button
-                type="button"
-                onClick={() => setMostrarRotulosAdmin(!mostrarRotulosAdmin)}
-                className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
-                  mostrarRotulosAdmin
-                    ? 'text-slate-700 bg-slate-100 hover:bg-slate-200'
-                    : 'bg-amber-100 border border-amber-300 text-amber-800'
-                }`}
-                title={mostrarRotulosAdmin ? "Ocultar rótulos (deixar só pontos e linhas no mapa)" : "Mostrar rótulos das armadilhas"}
-              >
-                <Tag className="w-4 h-4" />
-                <span className="hidden sm:inline">{mostrarRotulosAdmin ? 'Ocultar Rótulos' : 'Mostrar Rótulos'}</span>
-              </button>
-
               {/* Ocultar/Mostrar painel superior no modo mapa */}
               {modoVisualizacao === 'mapa' && (
                 <button
@@ -443,23 +428,6 @@ export function PainelAdminScreen({
                 >
                   {mostrarPainelAdmin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-blue-600" />}
                   <span className="hidden sm:inline">{mostrarPainelAdmin ? 'Ocultar Topo' : 'Mostrar Topo'}</span>
-                </button>
-              )}
-
-              {/* Botão de Remover/Mostrar Rótulos no Mapa do Administrador */}
-              {(modoVisualizacao === 'mapa' || modoVisualizacao === 'dividido') && (
-                <button
-                  type="button"
-                  onClick={() => setMostrarRotulosAdmin(!mostrarRotulosAdmin)}
-                  className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 border shadow-xs ${
-                    mostrarRotulosAdmin
-                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500'
-                  }`}
-                  title={mostrarRotulosAdmin ? "Remover rótulos do mapa (deixar só pontos e linhas)" : "Mostrar rótulos das armadilhas"}
-                >
-                  <Tag className="w-4 h-4" />
-                  <span>{mostrarRotulosAdmin ? 'Remover Rótulos' : 'Mostrar Rótulos'}</span>
                 </button>
               )}
 

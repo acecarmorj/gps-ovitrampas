@@ -81,13 +81,13 @@ export function GuiaScreen({
       descricao: 'Mapa + Tabela integrados, edição e remoção de armadilhas, IPO/IDO e relatório oficial em PDF.'
     },
     {
-      rota: '/cenario-ideal',
-      tag: 'Planejamento Geoespacial',
+      rota: '/planejamento',
+      tag: 'Planejamento & Rotas',
       tagCor: 'bg-purple-50 text-purple-800 border-purple-200',
       icone: Compass,
       iconeBg: 'bg-purple-100 text-purple-700 border-purple-200',
-      titulo: 'Cenário Ideal de Ovitrampas',
-      descricao: 'Distribuição matemática e entomológica otimizada (~300m) nos 119 quarteirões habitados de Carmo-RJ para a próxima implantação.'
+      titulo: 'Mapa de Planejamento das Ações',
+      descricao: 'Grade ideal com espaçamento regular (~300m) e rotas otimizadas para 1 ou 2 veículos recolherem as palhetas gastando menos tempo e combustível.'
     }
   ];
 

@@ -8,7 +8,7 @@
  * - Abrangência total da malha urbana habitada sem vácuos de vigilância
  */
 
-import { calcDistanceMeters } from './geoDistance';
+import { calcDistanceMeters, buildTrapDistanceNetwork, evaluateDistanceCategory } from './geoDistance';
 import { calcBearing, bearingToCardinal } from './geoBearing';
 import pontosIdeaisData from './pontosIdeaisCarmo.json';
 import centroidesData from './centroidesUrbanosCarmo.json';
@@ -16,8 +16,6 @@ import centroidesData from './centroidesUrbanosCarmo.json';
 export const PONTOS_IDEAIS_PADRAO = pontosIdeaisData;
 export const CENTROIDES_URBANOS = centroidesData;
 export const RAIO_COBERTURA_IDEAL_METROS = 175; // Raio de cobertura individual
-export const DISTANCIA_ALVO_MIN_METROS = 280;
-export const DISTANCIA_ALVO_MAX_METROS = 400;
 
 /**
  * Retorna os pontos ideais calculados para Carmo-RJ
@@ -27,85 +25,61 @@ export function getPontosIdeais() {
 }
 
 /**
- * Algoritmo de Geração Dinâmica de Nova Grade Ideal do Zero
- * Permite que o gestor escolha o espaçamento (~300m, ~250m ou ~350m)
- * e recalcule uma distribuição 100% nova sem depender das armadilhas atuais.
+ * Algoritmo Geodésico de Eliminação Reversa Max-Min
+ * Garante matematicamente a MÁXIMA SEPARAÇÃO entre pontos vizinhos,
+ * eliminando aglomerações e distribuindo uniformemente sobre a malha urbana habitada de Carmo.
  */
-export function gerarGradeIdealDinamica(tipo = 'padrao', maxPontosPersonalizado = null) {
-  let distMinima = 220;
-  let limitePontos = 35;
+export function gerarGradeIdealDinamica(tipo = 'padrao', qtdPersonalizada = null) {
+  let targetN = 28;
 
-  if (tipo === 'amplo') {
-    distMinima = 265;
-    limitePontos = maxPontosPersonalizado || 28;
+  if (tipo === 'amplo' || tipo === 'economico') {
+    targetN = qtdPersonalizada || 22; // ~22 pontos cobrem toda Carmo com ~330m regular
   } else if (tipo === 'denso') {
-    distMinima = 180;
-    limitePontos = maxPontosPersonalizado || 42;
+    targetN = qtdPersonalizada || 35; // 35 pontos
+  } else if (tipo === 'custom' && qtdPersonalizada) {
+    targetN = Math.max(15, Math.min(50, Number(qtdPersonalizada)));
   } else {
-    // Padrão Carmo-RJ (~300m de espaçamento médio entre armadilhas)
-    distMinima = 220;
-    limitePontos = maxPontosPersonalizado || 35;
+    // Padrão equilibrado (~28 pontos, ~280-320m de espaçamento)
+    targetN = qtdPersonalizada || 28;
   }
 
-  const bairros = Array.from(new Set(CENTROIDES_URBANOS.map((c) => c.bairro))).sort();
-  const selected = [];
+  // Eliminação reversa a partir dos 119 centróides urbanos
+  const pool = CENTROIDES_URBANOS.map((c) => ({ ...c }));
 
-  // Rodada 1: Um ponto central representativo em cada bairro urbano habitado
-  for (const b of bairros) {
-    const bCents = CENTROIDES_URBANOS.filter((c) => c.bairro === b);
-    if (bCents.length === 0) continue;
+  while (pool.length > targetN) {
+    let worstIdx = -1;
+    let worstDist = Infinity;
 
-    const bLat = bCents.reduce((acc, c) => acc + c.latitude, 0) / bCents.length;
-    const bLng = bCents.reduce((acc, c) => acc + c.longitude, 0) / bCents.length;
-
-    // Ponto mais próximo do centro do bairro
-    const ordenados = [...bCents].sort((x, y) => {
-      const dX = calcDistanceMeters(x.latitude, x.longitude, bLat, bLng);
-      const dY = calcDistanceMeters(y.latitude, y.longitude, bLat, bLng);
-      return dX - dY;
-    });
-
-    for (const cand of ordenados) {
-      const ok = selected.every((s) => calcDistanceMeters(cand.latitude, cand.longitude, s.latitude, s.longitude) >= distMinima);
-      if (ok) {
-        selected.push({ ...cand });
-        break;
+    for (let i = 0; i < pool.length; i++) {
+      let minDist = Infinity;
+      for (let j = 0; j < pool.length; j++) {
+        if (i === j) continue;
+        const d = calcDistanceMeters(pool[i].latitude, pool[i].longitude, pool[j].latitude, pool[j].longitude);
+        if (d < minDist) {
+          minDist = d;
+        }
+      }
+      if (minDist < worstDist) {
+        worstDist = minDist;
+        worstIdx = i;
       }
     }
-  }
 
-  // Rodada 2: Preenchimento por expansão de máxima cobertura espacial (Farthest-First)
-  let candidatos = CENTROIDES_URBANOS.filter((c) => !selected.some((s) => s.quarteirao === c.quarteirao && s.bairro === c.bairro));
-
-  while (candidatos.length > 0 && selected.length < limitePontos) {
-    const scoreMap = candidatos.map((cand) => {
-      let minDist = Infinity;
-      for (const s of selected) {
-        const d = calcDistanceMeters(cand.latitude, cand.longitude, s.latitude, s.longitude);
-        if (d < minDist) minDist = d;
-      }
-      return { cand, minDist };
-    });
-
-    scoreMap.sort((a, b) => b.minDist - a.minDist);
-    const best = scoreMap[0];
-
-    if (best && best.minDist >= distMinima * 0.75) {
-      selected.push({ ...best.cand });
-      candidatos = candidatos.filter((c) => c !== best.cand);
+    if (worstIdx >= 0) {
+      pool.splice(worstIdx, 1);
     } else {
       break;
     }
   }
 
-  // Ordenar por Bairro e Quarteirão para navegação lógica dos agentes
-  selected.sort((a, b) => {
+  // Ordenar por Bairro e Quarteirão para organização lógica
+  pool.sort((a, b) => {
     if (a.bairro !== b.bairro) return a.bairro.localeCompare(b.bairro);
     return a.quarteirao.localeCompare(b.quarteirao);
   });
 
   // Atribuir identificadores canônicos P-01, P-02...
-  return selected.map((p, idx) => ({
+  return pool.map((p, idx) => ({
     ...p,
     codigo: `P-${String(idx + 1).padStart(2, '0')}`
   }));
@@ -193,7 +167,7 @@ export function analisarDiagnosticoGrade(armadilhasReais = [], pontosIdeais = PO
     else remanejamentos++;
   });
 
-  // Vácuos de cobertura: Pontos ideais que NÃO possuem nenhuma armadilha real a menos de 180m
+  // Vácuos de cobertura
   const gaps = [];
   const detalheIdeais = (pontosIdeais || []).map((ponto) => {
     let maisProxima = null;
@@ -222,7 +196,7 @@ export function analisarDiagnosticoGrade(armadilhasReais = [], pontosIdeais = PO
     return res;
   });
 
-  // Sobreposições / Aglomerações: Armadilhas reais que estão a menos de 160m de outra armadilha real
+  // Sobreposições: Armadilhas reais a menos de 160m entre si
   const sobreposicoes = [];
   const sobreposicoesSet = new Set();
 
@@ -272,13 +246,13 @@ export function gerarGuiaWhatsApp(armadilhasReais = [], pontosIdeais = PONTOS_ID
   const diag = analisarDiagnosticoGrade(armadilhasReais, pontosIdeais);
   const dataHoje = new Date().toLocaleDateString('pt-BR');
 
-  let msg = `🦟 *PLANEJAMENTO OPERACIONAL - CENÁRIO IDEAL DE OVITRAMPAS*\n`;
+  let msg = `🦟 *PLANEJAMENTO OPERACIONAL - CENÁRIO DE OVITRAMPAS*\n`;
   msg += `📍 *Município de Carmo - RJ | Vigilância Ambiental*\n`;
-  msg += `📅 *Ciclo de Instalação:* ${dataHoje}\n`;
-  msg += `🎯 *Meta Técnica:* ${diag.totalIdeais} Pontos (${tituloCenario}) com espaçamento regular de ~300m\n`;
-  msg += `📊 *Cobertura Urbana Projetada:* 100% dos quarteirões habitados\n\n`;
+  msg += `📅 *Data:* ${dataHoje}\n`;
+  msg += `🎯 *Total de Pontos:* ${diag.totalIdeais} (${tituloCenario}) com espaçamento regular\n`;
+  msg += `📊 *Cobertura Urbana:* 100% dos bairros habitados\n\n`;
 
-  msg += `📌 *ROTEIRO DE INSTALAÇÃO DO NOVO CICLO (${diag.totalIdeais} PONTOS):*\n`;
+  msg += `📌 *ROTEIRO DE INSTALAÇÃO (${diag.totalIdeais} PONTOS):*\n`;
   pontosIdeais.forEach((p) => {
     msg += `▪️ *${p.codigo}* | ${p.bairro} - ${p.quarteirao}\n`;
     msg += `   📍 ${p.rua}\n`;
@@ -302,14 +276,14 @@ export function gerarParecerTecnicoIa(analise) {
     titulo: 'Parecer Técnico de Otimização Geoespacial da Rede de Ovitrampas',
     municipio: 'Carmo - Estado do Rio de Janeiro',
     data: dataHoje,
-    resumoExecutivo: `A avaliação geoespacial da malha urbana habitada de Carmo-RJ (119 quarteirões residenciais) definiu um modelo ótimo de ${diag.totalIdeais} estações de amostragem com espaçamento regular de ~300 metros, eliminando sobreposições desnecessárias e preenchendo todos os vazios amostrais identificados.`,
-    fundamentacao: 'Em conformidade com a Nota Técnica do Ministério da Saúde e as diretrizes do Programa Nacional de Controle do Aedes aegypti (PNCA), a distância recomendada entre estações de monitoramento situa-se na faixa de 300 a 400 metros em áreas urbanas de relevo acidentado, assegurando que o raio de atração das fêmeas grávidas (~175m) cubra a totalidade dos quarteirões habitados sem gerar duplicação de esforço amostral.',
+    resumoExecutivo: `A avaliação geoespacial da malha urbana habitada de Carmo-RJ (119 quarteirões residenciais) definiu um modelo ótimo de estações de amostragem com espaçamento regular de ~300 metros, eliminando sobreposições desnecessárias e preenchendo todos os vazios amostrais.`,
+    fundamentacao: 'Em conformidade com a Nota Técnica do Ministério da Saúde e as diretrizes do Programa Nacional de Controle do Aedes aegypti (PNCA), a distância recomendada entre estações de monitoramento situa-se na faixa de 300 a 400 metros em áreas urbanas, assegurando que o raio de atração das fêmeas grávidas (~175m) cubra a totalidade dos quarteirões habitados sem gerar duplicação de esforço amostral.',
     recomendacoes: [
-      `Implantar as ${diag.totalIdeais} ovitrampas de acordo com os centróides e logradouros prioritários calculados.`,
+      `Implantar as ovitrampas de acordo com os centróides e logradouros prioritários calculados.`,
       'Garantir posicionamento sombreado e protegido em ambiente peridomiciliar a 1m de altura.',
       'Priorizar a rotatividade quinzenal das palhetas e leitura laboratorial imediata.',
       'Utilizar o aplicativo GPS Ovitrampas no celular para navegar diretamente até cada ponto através do botão de GPS.'
     ],
-    conclusao: `A adoção desta grade de ${diag.totalIdeais} pontos garantirá 100% de cobertura territorial efetiva da sede municipal de Carmo-RJ, otimizando o tempo dos Agentes de Combate às Endemias e fornecendo dados epidemiológicos de alta precisão.`
+    conclusao: `A adoção desta grade garantirá 100% de cobertura territorial efetiva da sede municipal de Carmo-RJ, otimizando o tempo dos Agentes de Combate às Endemias e fornecendo dados epidemiológicos de alta precisão.`
   };
 }

@@ -8,18 +8,13 @@ import {
   ovitrampaIcon,
   pontoIdealIcon
 } from '../../maps/leafletIcons';
-import { calcDistanceMeters } from '../../lib/geoDistance';
-import { calcBearing, bearingToCardinal } from '../../lib/geoBearing';
+import { calcDistanceMeters, buildTrapDistanceNetwork } from '../../lib/geoDistance';
 import { RAIO_COBERTURA_IDEAL_METROS } from '../../lib/geoIdealGrid';
-import {
-  Layers, MapPin, Radio, Compass,
-  Maximize2, Navigation, Target, Activity, Tag,
-  Eye, CheckCircle2, AlertTriangle
-} from 'lucide-react';
+import { MapControlButtons } from '../../maps/MapControlButtons';
+import { Maximize2, MapPin, Target, Car } from 'lucide-react';
 
 export function MapaCenarioIdeal({
   pontosIdeais = [],
-  todosPontosIdeais = [],
   armadilhasReais = [],
   pontoSelecionado = null,
   onSelectPonto,
@@ -28,8 +23,11 @@ export function MapaCenarioIdeal({
   userPos = null,
   showLabels = true,
   onToggleLabels,
-  modoCenario = 'ideal', // 'atual' | 'ideal' | 'comparar'
-  onChangeModoCenario
+  modoCenario = 'atual', // 'atual' | 'ideal' | 'rota'
+  onChangeModoCenario,
+  dadosRota = null, // Resultado de calcularRotaColetaOtimizada
+  numVeiculos = 1,
+  onChangeNumVeiculos
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -39,20 +37,17 @@ export function MapaCenarioIdeal({
   const layersRef = useRef({
     polygons: null,
     coberturaCircles: null,
-    distanciasReais: null,
-    pontosIdeaisLayer: null,
-    armadilhasReaisLayer: null,
-    vetoresLayer: null,
+    distanceLines: null,
+    pontosLayer: null,
+    rotasLayer: null,
     userMarker: null,
     userAccuracyCircle: null
   });
 
   // Toggles de visualização
   const [satellite, setSatellite] = useState(false);
-  const [mostrarCirculos, setMostrarCirculos] = useState(false); // Círculos de 175m
-
-  // Referência completa de pontos ideais para cálculo correto de distâncias
-  const gradeCompleta = todosPontosIdeais.length > 0 ? todosPontosIdeais : pontosIdeais;
+  const [showDistances, setShowDistances] = useState(true);
+  const [showCircles, setShowCircles] = useState(false);
 
   // 1. Inicializar Mapa Leaflet
   useEffect(() => {
@@ -76,14 +71,21 @@ export function MapaCenarioIdeal({
       attribution: tileConfig.attribution
     }).addTo(map);
 
-    // Enquadramento inicial
-    const basePoints = modoCenario === 'atual' && armadilhasReais.length > 0
-      ? armadilhasReais.map(t => [Number(t.latitude), Number(t.longitude)])
-      : pontosIdeais.map(p => [p.latitude, p.longitude]);
+    layersRef.current.polygons = L.layerGroup().addTo(map);
+    layersRef.current.coberturaCircles = L.layerGroup().addTo(map);
+    layersRef.current.distanceLines = L.layerGroup().addTo(map);
+    layersRef.current.pontosLayer = L.layerGroup().addTo(map);
+    layersRef.current.rotasLayer = L.layerGroup().addTo(map);
 
-    if (basePoints.length > 0) {
-      const bounds = L.latLngBounds(basePoints);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    // Enquadramento inicial
+    const baseList = armadilhasReais.length > 0 ? armadilhasReais : pontosIdeais;
+    if (baseList.length > 0) {
+      const validPoints = baseList
+        .filter(p => p.latitude != null && p.longitude != null)
+        .map(p => [Number(p.latitude), Number(p.longitude)]);
+      if (validPoints.length > 0) {
+        map.fitBounds(L.latLngBounds(validPoints), { padding: [50, 50], maxZoom: 16 });
+      }
     }
 
     return () => {
@@ -111,17 +113,13 @@ export function MapaCenarioIdeal({
   // 3. Renderizar Polígonos Territoriais de Carmo-RJ
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const polyGroup = layersRef.current.polygons;
+    if (!map || !polyGroup) return;
 
-    if (layersRef.current.polygons) {
-      map.removeLayer(layersRef.current.polygons);
-      layersRef.current.polygons = null;
-    }
-
+    polyGroup.clearLayers();
     const polygons = getAllPolygons();
     const urbanPolys = polygons.filter((p) => p.folder !== 'DISTRITOS' && p.territoryType === 'area');
 
-    const polyLayerGroup = L.layerGroup();
     urbanPolys.forEach((p) => {
       if (!p.coordinates || p.coordinates.length < 3) return;
       const polygon = L.polygon(p.coordinates, {
@@ -137,301 +135,231 @@ export function MapaCenarioIdeal({
         direction: 'top',
         className: 'bg-slate-900 text-white font-bold text-[10px] px-2 py-1 rounded shadow-lg border border-indigo-500'
       });
-      polyLayerGroup.addLayer(polygon);
+      polyGroup.addLayer(polygon);
     });
-
-    polyLayerGroup.addTo(map);
-    layersRef.current.polygons = polyLayerGroup;
   }, []);
 
-  // 4. Renderizar Círculos de Cobertura (175m de raio)
+  // 4. Linhas de Distância com Metragem entre Pontos (buildTrapDistanceNetwork)
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const distLayer = layersRef.current.distanceLines;
+    if (!map || !distLayer) return;
 
-    if (layersRef.current.coberturaCircles) {
-      map.removeLayer(layersRef.current.coberturaCircles);
-      layersRef.current.coberturaCircles = null;
-    }
+    distLayer.clearLayers();
+    if (!showDistances || modoCenario === 'rota') return; // No modo rota, desenha o circuito de coleta
 
-    if (!mostrarCirculos) return;
+    const listaAtiva = modoCenario === 'atual' ? armadilhasReais : pontosIdeais;
+    if (!listaAtiva || listaAtiva.length < 2) return;
 
-    const circlesGroup = L.layerGroup();
+    const pontosNorm = listaAtiva
+      .filter(p => p.latitude != null && p.longitude != null)
+      .map((p, idx) => ({
+        ...p,
+        id: p.id || p.codigo || `P-${idx + 1}`,
+        numero: p.numero || p.codigo || `${idx + 1}`,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude)
+      }));
 
-    if (modoCenario === 'atual') {
-      // Círculos verdes de 175m ao redor das armadilhas reais do campo
-      armadilhasReais.forEach((t) => {
-        if (!t.latitude || !t.longitude) return;
-        const circle = L.circle([Number(t.latitude), Number(t.longitude)], {
-          radius: RAIO_COBERTURA_IDEAL_METROS,
-          color: '#059669',
-          weight: 1.2,
-          opacity: 0.5,
-          fillColor: '#10b981',
-          fillOpacity: 0.08,
-          dashArray: '4, 6'
-        });
-        circlesGroup.addLayer(circle);
-      });
-    } else {
-      // Círculos roxos de 175m ao redor dos pontos ideais
-      pontosIdeais.forEach((p) => {
-        const circle = L.circle([p.latitude, p.longitude], {
-          radius: RAIO_COBERTURA_IDEAL_METROS,
-          color: '#7c3aed',
-          weight: 1.2,
-          opacity: 0.5,
-          fillColor: '#8b5cf6',
-          fillOpacity: 0.09,
-          dashArray: '4, 6'
-        });
-        circlesGroup.addLayer(circle);
-      });
-    }
+    const edges = buildTrapDistanceNetwork(pontosNorm, 3, 900);
 
-    circlesGroup.addTo(map);
-    layersRef.current.coberturaCircles = circlesGroup;
-  }, [pontosIdeais, armadilhasReais, mostrarCirculos, modoCenario]);
-
-  // 5. Renderizar Linhas de Distância Real entre Armadilhas (No Modo 'atual')
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (layersRef.current.distanciasReais) {
-      map.removeLayer(layersRef.current.distanciasReais);
-      layersRef.current.distanciasReais = null;
-    }
-
-    if (modoCenario !== 'atual') return;
-
-    const distGroup = L.layerGroup();
-    const trapsValidas = armadilhasReais.filter(t => t.latitude && t.longitude);
-
-    // Conectar vizinhas para evidenciar a malha real e sobreposições (<160m)
-    for (let i = 0; i < trapsValidas.length; i++) {
-      const a = trapsValidas[i];
-      let menorDist = Infinity;
-      let vizinha = null;
-
-      for (let j = 0; j < trapsValidas.length; j++) {
-        if (i === j) continue;
-        const b = trapsValidas[j];
-        const d = calcDistanceMeters(Number(a.latitude), Number(a.longitude), Number(b.latitude), Number(b.longitude));
-        if (d < menorDist) {
-          menorDist = d;
-          vizinha = b;
-        }
-      }
-
-      if (vizinha && menorDist < 350) {
-        const isCluster = menorDist < 160;
-        const line = L.polyline(
-          [[Number(a.latitude), Number(a.longitude)], [Number(vizinha.latitude), Number(vizinha.longitude)]],
-          {
-            color: isCluster ? '#f43f5e' : '#059669',
-            weight: isCluster ? 2.5 : 1.5,
-            dashArray: isCluster ? '3, 4' : '4, 6',
-            opacity: 0.7
-          }
-        );
-
-        line.bindTooltip(
-          `${menorDist}m ${isCluster ? '⚠️ Sobreposição!' : '✓'}`,
-          {
-            sticky: true,
-            direction: 'center',
-            className: 'bg-slate-900 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow'
-          }
-        );
-
-        distGroup.addLayer(line);
-      }
-    }
-
-    distGroup.addTo(map);
-    layersRef.current.distanciasReais = distGroup;
-  }, [armadilhasReais, modoCenario]);
-
-  // 6. Renderizar Vetores de Deslocamento (Apenas no Modo 'comparar')
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (layersRef.current.vetoresLayer) {
-      map.removeLayer(layersRef.current.vetoresLayer);
-      layersRef.current.vetoresLayer = null;
-    }
-
-    if (modoCenario !== 'comparar') return;
-
-    const vetoresGroup = L.layerGroup();
-    const idsPontosVisiveis = new Set(pontosIdeais.map((p) => p.codigo));
-
-    armadilhasReais.forEach((t) => {
-      if (!t.latitude || !t.longitude) return;
-      const latReal = Number(t.latitude);
-      const lngReal = Number(t.longitude);
-
-      // Achar ponto ideal mais próximo na grade COMPLETA
-      let closest = null;
-      let minDist = Infinity;
-      for (const p of gradeCompleta) {
-        const d = calcDistanceMeters(latReal, lngReal, p.latitude, p.longitude);
-        if (d < minDist) {
-          minDist = d;
-          closest = p;
-        }
-      }
-
-      if (!closest) return;
-      if (!idsPontosVisiveis.has(closest.codigo)) return;
-
-      const strokeColor = minDist <= 60 ? '#059669' : minDist <= 120 ? '#d97706' : '#e11d48';
-      const rumoGraus = calcBearing(latReal, lngReal, closest.latitude, closest.longitude);
-      const card = bearingToCardinal(rumoGraus);
-
-      const polyline = L.polyline([[latReal, lngReal], [closest.latitude, closest.longitude]], {
-        color: strokeColor,
-        weight: 2,
-        dashArray: '5, 6',
-        opacity: 0.85
-      });
-
-      polyline.bindTooltip(
-        `OV-${t.numero} ➔ ${closest.codigo}: ${minDist}m (${card.sigla})`,
+    edges.forEach((edge) => {
+      const isIdealMode = modoCenario === 'ideal';
+      const polyline = L.polyline(
+        [
+          [edge.trapA.latitude, edge.trapA.longitude],
+          [edge.trapB.latitude, edge.trapB.longitude]
+        ],
         {
-          sticky: true,
-          direction: 'center',
-          className: 'bg-slate-900/95 text-white font-black text-[9px] px-2 py-0.5 rounded shadow border border-slate-700'
+          color: isIdealMode ? '#7c3aed' : edge.cor,
+          weight: 3.5,
+          opacity: 0.85,
+          dashArray: edge.status === 'ideal' ? '9, 7' : '4, 6'
         }
       );
+      polyline.addTo(distLayer);
 
-      vetoresGroup.addLayer(polyline);
+      const badgeIcon = L.divIcon({
+        className: '',
+        html: `<div class="distance-pill ${edge.badgeClass}" style="${isIdealMode ? 'background:#581c87;color:#fff;border-color:#a855f7;' : ''}">${edge.distancia} m</div>`,
+        iconSize: [60, 20],
+        iconAnchor: [30, 10]
+      });
+
+      const badge = L.marker(edge.midpoint, {
+        icon: badgeIcon,
+        interactive: false,
+        zIndexOffset: 600
+      });
+      badge.addTo(distLayer);
     });
+  }, [modoCenario, armadilhasReais, pontosIdeais, showDistances]);
 
-    vetoresGroup.addTo(map);
-    layersRef.current.vetoresLayer = vetoresGroup;
-  }, [pontosIdeais, gradeCompleta, armadilhasReais, modoCenario]);
-
-  // 7. Renderizar Pontos Ideais (Roxos) - Visível em 'ideal' e 'comparar'
+  // 5. Círculos de Raio de Cobertura (175m)
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const circlesLayer = layersRef.current.coberturaCircles;
+    if (!map || !circlesLayer) return;
 
-    if (layersRef.current.pontosIdeaisLayer) {
-      map.removeLayer(layersRef.current.pontosIdeaisLayer);
-      layersRef.current.pontosIdeaisLayer = null;
-    }
+    circlesLayer.clearLayers();
+    if (!showCircles || modoCenario === 'rota') return;
 
-    if (modoCenario === 'atual') return; // No modo atual, oculta pontos ideais
+    const listaAtiva = modoCenario === 'atual' ? armadilhasReais : pontosIdeais;
+    const isIdealMode = modoCenario === 'ideal';
 
-    const pontosGroup = L.layerGroup();
-
-    pontosIdeais.forEach((p) => {
-      const isSelected = pontoSelecionado && pontoSelecionado.codigo === p.codigo;
-      const icon = pontoIdealIcon(p, !showLabels, isSelected);
-
-      const marker = L.marker([p.latitude, p.longitude], {
-        icon,
-        zIndexOffset: isSelected ? 1200 : 800
+    listaAtiva.forEach((p) => {
+      if (p.latitude == null || p.longitude == null) return;
+      const circle = L.circle([Number(p.latitude), Number(p.longitude)], {
+        radius: RAIO_COBERTURA_IDEAL_METROS,
+        color: isIdealMode ? '#7c3aed' : '#059669',
+        weight: 1.5,
+        opacity: 0.6,
+        fillColor: isIdealMode ? '#8b5cf6' : '#10b981',
+        fillOpacity: 0.12,
+        dashArray: '4, 6'
       });
-
-      marker.on('click', () => {
-        if (onSelectPonto) onSelectPonto(p);
-      });
-
-      marker.bindPopup(`
-        <div style="font-family:Inter,sans-serif;padding:4px;min-width:200px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:6px;">
-            <span style="background:#7c3aed;color:#fff;font-weight:900;font-size:11px;padding:2px 8px;border-radius:999px;">${p.codigo}</span>
-            <span style="font-weight:700;font-size:11px;color:#475569;">${p.bairro}</span>
-          </div>
-          <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:2px;">${p.quarteirao}</div>
-          <div style="font-size:11px;color:#475569;margin-bottom:6px;">📍 ${p.rua}</div>
-          <div style="font-size:9px;color:#64748b;font-family:monospace;">${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}</div>
-          <div style="margin-top:6px;background:#f5f3ff;border:1px solid #ddd6fe;padding:4px 6px;border-radius:4px;font-size:10px;color:#5b21b6;font-weight:700;">
-            🎯 Posição Ideal (~300m regular)
-          </div>
-        </div>
-      `);
-
-      pontosGroup.addLayer(marker);
+      circle.addTo(circlesLayer);
     });
+  }, [modoCenario, armadilhasReais, pontosIdeais, showCircles]);
 
-    pontosGroup.addTo(map);
-    layersRef.current.pontosIdeaisLayer = pontosGroup;
-  }, [pontosIdeais, pontoSelecionado, showLabels, modoCenario]);
-
-  // 8. Renderizar Armadilhas Reais do Campo (Verdes) - Visível em 'atual' e 'comparar'
+  // 6. ROTA DE COLETA DE PALHETAS (MODO 'rota')
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const rotasLayer = layersRef.current.rotasLayer;
+    if (!map || !rotasLayer) return;
 
-    if (layersRef.current.armadilhasReaisLayer) {
-      map.removeLayer(layersRef.current.armadilhasReaisLayer);
-      layersRef.current.armadilhasReaisLayer = null;
-    }
+    rotasLayer.clearLayers();
+    if (modoCenario !== 'rota' || !dadosRota || !dadosRota.rotas) return;
 
-    if (modoCenario === 'ideal') return; // No modo ideal, oculta armadilhas reais
+    dadosRota.rotas.forEach((veiculoRota) => {
+      const paradas = veiculoRota.paradas;
+      if (!paradas || paradas.length < 2) return;
 
-    const reaisGroup = L.layerGroup();
-    const idsPontosVisiveis = new Set(pontosIdeais.map((p) => p.codigo));
+      const coords = paradas.map(p => [Number(p.latitude), Number(p.longitude)]);
 
-    armadilhasReais.forEach((t) => {
-      if (!t.latitude || !t.longitude) return;
-
-      // No modo comparar com filtro ativo, só mostra se pertence ao ponto filtrado
-      if (modoCenario === 'comparar' && pontosIdeais.length < gradeCompleta.length) {
-        let closest = null;
-        let minDist = Infinity;
-        for (const p of gradeCompleta) {
-          const d = calcDistanceMeters(Number(t.latitude), Number(t.longitude), p.latitude, p.longitude);
-          if (d < minDist) {
-            minDist = d;
-            closest = p;
-          }
-        }
-        if (closest && !idsPontosVisiveis.has(closest.codigo)) {
-          return;
-        }
-      }
-
-      const isSelected = armadilhaSelecionada && armadilhaSelecionada.id === t.id;
-      const icon = ovitrampaIcon(t, !showLabels);
-
-      const marker = L.marker([Number(t.latitude), Number(t.longitude)], {
-        icon,
-        zIndexOffset: isSelected ? 1100 : 700
+      // 6.1. Linha contínua do trajeto com a cor do veículo
+      const linhaRota = L.polyline(coords, {
+        color: veiculoRota.cor,
+        weight: 5,
+        opacity: 0.9,
+        dashArray: '8, 6',
+        lineCap: 'round',
+        lineJoin: 'round'
       });
+      linhaRota.addTo(rotasLayer);
 
-      marker.on('click', () => {
-        if (onSelectArmadilha) onSelectArmadilha(t);
+      // 6.2. Marcadores das paradas sequenciais com número da ordem
+      paradas.forEach((p) => {
+        const paradaBadge = L.divIcon({
+          className: '',
+          html: `
+            <div style="background:${veiculoRota.cor};color:#ffffff;font-size:11px;font-weight:900;width:26px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:2.5px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.35);">
+              ${p.ordem}
+            </div>
+          `,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13]
+        });
+
+        const marker = L.marker([Number(p.latitude), Number(p.longitude)], {
+          icon: paradaBadge,
+          zIndexOffset: 1200 + p.ordem
+        });
+
+        marker.bindPopup(`
+          <div style="font-family:Inter,sans-serif;padding:3px 4px;min-width:180px;">
+            <div style="background:${veiculoRota.cor};color:#fff;font-size:10px;font-weight:900;padding:2px 6px;border-radius:6px;display:inline-block;margin-bottom:4px;">
+              ${veiculoRota.nome} • Parada #${p.ordem}
+            </div>
+            <div style="font-weight:900;font-size:13px;color:#0f172a;">ARM-${p.numero || p.codigo}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px;">📍 ${p.rua || 'Logradouro'}</div>
+            <div style="font-size:10px;color:#64748b;">${p.bairro || 'Carmo'} ${p.moradorNome ? `• ${p.moradorNome}` : ''}</div>
+            ${p.distanciaDoAnteriorMetros > 0 ? `<div style="font-size:10px;font-weight:800;color:#059669;margin-top:4px;">➔ +${p.distanciaDoAnteriorMetros}m do ponto anterior</div>` : '<div style="font-size:10px;font-weight:800;color:#2563eb;margin-top:4px;">🏁 Início da Coleta</div>'}
+          </div>
+        `);
+
+        marker.addTo(rotasLayer);
       });
-
-      marker.bindPopup(`
-        <div style="font-family:Inter,sans-serif;padding:4px;min-width:190px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:6px;">
-            <span style="background:#059669;color:#fff;font-weight:900;font-size:11px;padding:2px 8px;border-radius:999px;">ARM-${t.numero}</span>
-            <span style="font-weight:700;font-size:11px;color:#475569;">${t.bairro || 'Carmo'}</span>
-          </div>
-          <div style="font-size:11px;color:#1e293b;font-weight:700;margin-bottom:2px;">${t.rua || 'Logradouro não informado'}</div>
-          <div style="font-size:10px;color:#64748b;margin-bottom:4px;">${t.moradorNome ? `👤 Morador: ${t.moradorNome}` : ''}</div>
-          <div style="font-size:9px;color:#64748b;font-family:monospace;">${Number(t.latitude).toFixed(6)}, ${Number(t.longitude).toFixed(6)}</div>
-          <div style="margin-top:6px;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 6px;border-radius:4px;font-size:10px;color:#065f46;font-weight:700;">
-            📦 Armadilha Instalada no Campo (Realidade)
-          </div>
-        </div>
-      `);
-
-      reaisGroup.addLayer(marker);
     });
+  }, [modoCenario, dadosRota]);
 
-    reaisGroup.addTo(map);
-    layersRef.current.armadilhasReaisLayer = reaisGroup;
-  }, [armadilhasReais, armadilhaSelecionada, showLabels, modoCenario, pontosIdeais, gradeCompleta]);
+  // 7. Marcadores dos Pontos Normais (quando NÃO está no modo rota)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const pontosLayer = layersRef.current.pontosLayer;
+    if (!map || !pontosLayer) return;
 
-  // 9. Marcador do Agente (Você)
+    pontosLayer.clearLayers();
+    if (modoCenario === 'rota') return; // Marcadores do modo rota são tratados acima
+
+    if (modoCenario === 'atual') {
+      armadilhasReais.forEach((t) => {
+        if (t.latitude == null || t.longitude == null) return;
+        const isSelected = armadilhaSelecionada && armadilhaSelecionada.id === t.id;
+        const icon = ovitrampaIcon(t, !showLabels);
+
+        const marker = L.marker([Number(t.latitude), Number(t.longitude)], {
+          icon,
+          zIndexOffset: isSelected ? 1200 : 800
+        });
+
+        marker.on('click', () => {
+          if (onSelectArmadilha) onSelectArmadilha(t);
+        });
+
+        marker.bindPopup(`
+          <div style="font-family:Inter,sans-serif;padding:4px;min-width:190px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:6px;">
+              <span style="background:#059669;color:#fff;font-weight:900;font-size:11px;padding:2px 8px;border-radius:999px;">ARM-${t.numero}</span>
+              <span style="font-weight:700;font-size:11px;color:#475569;">${t.bairro || 'Carmo'}</span>
+            </div>
+            <div style="font-size:11px;color:#1e293b;font-weight:700;margin-bottom:2px;">${t.rua || 'Logradouro não informado'}</div>
+            ${t.moradorNome ? `<div style="font-size:10px;color:#64748b;margin-bottom:4px;">👤 Morador: ${t.moradorNome}</div>` : ''}
+            <div style="font-size:9px;color:#64748b;font-family:monospace;">${Number(t.latitude).toFixed(6)}, ${Number(t.longitude).toFixed(6)}</div>
+            <div style="margin-top:6px;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 6px;border-radius:4px;font-size:10px;color:#065f46;font-weight:700;">
+              📦 Armadilha Instalada no Campo
+            </div>
+          </div>
+        `);
+
+        marker.addTo(pontosLayer);
+      });
+    } else {
+      pontosIdeais.forEach((p) => {
+        if (p.latitude == null || p.longitude == null) return;
+        const isSelected = pontoSelecionado && pontoSelecionado.codigo === p.codigo;
+        const icon = pontoIdealIcon(p, !showLabels, isSelected);
+
+        const marker = L.marker([Number(p.latitude), Number(p.longitude)], {
+          icon,
+          zIndexOffset: isSelected ? 1200 : 800
+        });
+
+        marker.on('click', () => {
+          if (onSelectPonto) onSelectPonto(p);
+        });
+
+        marker.bindPopup(`
+          <div style="font-family:Inter,sans-serif;padding:4px;min-width:200px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:6px;">
+              <span style="background:#7c3aed;color:#fff;font-weight:900;font-size:11px;padding:2px 8px;border-radius:999px;">${p.codigo}</span>
+              <span style="font-weight:700;font-size:11px;color:#475569;">${p.bairro}</span>
+            </div>
+            <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:2px;">${p.quarteirao}</div>
+            <div style="font-size:11px;color:#475569;margin-bottom:6px;">📍 ${p.rua}</div>
+            <div style="font-size:9px;color:#64748b;font-family:monospace;">${Number(p.latitude).toFixed(6)}, ${Number(p.longitude).toFixed(6)}</div>
+            <div style="margin-top:6px;background:#f5f3ff;border:1px solid #ddd6fe;padding:4px 6px;border-radius:4px;font-size:10px;color:#5b21b6;font-weight:700;">
+              🎯 Posição Ideal (~300m regular)
+            </div>
+          </div>
+        `);
+
+        marker.addTo(pontosLayer);
+      });
+    }
+  }, [modoCenario, armadilhasReais, pontosIdeais, armadilhaSelecionada, pontoSelecionado, showLabels]);
+
+  // 8. Marcador do Agente (Você)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !userPos || !userPos.latitude || !userPos.longitude) return;
@@ -466,7 +394,7 @@ export function MapaCenarioIdeal({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !pontoSelecionado) return;
-    map.flyTo([pontoSelecionado.latitude, pontoSelecionado.longitude], 17, { duration: 1 });
+    map.flyTo([Number(pontoSelecionado.latitude), Number(pontoSelecionado.longitude)], 17, { duration: 1 });
   }, [pontoSelecionado]);
 
   // Centralizar em Armadilha Selecionada
@@ -479,13 +407,13 @@ export function MapaCenarioIdeal({
   const handleResetBounds = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    const basePoints = modoCenario === 'atual' && armadilhasReais.length > 0
-      ? armadilhasReais.map(t => [Number(t.latitude), Number(t.longitude)])
-      : pontosIdeais.map(p => [p.latitude, p.longitude]);
+    const baseList = armadilhasReais.length > 0 ? armadilhasReais : pontosIdeais;
+    const validPoints = baseList
+      .filter(p => p.latitude != null && p.longitude != null)
+      .map(p => [Number(p.latitude), Number(p.longitude)]);
 
-    if (basePoints.length > 0) {
-      const bounds = L.latLngBounds(basePoints);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+    if (validPoints.length > 0) {
+      map.fitBounds(L.latLngBounds(validPoints), { padding: [50, 50], maxZoom: 16 });
     }
   };
 
@@ -497,146 +425,147 @@ export function MapaCenarioIdeal({
 
   return (
     <div className="relative w-full h-full">
-      {/* MAPA LEAFLET */}
       <div ref={mapContainerRef} className="absolute inset-0 w-full h-full z-0 bg-slate-100" />
 
-      {/* SELETOR RÁPIDO FLUTUANTE DE CENÁRIO (CENTRO-TOPO DO MAPA) */}
+      {/* SELETOR RÁPIDO NO TOPO-ESQUERDA DO MAPA */}
       <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border border-slate-300 shadow-xl pointer-events-auto">
         <button
           type="button"
           onClick={() => onChangeModoCenario && onChangeModoCenario('atual')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
             modoCenario === 'atual'
               ? 'bg-emerald-600 text-white shadow-md'
               : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           }`}
-          title="Ver o Cenário Atual (a realidade das armadilhas que estão hoje no campo)"
+          title="Ver o Cenário Atual (a realidade das armadilhas instaladas)"
         >
           <MapPin className="w-3.5 h-3.5" />
-          <span>Realidade Atual ({armadilhasReais.length})</span>
+          <span>Realidade ({armadilhasReais.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => onChangeModoCenario && onChangeModoCenario('ideal')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
             modoCenario === 'ideal'
               ? 'bg-purple-600 text-white shadow-md'
               : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           }`}
-          title="Ver o Cenário Ideal Puro (grade regular calculada do zero)"
+          title="Ver o Cenário Ideal (~300m regular)"
         >
           <Target className="w-3.5 h-3.5" />
-          <span>Cenário Ideal ({pontosIdeais.length})</span>
+          <span>Grade Ideal ({pontosIdeais.length})</span>
         </button>
 
         <button
           type="button"
-          onClick={() => onChangeModoCenario && onChangeModoCenario('comparar')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-            modoCenario === 'comparar'
-              ? 'bg-amber-600 text-white shadow-md'
+          onClick={() => onChangeModoCenario && onChangeModoCenario('rota')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
+            modoCenario === 'rota'
+              ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
           }`}
-          title="Comparar o Cenário Atual com o Cenário Ideal (mostra as linhas de deslocamento)"
+          title="Rota de Coleta Otimizada para 1 ou 2 veículos"
         >
-          <Compass className="w-3.5 h-3.5" />
-          <span>Comparar</span>
+          <Car className="w-3.5 h-3.5" />
+          <span>Rota de Coleta</span>
         </button>
       </div>
 
-      {/* CONTROLES FLUTUANTES NO TOPO DIREITO */}
-      <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 pointer-events-auto">
-        {/* BOTÃO REMOVER / MOSTRAR RÓTULO (PROEMINENTE COM TEXTO CLARO) */}
-        <button
-          type="button"
-          onClick={onToggleLabels}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
-            showLabels
-              ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500'
-          }`}
-          title={showLabels ? "Remover rótulos para ver apenas pontos limpos no mapa" : "Mostrar rótulos das armadilhas"}
-        >
-          <Tag className="w-4 h-4 shrink-0" />
-          <span>{showLabels ? 'Remover Rótulo' : 'Mostrar Rótulo'}</span>
-        </button>
+      {/* SELETOR DE VEÍCULOS QUANDO NO MODO ROTA */}
+      {modoCenario === 'rota' && (
+        <div className="absolute top-14 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border border-blue-200 shadow-xl pointer-events-auto text-xs font-black">
+          <span className="text-[10px] text-slate-500 uppercase px-2">Veículos:</span>
+          <button
+            type="button"
+            onClick={() => onChangeNumVeiculos && onChangeNumVeiculos(1)}
+            className={`px-3 py-1 rounded-xl transition-all ${
+              numVeiculos === 1 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            🚗 1 Carro (Circuito Único)
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeNumVeiculos && onChangeNumVeiculos(2)}
+            className={`px-3 py-1 rounded-xl transition-all ${
+              numVeiculos === 2 ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            🚗🚙 2 Carros (Divisão Norte/Sul)
+          </button>
+        </div>
+      )}
 
-        {/* SATÉLITE / MAPA */}
-        <button
-          type="button"
-          onClick={() => setSatellite((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all ${
-            satellite
-              ? 'bg-slate-900/90 text-amber-400 border-amber-400/50'
-              : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-          }`}
-          title="Alternar entre Satélite e Mapa Padrão"
-        >
-          <Layers className="w-4 h-4 shrink-0" />
-          <span>{satellite ? 'Satélite' : 'Mapa'}</span>
-        </button>
+      {/* BOTÕES FLUTUANTES PADRONIZADOS */}
+      <MapControlButtons
+        onRecenter={handleCentrarGps}
+        satellite={satellite}
+        onToggleSatellite={() => setSatellite(!satellite)}
+        showDistances={showDistances}
+        onToggleDistances={() => setShowDistances(!showDistances)}
+        showCircles={showCircles}
+        onToggleCircles={() => setShowCircles(!showCircles)}
+        showLabels={showLabels}
+        onToggleLabels={onToggleLabels}
+        top={14}
+        right={12}
+      />
 
-        {/* CÍRCULOS DE 175M (RAIO) */}
-        <button
-          type="button"
-          onClick={() => setMostrarCirculos((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
-            mostrarCirculos
-              ? modoCenario === 'atual' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-purple-600 text-white border-purple-500'
-              : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-          }`}
-          title="Alternar círculos de 175m de cobertura por ovitrampa"
-        >
-          <Radio className="w-4 h-4 shrink-0" />
-          <span>Raio 175m</span>
-        </button>
-
-        {/* ENQUADRAR CIDADE */}
+      {/* BOTÃO ENQUADRAR CIDADE */}
+      <div className="absolute top-[280px] right-3 z-20 pointer-events-auto">
         <button
           type="button"
           onClick={handleResetBounds}
-          className="p-2.5 bg-white/95 hover:bg-slate-100 text-slate-700 rounded-xl shadow-lg border border-slate-200 backdrop-blur-md transition-all active:scale-95"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 999,
+            border: '1.5px solid rgba(255, 255, 255, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.18)'
+          }}
+          className="active:scale-90"
           title="Enquadrar toda a cidade de Carmo"
         >
-          <Maximize2 className="w-4 h-4 text-purple-600" />
+          <Maximize2 size={19} color="#7c3aed" />
         </button>
-
-        {userPos?.latitude && (
-          <button
-            type="button"
-            onClick={handleCentrarGps}
-            className="p-2.5 bg-white/95 hover:bg-emerald-50 text-emerald-700 rounded-xl shadow-lg border border-emerald-300 backdrop-blur-md transition-all active:scale-95"
-            title="Centralizar na Minha Posição GPS"
-          >
-            <Navigation className="w-4 h-4 text-emerald-600" />
-          </button>
-        )}
       </div>
 
-      {/* LEGENDA INFORMATIVA NO CANTO INFERIOR ESQUERDO */}
+      {/* LEGENDA NO CANTO INFERIOR ESQUERDO */}
       <div className="absolute bottom-3 left-3 z-20 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-xl text-[11px] font-bold border border-slate-700/80 shadow-2xl flex items-center gap-3">
-        {modoCenario !== 'ideal' && (
+        {modoCenario === 'rota' ? (
+          numVeiculos === 1 ? (
+            <div className="flex items-center gap-1.5 text-blue-300">
+              <span className="w-3 h-3 rounded-full bg-blue-600 border border-white inline-block"></span>
+              <span>Circuito Único (~{dadosRota?.kmTotalGlobal || 0} km • ~{dadosRota?.tempoEstimadoGlobal || ''})</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-blue-300">
+                <span className="w-3 h-3 rounded-full bg-blue-600 border border-white inline-block"></span>
+                <span>Carro 1 (Sul/Centro)</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-amber-300">
+                <span className="w-3 h-3 rounded-full bg-amber-600 border border-white inline-block"></span>
+                <span>Carro 2 (Norte)</span>
+              </div>
+            </div>
+          )
+        ) : modoCenario === 'atual' ? (
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-emerald-600 border border-white inline-block"></span>
             <span>Realidade ({armadilhasReais.length} OVs)</span>
           </div>
-        )}
-        {modoCenario !== 'atual' && (
+        ) : (
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-purple-600 border border-white inline-block"></span>
-            <span>Cenário Ideal ({pontosIdeais.length} Pontos)</span>
-          </div>
-        )}
-        {modoCenario === 'comparar' && (
-          <div className="flex items-center gap-1 text-amber-400">
-            <span>⤏ Vetores de Deslocamento</span>
-          </div>
-        )}
-        {mostrarCirculos && (
-          <div className="flex items-center gap-1 text-slate-300">
-            <span className="w-3 h-3 rounded-full border border-dashed border-slate-300 inline-block"></span>
-            <span>Raio 175m</span>
+            <span>Grade Ideal ({pontosIdeais.length} Pontos)</span>
           </div>
         )}
       </div>

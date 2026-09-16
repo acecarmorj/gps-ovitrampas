@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff } from 'lucide-react';
+import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff, Radio } from 'lucide-react';
 
 /**
  * Botões flutuantes para controle de mapa adaptados do MOTOJAGEMINI.
@@ -10,6 +10,8 @@ export function MapControlButtons({
   onToggleSatellite,
   showDistances = true,
   onToggleDistances,
+  showCircles = false,
+  onToggleCircles,
   showLabels = true,
   onToggleLabels,
   showPanel = true,
@@ -70,6 +72,20 @@ export function MapControlButtons({
           title={showDistances ? "Ocultar linhas de distância (300m-400m)" : "Mostrar linhas de distância entre armadilhas"}
         >
           <Ruler size={19} color={showDistances ? "#ffffff" : "#0f172a"} />
+        </button>
+      )}
+
+      {/* 2.1. Círculos de Raio de Cobertura (175m) */}
+      {onToggleCircles && (
+        <button
+          type="button"
+          onClick={onToggleCircles}
+          aria-label={showCircles ? "Ocultar círculos de raio 175m" : "Mostrar círculos de raio 175m"}
+          style={btnStyle(showCircles, '#7c3aed', '#ffffff')}
+          className="active:scale-90"
+          title={showCircles ? "Ocultar círculos de raio 175m" : "Mostrar círculos de raio de atração (175m)"}
+        >
+          <Radio size={19} color={showCircles ? "#ffffff" : "#0f172a"} />
         </button>
       )}
 
