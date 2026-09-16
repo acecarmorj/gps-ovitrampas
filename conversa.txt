@@ -1344,3 +1344,34 @@ Módulo: /laboratorio (Laboratório de Entomologia - Carmo RJ)
    - Build Vite: Sucesso total em 6.24s.
    - Deploy Cloudflare Pages: Publicado com sucesso em https://gps-ovitrampas.pages.dev.
 ==============================================================================
+
+==============================================================================
+39. IDENTIFICADOR ENTOMOLÓGICO DE ESPÉCIES & ARQUITETURA OFFLINE-FIRST
+==============================================================================
+Data: 15/09/2026 - 23:35
+Ambiente: Produção (Cloudflare Pages https://gps-ovitrampas.pages.dev)
+Módulo: /laboratorio (Laboratório de Entomologia - Carmo RJ)
+
+1. RECURSOS ENTREGUES:
+   - Nova Ferramenta: "Identificador de Espécies com IA Gemini 3.6 Flash" (src/features/laboratorio/IdentificadorEspecies.jsx).
+     * Fotografia macro de mosquito adulto (alado) ou larva em lâmina.
+     * Reconhecimento taxonômico: Aedes aegypti (desenho em lira no tórax, anéis brancos), Aedes albopictus (linha reta única), Culex quinquefasciatus (pernilongo marrom), Anopheles, etc.
+     * Identificação de larvas por morfologia de sifão respiratório (curto no Aedes vs longo no Culex).
+     * Emissão de laudo com % de certeza científica, grau de risco epidemiológico e ação recomendada para Carmo.
+     * Botão para compartilhar laudo instantaneamente via WhatsApp.
+   - Navegação por Abas no Laboratório:
+     * Aba 1: Contagem de Ovos (Palhetas) - fluxo manual rápido + assistente local com anéis azuis + auditoria Gemini.
+     * Aba 2: Identificar Espécie (Mosquito/Larva).
+
+2. RESPOSTA ÀS DÚVIDAS DE CAMPO E CONECTIVIDADE (OFFLINE-FIRST):
+   - Orientação de instalação: O app pode orientar o local ideal pela foto do quintal (sombra, abrigo de chuva, longe de animais) e pelo GPS (distância mínima de 300m entre armadilhas).
+   - Ausência de Internet: 100% dos fluxos vitais de campo e laboratório funcionam SEM INTERNET (offline-first).
+     * O GPS funciona por satélite sem dados móveis.
+     * A contagem local de ovos (Canvas + eggCounter.js) roda no processador do próprio aparelho (Modo Avião).
+     * A IA em nuvem (Gemini) atua como um reforço opcional de auditoria pericial acionado quando houver Wi-Fi/rede.
+
+3. STATUS:
+   - Build Vite validado sem erros (6.22s).
+   - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/laboratorio.
+   - Git sincronizado na branch main.
+==============================================================================
