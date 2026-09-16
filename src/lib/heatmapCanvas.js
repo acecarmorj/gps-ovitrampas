@@ -113,9 +113,8 @@ function montarBaseTerritorial(armadilhas, width, height) {
   ctx.fillStyle = '#F8FAFC';
   ctx.fillRect(0, 0, W, H);
 
-  ctx.strokeStyle = 'rgba(100, 116, 139, 0.55)';
-  ctx.lineWidth = 1;
-  polygons.forEach((poly) => {
+  // Desenha os quarteirões territoriais oficiais com preenchimento sutil e bordas nítidas
+  polygonsNaArea.forEach((poly) => {
     const coords = poly.coordinates;
     if (!coords || coords.length < 3) return;
     ctx.beginPath();
@@ -125,13 +124,72 @@ function montarBaseTerritorial(armadilhas, width, height) {
       else ctx.lineTo(x, y);
     });
     ctx.closePath();
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
+
+    // Rótulo discreto do Quarteirão no centroide quando a área estiver focada
+    if (poly.properties?.quarteirao && polygonsNaArea.length <= 40) {
+      let cLat = 0, cLng = 0;
+      coords.forEach(([lat, lng]) => { cLat += lat; cLng += lng; });
+      cLat /= coords.length;
+      cLng /= coords.length;
+      const [cx, cy] = project(cLat, cLng);
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
+      ctx.font = 'bold 9px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(poly.properties.quarteirao, cx, cy + 3);
+      ctx.textAlign = 'start';
+    }
   });
 
   return { canvas, ctx, W, H, project, pontos };
 }
 
-function desenharLegenda(ctx, W, H, itens) {
+// Rosa dos Ventos / Indicador Oficial de Norte Cartográfico
+function desenharNorte(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Fundo circular sutil com sombra
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.strokeStyle = 'rgba(203, 213, 225, 0.9)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, 0, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Ponta Norte (Slate escuro)
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.moveTo(0, -12);
+  ctx.lineTo(4, 2);
+  ctx.lineTo(0, -1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Ponta Sul (Cinza médio)
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath();
+  ctx.moveTo(0, -12);
+  ctx.lineTo(-4, 2);
+  ctx.lineTo(0, -1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Letra N
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 8.5px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', 0, -13);
+
+  ctx.restore();
+}
+
+function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA') {
   const padding = 12;
   const boxW = 230;
   const lineH = 20;
@@ -139,17 +197,17 @@ function desenharLegenda(ctx, W, H, itens) {
   const x0 = W - boxW - padding;
   const y0 = H - boxH - padding;
 
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.strokeStyle = 'rgba(148,163,184,0.9)';
-  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.strokeStyle = 'rgba(203, 213, 225, 0.95)';
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
   ctx.roundRect ? ctx.roundRect(x0, y0, boxW, boxH, 8) : ctx.rect(x0, y0, boxW, boxH);
   ctx.fill();
   ctx.stroke();
 
   ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 12px Arial';
-  ctx.fillText('LEGENDA', x0 + padding, y0 + padding + 10);
+  ctx.font = 'bold 11px Arial';
+  ctx.fillText(titulo, x0 + padding, y0 + padding + 10);
 
   itens.forEach((item, idx) => {
     const y = y0 + padding + 24 + idx * lineH;
@@ -212,20 +270,36 @@ export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 9
   pontos.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     ctx.beginPath();
-    ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
     ctx.fillStyle = '#0f172a';
     ctx.fill();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
+
+    // Rótulo da OV com fundo branco nítido
+    const label = `OV-${arm.numero}`;
+    ctx.font = 'bold 9.5px Arial';
+    const lw = ctx.measureText(label).width + 6;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(x + 6, y - 13, lw, 12);
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.85)';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(x + 6, y - 13, lw, 12);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(label, x + 9, y - 4);
   });
+
+  // Desenha Rosa dos Ventos / Norte no canto superior direito
+  desenharNorte(ctx, W - 30, 30);
 
   desenharLegenda(ctx, W, H, [
     { cor: 'rgb(37,99,235)', label: 'Sem leitura / negativa' },
     { cor: 'rgb(16,185,129)', label: 'Baixo risco (1-20 ovos)' },
     { cor: 'rgb(234,179,8)', label: 'Médio risco (21-50 ovos)' },
     { cor: 'rgb(225,29,72)', label: 'Alto / crítico (>50 ovos)' }
-  ]);
+  ], 'NÍVEL DE RISCO');
 
   return { canvas, width: W, height: H };
 }
@@ -278,20 +352,32 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
     ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fillStyle = '#059669';
     ctx.fill();
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.8;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
 
-    ctx.fillStyle = '#0f172a';
+    // Rótulo da OV com fundo branco nítido
+    const label = `OV-${arm.numero}`;
     ctx.font = 'bold 10px Arial';
-    ctx.fillText(`OV-${arm.numero}`, x + 7, y - 6);
+    const lw = ctx.measureText(label).width + 6;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.fillRect(x + 7, y - 14, lw, 13);
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.9)';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(x + 7, y - 14, lw, 13);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(label, x + 10, y - 4);
   });
+
+  // Desenha Rosa dos Ventos / Norte no canto superior direito
+  desenharNorte(ctx, W - 30, 30);
 
   desenharLegenda(ctx, W, H, [
     { cor: 'rgb(5,150,105)', label: 'Ideal (300m - 400m)' },
     { cor: 'rgb(217,119,6)', label: 'Abaixo do ideal (< 300m)' },
     { cor: 'rgb(225,29,72)', label: 'Acima do ideal (> 400m)' }
-  ]);
+  ], 'ESPAÇAMENTO');
 
   return { canvas, width: W, height: H, totalLigacoes: edges.length };
 }

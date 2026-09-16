@@ -106,16 +106,38 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     ];
   });
 
+  // Linha de totalização geral de Carmo no rodapé da tabela de microáreas
+  const todosQuarteiroes = new Set();
+  armadilhas.forEach((a) => { if (a.quarteirao) todosQuarteiroes.add(a.quarteirao); });
+  const riscoGeral = Number(ipo) > 40 ? 'Muito Alto' : Number(ipo) > 20 ? 'Alto' : Number(ipo) > 10 ? 'Médio' : 'Baixo';
+  const linhasMicroareas = [
+    ...microareasResumo,
+    [
+      'TOTAL DO MUNICÍPIO',
+      `${todosQuarteiroes.size} Quarteirão(ões) monitorados`,
+      totalArmadilhas.toString(),
+      totalLidas.toString(),
+      totalPositivas.toString(),
+      `${ipo}%`,
+      totalOvos.toString(),
+      riscoGeral
+    ]
+  ];
+
   // 4. Cabeçalho Institucional Oficial (largura/layout se adapta a paisagem/retrato)
   const desenharCabecalho = () => {
     const pageW = doc.internal.pageSize.getWidth();
     const barW = pageW - 20;
     const isRetrato = pageW < 250;
-    const barH = isRetrato ? 30 : 24;
+    const barH = isRetrato ? 32 : 25;
 
-    // Barra superior verde institucional (Carmo - RJ)
-    doc.setFillColor(5, 150, 105); // emerald-600
+    // Barra superior verde institucional (Prefeitura de Carmo - RJ)
+    doc.setFillColor(5, 122, 85); // verde institucional encorpado
     doc.rect(10, 8, barW, barH, 'F');
+
+    // Faixa dourada/esmeralda decorativa na base da barra superior
+    doc.setFillColor(52, 211, 153); // emerald-400
+    doc.rect(10, 8 + barH - 1.2, barW, 1.2, 'F');
 
     // Texto do Cabeçalho (esquerda)
     doc.setFont('helvetica', 'bold');
@@ -126,27 +148,27 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(isRetrato ? 6.8 : 8.5);
     doc.text('SECRETARIA MUNICIPAL DE SAÚDE  •  COORDENADORIA DE VIGILÂNCIA AMBIENTAL EM SAÚDE', 14, 20);
-    doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 14, isRetrato ? 24 : 25);
+    doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 14, isRetrato ? 24.5 : 25);
 
     if (isRetrato) {
-      // Retrato: info de emissão/filtro numa linha própria embaixo (largura estreita
-      // não cabe ao lado do texto institucional sem sobrepor).
+      // Retrato: info de emissão/filtro numa linha própria embaixo
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6.5);
       doc.text(
         `EMISSÃO: ${dataFormatada} às ${horaFormatada}   •   FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`,
         14,
-        29
+        30
       );
     } else {
       // Paisagem: box no canto direito, ao lado do texto institucional
-      const direitaX = pageW - 10;
+      const direitaX = pageW - 14;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.text(`EMISSÃO: ${dataFormatada} às ${horaFormatada}`, direitaX, 16, { align: 'right' });
+      doc.text(`EMISSÃO: ${dataFormatada} às ${horaFormatada}`, direitaX, 15.5, { align: 'right' });
       doc.setFont('helvetica', 'normal');
-      doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', direitaX, 21, { align: 'right' });
-      doc.text(`FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`, direitaX, 26, { align: 'right' });
+      doc.setFontSize(7.5);
+      doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', direitaX, 20.5, { align: 'right' });
+      doc.text(`FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`, direitaX, 25, { align: 'right' });
     }
   };
 
@@ -156,22 +178,23 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text('RELATÓRIO TÉCNICO CONSOLIDADO DE VIGILÂNCIA ENTOMOLÓGICA', 10, 38);
+  doc.text('RELATÓRIO TÉCNICO CONSOLIDADO DE VIGILÂNCIA ENTOMOLÓGICA', 10, 39);
 
   // 6. Bloco de Indicadores Epidemiológicos Oficiais
+  const statusIpoTexto = Number(ipo) > 20 ? 'ALERTA EPIDEMIOLÓGICO' : 'TRANSMISSÃO CONTROLADA';
   const indicadores = [
     ['Total de Ovitrampas', `${totalArmadilhas}`],
     ['OVs Lidas em Lab', `${totalLidas} (${totalArmadilhas > 0 ? ((totalLidas / totalArmadilhas) * 100).toFixed(0) : 0}%)`],
     ['Armadilhas Positivas', `${totalPositivas}`],
     ['Armadilhas Negativas', `${totalNegativas}`],
     ['Pendentes (Em Campo)', `${pendentes}`],
-    ['IPO (Positividade)', `${ipo}%`],
-    ['Total de Ovos', `${totalOvos}`],
+    ['IPO (% Positividade)', `${ipo}% (${statusIpoTexto})`],
+    ['Total de Ovos Contados', `${totalOvos}`],
     ['IDO (Densidade de Ovos)', `${ido} ovos/OV+`]
   ];
 
   autoTable(doc, {
-    startY: 42,
+    startY: 43,
     margin: { left: 10, right: 10 },
     head: [['INDICADOR', 'VALOR CONSOLIDADO', 'INDICADOR', 'VALOR CONSOLIDADO', 'INDICADOR', 'VALOR CONSOLIDADO', 'INDICADOR', 'VALOR CONSOLIDADO']],
     body: [
@@ -194,34 +217,35 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 7.5,
-      halign: 'center'
+      halign: 'center',
+      cellPadding: 2.2
     },
     bodyStyles: {
       fontSize: 8,
       halign: 'center',
-      cellPadding: 2
+      cellPadding: 2.5
     },
     columnStyles: {
-      0: { fontStyle: 'bold', fillColor: [248, 250, 252] },
-      1: { fontStyle: 'bold', textColor: [5, 150, 105] },
-      2: { fontStyle: 'bold', fillColor: [248, 250, 252] },
-      3: { fontStyle: 'bold', textColor: [37, 99, 235] },
-      4: { fontStyle: 'bold', fillColor: [248, 250, 252] },
-      5: { fontStyle: 'bold', textColor: [225, 29, 72] },
-      6: { fontStyle: 'bold', fillColor: [248, 250, 252] },
-      7: { fontStyle: 'bold', textColor: [217, 119, 6] }
+      0: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.2 },
+      1: { fontStyle: 'bold', textColor: [15, 23, 42], fontSize: 9 },
+      2: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.2 },
+      3: { fontStyle: 'bold', textColor: [37, 99, 235], fontSize: 9 },
+      4: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.2 },
+      5: { fontStyle: 'bold', textColor: [225, 29, 72], fontSize: 9 },
+      6: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [71, 85, 105], fontSize: 7.2 },
+      7: { fontStyle: 'bold', textColor: Number(ipo) > 20 ? [225, 29, 72] : [5, 150, 105], fontSize: 9 }
     }
   });
 
   // 7. Tabela 1: Consolidação por Microárea e Quarteirões
-  const yPosMicroareas = doc.lastAutoTable.finalY + 6;
+  const yPosMicroareas = doc.lastAutoTable.finalY + 7;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
   doc.text('1. CONSOLIDAÇÃO TERRITORIAL POR MICROÁREA E QUARTEIRÃO', 10, yPosMicroareas);
 
   autoTable(doc, {
-    startY: yPosMicroareas + 3,
+    startY: yPosMicroareas + 3.5,
     margin: { left: 10, right: 10 },
     head: [[
       'MICROÁREA',
@@ -233,19 +257,20 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       'TOTAL OVOS',
       'NÍVEL DE RISCO'
     ]],
-    body: microareasResumo,
+    body: linhasMicroareas,
     theme: 'striped',
     headStyles: {
-      fillColor: [16, 185, 129], // emerald-500
+      fillColor: [5, 150, 105], // emerald-600 institucional
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 7.5,
-      halign: 'center'
+      halign: 'center',
+      cellPadding: 2.2
     },
     bodyStyles: {
       fontSize: 7.5,
       halign: 'center',
-      cellPadding: 2
+      cellPadding: 2.2
     },
     columnStyles: {
       0: { halign: 'left', fontStyle: 'bold' },
@@ -253,6 +278,14 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       5: { fontStyle: 'bold' },
       6: { fontStyle: 'bold' },
       7: { fontStyle: 'bold' }
+    },
+    didParseCell: (data) => {
+      // Destaque para a linha de Total Geral
+      if (data.row.index === linhasMicroareas.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [241, 245, 249];
+        data.cell.styles.textColor = [15, 23, 42];
+      }
     }
   });
 
@@ -262,7 +295,7 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('2. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 38);
+  doc.text('2. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 39);
   const startYTable2 = 42;
 
   // Prepara as linhas de armadilhas com o cálculo das vizinhas mais próximas
@@ -342,6 +375,30 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       8: { fontStyle: 'bold', halign: 'center', width: 28 },
       9: { fontSize: 6.2, width: 32 }
     },
+    didParseCell: (data) => {
+      if (data.section === 'body') {
+        if (data.column.index === 8) { // Coluna de Resultado
+          const txt = String(data.cell.raw || '');
+          if (txt.includes('Positiva')) {
+            data.cell.styles.textColor = [225, 29, 72]; // vermelho/coral
+            data.cell.styles.fontStyle = 'bold';
+          } else if (txt.includes('Negativa')) {
+            data.cell.styles.textColor = [5, 150, 105]; // verde esmeralda
+          }
+        }
+        if (data.column.index === 9) { // Coluna de OV Mais Próxima
+          const txt = String(data.cell.raw || '');
+          if (txt.includes('Ideal')) {
+            data.cell.styles.textColor = [5, 150, 105];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (txt.includes('<300m')) {
+            data.cell.styles.textColor = [217, 119, 6];
+          } else if (txt.includes('>400m')) {
+            data.cell.styles.textColor = [225, 29, 72];
+          }
+        }
+      }
+    },
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
         desenharCabecalho();
@@ -349,54 +406,47 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     }
   });
 
-  // 9. Páginas de Mapas (últimas páginas, depois das tabelas): Calor (densidade/
-  // risco) e Distâncias (espaçamento 300-400m). EM RETRATO (A4 210x297mm) -
-  // Carmo é uma cidade mais alta do que larga, retrato aproveita bem mais
-  // espaço vertical pro mapa do que a paisagem do resto do relatório.
-  // Sempre enquadram TODAS as armadilhas do filtro atual (bounding box automático).
-  const areaMapaX = 10, areaMapaY = 46, areaMapaMaxW = 190, areaMapaMaxH = 226;
+  // 9. Páginas de Mapas (últimas páginas, depois das tabelas): Calor e Distâncias.
+  // EM RETRATO (A4 210x297mm) com enquadramento proporcional e respiro no rodapé.
+  const areaMapaX = 10, areaMapaY = 48, areaMapaMaxW = 190, areaMapaMaxH = 195;
 
   doc.addPage('a4', 'portrait');
   desenharCabecalho();
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO', 10, 42);
-  doc.text('ENTOMOLÓGICO DAS OVITRAMPAS', 10, 47);
+  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO', 10, 43);
   const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1250, height: 1550 });
-  const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 6, areaMapaMaxW, areaMapaMaxH - 6);
+  const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text('Intensidade proporcional à contagem de ovos da última leitura', 10, posCalor.y + posCalor.h + 6);
-  doc.text('(armadilhas ainda sem leitura aparecem em tom discreto).', 10, posCalor.y + posCalor.h + 10);
+  doc.text('• Intensidade de calor proporcional à contagem de ovos da última leitura de laboratório.', 10, posCalor.y + posCalor.h + 5);
+  doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência.', 10, posCalor.y + posCalor.h + 9);
 
   doc.addPage('a4', 'portrait');
   desenharCabecalho();
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS', 10, 42);
-  doc.text('(DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 47);
+  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ 300m - 400m)', 10, 43);
   const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1250, height: 1550 });
-  const posDist = desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY + 6, areaMapaMaxW, areaMapaMaxH - 6);
+  const posDist = desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas,`, 10, posDist.y + posDist.h + 6);
-  doc.text('com a distância em metros de cada trecho.', 10, posDist.y + posDist.h + 10);
+  doc.text(`• Total de ${totalLigacoes} ligação(ões) geodésicas calculadas entre as vizinhas mais próximas.`, 10, posDist.y + posDist.h + 5);
+  doc.text('• Metragem indicada no centro de cada trecho (Verde = 300-400m ideal; Vermelho = >400m; Âmbar = <300m).', 10, posDist.y + posDist.h + 9);
 
-  // 10. Seção Final: Observações Técnicas & Assinaturas Oficiais (sempre em
-  // página nova, depois dos mapas) - volta pra paisagem (retrato foi só
-  // nas 2 páginas de mapa acima)
+  // 10. Seção Final: Observações Técnicas & Assinaturas Oficiais (Paisagem A4)
   doc.addPage('a4', 'landscape');
   desenharCabecalho();
-  const yAssinaturas = 50;
+  const yAssinaturas = 46;
 
   // Bloco de Notas Técnicas Oficiais
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(10, yAssinaturas, 277, 14, 2, 2, 'FD');
+  doc.roundedRect(10, yAssinaturas, 277, 16, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
@@ -406,30 +456,45 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('• Espaçamento recomendado entre armadilhas: 300 a 400 metros para cobertura territorial eficiente sem sobreposição de raio atrativo.', 13, yAssinaturas + 9);
-  doc.text('• IPO > 20%: Alerta de alta transmissão vetorial de arboviroses (Dengue, Zika e Chikungunya). Ação imediata de eliminação mecânica de criadouros.', 13, yAssinaturas + 12.5);
+  doc.text('• Espaçamento recomendado entre armadilhas: 300 a 400 metros para cobertura territorial eficiente sem sobreposição de raio atrativo.', 13, yAssinaturas + 9.5);
+  doc.text('• IPO > 20%: Alerta de alta transmissão vetorial de arboviroses (Dengue, Zika e Chikungunya). Ação imediata de eliminação mecânica de criadouros.', 13, yAssinaturas + 13.5);
 
-  // Bloco de Assinaturas
-  const yLinhaAssinatura = yAssinaturas + 26;
+  // Bloco de 3 Assinaturas Oficiais Equilibradas
+  const yLinhaAssinatura = yAssinaturas + 32;
 
-  // Assinatura 1
+  // Assinatura 1 - Coordenação
   doc.setDrawColor(100, 116, 139);
-  doc.line(30, yLinhaAssinatura, 110, yLinhaAssinatura);
+  doc.line(18, yLinhaAssinatura, 95, yLinhaAssinatura);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('COORDENAÇÃO DE VIGILÂNCIA AMBIENTAL', 70, yLinhaAssinatura + 4, { align: 'center' });
+  doc.text('COORDENAÇÃO DE VIGILÂNCIA AMBIENTAL', 56.5, yLinhaAssinatura + 4, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('Secretaria Municipal de Saúde • PM Carmo/RJ', 70, yLinhaAssinatura + 7, { align: 'center' });
+  doc.text('Secretaria Municipal de Saúde • PM Carmo/RJ', 56.5, yLinhaAssinatura + 7.5, { align: 'center' });
 
-  // Assinatura 2
-  doc.line(170, yLinhaAssinatura, 250, yLinhaAssinatura);
+  // Assinatura 2 - Laboratório
+  doc.line(105, yLinhaAssinatura, 185, yLinhaAssinatura);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('RESPONSÁVEL TÉCNICO DE LABORATÓRIO / CAMPO', 210, yLinhaAssinatura + 4, { align: 'center' });
+  doc.text('RESPONSÁVEL TÉCNICO DE LABORATÓRIO / CAMPO', 145, yLinhaAssinatura + 4, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Vigilância Entomológica de Ovitrampas', 145, yLinhaAssinatura + 7.5, { align: 'center' });
+
+  // Assinatura 3 - Secretaria Municipal de Saúde
+  doc.line(195, yLinhaAssinatura, 277, yLinhaAssinatura);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('SECRETARIA MUNICIPAL DE SAÚDE', 236, yLinhaAssinatura + 4, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Homologação do Relatório Oficial', 236, yLinhaAssinatura + 7.5, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);

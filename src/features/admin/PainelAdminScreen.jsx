@@ -347,8 +347,8 @@ export function PainelAdminScreen({
         </div>
       </div>
 
-      {/* ÁREA DE CONTEÚDO: DIVIDIDO (MAPA + TABELA LADO A LADO EM TABLET MD E DESKTOP LG) */}
-      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col md:flex-row">
+      {/* ÁREA DE CONTEÚDO: DIVIDIDO (VERTICAL EM TABLET RETRATO 800px, LADO A LADO EM TABLET PAISAGEM 1340px / DESKTOP) */}
+      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
         
         {/* MAPA GERAL DENTRO DO PAINEL DO ADMINISTRADOR */}
         {(modoVisualizacao === 'dividido' || modoVisualizacao === 'mapa') && (
@@ -356,7 +356,7 @@ export function PainelAdminScreen({
             className={`relative transition-all ${
               modoVisualizacao === 'mapa'
                 ? 'w-full h-full'
-                : 'w-full h-[40vh] md:h-full md:w-1/2 border-b md:border-b-0 md:border-r border-slate-200 shrink-0'
+                : 'w-full h-[45vh] lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200 shrink-0'
             }`}
           >
             <MapaGrandeOvitrampa
@@ -369,7 +369,7 @@ export function PainelAdminScreen({
 
             {/* Badge flutuante sobre o mapa em modo dividido */}
             {modoVisualizacao === 'dividido' && (
-              <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 text-slate-800 px-2.5 py-1 rounded-xl text-[10px] font-black flex items-center gap-1.5 shadow-sm pointer-events-none">
+              <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-md border border-slate-200 text-slate-800 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm pointer-events-none">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                 <span>Mapa de Carmo ({armadilhasFiltradas.length} OVs)</span>
               </div>
@@ -377,17 +377,17 @@ export function PainelAdminScreen({
           </div>
         )}
 
-        {/* TABELA ADMINISTRATIVA COM DADOS E AÇÕES (CLEAN & TOUCH TABLET FRIENDLY) */}
+        {/* TABELA ADMINISTRATIVA COM DADOS E AÇÕES (OTIMIZADA PARA TOUCH TABLET SAMSUNG) */}
         {(modoVisualizacao === 'dividido' || modoVisualizacao === 'tabela') && (
           <div
             className={`overflow-auto flex-1 p-2.5 sm:p-4 ${
               modoVisualizacao === 'dividido'
-                ? 'w-full md:w-1/2 h-[60vh] md:h-full'
+                ? 'w-full lg:w-1/2 h-[55vh] lg:h-full'
                 : 'w-full h-full'
             }`}
           >
             <div className="bg-white border border-slate-200/90 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs text-slate-700">
+              <table className="w-full min-w-[620px] text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 border-b border-slate-200 sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="py-3 px-3">OV</th>

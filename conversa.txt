@@ -1076,3 +1076,41 @@ Para: ALMIR
    - Build de produção validado com 0 erros (vite v6.4.3 em 6.74s).
    - Projeto 100% alinhado, consistente e pronto para uso em campo e gestão técnica.
 ==============================================================================
+
+==============================================================================
+31. POLIMENTO VISUAL DO RELATÓRIO PDF E OTIMIZAÇÃO PARA TABLET SAMSUNG 8.7"
+==============================================================================
+Data/Hora: 15/09/2026 ~22:55
+Autor: GEMINI (Antigravity)
+Para: ALMIR
+
+1. POLIMENTO INSTITUCIONAL DO RELATÓRIO PDF CONSOLIDADO (pdfRelatorioConsolidado.js e heatmapCanvas.js):
+   - Cabeçalho Governamental: Barra institucional em verde esmeralda com friso decorativo
+     em esmeralda claro (PM Carmo/RJ), tipografia refinada e box de metadados balanceado.
+   - Painel Executivo de Indicadores: Células com pesos visuais e cores temáticas por indicador,
+     incluindo classificação oficial do IPO (Alerta Epidemiológico para > 20% vs Transmissão Controlada).
+   - Tabela de Microáreas com Totalização: Adicionada linha de rodapé "TOTAL DO MUNICÍPIO"
+     com consolidação de quarteirões monitorados, totais de OVs, lidas, positivas, IPO e ovos.
+   - Tabela Individualizada com Cores Dinâmicas: Células de resultado destacadas em verde (negativa)
+     ou vermelho/coral (positiva com ovos), e células de vizinhança coloridas conforme conformidade.
+   - Mapas Cartográficos Refinados (Retrato A4):
+     * Quarteirões preenchidos com contorno nítido e rótulos de quarteirão quando a área é focada.
+     * Rosa dos Ventos / Indicador de Norte Cartográfico oficial no canto superior direito.
+     * Etiquetas das armadilhas (OV-XX) com pílula de fundo branco para leitura nítida sobre qualquer rua.
+     * Área do mapa rebalanceada para deixar mais de 30mm de respiro livre acima do rodapé.
+   - Bloco Oficial de Assinaturas: 3 colunas institucionais perfeitamente equilibradas em Paisagem A4:
+     1. Coordenação de Vigilância Ambiental em Saúde (PM Carmo/RJ)
+     2. Responsável Técnico pelo Laboratório de Entomologia
+     3. Secretaria Municipal de Saúde (Homologação Oficial)
+
+2. OTIMIZAÇÃO RESPONSIVA DO PAINEL DO ADMINISTRADOR (PainelAdminScreen.jsx):
+   - Tablet Samsung Galaxy Tab 8.7" (SM-X130/X135 - 800px Retrato / 1340px Paisagem):
+     * Em Retrato (~800px): Modo dividido configurado em pilha vertical elegante (mapa no topo
+       com 45vh e tabela na base com 55vh), aproveitando toda a largura de 800px sem espremer as 8 colunas.
+     * Em Paisagem (~1340px): Modo dividido em lado a lado (50% mapa e 50% tabela) via lg:flex-row.
+     * Tabela protegida com min-w-[620px] e rolagem touch suave com inércia nativa.
+
+3. VALIDAÇÃO:
+   - Build Vite validado com 0 erros (tempo: 6.13s).
+   - Deploy ativo e sincronizado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
+==============================================================================
