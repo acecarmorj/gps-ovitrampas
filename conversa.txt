@@ -1196,3 +1196,41 @@ Para: ALMIR
    [X] Deploy em produção ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
    [X] Repositório Git sincronizado e atualizado no GitHub (origin main).
 ==============================================================================
+
+==============================================================================
+34. CENTRAL DE LINKS DIRETOS NA TELA INICIAL (GUIA)
+==============================================================================
+Data/Hora: 15/09/2026 ~23:10
+Autor: GEMINI (Antigravity)
+Para: ALMIR
+
+1. SOLICITAÇÃO:
+   - "Admin no Tablet: https://gps-ovitrampas.pages.dev/admin
+      Mapa: https://gps-ovitrampas.pages.dev/mapa
+      Campo: https://gps-ovitrampas.pages.dev/campo
+      COLOQUE TUDO ISSO NA TELA DE LINKS INICIAL"
+   - "E ME MANDE O LINK DA TELA INICIAL"
+
+2. IMPLEMENTAÇÃO REALIZADA (GuiaScreen.jsx):
+   - Criada a seção destacada "Links Oficiais de Acesso Rápido" logo no topo
+     da tela inicial (Guia / Menu Inicial).
+   - Links com exibição em fonte mono, botão individual de "Copiar Link" (com feedback
+     visual verde "Copiado!"), botão de compartilhamento via WhatsApp e botão "Abrir":
+     * Admin no Tablet: https://gps-ovitrampas.pages.dev/admin
+     * Campo (Agentes): https://gps-ovitrampas.pages.dev/campo
+     * Mapa de Armadilhas: https://gps-ovitrampas.pages.dev/mapa
+     * Laboratório: https://gps-ovitrampas.pages.dev/laboratorio
+   - Adicionado botão master "Enviar Todos no WhatsApp" que dispara uma mensagem
+     formatada completa com os 4 links organizados por setor.
+
+3. LINKS OFICIAIS DO SISTEMA:
+   - Tela Inicial / Guia Geral: https://gps-ovitrampas.pages.dev/
+   - Admin no Tablet: https://gps-ovitrampas.pages.dev/admin
+   - Campo (Agente): https://gps-ovitrampas.pages.dev/campo
+   - Mapa de Armadilhas: https://gps-ovitrampas.pages.dev/mapa
+   - Laboratório: https://gps-ovitrampas.pages.dev/laboratorio
+
+4. DEPLOY:
+   - Build Vite 100% limpo em 6.04s.
+   - Publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
+==============================================================================
