@@ -290,7 +290,7 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
   desenharLegenda(ctx, W, H, [
     { cor: 'rgb(5,150,105)', label: 'Ideal (300m - 400m)' },
     { cor: 'rgb(217,119,6)', label: 'Abaixo do ideal (< 300m)' },
-    { cor: 'rgb(37,99,235)', label: 'Acima do ideal (> 400m)' }
+    { cor: 'rgb(225,29,72)', label: 'Acima do ideal (> 400m)' }
   ]);
 
   return { canvas, width: W, height: H, totalLigacoes: edges.length };

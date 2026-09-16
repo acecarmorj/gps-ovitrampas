@@ -50,11 +50,11 @@ export function evaluateDistanceCategory(meters) {
     return {
       status: 'ampla',
       label: 'Acima do ideal (> 400m)',
-      cor: '#2563eb', // Azul
-      corFundo: '#eff6ff',
-      corBorda: '#bfdbfe',
+      cor: '#e11d48', // Vermelho/rosa - gap de cobertura e mais critico que redundancia
+      corFundo: '#fff1f2',
+      corBorda: '#fecdd3',
       badgeClass: 'distance-pill-far',
-      descricao: 'Espaçamento amplo'
+      descricao: 'Espaçamento amplo (possível brecha de cobertura)'
     };
   }
 }

@@ -451,12 +451,12 @@ export function InstalarArmadilhaScreen({
                         ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-900'
                         : viz.status === 'proxima'
                         ? 'bg-amber-50/70 border-amber-200/80 text-amber-900'
-                        : 'bg-sky-50/70 border-sky-200/80 text-sky-900'
+                        : 'bg-rose-50/70 border-rose-200/80 text-rose-900'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs shrink-0">
-                        {viz.status === 'ideal' ? '🟢' : viz.status === 'proxima' ? '🟡' : '🔵'}
+                        {viz.status === 'ideal' ? '🟢' : viz.status === 'proxima' ? '🟡' : '🔴'}
                       </span>
                       <div className="min-w-0">
                         <p className="font-extrabold text-[11px] truncate leading-tight">
@@ -478,7 +478,7 @@ export function InstalarArmadilhaScreen({
                           ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                           : viz.status === 'proxima'
                           ? 'bg-amber-100 text-amber-800 border-amber-300'
-                          : 'bg-sky-100 text-sky-800 border-sky-300'
+                          : 'bg-rose-100 text-rose-800 border-rose-300'
                       }`}
                     >
                       {viz.distancia} m
@@ -495,7 +495,7 @@ export function InstalarArmadilhaScreen({
                   ) : vizinhasProximas[0].status === 'proxima' ? (
                     <span className="text-amber-700">⚠️ Atenção: Apenas {vizinhasProximas[0].distancia}m da OV-{vizinhasProximas[0].armadilha.numero}. Se possível, afaste-se um pouco para cobrir 300m+.</span>
                   ) : (
-                    <span className="text-sky-700">ℹ️ Espaçamento amplo: {vizinhasProximas[0].distancia}m da vizinha mais próxima.</span>
+                    <span className="text-rose-700">⚠️ Espaçamento amplo: {vizinhasProximas[0].distancia}m da vizinha mais próxima.</span>
                   )}
                 </div>
               )}

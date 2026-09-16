@@ -946,3 +946,61 @@ Ajustado weight/opacity no Leaflet (mapa ao vivo) e lineWidth no canvas do
 relatório PDF - só espessura/opacidade, cores mantidas. Commit 66ce15a,
 deploy publicado e confirmado no ar (200 OK em /mapa).
 ==============================================================================
+
+==============================================================================
+28. [CLAUDE] fix CRITICO: app inteiro fora do ar + mapas em retrato + limpeza
+==============================================================================
+Data/Hora: 15/09/2026 ~22:00-22:15
+De: Claude (Sonnet 5, via Claude Code)
+
+ALMIR REPORTOU: "O APP DO AGENTE NAO ESTA ABRINDO"
+
+DIAGNOSTICO: nao era so o /campo - o app INTEIRO estava fora do ar (tela
+em branco) em producao. Causa raiz real: InstalarArmadilhaScreen.jsx
+calculava `findNearbyTraps(localizacao, ...)` DUAS LINHAS ANTES do
+`useState` que declara `localizacao` (37 linhas depois no mesmo
+componente) - um erro classico de "usar antes de declarar" (TDZ) que
+sempre da ReferenceError em JS, independente de bundler/minificacao. Como
+App.jsx importa TODAS as telas estaticamente (sem lazy loading por rota),
+esse erro quebrava a inicializacao do modulo inteiro, derrubando TODAS as
+rotas (nao so /campo - so foi notado la primeiro). Esse bug ja estava no
+codigo herdado da Gemini quando assumi o frontend (commit 72c9243) - eu
+tinha revisado por `git diff` na hora mas nao cheguei a abrir /campo num
+navegador de verdade, entao nao peguei. Corrigido: movido o calculo pra
+depois da declaracao do useState.
+
+CONTAMINACAO DE DADOS DE TESTE NO BANCO REAL (achado durante a
+investigacao): o endpoint de sync (`API_SYNC_ENDPOINT` em storage.js) e
+FIXO no codigo (https://ovitrampas-api.acecarmorj.workers.dev/api/sync),
+sem diferenciar ambiente local/preview de producao. Meus testes locais
+sincronizaram 3 armadilhas falsas pro D1 de producao de verdade. Pedido
+do Almir ("LIMPE TUDO DEIXE TUDO ZERADO PRA AMANHA"): rodei
+`DELETE FROM traps; DELETE FROM readings;` no D1 remoto - confirmado
+`{"traps":[]}` e `{"readings":[]}` via /api/traps e /api/readings.
+ATENCAO GEMINI/CLAUDE-CURSOR: cuidado ao testar localmente com dados
+fake - eles vao pro banco de PRODUCAO de verdade, nao existe ambiente de
+teste separado ainda.
+
+TAMBEM NESTA RODADA:
+- jsPDF/jspdf-autotable/heatmapCanvas viraram import dinamico (lazy, so
+  carrega ao clicar "Relatorio PDF") em vez de import estatico no topo -
+  bundle principal caiu de ~930KB pra ~499KB. (Isso NAO era a causa do
+  bug acima, so uma melhoria de performance feita durante a investigacao.)
+- Relatorio PDF reordenado: mapas agora sao as ULTIMAS paginas (depois da
+  tabela individualizada), nao mais logo apos a tabela de microareas -
+  pedido do Almir.
+- Paginas dos mapas (calor e distancias) agora em RETRATO (A4 210x297mm)
+  em vez de paisagem - Carmo e mais alta que larga, aproveita muito mais
+  espaco vertical. Resto do relatorio continua paisagem. Cabecalho
+  institucional adaptado pra nao sobrepor texto na largura mais estreita.
+
+TESTADO: build de producao real (npm run build + vite preview) nas 5
+rotas, sem erros de console em nenhuma. PDF gerado e inspecionado pagina
+a pagina com PyMuPDF (confirmei paisagem/paisagem/RETRATO/RETRATO/
+paisagem). Producao verificada ao vivo apos cada deploy (200 OK + sem
+erro de console em /campo e /admin, dados zerados como esperado).
+
+Commits: 4612458 (fix critico + lazy PDF + reordenacao), a360629 (mapas
+em retrato + cabecalho adaptativo). Deploy publicado e confirmado no ar.
+Banco de producao zerado a pedido do Almir - pronto pra amanha.
+==============================================================================
