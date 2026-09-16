@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical, CheckCircle2, Plus, Minus,
-  Camera, X, History, Check
+  Camera, X, History, Check, Sparkles, Bot
 } from 'lucide-react';
 import {
   registrarLeituraLaboratorio,
@@ -9,6 +9,7 @@ import {
   compressImage
 } from '../../lib/storage';
 import { playSuccessSound } from '../../lib/soundAlert';
+import { AssistenteContadorOvos } from './AssistenteContadorOvos';
 
 export function LaboratorioScreen({
   armadilhas = [],
@@ -25,6 +26,10 @@ export function LaboratorioScreen({
   const [fotoPalheta, setFotoPalheta] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
+
+  // Assistente de IA
+  const [mostrarAssistente, setMostrarAssistente] = useState(false);
+  const [laudoAuditoria, setLaudoAuditoria] = useState(null);
 
   // Histórico de Leituras salvas offline
   const [historicoLeituras, setHistoricoLeituras] = useState([]);
@@ -80,7 +85,9 @@ export function LaboratorioScreen({
         numeroPalheta: numeroPalheta.trim() || 'P-01',
         ovos: qtdOvos,
         tecnicoNome: 'Laboratório Carmo',
-        fotoPalhetaDataUrl: fotoPalheta
+        fotoPalhetaDataUrl: fotoPalheta,
+        laudoIA: laudoAuditoria?.laudo || null,
+        confiancaIA: laudoAuditoria?.confianca || null
       });
 
       playSuccessSound();
@@ -90,6 +97,7 @@ export function LaboratorioScreen({
       // Reset
       setQtdOvos(0);
       setFotoPalheta(null);
+      setLaudoAuditoria(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       if (onLeituraConcluida) {
@@ -118,7 +126,7 @@ export function LaboratorioScreen({
             </div>
             <div>
               <h1 className="text-sm font-black text-slate-900">Laboratório Ovitrampa</h1>
-              <p className="text-[11px] text-slate-500">Leitura e contagem de ovos da palheta</p>
+              <p className="text-[11px] text-slate-500">Leitura, contagem manual e assistência por IA</p>
             </div>
           </div>
           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -265,8 +273,8 @@ export function LaboratorioScreen({
             </div>
           </div>
 
-          {/* FOTO DA PALHETA (OPCIONAL) */}
-          <div>
+          {/* FOTO E ASSISTENTE DE IA */}
+          <div className="space-y-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -276,25 +284,47 @@ export function LaboratorioScreen({
               className="hidden"
             />
 
-            {!fotoPalheta ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50 hover:bg-slate-100 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-600 transition-colors"
-              >
-                <Camera className="w-4 h-4 text-indigo-600" />
-                <span>Foto da Palheta (Opcional)</span>
-              </button>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden border border-indigo-200 bg-slate-100 h-20 flex items-center justify-center">
-                <img src={fotoPalheta} alt="Palheta" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setFotoPalheta(null)}
-                  className="absolute top-1.5 right-1.5 bg-rose-600 text-white p-1 rounded-lg shadow-sm"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+            {/* BOTÃO ASSISTENTE DE IA GEMINI */}
+            <button
+              type="button"
+              onClick={() => setMostrarAssistente(true)}
+              className="w-full bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-500 hover:to-purple-600 active:scale-95 text-white font-black text-xs py-3 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 transition-all uppercase tracking-wider"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Contar Ovos por Foto (IA Gemini)</span>
+            </button>
+
+            {/* PREVIEW DA FOTO SE EXISTIR */}
+            {fotoPalheta && (
+              <div className="relative rounded-2xl overflow-hidden border border-indigo-200 bg-slate-100 p-2 space-y-2">
+                <div className="relative h-24 rounded-xl overflow-hidden">
+                  <img src={fotoPalheta} alt="Palheta" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFotoPalheta(null);
+                      setLaudoAuditoria(null);
+                    }}
+                    className="absolute top-1.5 right-1.5 bg-rose-600 text-white p-1 rounded-lg shadow-sm"
+                    title="Remover foto"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {laudoAuditoria && (
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-2.5 text-xs flex items-start gap-2">
+                    <Bot className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-black text-indigo-900 block">
+                        Laudo IA: {laudoAuditoria.ovos} ovos ({laudoAuditoria.confianca}% confiança)
+                      </span>
+                      <span className="text-[11px] text-slate-600 block leading-tight mt-0.5">
+                        {laudoAuditoria.laudo}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -337,6 +367,11 @@ export function LaboratorioScreen({
                   <div>
                     <span className="font-black text-slate-900 text-xs">OV-{leit.numeroArmadilha}</span>
                     <span className="text-[10px] text-slate-500 ml-2">({leit.numeroPalheta})</span>
+                    {leit.confiancaIA && (
+                      <span className="text-[9px] font-extrabold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full ml-1.5">
+                        IA {leit.confiancaIA}%
+                      </span>
+                    )}
                   </div>
                   <span
                     className={`text-xs font-black px-2 py-0.5 rounded-full ${
@@ -354,6 +389,20 @@ export function LaboratorioScreen({
         </div>
 
       </div>
+
+      {/* MODAL DO ASSISTENTE DE CONTAGEM E IA */}
+      {mostrarAssistente && (
+        <AssistenteContadorOvos
+          fotoInicial={fotoPalheta}
+          onConfirmar={(total, fotoUrl, markers, laudo) => {
+            setQtdOvos(total);
+            if (fotoUrl) setFotoPalheta(fotoUrl);
+            if (laudo) setLaudoAuditoria(laudo);
+            setMostrarAssistente(false);
+          }}
+          onFechar={() => setMostrarAssistente(false)}
+        />
+      )}
     </div>
   );
 }
