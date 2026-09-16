@@ -72,7 +72,7 @@ export function MapaCenarioIdeal({
 
     // Ajuste inicial para cobrir todos os pontos ideais
     if (pontosIdeais.length > 0) {
-      const bounds = L.latLngBounds(pontosIdeais.map((p) => [p.latitude, ponto.longitude]));
+      const bounds = L.latLngBounds(pontosIdeais.map((p) => [p.latitude, p.longitude]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
     }
 
