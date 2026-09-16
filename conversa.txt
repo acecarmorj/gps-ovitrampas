@@ -1412,3 +1412,38 @@ Módulo: /campo (Instalar Ovitrampa - Agente Comunitário de Endemias)
    - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/campo.
    - Repositório GitHub sincronizado.
 ==============================================================================
+
+==============================================================================
+41. CENTRAL DE INTELIGÊNCIA EPIDEMIOLÓGICA (GEMINI 3.6 FLASH) NO PAINEL ADMIN (OTIMIZADO PARA TABLET)
+==============================================================================
+Data: 15/09/2026 - 23:51
+Ambiente: Produção (Cloudflare Pages https://gps-ovitrampas.pages.dev)
+Módulo: /admin (Painel do Administrador / Coordenação de Vigilância)
+
+1. REQUISITO ATENDIDO:
+   - "2. Análise Epidemiológica e Relatórios Oficiais em Segundos: Boletim no padrão da SES-RJ (IPO, IDO, bairros prioritários para fumacê/UBV)."
+   - "3. Alertas para a população no WhatsApp."
+   - "4. Consultor técnico dos manuais do SUS (dosagens de Piriproxifem, regra de 300m, etc.)."
+   - "MAS NÃO SE ESQUEÇA QUE ESTE PAINEL ADM SERÁ USADO BASICAMENTE EM TABLET" (Samsung Galaxy Tab 8.7" - ergonomia de toque, botões min 40-48px, alto contraste, sem necessidade de rolagem fina).
+
+2. ARQUITETURA & ARQUIVOS IMPLANTADOS:
+   - src/lib/geminiAdminIntelligence.js:
+     * Motor de Inteligência Epidemiológica conectado ao Google Gemini 3.6 Flash.
+     * gerarBoletimEpidemiologicoOficial(armadilhas, leituras): calcula em tempo real o IPO Geral (%), o IDO Geral (ovos/palheta positiva), mapeia índices por microárea (Centro, Valparaíso, etc.) e redige o Boletim Oficial da Secretaria de Estado de Saúde do RJ (SES-RJ) e Ministério da Saúde, com classificação de risco e plano de ação imediata (fumacê/bloqueio UBV).
+     * gerarAlertaPopulacaoWhatsApp(armadilhas): redige texto comunitário com formatação WhatsApp (*negrito*, emojis), informando bairros com mais ovos e convocando moradores para o 'Check-up de 10 minutos' no sábado.
+     * consultarManualSUS(duvidaTecnica): tira-dúvidas técnico baseado nas Diretrizes Nacionais para Prevenção e Controle de Epidemias de Dengue do Ministério da Saúde e Funasa.
+   - src/features/admin/PainelInteligenciaIA.jsx:
+     * Interface desenhada especificamente para Tablet (Galaxy Tab 8.7" e telas similares):
+     * Toque confortável: botões de ação com altura mínima de 48px e feedback visual active:scale-[0.98].
+     * Layout adaptativo: 2 colunas em orientação paisagem (landscape) e 1 coluna em retrato (portrait).
+     * Banners de status e botões diretos de [ Copiar Texto ] e [ Disparar WhatsApp ].
+     * Chips de toque rápido com perguntas prontas do SUS (Dosagem de Piriproxifem em 1.000L, Conduta quando IPO > 40%, Regra dos 300m, Diferenciação Aedes aegypti vs albopictus).
+   - src/features/admin/PainelAdminScreen.jsx:
+     * Adicionada a aba "Inteligência IA" com gradiente roxo/índigo e ícone de brilho no seletor de visualizações [ Dividido | Só Mapa | Inteligência IA | Só Tabela ].
+     * Touch targets ampliados para min-h-[40px] com feedback ativo para uso confortável em tablet.
+
+3. STATUS DE PUBLICAÇÃO:
+   - Build Vite validado sem erros (6.51s).
+   - Deploy ativo na Cloudflare Pages: https://gps-ovitrampas.pages.dev/admin.
+   - Deploy versionado: https://a3e26421.gps-ovitrampas.pages.dev.
+==============================================================================

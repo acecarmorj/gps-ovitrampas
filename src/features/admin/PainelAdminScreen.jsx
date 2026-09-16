@@ -12,6 +12,8 @@ import { excluirArmadilha, atualizarArmadilha, limparTodasArmadilhas } from '../
 import { playNewRequestSound } from '../../lib/soundAlert';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
+import { PainelInteligenciaIA } from './PainelInteligenciaIA';
+import { Sparkles } from 'lucide-react';
 
 // Bairros e microáreas oficiais de Carmo - RJ
 const MICROAREAS_CARMO_OFICIAIS = [
@@ -328,46 +330,58 @@ export function PainelAdminScreen({
             </div>
           </div>
 
-          {/* BOTÕES DE VISUALIZAÇÃO E AÇÕES GERAIS */}
+          {/* BOTÕES DE VISUALIZAÇÃO E AÇÕES GERAIS (TABLET TOUCH FRIENDLY) */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="bg-slate-100 p-1 rounded-2xl border border-slate-200 flex items-center shadow-xs">
               <button
                 type="button"
                 onClick={() => setModoVisualizacao('dividido')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
                   modoVisualizacao === 'dividido'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir Mapa e Tabela juntos"
               >
-                <Layers className="w-3.5 h-3.5" />
+                <Layers className="w-4 h-4" />
                 <span>Dividido</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModoVisualizacao('mapa')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
                   modoVisualizacao === 'mapa'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir somente o Mapa Geral"
               >
-                <MapPin className="w-3.5 h-3.5" />
+                <MapPin className="w-4 h-4" />
                 <span>Só Mapa</span>
               </button>
               <button
                 type="button"
+                onClick={() => setModoVisualizacao('ia')}
+                className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
+                  modoVisualizacao === 'ia'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20'
+                    : 'text-purple-700 bg-purple-50/80 hover:bg-purple-100'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>Inteligência IA</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setModoVisualizacao('tabela')}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
                   modoVisualizacao === 'tabela'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
                 title="Exibir somente a Tabela de Dados"
               >
-                <Activity className="w-3.5 h-3.5" />
+                <Activity className="w-4 h-4" />
                 <span>Só Tabela</span>
               </button>
             </div>
@@ -477,8 +491,13 @@ export function PainelAdminScreen({
         </div>
       </div>
 
-      {/* ÁREA DE CONTEÚDO: DIVIDIDO (VERTICAL EM TABLET RETRATO 800px, LADO A LADO EM TABLET PAISAGEM 1340px / DESKTOP) */}
-      <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
+      {/* ÁREA DE CONTEÚDO */}
+      {modoVisualizacao === 'ia' ? (
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/70">
+          <PainelInteligenciaIA armadilhas={armadilhas} />
+        </div>
+      ) : (
+        <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">
         
         {/* MAPA GERAL DENTRO DO PAINEL DO ADMINISTRADOR */}
         {(modoVisualizacao === 'dividido' || modoVisualizacao === 'mapa') && (
@@ -628,7 +647,8 @@ export function PainelAdminScreen({
           </div>
         )}
 
-      </div>
+        </div>
+      )}
 
       {/* MODAL DE DETALHES DA ARMADILHA (CLEAN & MODERNO) */}
       {armadilhaSelecionada && (
