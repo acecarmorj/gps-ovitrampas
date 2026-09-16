@@ -19,6 +19,17 @@ const broadcast = typeof window !== 'undefined' && window.BroadcastChannel
   ? new BroadcastChannel('gps_ovitrampas_sync')
   : null;
 
+/**
+ * O campo `numero` guarda SEMPRE o numero cru ("02"), sem prefixo.
+ * Todas as telas montam o rotulo adicionando o prefixo na hora de exibir
+ * ("ARM-02", "OV-02"). Se o prefixo fosse gravado junto, apareceria
+ * duplicado ("OV-OV-02", "ARM-OV-02"). O campo `palheta`, ao contrario,
+ * guarda COM prefixo ("PL-02") porque e exibido direto, sem montagem.
+ */
+export function normalizarNumeroArmadilha(valor) {
+  return String(valor ?? '').trim().replace(/^OV[-_ ]*/i, '').trim();
+}
+
 // Endpoints da API de sincronização (Cloudflare Worker + D1)
 const API_BASE_URL = typeof window !== 'undefined' && window.VITE_API_BASE_URL
   ? window.VITE_API_BASE_URL
@@ -181,10 +192,15 @@ export async function salvarArmadilhas(lista) {
       broadcast.postMessage({ type: 'TRAPS_UPDATE', traps: lista });
     }
 
-    // Grava também no IndexedDB para redundância total
+    // Grava também no IndexedDB para redundância total.
+    // Limpa antes de regravar: o IndexedDB precisa ser um espelho fiel da
+    // lista. Antes so fazia `put`, entao registro removido (apagado pelo
+    // usuario ou apagado no servidor) continuava la e voltava a aparecer no
+    // proximo boot, via carregarArmadilhasDoIndexedDB().
     const db = await openOvitrampasDB();
     const tx = db.transaction(TRAPS_STORE, 'readwrite');
     const store = tx.objectStore(TRAPS_STORE);
+    store.clear();
     lista.forEach((item) => store.put(item));
   } catch (e) {
     console.warn('Erro ao persistir armadilhas:', e);
@@ -239,7 +255,7 @@ export async function cadastrarArmadilha({
 
   const novaArmadilha = {
     id,
-    numero: String(numero).trim(),
+    numero: normalizarNumeroArmadilha(numero),
     palheta: String(palheta || 'P-01').trim(),
     moradorNome: String(moradorNome || '').trim(),
     rua: rua || 'Logradouro não identificado',
@@ -329,7 +345,7 @@ export async function registrarLeituraLaboratorio({
   const novaLeitura = {
     id: leituraId,
     armadilhaId,
-    numeroArmadilha: String(numeroArmadilha).trim(),
+    numeroArmadilha: normalizarNumeroArmadilha(numeroArmadilha),
     numeroPalheta: String(numeroPalheta).trim() || 'P-01',
     ovos: qtdOvos,
     positiva: qtdOvos > 0,
@@ -348,8 +364,10 @@ export async function registrarLeituraLaboratorio({
 
   // Atualiza a armadilha correspondente
   const todasArmadilhas = getArmadilhas();
+  const numeroNormalizado = normalizarNumeroArmadilha(numeroArmadilha).toLowerCase();
   const index = todasArmadilhas.findIndex(
-    (a) => a.id === armadilhaId || (a.numero && a.numero.toLowerCase() === String(numeroArmadilha).toLowerCase())
+    (a) => a.id === armadilhaId ||
+      (a.numero && normalizarNumeroArmadilha(a.numero).toLowerCase() === numeroNormalizado)
   );
 
   if (index !== -1) {
@@ -419,10 +437,8 @@ export async function tentarSincronizarEmSegundoPlano() {
 
   if (syncInProgress) return;
 
-  const armadilhas = getArmadilhas();
-  const leituras = getLeituras();
-  const pendentesArm = armadilhas.filter((a) => a.syncStatus === 'pendente');
-  const pendentesLeit = leituras.filter((l) => l.syncStatus === 'pendente');
+  const pendentesArm = getArmadilhas().filter((a) => a.syncStatus === 'pendente');
+  const pendentesLeit = getLeituras().filter((l) => l.syncStatus === 'pendente');
 
   if (pendentesArm.length === 0 && pendentesLeit.length === 0) {
     notificarStatusSync(getStatusSincronizacao());
@@ -480,7 +496,8 @@ export async function tentarSincronizarEmSegundoPlano() {
 function mapD1TrapToLocal(row) {
   return {
     id: row.id,
-    numero: String(row.numero),
+    // Normaliza registros legados que foram gravados com o prefixo junto ("OV-02")
+    numero: normalizarNumeroArmadilha(row.numero),
     palheta: row.palheta || 'P-01',
     moradorNome: row.morador_nome || '',
     rua: row.rua || '',
@@ -522,9 +539,14 @@ export async function sincronizarDadosDoServidor() {
       map.set(parsed.id, parsed);
     });
 
-    // 2. Preserva registros locais que ainda estejam pendentes de envio
+    // 2. Preserva APENAS registros locais ainda pendentes de envio.
+    // Registros ja marcados como 'sincronizado' que sumiram do servidor foram
+    // apagados no D1 - devem sumir daqui tambem. Antes eles eram preservados
+    // (`|| !map.has(loc.id)`), o que fazia registro apagado no servidor
+    // "reviver" para sempre no aparelho, deixando cada dispositivo com uma
+    // lista diferente.
     armadilhasLocais.forEach((loc) => {
-      if (loc.syncStatus === 'pendente' || !map.has(loc.id)) {
+      if (loc.syncStatus === 'pendente') {
         map.set(loc.id, loc);
       }
     });

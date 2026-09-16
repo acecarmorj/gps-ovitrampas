@@ -21,6 +21,32 @@ function badRequest(message) {
   return json({ error: "bad_request", message }, 400);
 }
 
+function agoraIso() {
+  return new Date().toISOString();
+}
+
+// Valida o minimo para o registro poder ser gravado. Devolve o motivo da
+// recusa (string) ou null se estiver ok. O motivo volta pro aparelho para o
+// registro continuar pendente em vez de sumir silenciosamente.
+function motivoRecusaTrap(trap) {
+  if (!trap || typeof trap !== "object") return "registro vazio";
+  if (!trap.id) return "sem id";
+  if (trap.numero == null || String(trap.numero).trim() === "") return "sem numero da ovitrampa";
+  if (!Number.isFinite(Number(trap.latitude)) || !Number.isFinite(Number(trap.longitude))) {
+    return "sem coordenadas GPS validas";
+  }
+  return null;
+}
+
+function motivoRecusaReading(reading) {
+  if (!reading || typeof reading !== "object") return "registro vazio";
+  if (!reading.id) return "sem id";
+  if (reading.numeroArmadilha == null || String(reading.numeroArmadilha).trim() === "") {
+    return "sem numero da ovitrampa";
+  }
+  return null;
+}
+
 async function upsertTrap(trap, env) {
   await env.DB.prepare(
     `INSERT INTO traps (
@@ -44,10 +70,18 @@ async function upsertTrap(trap, env) {
        tem_foto = excluded.tem_foto,
        status = excluded.status,
        atualizada_em = excluded.atualizada_em,
-       ultimos_ovos = excluded.ultimos_ovos,
-       ultima_palheta = excluded.ultima_palheta,
-       ultima_leitura_em = excluded.ultima_leitura_em,
-       synced_at = datetime('now')`
+       -- Nunca apaga resultado de laboratorio ja gravado: se o aparelho que
+       -- esta enviando nao conhece a leitura (campo nulo), mantem o que o D1
+       -- ja tem. Protege o caso do agente que ficou offline o dia todo e
+       -- sincroniza depois do laboratorio ter lancado os ovos.
+       ultimos_ovos = COALESCE(excluded.ultimos_ovos, traps.ultimos_ovos),
+       ultima_palheta = COALESCE(excluded.ultima_palheta, traps.ultima_palheta),
+       ultima_leitura_em = COALESCE(excluded.ultima_leitura_em, traps.ultima_leitura_em),
+       synced_at = datetime('now')
+     -- So aceita a versao que chegou se ela for igual ou mais nova que a
+     -- gravada. Versao atrasada e ignorada (sem erro) em vez de regredir o
+     -- registro.
+     WHERE excluded.atualizada_em >= traps.atualizada_em`
   )
     .bind(
       trap.id,
@@ -64,8 +98,10 @@ async function upsertTrap(trap, env) {
       trap.precisaoGps != null ? Number(trap.precisaoGps) : null,
       trap.temFoto ? 1 : 0,
       trap.status ?? "instalada",
-      trap.instaladaEm,
-      trap.atualizadaEm ?? trap.instaladaEm,
+      // Datas nunca podem ser undefined: bind() do D1 lanca e derruba o lote
+      // inteiro, travando a fila do agente para sempre.
+      trap.instaladaEm ?? agoraIso(),
+      trap.atualizadaEm ?? trap.instaladaEm ?? agoraIso(),
       trap.ultimosOvos != null ? Number(trap.ultimosOvos) : null,
       trap.ultimaPalheta ?? null,
       trap.ultimaLeituraEm ?? null
@@ -109,22 +145,54 @@ async function handleSync(request, env) {
   const traps = Array.isArray(body.traps) ? body.traps : [];
   const readings = Array.isArray(body.readings) ? body.readings : [];
 
-  let trapsSalvos = 0;
-  let readingsSalvos = 0;
+  // Responde com a lista EXATA do que foi gravado. O aparelho so pode marcar
+  // como sincronizado aquilo que o servidor confirmou - antes a resposta era
+  // sempre {ok:true} mesmo descartando itens, e o registro descartado sumia
+  // do aparelho no proximo poll (dado perdido de vez).
+  const trapsAceitos = [];
+  const trapsRecusados = [];
+  const readingsAceitos = [];
+  const readingsRecusados = [];
 
   for (const trap of traps) {
-    if (!trap.id || !trap.numero || trap.latitude == null || trap.longitude == null) continue;
-    await upsertTrap(trap, env);
-    trapsSalvos++;
+    const motivo = motivoRecusaTrap(trap);
+    if (motivo) {
+      trapsRecusados.push({ id: trap?.id ?? null, motivo });
+      continue;
+    }
+    // Falha de um item nao pode derrubar o lote inteiro: sem isso, um unico
+    // registro problematico trava a fila do agente para sempre.
+    try {
+      await upsertTrap(trap, env);
+      trapsAceitos.push(trap.id);
+    } catch (err) {
+      trapsRecusados.push({ id: trap.id, motivo: String(err?.message || err) });
+    }
   }
 
   for (const reading of readings) {
-    if (!reading.id || !reading.numeroArmadilha) continue;
-    await upsertReading(reading, env);
-    readingsSalvos++;
+    const motivo = motivoRecusaReading(reading);
+    if (motivo) {
+      readingsRecusados.push({ id: reading?.id ?? null, motivo });
+      continue;
+    }
+    try {
+      await upsertReading(reading, env);
+      readingsAceitos.push(reading.id);
+    } catch (err) {
+      readingsRecusados.push({ id: reading.id, motivo: String(err?.message || err) });
+    }
   }
 
-  return json({ ok: true, traps: trapsSalvos, readings: readingsSalvos });
+  return json({
+    ok: true,
+    trapsAceitos,
+    trapsRecusados,
+    readingsAceitos,
+    readingsRecusados,
+    traps: trapsAceitos.length,
+    readings: readingsAceitos.length
+  });
 }
 
 async function listTraps(env) {

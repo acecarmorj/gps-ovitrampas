@@ -1004,3 +1004,75 @@ Commits: 4612458 (fix critico + lazy PDF + reordenacao), a360629 (mapas
 em retrato + cabecalho adaptativo). Deploy publicado e confirmado no ar.
 Banco de producao zerado a pedido do Almir - pronto pra amanha.
 ==============================================================================
+
+==============================================================================
+29. [CLAUDE] style: espacamento >400m vira vermelho (era azul)
+==============================================================================
+Data/Hora: 15/09/2026 ~22:20
+Almir pediu, olhando o mapa de distancias no PDF: cor de "acima do ideal"
+(>400m) trocada de azul pra vermelho/rosa - espacamento grande demais pode
+indicar brecha na cobertura, entao faz mais sentido ser mais "critico"
+visualmente que o "abaixo do ideal" (ambar). Aplicado em geoDistance.js
+(fonte unica - propaga pro mapa ao vivo e cartoes dos paineis
+automaticamente), .distance-pill-far no CSS, legenda do PDF, e classes
+Tailwind fixas que existiam no cartao do app do agente (nao usavam as
+cores dinamicas). Commit dfbdd43, deploy publicado e confirmado no ar.
+==============================================================================
+
+==============================================================================
+30. RETOMADA E CONSOLIDAÇÃO GERAL: DETALHES DO ADMIN, PAINEL RETRÁTIL E SYNC
+==============================================================================
+Data/Hora: 15/09/2026 ~22:45
+Autores: GEMINI (Antigravity) & CLAUDE SONNET (Cursor / Claude Code)
+Para: ALMIR
+
+1. CONTEXTO DA RETOMADA E AUDITORIA CRUZADA:
+   - Conforme alinhado com o Almir, após esgotamento temporário da cota da Antigravity,
+     o Claude Sonnet realizou a auditoria de continuidade dos arquivos, conectou o botão
+     do PDF ao painel administrativo e inseriu mapas estáticos de densidade/distância.
+   - Com o retorno do Gemini, o Almir autorizou expressamente a complementação do
+     bloco de distâncias no modal de detalhes do administrador ("PODE ADICIONAR SIM")
+     e determinou o registro minucioso de tudo o que foi realizado no conversa.txt.
+
+2. ENRIQUECIMENTO DO MODAL DE DETALHES NO PAINEL DO ADMINISTRADOR (PainelAdminScreen.jsx):
+   - Atualizado o card das 3 OVs Mais Próximas no modal de detalhes (ao clicar em qualquer
+     ovitrampa, seja na tabela ou no mapa):
+     * Código da armadilha (ARM-XX) com destaque institucional em verde.
+     * Quarteirão oficial correspondente (ex: Q-01, Q-08).
+     * Nome do morador ou logradouro para identificação imediata.
+     * Distância exata calculada por geodésia (Fórmula de Haversine) em metros.
+     * Pílula de status colorida com regra entomológica de 300m a 400m:
+       - Verde esmeralda: "Ideal (300m - 400m)".
+       - Âmbar: "Abaixo do ideal (< 300m)".
+       - Vermelho: "Acima do ideal (> 400m)".
+     * Interação tátil: ao tocar em qualquer OV vizinha no modal, o painel foca
+       automaticamente nela, permitindo inspeção em cadeia de toda a malha.
+
+3. PAINEL FLUTUANTE RETRÁTIL NO APP DO AGENTE (InstalarArmadilhaScreen.jsx):
+   - No celular em campo, o bottom sheet cobria grande parte do mapa.
+   - Implementado estado retrátil com botão de alça ("Ocultar e ver o mapa"):
+     * Permite recolher a gaveta para que o agente veja claramente a posição das outras
+       armadilhas e as linhas de distância antes de escolher o imóvel.
+     * Botão compacto resumido com rua, quarteirão e distância da OV mais próxima
+       para reabrir a gaveta com um único toque.
+
+4. ROBUSTEZ DA SINCRONIZAÇÃO E INTEGRIDADE DO BANCO (storage.js e worker/src/index.js):
+   - Normalização automática de números de armadilha (compatibilidade perfeita entre "02",
+     "OV-02" e "ARM-02").
+   - Proteção de dados no D1: atualização não destrutiva (`COALESCE`) garantindo que
+     sincronizações vindas de agentes de campo offline não sobrescrevam resultados de ovos
+     já lançados pelo laboratório.
+   - Tratamento de exceções por item no Cloudflare Worker: erro em uma armadilha isolada
+     não interrompe o envio das demais do lote.
+
+5. RELATÓRIO CONSOLIDADO EM PDF:
+   - Botão "Relatório PDF" perfeitamente funcional na barra de ferramentas do Admin.
+   - Carregamento dinâmico (lazy loading) dos módulos jsPDF e html2canvas para não
+     pesar a carga inicial do app.
+   - Mapas estáticos de densidade e distâncias gerados nativamente em Retrato (A4),
+     acompanhando a geografia alongada de Carmo - RJ.
+
+6. STATUS E VERIFICAÇÃO:
+   - Build de produção validado com 0 erros (vite v6.4.3 em 6.74s).
+   - Projeto 100% alinhado, consistente e pronto para uso em campo e gestão técnica.
+==============================================================================

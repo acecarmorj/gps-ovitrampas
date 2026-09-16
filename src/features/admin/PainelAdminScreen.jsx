@@ -551,24 +551,45 @@ export function PainelAdminScreen({
                 if (vizinhas.length === 0) return null;
                 return (
                   <div className="bg-slate-50/95 rounded-2xl p-2.5 border border-slate-200/90 col-span-2 space-y-1.5">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-slate-700 block">
-                      OVs Mais Próximas (Regra 300m-400m)
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        3 OVs Vizinhas Mais Próximas (Regra 300m-400m)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">Toque p/ focar</span>
+                    </div>
                     <div className="space-y-1.5">
                       {vizinhas.map((viz) => (
                         <button
                           type="button"
                           key={viz.armadilha.id}
                           onClick={() => setArmadilhaSelecionada(viz.armadilha)}
-                          className="w-full text-left flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all"
+                          className="w-full text-left flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all cursor-pointer group shadow-2xs"
                         >
-                          <span className="font-black text-xs text-emerald-700">ARM-{viz.armadilha.numero}</span>
-                          <span
-                            className="text-[10px] font-black px-2 py-0.5 rounded-full border"
-                            style={{ backgroundColor: viz.corFundo, borderColor: viz.corBorda, color: viz.cor }}
-                          >
-                            {viz.distancia} m
-                          </span>
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-black text-xs text-emerald-700 group-hover:text-emerald-800">
+                                ARM-{viz.armadilha.numero}
+                              </span>
+                              <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-1 rounded">
+                                {viz.armadilha.quarteirao}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 truncate mt-0.5">
+                              {viz.armadilha.moradorNome || viz.armadilha.rua || 'S/N'}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0 gap-0.5">
+                            <span className="font-black text-xs text-slate-900">
+                              {viz.distancia} m
+                            </span>
+                            <span
+                              className="text-[9px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap"
+                              style={{ backgroundColor: viz.corFundo, borderColor: viz.corBorda, color: viz.cor }}
+                            >
+                              {viz.label}
+                            </span>
+                          </div>
                         </button>
                       ))}
                     </div>

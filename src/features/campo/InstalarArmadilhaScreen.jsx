@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, CheckCircle2, RefreshCw,
-  X, Check, User, AlertCircle
+  X, Check, User, AlertCircle,
+  ChevronDown, ChevronUp, Ruler
 } from 'lucide-react';
 import { resolveAddressFromGps } from '../../lib/geoDetection';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
@@ -24,6 +25,9 @@ export function InstalarArmadilhaScreen({
   const [numeroPalheta, setNumeroPalheta] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
+  // No celular o painel cobre quase todo o mapa; recolher deixa o agente ver
+  // as armadilhas e as linhas de distância antes de escolher o ponto.
+  const [painelAberto, setPainelAberto] = useState(true);
 
   // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
   const handleNumeroArmadilhaChange = (e) => {
@@ -371,9 +375,56 @@ export function InstalarArmadilhaScreen({
       )}
 
       {/* 4. PAINEL FLUTUANTE SUAVE / CLARO SEMITRANSPARENTE (ESTILO MOTOJÁ) */}
+      {/* Recolhível: no celular ele cobre quase todo o mapa, então o agente
+          pode ocultar para enxergar as armadilhas e as linhas de distância. */}
       <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
-        <div className="bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-800">
-          
+        {!painelAberto && (
+          <button
+            type="button"
+            onClick={() => setPainelAberto(true)}
+            className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
+          >
+            <div className="w-9 h-9 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-md">
+              <ChevronUp className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black text-slate-900 leading-tight">
+                Instalar Ovitrampa aqui
+              </p>
+              <p className="text-[11px] text-slate-600 truncate leading-tight mt-0.5">
+                {localizacao.rua} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span>
+              </p>
+            </div>
+            {vizinhaMaisProxima && (
+              <span
+                className="text-[10px] font-black px-2 py-1 rounded-lg border shrink-0"
+                style={{
+                  backgroundColor: vizinhaMaisProxima.corFundo,
+                  borderColor: vizinhaMaisProxima.corBorda,
+                  color: vizinhaMaisProxima.cor
+                }}
+              >
+                {vizinhaMaisProxima.distancia} m
+              </span>
+            )}
+          </button>
+        )}
+
+        <div
+          className={`bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-800 max-h-[82dvh] overflow-y-auto ${
+            painelAberto ? '' : 'hidden'
+          }`}
+        >
+          {/* Alça para ocultar o painel e liberar o mapa */}
+          <button
+            type="button"
+            onClick={() => setPainelAberto(false)}
+            className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-700 active:scale-95 transition-all"
+          >
+            <ChevronDown className="w-4 h-4" />
+            <span>Ocultar e ver o mapa</span>
+          </button>
+
           {/* ENDEREÇO E QUARTEIRÃO DETECTADOS 100% PELO GPS */}
           <div className="flex items-center gap-2.5 bg-emerald-50/85 backdrop-blur-xs px-3.5 py-2.5 rounded-2xl border border-emerald-200/80 shadow-xs">
             <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200 flex items-center justify-center shrink-0">
