@@ -13,11 +13,12 @@ import { calcBearing, bearingToCardinal } from '../../lib/geoBearing';
 import { RAIO_COBERTURA_IDEAL_METROS } from '../../lib/geoIdealGrid';
 import {
   Layers, MapPin, Eye, EyeOff, Radio, Compass,
-  Maximize2, Navigation, Target, Activity
+  Maximize2, Navigation, Target, Activity, Tag
 } from 'lucide-react';
 
 export function MapaCenarioIdeal({
   pontosIdeais = [],
+  todosPontosIdeais = [],
   armadilhasReais = [],
   pontoSelecionado = null,
   onSelectPonto,
@@ -31,7 +32,7 @@ export function MapaCenarioIdeal({
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
 
-  // Camadas
+  // Camadas Leaflet
   const layersRef = useRef({
     polygons: null,
     coberturaCircles: null,
@@ -42,11 +43,14 @@ export function MapaCenarioIdeal({
     userAccuracyCircle: null
   });
 
-  // Toggles de visualização
+  // Toggles de visualização - PADRÃO LIMPO: Cenário Ideal puro (sem poluição de linhas ou armadilhas antigas)
   const [satellite, setSatellite] = useState(false);
-  const [mostrarCirculos, setMostrarCirculos] = useState(true);
-  const [mostrarReais, setMostrarReais] = useState(true);
-  const [mostrarVetores, setMostrarVetores] = useState(true);
+  const [mostrarCirculos, setMostrarCirculos] = useState(false); // Círculos desligados por padrão para mapa limpo
+  const [mostrarReais, setMostrarReais] = useState(false); // Armadilhas atuais desligadas por padrão (do zero!)
+  const [mostrarVetores, setMostrarVetores] = useState(false); // Linhas de vetor desligadas por padrão
+
+  // Referência completa de pontos ideais para cálculo correto de distâncias
+  const gradeCompleta = todosPontosIdeais.length > 0 ? todosPontosIdeais : pontosIdeais;
 
   // 1. Inicializar Mapa Leaflet
   useEffect(() => {
@@ -70,7 +74,7 @@ export function MapaCenarioIdeal({
       attribution: tileConfig.attribution
     }).addTo(map);
 
-    // Ajuste inicial para cobrir todos os pontos ideais
+    // Enquadramento inicial nos pontos ideais
     if (pontosIdeais.length > 0) {
       const bounds = L.latLngBounds(pontosIdeais.map((p) => [p.latitude, p.longitude]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
@@ -82,7 +86,7 @@ export function MapaCenarioIdeal({
     };
   }, []);
 
-  // 2. Atualizar Tile Layer (Satélite / Rua)
+  // 2. Atualizar Tile Layer (Satélite / Mapa Padrão)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -118,9 +122,9 @@ export function MapaCenarioIdeal({
         color: '#6366f1',
         weight: 1.2,
         dashArray: '3, 4',
-        opacity: 0.45,
+        opacity: 0.35,
         fillColor: '#818cf8',
-        fillOpacity: 0.05
+        fillOpacity: 0.04
       });
       polygon.bindTooltip(`${p.folder} - ${p.name}`, {
         sticky: true,
@@ -152,9 +156,9 @@ export function MapaCenarioIdeal({
         radius: RAIO_COBERTURA_IDEAL_METROS,
         color: '#7c3aed',
         weight: 1.2,
-        opacity: 0.4,
+        opacity: 0.45,
         fillColor: '#8b5cf6',
-        fillOpacity: 0.09,
+        fillOpacity: 0.1,
         dashArray: '4, 6'
       });
       circlesGroup.addLayer(circle);
@@ -165,6 +169,8 @@ export function MapaCenarioIdeal({
   }, [pontosIdeais, mostrarCirculos]);
 
   // 5. Renderizar Vetores de Deslocamento (Armadilha Real -> Ponto Ideal Mais Próximo)
+  // CORREÇÃO CRÍTICA: Busca o ponto mais próximo na grade COMPLETA da cidade, e não apenas no filtro ativo,
+  // evitando que armadilhas distantes de outros bairros sejam puxadas em "estrela" para um mesmo ponto!
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -177,16 +183,17 @@ export function MapaCenarioIdeal({
     if (!mostrarVetores || !mostrarReais) return;
 
     const vetoresGroup = L.layerGroup();
+    const idsPontosVisiveis = new Set(pontosIdeais.map((p) => p.codigo));
 
     armadilhasReais.forEach((t) => {
       if (!t.latitude || !t.longitude) return;
       const latReal = Number(t.latitude);
       const lngReal = Number(t.longitude);
 
-      // Achar ponto ideal mais proximo
+      // Achar ponto ideal mais proximo na grade COMPLETA
       let closest = null;
       let minDist = Infinity;
-      for (const p of pontosIdeais) {
+      for (const p of gradeCompleta) {
         const d = calcDistanceMeters(latReal, lngReal, p.latitude, p.longitude);
         if (d < minDist) {
           minDist = d;
@@ -196,7 +203,10 @@ export function MapaCenarioIdeal({
 
       if (!closest) return;
 
-      // Cor do vetor
+      // Se houver filtro ativo (ex: Manter), só desenha se o ponto ideal correspondente estiver no filtro!
+      if (!idsPontosVisiveis.has(closest.codigo)) return;
+
+      // Cor do vetor conforme diretriz
       const strokeColor = minDist <= 60 ? '#059669' : minDist <= 120 ? '#d97706' : '#e11d48';
       const rumoGraus = calcBearing(latReal, lngReal, closest.latitude, closest.longitude);
       const card = bearingToCardinal(rumoGraus);
@@ -205,7 +215,7 @@ export function MapaCenarioIdeal({
         color: strokeColor,
         weight: 2,
         dashArray: '5, 6',
-        opacity: 0.75
+        opacity: 0.8
       });
 
       polyline.bindTooltip(
@@ -213,7 +223,7 @@ export function MapaCenarioIdeal({
         {
           sticky: true,
           direction: 'center',
-          className: 'bg-slate-900/90 text-white font-black text-[9px] px-2 py-0.5 rounded shadow border border-slate-700'
+          className: 'bg-slate-900/95 text-white font-black text-[9px] px-2 py-0.5 rounded shadow border border-slate-700'
         }
       );
 
@@ -222,9 +232,9 @@ export function MapaCenarioIdeal({
 
     vetoresGroup.addTo(map);
     layersRef.current.vetoresLayer = vetoresGroup;
-  }, [pontosIdeais, armadilhasReais, mostrarVetores, mostrarReais]);
+  }, [pontosIdeais, gradeCompleta, armadilhasReais, mostrarVetores, mostrarReais]);
 
-  // 6. Renderizar Pontos Ideais
+  // 6. Renderizar Pontos Ideais (Roxos)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -271,7 +281,7 @@ export function MapaCenarioIdeal({
     layersRef.current.pontosIdeaisLayer = pontosGroup;
   }, [pontosIdeais, pontoSelecionado, showLabels]);
 
-  // 7. Renderizar Armadilhas Reais do Campo
+  // 7. Renderizar Armadilhas Reais do Campo (Verdes)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -284,9 +294,27 @@ export function MapaCenarioIdeal({
     if (!mostrarReais) return;
 
     const reaisGroup = L.layerGroup();
+    const idsPontosVisiveis = new Set(pontosIdeais.map((p) => p.codigo));
 
     armadilhasReais.forEach((t) => {
       if (!t.latitude || !t.longitude) return;
+
+      // Se houver filtro ativo de pontos ideais, só mostra armadilhas vinculadas aos pontos visíveis
+      if (pontosIdeais.length < gradeCompleta.length) {
+        let closest = null;
+        let minDist = Infinity;
+        for (const p of gradeCompleta) {
+          const d = calcDistanceMeters(Number(t.latitude), Number(t.longitude), p.latitude, p.longitude);
+          if (d < minDist) {
+            minDist = d;
+            closest = p;
+          }
+        }
+        if (closest && !idsPontosVisiveis.has(closest.codigo)) {
+          return;
+        }
+      }
+
       const isSelected = armadilhaSelecionada && armadilhaSelecionada.id === t.id;
       const icon = ovitrampaIcon(t, !showLabels);
 
@@ -318,7 +346,7 @@ export function MapaCenarioIdeal({
 
     reaisGroup.addTo(map);
     layersRef.current.armadilhasReaisLayer = reaisGroup;
-  }, [armadilhasReais, armadilhaSelecionada, showLabels, mostrarReais]);
+  }, [armadilhasReais, armadilhaSelecionada, showLabels, mostrarReais, pontosIdeais, gradeCompleta]);
 
   // 8. Marcador do Agente (Você)
   useEffect(() => {
@@ -385,6 +413,22 @@ export function MapaCenarioIdeal({
 
       {/* CONTROLES FLUTUANTES NO TOPO DIREITO */}
       <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
+        {/* BOTÃO REMOVER / MOSTRAR RÓTULO (PROEMINENTE COM TEXTO CLARO) */}
+        <button
+          type="button"
+          onClick={onToggleLabels}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
+            showLabels
+              ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500'
+          }`}
+          title={showLabels ? "Remover rótulos para ver apenas pontos limpos no mapa" : "Mostrar rótulos das armadilhas"}
+        >
+          <Tag className="w-4 h-4 shrink-0" />
+          <span>{showLabels ? 'Remover Rótulo' : 'Mostrar Rótulo'}</span>
+        </button>
+
+        {/* SATÉLITE / MAPA */}
         <button
           type="button"
           onClick={() => setSatellite((prev) => !prev)}
@@ -395,70 +439,66 @@ export function MapaCenarioIdeal({
           }`}
           title="Alternar entre Satélite e Mapa Padrão"
         >
-          <Layers className="w-4 h-4" />
-          <span className="hidden sm:inline">{satellite ? 'Satélite' : 'Mapa'}</span>
+          <Layers className="w-4 h-4 shrink-0" />
+          <span>{satellite ? 'Satélite' : 'Mapa'}</span>
         </button>
 
+        {/* CAMPO (35 ATUAIS) - DESLIGADO POR PADRÃO */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !mostrarReais;
+            setMostrarReais(next);
+            if (!next) setMostrarVetores(false);
+          }}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
+            mostrarReais
+              ? 'bg-emerald-600 text-white border-emerald-500'
+              : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
+          }`}
+          title={mostrarReais ? "Ocultar armadilhas atuais (ver só cenário do zero)" : "Mostrar armadilhas atuais do campo (35 OVs)"}
+        >
+          <MapPin className="w-4 h-4 shrink-0" />
+          <span>{mostrarReais ? 'Ocultar Campo' : `Campo (${armadilhasReais.length})`}</span>
+        </button>
+
+        {/* VETORES DE DESLOCAMENTO - SÓ DISPONÍVEL QUANDO CAMPO ESTIVER LIGADO */}
+        {mostrarReais && (
+          <button
+            type="button"
+            onClick={() => setMostrarVetores((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
+              mostrarVetores
+                ? 'bg-amber-600 text-white border-amber-500'
+                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Alternar linhas de vetor ligando cada armadilha ao seu ponto ideal"
+          >
+            <Compass className="w-4 h-4 shrink-0" />
+            <span>{mostrarVetores ? 'Ocultar Linhas' : 'Ver Linhas'}</span>
+          </button>
+        )}
+
+        {/* CÍRCULOS DE 175M (RAIO) - DESLIGADOS POR PADRÃO */}
         <button
           type="button"
           onClick={() => setMostrarCirculos((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all active:scale-95 ${
             mostrarCirculos
               ? 'bg-purple-600 text-white border-purple-500'
-              : 'bg-white/95 text-slate-600 border-slate-200 hover:bg-slate-50'
+              : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
           }`}
-          title="Alternar círculos de 175m de cobertura"
+          title="Alternar círculos de 175m de cobertura por ovitrampa"
         >
-          <Radio className="w-4 h-4" />
-          <span className="hidden sm:inline">Raio 175m</span>
+          <Radio className="w-4 h-4 shrink-0" />
+          <span>Raio 175m</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setMostrarReais((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all ${
-            mostrarReais
-              ? 'bg-emerald-600 text-white border-emerald-500'
-              : 'bg-white/95 text-slate-600 border-slate-200 hover:bg-slate-50'
-          }`}
-          title="Alternar armadilhas reais do campo"
-        >
-          <MapPin className="w-4 h-4" />
-          <span className="hidden sm:inline">Campo ({armadilhasReais.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMostrarVetores((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all ${
-            mostrarVetores
-              ? 'bg-amber-600 text-white border-amber-500'
-              : 'bg-white/95 text-slate-600 border-slate-200 hover:bg-slate-50'
-          }`}
-          title="Alternar linhas de vetor de deslocamento"
-        >
-          <Compass className="w-4 h-4" />
-          <span className="hidden sm:inline">Vetores</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onToggleLabels}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black shadow-lg backdrop-blur-md border transition-all ${
-            showLabels
-              ? 'bg-indigo-600 text-white border-indigo-500'
-              : 'bg-white/95 text-slate-600 border-slate-200 hover:bg-slate-50'
-          }`}
-          title="Ocultar ou Exibir Rótulos das Armadilhas"
-        >
-          {showLabels ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          <span className="hidden sm:inline">{showLabels ? 'Com Rótulo' : 'Sem Rótulo'}</span>
-        </button>
-
+        {/* ENQUADRAR CIDADE */}
         <button
           type="button"
           onClick={handleResetBounds}
-          className="p-2.5 bg-white/95 hover:bg-slate-100 text-slate-700 rounded-xl shadow-lg border border-slate-200 backdrop-blur-md transition-all"
+          className="p-2.5 bg-white/95 hover:bg-slate-100 text-slate-700 rounded-xl shadow-lg border border-slate-200 backdrop-blur-md transition-all active:scale-95"
           title="Enquadrar toda a cidade de Carmo"
         >
           <Maximize2 className="w-4 h-4 text-purple-600" />
@@ -468,7 +508,7 @@ export function MapaCenarioIdeal({
           <button
             type="button"
             onClick={handleCentrarGps}
-            className="p-2.5 bg-white/95 hover:bg-emerald-50 text-emerald-700 rounded-xl shadow-lg border border-emerald-300 backdrop-blur-md transition-all"
+            className="p-2.5 bg-white/95 hover:bg-emerald-50 text-emerald-700 rounded-xl shadow-lg border border-emerald-300 backdrop-blur-md transition-all active:scale-95"
             title="Centralizar na Minha Posição GPS"
           >
             <Navigation className="w-4 h-4 text-emerald-600" />

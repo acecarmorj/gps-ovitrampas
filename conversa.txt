@@ -2091,3 +2091,42 @@ STATUS: CONCLUÍDO E PUBLICADO (Cloudflare Pages)
      URL oficial: https://gps-ovitrampas.pages.dev
      URL direta: https://1136cf23.gps-ovitrampas.pages.dev
 ==============================================================================
+
+==============================================================================
+SESSAO 52: BOTAO "GERAR GRADE DO ZERO", CORRECAO DOS VETORES E GUIA DO PAINEL LATERAL
+==============================================================================
+Data: 2026-09-16
+Solicitacao:
+1. "agora que vi a barra lateral direita que ajuda muito me explique como usa o painel"
+2. "mas coloque um botao gerar ceario ideal para grar uma nova grade do zero"
+3. "tem que ter o botao remover rotulo e todas as telas com mapas inclusive esta"
+4. "o mapa ideal ficou confuso... pensei em mostrar como esta mas poder gerar um totalmente novo do zero sem as armadilhas atuais"
+
+1. NOVO BOTAO E MODAL "GERAR CENARIO IDEAL DO ZERO":
+   - Adicionado no cabecalho de `/cenario-ideal` o botao proeminente "⚡ Gerar Grade do Zero".
+   - Abre modal inteligente com 4 opcoes baseadas nos 119 quarteiroes urbanos habitados de Carmo-RJ:
+     a) Padrao Ministerio da Saude (35 OVs ~300m regular).
+     b) Alta Densidade / Periodo Epidemico (~42 OVs ~240m).
+     c) Economica / Malha Ampla (~28 OVs ~350m).
+     d) Quantidade Personalizada (slider de 20 a 50 armadilhas com recalculo geodesico Farthest-First em tempo real).
+   - Recalcula instantaneamente os KPIs, diagnostico de cobertura, relatorio WhatsApp e parecer tecnico SUS.
+   - Incluido botao "Restaurar Padrao" para retornar a grade canonica de 35 pontos a qualquer momento.
+
+2. CORRECAO VISUAL DO MAPA (ELIMINACAO DO EFEITO "ESTRELA" E MODO LIMPO):
+   - Por padrao, o mapa agora abre 100% limpo com o cenario gerado do zero (sem armadilhas antigas e sem linhas de vetor que poluiam a tela).
+   - O usuario tem o botao "Campo (35)" e "Ver Linhas" para comparar quando desejar.
+   - Correcao do bug do vetor: agora ao filtrar por status (ex: Manter), a busca do ponto mais proximo e feita contra a grade completa da cidade e so desenha os vetores dos pontos visiveis, eliminando o efeito teia/estrela.
+
+3. BOTAO "REMOVER ROTULOS" UNIFICADO EM TODAS AS TELAS COM MAPA:
+   - Presente e funcionando perfeitamente em:
+     * `/campo` (Instalar Armadilha)
+     * `/mapa` (Acompanhamento dos Agentes)
+     * `/admin` (Painel Administrativo)
+     * `/cenario-ideal` (Cenario Ideal de Planejamento)
+
+4. BUILD E DEPLOY:
+   - `npm run build` executado com sucesso (12.75s).
+   - Deploy realizado no Cloudflare Pages:
+     URL oficial: https://gps-ovitrampas.pages.dev
+     URL da versao: https://a2ab5644.gps-ovitrampas.pages.dev
+==============================================================================

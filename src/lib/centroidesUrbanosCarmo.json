@@ -1,0 +1,835 @@
+[
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-05",
+    "rua": "Rua Roberto Simões de Araujo",
+    "latitude": -21.94122,
+    "longitude": -42.612333
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-03",
+    "rua": "Rua Roberto Simões de Araujo",
+    "latitude": -21.94109,
+    "longitude": -42.61206
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-04",
+    "rua": "Rua Joaquim Simões de Araujo",
+    "latitude": -21.940771,
+    "longitude": -42.613278
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-02",
+    "rua": "Rua Roberto Simões de Araujo",
+    "latitude": -21.941599,
+    "longitude": -42.612285
+  },
+  {
+    "bairro": "Val Paraíso",
+    "quarteirao": "Q-01",
+    "rua": "Rua José Fernandes",
+    "latitude": -21.941248,
+    "longitude": -42.613679
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-01",
+    "rua": "Rua Nilo Carrilho de Farias",
+    "latitude": -21.930754,
+    "longitude": -42.613843
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-01/1",
+    "rua": "Rua Senhor dos Passos",
+    "latitude": -21.933782,
+    "longitude": -42.61148
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-02",
+    "rua": "Rua Dalmo José Gonçalves",
+    "latitude": -21.933526,
+    "longitude": -42.613055
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-03",
+    "rua": "Rua Ermance Dias Ferreira",
+    "latitude": -21.931682,
+    "longitude": -42.612121
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-04",
+    "rua": "Rua Nilo Carrilho de Farias",
+    "latitude": -21.930902,
+    "longitude": -42.613218
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-05",
+    "rua": "Rua Nilo Carrilho de Farias",
+    "latitude": -21.929829,
+    "longitude": -42.613584
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-06",
+    "rua": "Rua Luiz José Bento Vieira Ferreira",
+    "latitude": -21.93046,
+    "longitude": -42.614353
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-07",
+    "rua": "Rua Manoel José de Moraes",
+    "latitude": -21.927274,
+    "longitude": -42.615848
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-08",
+    "rua": "Rua Manoel José de Moraes",
+    "latitude": -21.927396,
+    "longitude": -42.616463
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-09",
+    "rua": "Rua Irmã Zélia",
+    "latitude": -21.927075,
+    "longitude": -42.615035
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-10",
+    "rua": "Rua Silvio Geraldo França",
+    "latitude": -21.92933,
+    "longitude": -42.613095
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-11",
+    "rua": "Rua José Cassane",
+    "latitude": -21.925393,
+    "longitude": -42.615237
+  },
+  {
+    "bairro": "Progresso",
+    "quarteirao": "Q-12",
+    "rua": "Rua Sebastião Lutterback",
+    "latitude": -21.918474,
+    "longitude": -42.615219
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-01",
+    "rua": "Rua Geraldo de Souza Câmara",
+    "latitude": -21.943467,
+    "longitude": -42.607747
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-02",
+    "rua": "Rua Joaquim Mesquita Soares",
+    "latitude": -21.942647,
+    "longitude": -42.609381
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-03",
+    "rua": "Avenida Edgar Gismonti",
+    "latitude": -21.941082,
+    "longitude": -42.60965
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-04",
+    "rua": "Rua Joaquim Mesquita Soares",
+    "latitude": -21.942603,
+    "longitude": -42.608506
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-05",
+    "rua": "Rua Geraldo de Souza Câmara",
+    "latitude": -21.942252,
+    "longitude": -42.607759
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-06",
+    "rua": "Avenida Edgar Gismonti",
+    "latitude": -21.941463,
+    "longitude": -42.609181
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-07",
+    "rua": "Avenida Aristeu de Sá",
+    "latitude": -21.941952,
+    "longitude": -42.607774
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-08",
+    "rua": "Rua Manoel Pereira Tatagiba",
+    "latitude": -21.941262,
+    "longitude": -42.607506
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-09",
+    "rua": "Rua Antônio César da Silva",
+    "latitude": -21.940739,
+    "longitude": -42.608196
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-10",
+    "rua": "Rua Antônio César da Silva",
+    "latitude": -21.940164,
+    "longitude": -42.607917
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-11",
+    "rua": "Rua José Geraldo Jasmin",
+    "latitude": -21.939193,
+    "longitude": -42.609018
+  },
+  {
+    "bairro": "Morro do Estado",
+    "quarteirao": "Q-12",
+    "rua": "Rua Bacelar",
+    "latitude": -21.937635,
+    "longitude": -42.608584
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-01",
+    "rua": "Praça Alexandre de Melo",
+    "latitude": -21.930495,
+    "longitude": -42.608961
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-02",
+    "rua": "Rua Eurico Teixeira Xavier",
+    "latitude": -21.929184,
+    "longitude": -42.609415
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-03",
+    "rua": "Rua Geraldo Mariano",
+    "latitude": -21.928643,
+    "longitude": -42.609841
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-04",
+    "rua": "Rua Geraldo Mariano",
+    "latitude": -21.928088,
+    "longitude": -42.610409
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-05",
+    "rua": "Rua Sebastião da Costa Gomes",
+    "latitude": -21.927465,
+    "longitude": -42.610367
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-06",
+    "rua": "Avenida Saraiva",
+    "latitude": -21.925995,
+    "longitude": -42.611015
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-07",
+    "rua": "Rua Alaide Ferreira Braga Monteiro",
+    "latitude": -21.927062,
+    "longitude": -42.6094
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-08",
+    "rua": "Rua Alaide Ferreira Braga Monteiro",
+    "latitude": -21.927014,
+    "longitude": -42.608242
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-09",
+    "rua": "Rua Carolina França",
+    "latitude": -21.925118,
+    "longitude": -42.610132
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-1/1",
+    "rua": "Praça Alexandre de Melo",
+    "latitude": -21.929897,
+    "longitude": -42.609372
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-10",
+    "rua": "Rua Carolina França",
+    "latitude": -21.924942,
+    "longitude": -42.609479
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-11",
+    "rua": "Rua Padre Angelo Peloso",
+    "latitude": -21.924314,
+    "longitude": -42.610818
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-12",
+    "rua": "Rua Padre Angelo Peloso",
+    "latitude": -21.924619,
+    "longitude": -42.611244
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-13",
+    "rua": "Rua Ulisses Brito",
+    "latitude": -21.924974,
+    "longitude": -42.611406
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-14",
+    "rua": "Rua Oswaldo Martins Damasceno",
+    "latitude": -21.924594,
+    "longitude": -42.61223
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-15",
+    "rua": "Rua José Medeiros Ferreira",
+    "latitude": -21.924143,
+    "longitude": -42.612198
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-16",
+    "rua": "Rua Padre Angelo Peloso",
+    "latitude": -21.923847,
+    "longitude": -42.611878
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-17",
+    "rua": "Rua Carolina França",
+    "latitude": -21.925497,
+    "longitude": -42.609975
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-17/1",
+    "rua": "Rua Doutor Alves Costa",
+    "latitude": -21.929625,
+    "longitude": -42.607467
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-18",
+    "rua": "Rua Jair Albuquerque",
+    "latitude": -21.928323,
+    "longitude": -42.604943
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-19",
+    "rua": "Rua Jair Albuquerque",
+    "latitude": -21.928759,
+    "longitude": -42.604885
+  },
+  {
+    "bairro": "Jardim Centenário",
+    "quarteirao": "Q-6/1",
+    "rua": "Rua Ulisses Brito",
+    "latitude": -21.925927,
+    "longitude": -42.611646
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-01",
+    "rua": "Rua Antônio Braga Monteiro",
+    "latitude": -21.936243,
+    "longitude": -42.609958
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-02",
+    "rua": "Rua Manoel Goulart",
+    "latitude": -21.934407,
+    "longitude": -42.610029
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-03",
+    "rua": "Rua José Pinto Pinheiro",
+    "latitude": -21.934543,
+    "longitude": -42.609252
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-04",
+    "rua": "Rua Mário Mesquita",
+    "latitude": -21.935705,
+    "longitude": -42.609053
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-05",
+    "rua": "Rua Mário Mesquita",
+    "latitude": -21.935742,
+    "longitude": -42.608426
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-06",
+    "rua": "Rua Bráulio Alves Casas",
+    "latitude": -21.937292,
+    "longitude": -42.609807
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-07",
+    "rua": "Rua Benedito Branco",
+    "latitude": -21.936719,
+    "longitude": -42.608237
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-08",
+    "rua": "Rua Barão de Aparecida",
+    "latitude": -21.935624,
+    "longitude": -42.607827
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-09",
+    "rua": "Rua Luis de Moura Pinheiro",
+    "latitude": -21.934444,
+    "longitude": -42.607133
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-10",
+    "rua": "Ladeira João Henrique",
+    "latitude": -21.934177,
+    "longitude": -42.608174
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-11",
+    "rua": "Praça Getúlio Vargas",
+    "latitude": -21.933487,
+    "longitude": -42.608819
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-12",
+    "rua": "Rua Cônego Gonçalves",
+    "latitude": -21.933115,
+    "longitude": -42.609688
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-13",
+    "rua": "Rua Princesa Izabel",
+    "latitude": -21.932816,
+    "longitude": -42.610681
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-14",
+    "rua": "Rua Princesa Izabel",
+    "latitude": -21.932727,
+    "longitude": -42.610156
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-15",
+    "rua": "Rua Princesa Izabel",
+    "latitude": -21.932475,
+    "longitude": -42.610069
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-16",
+    "rua": "Rua Martinho Campos",
+    "latitude": -21.932266,
+    "longitude": -42.609009
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-17",
+    "rua": "Rua Ubelart",
+    "latitude": -21.933072,
+    "longitude": -42.607837
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-18",
+    "rua": "Rua Luis de Moura Pinheiro",
+    "latitude": -21.93351,
+    "longitude": -42.606597
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-19",
+    "rua": "Rua José Marciano de Carvalho",
+    "latitude": -21.932845,
+    "longitude": -42.606206
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-20",
+    "rua": "Rua Ulisses Lemgruber de Andrade",
+    "latitude": -21.932251,
+    "longitude": -42.607354
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-21",
+    "rua": "Rua Abreu Magalhães",
+    "latitude": -21.931566,
+    "longitude": -42.608292
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-22",
+    "rua": "Rua Doutor Alves Costa",
+    "latitude": -21.930487,
+    "longitude": -42.607977
+  },
+  {
+    "bairro": "Centro",
+    "quarteirao": "Q-23",
+    "rua": "Rua Adão Costa",
+    "latitude": -21.928832,
+    "longitude": -42.604214
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-01",
+    "rua": "Rua Carminda Maria da Conceição",
+    "latitude": -21.940458,
+    "longitude": -42.606455
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-02",
+    "rua": "Rua Maria Enelina Cunha Rabello",
+    "latitude": -21.939773,
+    "longitude": -42.60629
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-03",
+    "rua": "Rua Maria Enelina Cunha Rabello",
+    "latitude": -21.939456,
+    "longitude": -42.606493
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-04",
+    "rua": "Rua Carminda Maria da Conceição",
+    "latitude": -21.940036,
+    "longitude": -42.607279
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-05",
+    "rua": "Rua Rui Mesquita Soares",
+    "latitude": -21.938713,
+    "longitude": -42.607035
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-06",
+    "rua": "Rua Rui Mesquita Soares",
+    "latitude": -21.938338,
+    "longitude": -42.607717
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-07",
+    "rua": "Rua Lizair Vidal Ribeiro",
+    "latitude": -21.93761,
+    "longitude": -42.607475
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-08",
+    "rua": "Rua Treze de Outrubro",
+    "latitude": -21.937511,
+    "longitude": -42.606405
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-09",
+    "rua": "Rua Lizair Vidal Ribeiro",
+    "latitude": -21.937082,
+    "longitude": -42.607191
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-10",
+    "rua": "Rua Soares Brandão",
+    "latitude": -21.936597,
+    "longitude": -42.605835
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-11",
+    "rua": "Rua Francisco Lourenço Alves",
+    "latitude": -21.93603,
+    "longitude": -42.606806
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-12",
+    "rua": "Vila Nossa Senhora do Carmo",
+    "latitude": -21.935441,
+    "longitude": -42.605153
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-13",
+    "rua": "Vila Nossa Senhora do Carmo",
+    "latitude": -21.93491,
+    "longitude": -42.606174
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-14",
+    "rua": "Rua Capitão Jorge Soares",
+    "latitude": -21.934576,
+    "longitude": -42.604867
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-15",
+    "rua": "Rua Capitão Jorge Soares",
+    "latitude": -21.933979,
+    "longitude": -42.605651
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-16",
+    "rua": "Rua José Marciano de Carvalho",
+    "latitude": -21.934157,
+    "longitude": -42.604103
+  },
+  {
+    "bairro": "Caixa d'Água",
+    "quarteirao": "Q-17",
+    "rua": "Rua José Marciano de Carvalho",
+    "latitude": -21.933249,
+    "longitude": -42.605219
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-01",
+    "rua": "Rua Antônio Constâncio de Andrade",
+    "latitude": -21.940782,
+    "longitude": -42.603325
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-02",
+    "rua": "Rua Mário Gomes",
+    "latitude": -21.942868,
+    "longitude": -42.603029
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-03",
+    "rua": "Rua Henrique José do Carmo",
+    "latitude": -21.941557,
+    "longitude": -42.601463
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-04",
+    "rua": "Rua Henrique José do Carmo",
+    "latitude": -21.941311,
+    "longitude": -42.601131
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-05",
+    "rua": "Rua José Cabral Filho",
+    "latitude": -21.94024,
+    "longitude": -42.602342
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-06",
+    "rua": "Rua José Cabral Filho",
+    "latitude": -21.940525,
+    "longitude": -42.602689
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-07",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.938959,
+    "longitude": -42.602332
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-08",
+    "rua": "Rua Izauna Maia de Souza",
+    "latitude": -21.939437,
+    "longitude": -42.602912
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-09",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.938002,
+    "longitude": -42.602781
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-10",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.938079,
+    "longitude": -42.602423
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-11",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.937014,
+    "longitude": -42.60105
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-12",
+    "rua": "Rua Nossa Senhora do Carmo",
+    "latitude": -21.937502,
+    "longitude": -42.600836
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-13",
+    "rua": "Rua Izauna Maia de Souza",
+    "latitude": -21.93905,
+    "longitude": -42.601268
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-13/1",
+    "rua": "Rua Paraisópolis",
+    "latitude": -21.940467,
+    "longitude": -42.600705
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-14",
+    "rua": "Rua Paraisópolis",
+    "latitude": -21.941187,
+    "longitude": -42.600438
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-15",
+    "rua": "Rua Henrique José do Carmo",
+    "latitude": -21.94193,
+    "longitude": -42.6019
+  },
+  {
+    "bairro": "Boa Ideia",
+    "quarteirao": "Q-09/1",
+    "rua": "Rua Jair Nunes Macuco",
+    "latitude": -21.936732,
+    "longitude": -42.602472
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-01",
+    "rua": "Rua Adalberto Pires da Silva",
+    "latitude": -21.941763,
+    "longitude": -42.606361
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-02",
+    "rua": "Rua Luiz Amancio Porto",
+    "latitude": -21.941505,
+    "longitude": -42.604773
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-03",
+    "rua": "Rua Armando Chaves Monteiro",
+    "latitude": -21.940453,
+    "longitude": -42.605172
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-04",
+    "rua": "Rua Carminda Maria da Conceição",
+    "latitude": -21.940479,
+    "longitude": -42.605997
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-05",
+    "rua": "Rua Esperança Soares Senhorinho",
+    "latitude": -21.940077,
+    "longitude": -42.605667
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-06",
+    "rua": "Rua Esperança Soares Senhorinho",
+    "latitude": -21.939213,
+    "longitude": -42.605683
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-07",
+    "rua": "Rua Residencial",
+    "latitude": -21.938516,
+    "longitude": -42.605876
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-08",
+    "rua": "Rua Armando Chaves Monteiro",
+    "latitude": -21.940184,
+    "longitude": -42.604383
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-09",
+    "rua": "Rua Sebastião Melo",
+    "latitude": -21.938845,
+    "longitude": -42.604291
+  },
+  {
+    "bairro": "Botafogo",
+    "quarteirao": "Q-10",
+    "rua": "Rua Jair Nunes Macuco",
+    "latitude": -21.937161,
+    "longitude": -42.604231
+  }
+]

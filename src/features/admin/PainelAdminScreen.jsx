@@ -446,6 +446,23 @@ export function PainelAdminScreen({
                 </button>
               )}
 
+              {/* Botão de Remover/Mostrar Rótulos no Mapa do Administrador */}
+              {(modoVisualizacao === 'mapa' || modoVisualizacao === 'dividido') && (
+                <button
+                  type="button"
+                  onClick={() => setMostrarRotulosAdmin(!mostrarRotulosAdmin)}
+                  className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 border shadow-xs ${
+                    mostrarRotulosAdmin
+                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500'
+                  }`}
+                  title={mostrarRotulosAdmin ? "Remover rótulos do mapa (deixar só pontos e linhas)" : "Mostrar rótulos das armadilhas"}
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>{mostrarRotulosAdmin ? 'Remover Rótulos' : 'Mostrar Rótulos'}</span>
+                </button>
+              )}
+
             <button
               type="button"
               onClick={handleExportarCsv}

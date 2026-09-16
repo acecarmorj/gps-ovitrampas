@@ -78,10 +78,10 @@ export function MapControlButtons({
         <button
           type="button"
           onClick={onToggleLabels}
-          aria-label={showLabels ? "Ocultar rótulos (deixar só pontos e linhas)" : "Mostrar rótulos das armadilhas"}
-          style={btnStyle(showLabels, '#2563eb', '#ffffff')}
+          aria-label={showLabels ? "Remover rótulos (deixar só pontos e linhas)" : "Mostrar rótulos das armadilhas"}
+          style={btnStyle(showLabels, '#d97706', '#ffffff')}
           className="active:scale-90"
-          title={showLabels ? "Ocultar balões/rótulos (deixar apenas pontos e linhas limpos)" : "Mostrar balões e rótulos das armadilhas"}
+          title={showLabels ? "Remover rótulos (deixar apenas pontos e linhas limpos)" : "Mostrar balões e rótulos das armadilhas"}
         >
           <Tag size={19} color={showLabels ? "#ffffff" : "#0f172a"} />
         </button>

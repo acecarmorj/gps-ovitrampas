@@ -493,6 +493,10 @@ export function MapaGrandeOvitrampa({
         onToggleSatellite={() => setSatellite(!satellite)}
         showDistances={showDistances}
         onToggleDistances={() => setShowDistances(!showDistances)}
+        showLabels={effectiveShowLabels}
+        onToggleLabels={handleToggleLabels}
+        showPanel={showPanel}
+        onTogglePanel={onTogglePanel}
         top={controlTop}
         right={12}
       />

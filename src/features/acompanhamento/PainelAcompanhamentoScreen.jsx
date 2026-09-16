@@ -185,15 +185,15 @@ export function PainelAcompanhamentoScreen({
             <button
               type="button"
               onClick={() => setMostrarRotulos(!mostrarRotulos)}
-              className={`font-black text-xs px-2 sm:px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition-all shadow-xs active:scale-95 ${
+              className={`font-black text-xs px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-xs active:scale-95 ${
                 mostrarRotulos
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                  : 'bg-amber-100 border border-amber-300 text-amber-800'
+                  ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
               }`}
-              title={mostrarRotulos ? "Ocultar balões (deixar apenas pontos e linhas limpos)" : "Mostrar rótulos das armadilhas"}
+              title={mostrarRotulos ? "Remover rótulos (deixar apenas pontos e linhas limpos)" : "Mostrar rótulos das armadilhas"}
             >
               <Tag className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">{mostrarRotulos ? 'Sem Rótulo' : 'Com Rótulo'}</span>
+              <span>{mostrarRotulos ? 'Remover Rótulos' : 'Mostrar Rótulos'}</span>
             </button>
 
             {/* Ocultar janela flutuante */}

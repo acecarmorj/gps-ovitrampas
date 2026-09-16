@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, CheckCircle2, RefreshCw,
   X, Check, User, AlertCircle,
-  ChevronDown, ChevronUp, Ruler
+  ChevronDown, ChevronUp, Ruler, Tag
 } from 'lucide-react';
 import { resolveAddressFromGps } from '../../lib/geoDetection';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
@@ -34,6 +34,7 @@ export function InstalarArmadilhaScreen({
   // as armadilhas e as linhas de distância antes de escolher o ponto.
   const [painelAberto, setPainelAberto] = useState(true);
   const [mostrarBussolaFlutuante, setMostrarBussolaFlutuante] = useState(false);
+  const [mostrarRotulos, setMostrarRotulos] = useState(true);
 
   // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
   const handleNumeroArmadilhaChange = (e) => {
@@ -372,6 +373,8 @@ export function InstalarArmadilhaScreen({
           quarteirao={localizacao.quarteirao}
           armadilhas={armadilhas}
           controlTop={56}
+          showLabels={mostrarRotulos}
+          onToggleLabels={() => setMostrarRotulos(!mostrarRotulos)}
         />
       </div>
 
@@ -433,20 +436,37 @@ export function InstalarArmadilhaScreen({
           </button>
         </div>
 
-        {/* Botão de Bússola e Rumo Tático */}
-        <button
-          type="button"
-          onClick={() => setMostrarBussolaFlutuante((v) => !v)}
-          className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto transition-all ${
-            mostrarBussolaFlutuante
-              ? 'bg-sky-600 text-white border-sky-400'
-              : 'bg-white/92 text-slate-800 border-slate-200/90 hover:bg-white'
-          }`}
-          title="Abrir bússola e orientação cardeal"
-        >
-          <Compass className={`w-3.5 h-3.5 ${mostrarBussolaFlutuante ? 'text-white' : 'text-sky-600'}`} />
-          <span>Bússola</span>
-        </button>
+        {/* Botão de Rótulos Limpos */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setMostrarRotulos(!mostrarRotulos)}
+            className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black transition-all ${
+              mostrarRotulos
+                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-400'
+                : 'bg-white/92 hover:bg-white text-slate-800 border-slate-200/90'
+            }`}
+            title={mostrarRotulos ? "Remover rótulos das armadilhas para ver o mapa limpo" : "Mostrar rótulos das armadilhas"}
+          >
+            <Tag className="w-3.5 h-3.5" />
+            <span>{mostrarRotulos ? 'Remover Rótulo' : 'Mostrar Rótulos'}</span>
+          </button>
+
+          {/* Botão de Bússola e Rumo Tático */}
+          <button
+            type="button"
+            onClick={() => setMostrarBussolaFlutuante((v) => !v)}
+            className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black transition-all ${
+              mostrarBussolaFlutuante
+                ? 'bg-sky-600 text-white border-sky-400'
+                : 'bg-white/92 text-slate-800 border-slate-200/90 hover:bg-white'
+            }`}
+            title="Abrir bússola e orientação cardeal"
+          >
+            <Compass className={`w-3.5 h-3.5 ${mostrarBussolaFlutuante ? 'text-white' : 'text-sky-600'}`} />
+            <span>Bússola</span>
+          </button>
+        </div>
       </header>
 
       {/* MODAL / CARD FLUTUANTE DE BÚSSOLA NO MAPA */}
