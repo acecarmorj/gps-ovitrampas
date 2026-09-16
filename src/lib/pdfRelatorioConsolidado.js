@@ -106,30 +106,48 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     ];
   });
 
-  // 4. Cabeçalho Institucional Oficial
+  // 4. Cabeçalho Institucional Oficial (largura/layout se adapta a paisagem/retrato)
   const desenharCabecalho = () => {
+    const pageW = doc.internal.pageSize.getWidth();
+    const barW = pageW - 20;
+    const isRetrato = pageW < 250;
+    const barH = isRetrato ? 30 : 24;
+
     // Barra superior verde institucional (Carmo - RJ)
     doc.setFillColor(5, 150, 105); // emerald-600
-    doc.rect(10, 8, 277, 24, 'F');
+    doc.rect(10, 8, barW, barH, 'F');
 
-    // Texto do Cabeçalho
+    // Texto do Cabeçalho (esquerda)
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
     doc.text('PREFEITURA MUNICIPAL DE CARMO - RJ', 14, 15);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(isRetrato ? 6.8 : 8.5);
     doc.text('SECRETARIA MUNICIPAL DE SAÚDE  •  COORDENADORIA DE VIGILÂNCIA AMBIENTAL EM SAÚDE', 14, 20);
-    doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 14, 25);
+    doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 14, isRetrato ? 24 : 25);
 
-    // Box data / hora no canto direito
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text(`EMISSÃO: ${dataFormatada} às ${horaFormatada}`, 235, 16);
-    doc.setFont('helvetica', 'normal');
-    doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', 222, 21);
-    doc.text(`FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`, 235, 26);
+    if (isRetrato) {
+      // Retrato: info de emissão/filtro numa linha própria embaixo (largura estreita
+      // não cabe ao lado do texto institucional sem sobrepor).
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.text(
+        `EMISSÃO: ${dataFormatada} às ${horaFormatada}   •   FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`,
+        14,
+        29
+      );
+    } else {
+      // Paisagem: box no canto direito, ao lado do texto institucional
+      const direitaX = pageW - 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text(`EMISSÃO: ${dataFormatada} às ${horaFormatada}`, direitaX, 16, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', direitaX, 21, { align: 'right' });
+      doc.text(`FILTRO: ${opcoes.filtroDescricao || 'Todos os Registros'}`, direitaX, 26, { align: 'right' });
+    }
   };
 
   desenharCabecalho();
@@ -332,39 +350,46 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   });
 
   // 9. Páginas de Mapas (últimas páginas, depois das tabelas): Calor (densidade/
-  // risco) e Distâncias (espaçamento 300-400m). Sempre enquadram TODAS as
-  // armadilhas do filtro atual (bounding box automático).
-  const areaMapaX = 10, areaMapaY = 42, areaMapaMaxW = 277, areaMapaMaxH = 150;
+  // risco) e Distâncias (espaçamento 300-400m). EM RETRATO (A4 210x297mm) -
+  // Carmo é uma cidade mais alta do que larga, retrato aproveita bem mais
+  // espaço vertical pro mapa do que a paisagem do resto do relatório.
+  // Sempre enquadram TODAS as armadilhas do filtro atual (bounding box automático).
+  const areaMapaX = 10, areaMapaY = 46, areaMapaMaxW = 190, areaMapaMaxH = 226;
 
-  doc.addPage();
+  doc.addPage('a4', 'portrait');
   desenharCabecalho();
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO DAS OVITRAMPAS', 10, 38);
-  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1700, height: 1050 });
-  desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO', 10, 42);
+  doc.text('ENTOMOLÓGICO DAS OVITRAMPAS', 10, 47);
+  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1250, height: 1550 });
+  const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 6, areaMapaMaxW, areaMapaMaxH - 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text('Intensidade proporcional à contagem de ovos da última leitura (armadilhas ainda sem leitura aparecem em tom discreto).', 10, areaMapaY + areaMapaMaxH + 6);
+  doc.text('Intensidade proporcional à contagem de ovos da última leitura', 10, posCalor.y + posCalor.h + 6);
+  doc.text('(armadilhas ainda sem leitura aparecem em tom discreto).', 10, posCalor.y + posCalor.h + 10);
 
-  doc.addPage();
+  doc.addPage('a4', 'portrait');
   desenharCabecalho();
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 38);
-  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1700, height: 1050 });
-  desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS', 10, 42);
+  doc.text('(DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 47);
+  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1250, height: 1550 });
+  const posDist = desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY + 6, areaMapaMaxW, areaMapaMaxH - 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas, com a distância em metros de cada trecho.`, 10, areaMapaY + areaMapaMaxH + 6);
+  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas,`, 10, posDist.y + posDist.h + 6);
+  doc.text('com a distância em metros de cada trecho.', 10, posDist.y + posDist.h + 10);
 
   // 10. Seção Final: Observações Técnicas & Assinaturas Oficiais (sempre em
-  // página nova, depois dos mapas)
-  doc.addPage();
+  // página nova, depois dos mapas) - volta pra paisagem (retrato foi só
+  // nas 2 páginas de mapa acima)
+  doc.addPage('a4', 'landscape');
   desenharCabecalho();
   const yAssinaturas = 50;
 
@@ -410,17 +435,20 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setTextColor(100, 116, 139);
   doc.text('Vigilância Entomológica de Ovitrampas', 210, yLinhaAssinatura + 7, { align: 'center' });
 
-  // 11. Numeração de Páginas em Todas as Folhas
+  // 11. Numeração de Páginas em Todas as Folhas (centralizado conforme a
+  // largura real de cada página - paisagem ou retrato nas páginas de mapa)
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    const pW = doc.internal.pageSize.getWidth();
+    const pH = doc.internal.pageSize.getHeight();
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.setTextColor(148, 163, 184); // slate-400
     doc.text(
       `Página ${i} de ${pageCount}  •  Sistema de Monitoramento Territorial por Ovitrampas  •  Prefeitura Municipal de Carmo - RJ`,
-      148.5,
-      204,
+      pW / 2,
+      pH - 6,
       { align: 'center' }
     );
   }
