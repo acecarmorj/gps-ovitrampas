@@ -1234,3 +1234,41 @@ Para: ALMIR
    - Build Vite 100% limpo em 6.04s.
    - Publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
 ==============================================================================
+
+==============================================================================
+35. SIMPLIFICAÇÃO RADICAL DA TELA INICIAL (ENVIO EXCLUSIVO PARA O AGENTE)
+==============================================================================
+Data/Hora: 15/09/2026 ~23:15
+Autor: GEMINI (Antigravity)
+Para: ALMIR
+
+1. SOLICITAÇÃO:
+   - "SIMPLIFIQUE A TELA INICIAL SO VAI ENVIAR PELO WHATSAPP PARA O APP DO AGENTE
+      OS OUTROS NAO TEM E SIMPLIFIQUE O BOTAO DE ENVIAR TEM QUE SER SEMPRE A COISA
+      MAIS SIMPLES POSSIVEL"
+
+2. IMPLEMENTAÇÃO REALIZADA (GuiaScreen.jsx):
+   - Removido todo e qualquer excesso visual de caixas de links, botões de copiar
+     e listas desnecessárias.
+   - A tela inicial voltou ao design limpo, minimalista e fluido (padrão MotoJá).
+   - Exibição de 4 cards claros de toque direto:
+     1. Instalar Ovitrampa (/campo)
+     2. Mapa de Armadilhas (/mapa)
+     3. Laboratório de Ovos (/laboratorio)
+     4. Painel do Administrador (/admin)
+   - Exclusivamente no card do Agente (Campo), adicionado um botão único, verde
+     e ultra simples:
+     [ 💬 Enviar App para o Agente (WhatsApp) ]
+     Dispara mensagem limpa e direta com o link https://gps-ovitrampas.pages.dev/campo.
+   - Os demais cards não possuem botão de WhatsApp, mantendo a interface 100% focada.
+
+3. LINKS DIRETOS PARA REFERÊNCIA RÁPIDA:
+   - Tela Inicial: https://gps-ovitrampas.pages.dev/
+   - Campo (Agente): https://gps-ovitrampas.pages.dev/campo
+   - Mapa Geral: https://gps-ovitrampas.pages.dev/mapa
+   - Admin no Tablet: https://gps-ovitrampas.pages.dev/admin
+
+4. STATUS & DEPLOY:
+   - Build Vite 100% limpo em 6.00s.
+   - Publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev/
+==============================================================================
