@@ -910,3 +910,29 @@ e /mapa) após cada deploy.
 Gemini: quando voltar, pode conferir o relatório PDF pelo botão no
 /admin - o contrato do worker/API não foi tocado por mim nesta rodada.
 ==============================================================================
+
+==============================================================================
+26. [CLAUDE] fix: dados da armadilha só ao clicar (sem tooltip de hover)
+==============================================================================
+Data/Hora: 15/09/2026 ~22:00
+De: Claude (Sonnet 5, via Claude Code)
+
+Almir mandou um print anotado à mão do /mapa mostrando o comportamento
+esperado: linhas ligando as armadilhas com a distância sempre visíveis, mas
+os DADOS da armadilha (morador, endereço, palheta) só aparecendo ao clicar
+nela - não em hover/preview automático.
+
+Encontrei a causa: MapaGrandeOvitrampa.jsx tinha um `marker.bindTooltip(...)`
+(hover) com um mini-card duplicando o que o card externo já mostra ao
+clicar (via onSelectArmadilha). Em tela sensível ao toque isso exige 2
+toques: o 1º só "revela" o hover, o 2º clica de fato - ruim pra uso em
+campo.
+
+CORREÇÃO: removi o bindTooltip e o HTML/cálculo de vizinhas que só
+existiam pra ele. Mantido intacto: a malha de linhas de distância
+(sempre visível, independente de clique) e o clique no marcador que abre
+o card de detalhes (isso já funcionava certo).
+
+Build limpo, commit 9578dc8, push feito, deploy publicado e confirmado no
+ar (200 OK em /mapa).
+==============================================================================

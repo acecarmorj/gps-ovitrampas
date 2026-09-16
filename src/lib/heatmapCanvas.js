@@ -239,14 +239,14 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
 
   const edges = buildTrapDistanceNetwork(pontos, maxNeighbors, maxDistance);
 
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3.5;
   ctx.font = 'bold 11px Arial';
   edges.forEach((edge) => {
     const [x1, y1] = project(Number(edge.trapA.latitude), Number(edge.trapA.longitude));
     const [x2, y2] = project(Number(edge.trapB.latitude), Number(edge.trapB.longitude));
 
     ctx.strokeStyle = edge.cor;
-    ctx.setLineDash(edge.status === 'ideal' ? [7, 5] : [3, 5]);
+    ctx.setLineDash(edge.status === 'ideal' ? [10, 7] : [5, 7]);
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);

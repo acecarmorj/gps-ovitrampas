@@ -286,9 +286,9 @@ export function MapaGrandeOvitrampa({
           ],
           {
             color: edge.cor,
-            weight: 2,
-            opacity: 0.75,
-            dashArray: edge.status === 'ideal' ? '6, 6' : '3, 5'
+            weight: 4,
+            opacity: 0.92,
+            dashArray: edge.status === 'ideal' ? '9, 7' : '4, 6'
           }
         );
         polyline.addTo(distanceLayer);
@@ -322,9 +322,9 @@ export function MapaGrandeOvitrampa({
           ],
           {
             color: closest.cor,
-            weight: 2.5,
-            dashArray: '5, 5',
-            opacity: 0.85
+            weight: 4.5,
+            dashArray: '7, 6',
+            opacity: 0.95
           }
         );
         agentLine.addTo(distanceLayer);
