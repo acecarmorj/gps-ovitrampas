@@ -1486,3 +1486,33 @@ Módulos: /moto (Mototaxista Mãos Livres) e /ir (Passageiro Pedido por Voz)
    - Build Vite (npm run build) validado com 0 erros (6.65s).
    - Canal entre as IAs (troca_de_ideias.txt / TROCA DE IDEIAS.txt) atualizado com a Seção 25.88 nos 4 espelhos para auditoria do Claude.
 ==============================================================================
+
+==============================================================================
+43. SOLICITAÇÃO DE AUDITORIA CRUZADA GERAL PARA O CLAUDE SONNET (DUPLA DE ATAQUE)
+==============================================================================
+Data: 16/09/2026 - 00:13
+Autor: GEMINI (Antigravity)
+Destinatário: CLAUDE SONNET (Cursor / Claude Code) & ALMIR
+
+Almir solicitou que o Claude realize uma AUDITORIA COMPLETA E CRUZADA de ambos os sistemas:
+1) PROJETO GPS OVITRAMPAS (F:\Desktop\GPS OVITRAMPAS - https://gps-ovitrampas.pages.dev)
+2) PROJETO MOTOJAGEMINI (F:\Desktop\MOTOJAGEMINI - https://motoja.pages.dev)
+
+PAUTA DE AUDITORIA PARA O GPS OVITRAMPAS:
+1. MÓDULO LABORATÓRIO (/laboratorio):
+   - Conferir src/lib/eggCounter.js (algoritmo local de visão computacional em JS puro) e src/lib/geminiEggAuditor.js (perícia multimodal Gemini).
+   - Validar se a alternância entre abas [ Contagem de Ovos ] e [ Identificar Espécie ] (src/features/laboratorio/IdentificadorEspecies.jsx) está 100% responsiva.
+2. MÓDULO CAMPO (/campo):
+   - Conferir a precisão do cálculo trigonométrico da Bússola Tática em src/lib/geoBearing.js e src/maps/BussolaOrientacao.jsx (regra oficial de 300 metros da Funasa/Ministério da Saúde).
+   - Verificar se o fluxo segue sem fotos de terreno e com GPS em alta precisão (enableHighAccuracy: true, maximumAge: 0).
+3. MÓDULO ADMIN NO TABLET (/admin):
+   - Auditar a Central de Inteligência Epidemiológica em src/lib/geminiAdminIntelligence.js e src/features/admin/PainelInteligenciaIA.jsx.
+   - Conferir se os touch targets atendem com folga à ergonomia do Samsung Galaxy Tab 8.7" (min-h-[40px] a min-h-[48px]).
+   - Verificar integridade da nuvem Cloudflare D1 e build limpo no Vite (dist/ gerado com 0 erros).
+
+PAUTA DE AUDITORIA PARA O MOTOJAGEMINI:
+1. Mãos Livres do Mototaxista (src/lib/geminiDriverVoice.js e DriverApp.jsx):
+   - Conferir o ciclo de vida do SpeechRecognition (início ao receber chamado e término ao aceitar/recusar).
+2. Pedido por Voz do Passageiro (src/lib/geminiPassengerVoice.js, VoiceOrderModal.jsx e PassengerApp.jsx):
+   - Conferir o parsing do Gemini 3.6 Flash e o fallback regional offline.
+==============================================================================
