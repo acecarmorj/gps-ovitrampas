@@ -4,6 +4,7 @@ import { getAllPolygons } from '../lib/geoDetection';
 import { MAP_TILE_STANDARD, MAP_TILE_SATELLITE, youDotIcon, ovitrampaIcon } from './leafletIcons';
 import { makeAutoFit } from './mapFit';
 import { MapControlButtons } from './MapControlButtons';
+import { buildTrapDistanceNetwork, findNearbyTraps } from '../lib/geoDistance';
 
 export function MapaGrandeOvitrampa({
   userPos,
@@ -23,10 +24,12 @@ export function MapaGrandeOvitrampa({
     polygons: null,
     userMarker: null,
     userAccuracyCircle: null,
+    distanceLinesLayer: null,
     trapsLayer: null
   });
 
   const [satellite, setSatellite] = useState(false);
+  const [showDistances, setShowDistances] = useState(true);
 
   // 1. Inicialização do Mapa Leaflet
   useEffect(() => {
@@ -51,6 +54,7 @@ export function MapaGrandeOvitrampa({
     }).addTo(map);
 
     layersRef.current.polygons = L.layerGroup().addTo(map);
+    layersRef.current.distanceLinesLayer = L.layerGroup().addTo(map);
     layersRef.current.trapsLayer = L.layerGroup().addTo(map);
 
     const onResize = () => {
@@ -78,6 +82,9 @@ export function MapaGrandeOvitrampa({
       try {
         if (layersRef.current.userAccuracyCircle) {
           map.removeLayer(layersRef.current.userAccuracyCircle);
+        }
+        if (layersRef.current.distanceLinesLayer) {
+          map.removeLayer(layersRef.current.distanceLinesLayer);
         }
         map.remove();
       } catch (e) {}
@@ -231,6 +238,40 @@ export function MapaGrandeOvitrampa({
         zIndexOffset: isSelected ? 1500 : 1000
       });
 
+      // Calcula as 3 vizinhas mais próximas para exibir no quadrinho ao clicar/passar o dedo
+      const vizinhos = findNearbyTraps(arm, armadilhas, 3, arm.id);
+      const vizinhosHtml = vizinhos.length > 0
+        ? vizinhos.map(v => `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:2px;">
+              <span>• <b>OV-${v.armadilha.numero}</b> (${v.armadilha.moradorNome || 'Morador'})</span>
+              <span style="font-weight:800; color:${v.cor};">${v.distancia} m</span>
+            </div>
+          `).join('')
+        : '<div style="color:#64748b; font-size:10px; margin-top:2px;">Primeira armadilha deste setor</div>';
+
+      const tooltipContent = `
+        <div style="font-family:'Inter',sans-serif; min-width:180px; text-align:left;">
+          <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:3px;">
+            <span style="font-weight:900; color:#0f172a; font-size:12px;">🪤 OV-${arm.numero}</span>
+            <span style="font-size:10px; font-weight:700; color:#059669; background:#ecfdf5; padding:1px 6px; border-radius:999px;">${arm.palheta || 'PL-01'}</span>
+          </div>
+          <div style="font-size:11px; color:#334155; margin-bottom:4px; line-height:1.25;">
+            <b>${arm.moradorNome || 'Morador'}</b><br/>
+            <span style="font-size:10px; color:#64748b;">${arm.rua || ''} ${arm.numeroImovel ? `Nº ${arm.numeroImovel}` : ''} • Q-${arm.quarteirao || '01'}</span>
+          </div>
+          <div style="border-top:1px dashed #cbd5e1; padding-top:3px; font-size:10px;">
+            <b style="color:#0f172a;">Distância para vizinhas (300-400m):</b>
+            ${vizinhosHtml}
+          </div>
+        </div>
+      `;
+
+      marker.bindTooltip(tooltipContent, {
+        direction: 'top',
+        offset: [0, -18],
+        opacity: 0.98
+      });
+
       marker.on('click', () => {
         if (onSelectArmadilha) {
           onSelectArmadilha(arm);
@@ -253,6 +294,93 @@ export function MapaGrandeOvitrampa({
       }
     }
   }, [armadilhas, armadilhaSelecionada, mostrarTodosPontos, userPos, onSelectArmadilha]);
+
+  // 6. Renderização da Malha de Distâncias entre Ovitrampas (Regra 300m - 400m)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const distanceLayer = layersRef.current.distanceLinesLayer;
+    if (!map || !distanceLayer) return;
+
+    distanceLayer.clearLayers();
+
+    if (!showDistances) return;
+
+    // 6.1. Linhas retas entre as armadilhas cadastradas (conforme desenho do usuário)
+    if (armadilhas && armadilhas.length >= 2) {
+      const edges = buildTrapDistanceNetwork(armadilhas, 3, 900);
+
+      edges.forEach((edge) => {
+        const polyline = L.polyline(
+          [
+            [edge.trapA.latitude, edge.trapA.longitude],
+            [edge.trapB.latitude, edge.trapB.longitude]
+          ],
+          {
+            color: edge.cor,
+            weight: 2,
+            opacity: 0.75,
+            dashArray: edge.status === 'ideal' ? '6, 6' : '3, 5'
+          }
+        );
+        polyline.addTo(distanceLayer);
+
+        // Pílula com a metragem exata no ponto médio da reta
+        const badgeIcon = L.divIcon({
+          className: '',
+          html: `<div class="distance-pill ${edge.badgeClass}">${edge.distancia} m</div>`,
+          iconSize: [60, 20],
+          iconAnchor: [30, 10]
+        });
+
+        const badge = L.marker(edge.midpoint, {
+          icon: badgeIcon,
+          interactive: false,
+          zIndexOffset: 600
+        });
+        badge.addTo(distanceLayer);
+      });
+    }
+
+    // 6.2. Linha guia em tempo real: Agente (Você) ➔ Armadilha mais próxima
+    if (userPos?.latitude && userPos?.longitude && armadilhas && armadilhas.length > 0) {
+      const nearby = findNearbyTraps(userPos, armadilhas, 1);
+      if (nearby && nearby.length > 0) {
+        const closest = nearby[0];
+        const agentLine = L.polyline(
+          [
+            [userPos.latitude, userPos.longitude],
+            [closest.armadilha.latitude, closest.armadilha.longitude]
+          ],
+          {
+            color: closest.cor,
+            weight: 2.5,
+            dashArray: '5, 5',
+            opacity: 0.85
+          }
+        );
+        agentLine.addTo(distanceLayer);
+
+        const agentMidpoint = [
+          (Number(userPos.latitude) + Number(closest.armadilha.latitude)) / 2,
+          (Number(userPos.longitude) + Number(closest.armadilha.longitude)) / 2
+        ];
+
+        const agentBadgeIcon = L.divIcon({
+          className: '',
+          html: `<div class="distance-pill ${closest.badgeClass}" style="box-shadow:0 3px 10px rgba(0,0,0,0.25);">Você ➔ OV-${closest.armadilha.numero}: ${closest.distancia}m</div>`,
+          iconSize: [140, 22],
+          iconAnchor: [70, 11]
+        });
+
+        const agentBadge = L.marker(agentMidpoint, {
+          icon: agentBadgeIcon,
+          interactive: false,
+          zIndexOffset: 1400
+        });
+        agentBadge.addTo(distanceLayer);
+      }
+    }
+  }, [armadilhas, showDistances, userPos]);
 
   // Centraliza suavemente na armadilha quando for selecionada
   useEffect(() => {
@@ -280,6 +408,8 @@ export function MapaGrandeOvitrampa({
         onRecenter={handleRecenter}
         satellite={satellite}
         onToggleSatellite={() => setSatellite(!satellite)}
+        showDistances={showDistances}
+        onToggleDistances={() => setShowDistances(!showDistances)}
         top={controlTop}
         right={12}
       />

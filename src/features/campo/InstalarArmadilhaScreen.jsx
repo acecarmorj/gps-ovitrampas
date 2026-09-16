@@ -8,6 +8,7 @@ import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { playSuccessSound } from '../../lib/soundAlert';
 import { cadastrarArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
+import { findNearbyTraps } from '../../lib/geoDistance';
 
 export function InstalarArmadilhaScreen({
   armadilhas = [],
@@ -23,6 +24,10 @@ export function InstalarArmadilhaScreen({
   const [numeroPalheta, setNumeroPalheta] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
+
+  // Assistente de espaçamento (Regra de 300m a 400m entre armadilhas)
+  const vizinhasProximas = findNearbyTraps(localizacao, armadilhas, 3);
+  const vizinhaMaisProxima = vizinhasProximas.length > 0 ? vizinhasProximas[0] : null;
 
   // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
   const handleNumeroArmadilhaChange = (e) => {
@@ -422,6 +427,85 @@ export function InstalarArmadilhaScreen({
               <span className="leading-tight font-semibold">{gpsErrorMsg}</span>
             </div>
           )}
+
+          {/* ASSISTENTE DE GEORREFERENCIAMENTO: DISTÂNCIA DAS OVs MAIS PRÓXIMAS (REGRA 300M - 400M) */}
+          {vizinhasProximas && vizinhasProximas.length > 0 ? (
+            <div className="bg-white/95 rounded-2xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+                <span className="font-black text-slate-800 flex items-center gap-1.5 text-[11px]">
+                  <span>📏</span>
+                  <span>Distância das OVs Mais Próximas</span>
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                  Meta: 300m a 400m
+                </span>
+              </div>
+
+              {/* Lista das até 3 OVs vizinhas mais próximas */}
+              <div className="space-y-1.5">
+                {vizinhasProximas.map((viz, idx) => (
+                  <div
+                    key={viz.armadilha.id || idx}
+                    className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl border text-xs transition-colors ${
+                      viz.status === 'ideal'
+                        ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-900'
+                        : viz.status === 'proxima'
+                        ? 'bg-amber-50/70 border-amber-200/80 text-amber-900'
+                        : 'bg-sky-50/70 border-sky-200/80 text-sky-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs shrink-0">
+                        {viz.status === 'ideal' ? '🟢' : viz.status === 'proxima' ? '🟡' : '🔵'}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-[11px] truncate leading-tight">
+                          OV-{viz.armadilha.numero} <span className="font-normal text-[10px] text-slate-600">({viz.armadilha.moradorNome || 'Morador'})</span>
+                        </p>
+                        <p className="text-[9px] opacity-80 leading-none mt-0.5">
+                          {viz.status === 'ideal'
+                            ? 'Espaçamento ideal'
+                            : viz.status === 'proxima'
+                            ? 'Abaixo de 300m (muito próxima)'
+                            : 'Acima de 400m (ampla)'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-black px-2 py-0.5 rounded-lg shrink-0 border ${
+                        viz.status === 'ideal'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : viz.status === 'proxima'
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-sky-100 text-sky-800 border-sky-300'
+                      }`}
+                    >
+                      {viz.distancia} m
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Status do Ponto de Instalação */}
+              {vizinhasProximas[0] && (
+                <div className="pt-1 text-[10px] font-bold text-center">
+                  {vizinhasProximas[0].status === 'ideal' ? (
+                    <span className="text-emerald-700">✅ Ponto excelente! Atende à regra de 300m a 400m da vizinha mais próxima.</span>
+                  ) : vizinhasProximas[0].status === 'proxima' ? (
+                    <span className="text-amber-700">⚠️ Atenção: Apenas {vizinhasProximas[0].distancia}m da OV-{vizinhasProximas[0].armadilha.numero}. Se possível, afaste-se um pouco para cobrir 300m+.</span>
+                  ) : (
+                    <span className="text-sky-700">ℹ️ Espaçamento amplo: {vizinhasProximas[0].distancia}m da vizinha mais próxima.</span>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : armadilhas.length > 0 ? (
+            <div className="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-[11px] flex items-center gap-2">
+              <span>📍</span>
+              <span>Calculando distância para as armadilhas cadastradas...</span>
+            </div>
+          ) : null}
 
           {/* FORMULÁRIO RÁPIDO DO AGENTE: MORADOR + Nº DA OV + PALHETA */}
           <form onSubmit={handleRegistrar} className="space-y-2.5">

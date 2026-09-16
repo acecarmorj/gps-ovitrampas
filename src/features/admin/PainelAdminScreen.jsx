@@ -4,11 +4,13 @@ import {
   MapPin, Eye, Calendar, RefreshCw,
   FlaskConical, CheckCircle2, AlertTriangle,
   X, Layers, ExternalLink, Trash2, BellRing,
-  PieChart, Activity, User
+  PieChart, Activity, User, FileText
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { excluirArmadilha } from '../../lib/storage';
 import { playNewRequestSound } from '../../lib/soundAlert';
+import { findNearbyTraps } from '../../lib/geoDistance';
+import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
 
 export function PainelAdminScreen({
   armadilhas = [],
@@ -143,6 +145,19 @@ export function PainelAdminScreen({
     document.body.removeChild(link);
   };
 
+  // Geração do Relatório Consolidado Oficial em PDF
+  const handleGerarPdf = () => {
+    const filtroDescricao = [
+      filtroMicroarea !== 'todas' ? filtroMicroarea : null,
+      filtroStatus !== 'todos' ? filtroStatus : null,
+      filtroTexto.trim() || null
+    ]
+      .filter(Boolean)
+      .join(' • ') || 'Todos os Registros';
+
+    gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
+  };
+
   const handleExcluir = async (id, numero) => {
     if (window.confirm(`Tem certeza que deseja remover a armadilha ARM-${numero}?`)) {
       await excluirArmadilha(id);
@@ -172,7 +187,7 @@ export function PainelAdminScreen({
 
       {/* TOPO: DASHBOARD COM INDICADORES EPIDEMIOLÓGICOS (CLEAN & ADAPTADO PARA TABLET) */}
       <div className="bg-white/95 border-b border-slate-200/90 p-3 sm:p-4 shrink-0 space-y-3 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
@@ -245,7 +260,17 @@ export function PainelAdminScreen({
               title="Baixar planilha CSV para Excel"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGerarPdf}
+              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs"
+              title="Gerar relatório técnico consolidado em PDF"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Relatório PDF</span>
             </button>
           </div>
         </div>
@@ -519,6 +544,37 @@ export function PainelAdminScreen({
                   </span>
                 </div>
               </div>
+
+              {/* DISTÂNCIAS DAS OVs VIZINHAS MAIS PRÓXIMAS (DIRETRIZ 300m - 400m) */}
+              {(() => {
+                const vizinhas = findNearbyTraps(armadilhaSelecionada, armadilhas, 3, armadilhaSelecionada.id);
+                if (vizinhas.length === 0) return null;
+                return (
+                  <div className="bg-slate-50/95 rounded-2xl p-2.5 border border-slate-200/90 col-span-2 space-y-1.5">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-slate-700 block">
+                      OVs Mais Próximas (Regra 300m-400m)
+                    </span>
+                    <div className="space-y-1.5">
+                      {vizinhas.map((viz) => (
+                        <button
+                          type="button"
+                          key={viz.armadilha.id}
+                          onClick={() => setArmadilhaSelecionada(viz.armadilha)}
+                          className="w-full text-left flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all"
+                        >
+                          <span className="font-black text-xs text-emerald-700">ARM-{viz.armadilha.numero}</span>
+                          <span
+                            className="text-[10px] font-black px-2 py-0.5 rounded-full border"
+                            style={{ backgroundColor: viz.corFundo, borderColor: viz.corBorda, color: viz.cor }}
+                          >
+                            {viz.distancia} m
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="flex gap-2 pt-2 border-t border-slate-100">

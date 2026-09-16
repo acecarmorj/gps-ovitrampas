@@ -7,6 +7,7 @@ import {
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { excluirArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
+import { findNearbyTraps } from '../../lib/geoDistance';
 
 export function PainelAcompanhamentoScreen({
   armadilhas = [],
@@ -70,51 +71,51 @@ export function PainelAcompanhamentoScreen({
         />
       </div>
 
-      {/* 2. TOPO FLUTUANTE: RESUMO E BUSCA */}
-      <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none max-w-lg mx-auto">
+      {/* 2. TOPO FLUTUANTE: RESUMO E BUSCA (OTIMIZADO PARA TABLET SAMSUNG E MOBILE) */}
+      <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none max-w-lg md:max-w-2xl mx-auto">
         {/* Resumo Rápido */}
-        <div className="bg-white/92 backdrop-blur-md text-slate-800 px-3.5 py-2.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center justify-between pointer-events-auto text-xs">
-          <div className="flex items-center gap-3">
+        <div className="bg-white/95 backdrop-blur-md text-slate-800 px-3.5 py-2.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center justify-between pointer-events-auto text-xs">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div>
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Armadilhas</span>
-              <span className="font-black text-slate-900 text-sm">{totalArmadilhas}</span>
+              <span className="font-black text-slate-900 text-sm sm:text-base">{totalArmadilhas}</span>
             </div>
             <div className="w-px h-6 bg-slate-200" />
             <div>
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Lidas (Lab)</span>
-              <span className="font-black text-blue-600 text-sm">{totalAnalisadas}</span>
+              <span className="font-black text-blue-600 text-sm sm:text-base">{totalAnalisadas}</span>
             </div>
             <div className="w-px h-6 bg-slate-200" />
             <div>
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Positivas</span>
-              <span className="font-black text-rose-600 text-sm">{totalPositivas}</span>
+              <span className="font-black text-rose-600 text-sm sm:text-base">{totalPositivas}</span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setMostrarLista(!mostrarLista)}
-            className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-[11px] px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
+            className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>{mostrarLista ? 'Ocultar' : 'Lista'}</span>
+            <span>{mostrarLista ? 'Ocultar' : 'Ver Lista'}</span>
           </button>
         </div>
 
         {/* Barra de Busca e Filtro de Status */}
-        <div className="bg-white/92 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center gap-2 pointer-events-auto">
-          <div className="flex-1 flex items-center gap-2 bg-slate-50/90 px-2.5 py-1.5 rounded-xl border border-slate-200">
-            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        <div className="bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center gap-2 pointer-events-auto">
+          <div className="flex-1 flex items-center gap-2 bg-slate-50/90 px-3 py-2 rounded-xl border border-slate-200">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder="Buscar Nº, rua ou microárea..."
+              placeholder="Buscar Nº, morador, rua ou quarteirão..."
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
               className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full font-medium"
             />
             {filtroTexto && (
               <button onClick={() => setFiltroTexto('')}>
-                <X className="w-3 h-3 text-slate-400 hover:text-slate-700" />
+                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
               </button>
             )}
           </div>
@@ -122,7 +123,7 @@ export function PainelAcompanhamentoScreen({
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
-            className="bg-slate-50/90 border border-slate-200 text-slate-800 text-[11px] font-bold px-2 py-1.5 rounded-xl focus:outline-none"
+            className="bg-slate-50/90 border border-slate-200 text-slate-800 text-xs font-bold px-2.5 py-2 rounded-xl focus:outline-none"
           >
             <option value="todas">Todas</option>
             <option value="instalada">Sem Leitura</option>
@@ -131,9 +132,9 @@ export function PainelAcompanhamentoScreen({
         </div>
       </div>
 
-      {/* 3. MODAL DE LISTA DE ARMADILHAS */}
+      {/* 3. MODAL DE LISTA DE ARMADILHAS (LADO DIREITO NO TABLET / CENTRAL NO MOBILE) */}
       {mostrarLista && (
-        <div className="absolute top-28 left-3 right-3 bottom-20 z-30 max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-2xl p-4 flex flex-col pointer-events-auto overflow-hidden text-slate-800">
+        <div className="absolute top-28 left-3 right-3 bottom-20 md:top-24 md:left-auto md:right-4 md:bottom-6 md:w-[440px] md:max-w-none z-30 max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-2xl p-4 flex flex-col pointer-events-auto overflow-hidden text-slate-800">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
               Armadilhas Registradas ({armadilhasFiltradas.length})
@@ -184,80 +185,127 @@ export function PainelAcompanhamentoScreen({
         </div>
       )}
 
-      {/* 4. CARD FLUTUANTE DE DETALHES DA ARMADILHA SELECIONADA */}
-      {selecionada && (
-        <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-lg mx-auto w-full pointer-events-none">
-          <div className="bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-4 space-y-3 pointer-events-auto max-h-[75dvh] overflow-y-auto text-slate-800">
-            
-            {/* Cabeçalho do Card */}
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span>ARMADILHA ARM-{selecionada.numero}</span>
-                    {(() => {
-                      const sit = calcularSituacaoArmadilha(selecionada);
-                      return (
-                        <span className={`text-[10px] ${sit.corBg} border ${sit.corBorda} ${sit.corTexto} font-black px-2 py-0.5 rounded-full`}>
-                          {sit.titulo}
-                        </span>
-                      );
-                    })()}
-                  </h3>
-                </div>
-              </div>
+      {/* 4. CARD FLUTUANTE DE DETALHES DA ARMADILHA SELECIONADA (FLUTUA À DIREITA NO TABLET) */}
+      {selecionada && (() => {
+        const vizinhasMaisProximas = findNearbyTraps(selecionada, armadilhas, 3, selecionada.id);
+        const sit = calcularSituacaoArmadilha(selecionada);
 
-              <button
-                onClick={() => setSelecionada(null)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Informações de Localização */}
-            <div className="space-y-2 text-xs">
-              {selecionada.moradorNome && (
-                <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-slate-500">Morador(a):</span>
-                  <span className="text-xs font-black text-slate-900">{selecionada.moradorNome}</span>
-                </div>
-              )}
-
-              <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80">
-                <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-extrabold text-slate-900 text-xs">
-                    {selecionada.rua} {selecionada.numeroImovel ? `Nº ${selecionada.numeroImovel}` : ''}
-                  </p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    {selecionada.microarea} • Quarteirão: <span className="text-emerald-700 font-extrabold">{selecionada.quarteirao}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 px-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>Instalada em: {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</span>
-              </div>
-
-              {(() => {
-                const sit = calcularSituacaoArmadilha(selecionada);
-                return (
-                  <div className={`p-2.5 rounded-xl border ${sit.corBorda} ${sit.corBg} text-[11px]`}>
-                    <span className={`font-black ${sit.corTexto} block mb-0.5`}>Situação da OV: {sit.titulo}</span>
-                    <p className="text-slate-700 text-[10px] leading-relaxed">{sit.descricao}</p>
+        return (
+          <div className="absolute left-0 right-0 bottom-0 md:left-auto md:right-4 md:top-24 md:bottom-auto md:w-[410px] md:max-w-none md:p-0 z-30 p-2.5 sm:p-4 max-w-lg mx-auto w-full pointer-events-none">
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 p-4 space-y-3 pointer-events-auto max-h-[75dvh] md:max-h-[82vh] overflow-y-auto text-slate-800">
+              
+              {/* Cabeçalho do Card */}
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <span>ARMADILHA ARM-{selecionada.numero}</span>
+                      <span className={`text-[10px] ${sit.corBg} border ${sit.corBorda} ${sit.corTexto} font-black px-2 py-0.5 rounded-full`}>
+                        {sit.titulo}
+                      </span>
+                    </h3>
                   </div>
-                );
-              })()}
+                </div>
 
-              {selecionada.observacoes && (
-                <p className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                  <span className="text-slate-500 font-bold">Obs:</span> {selecionada.observacoes}
-                </p>
-              )}
-            </div>
+                <button
+                  onClick={() => setSelecionada(null)}
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Informações de Localização */}
+              <div className="space-y-2 text-xs">
+                {selecionada.moradorNome && (
+                  <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Morador(a):</span>
+                    <span className="text-xs font-black text-slate-900">{selecionada.moradorNome}</span>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80">
+                  <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-extrabold text-slate-900 text-xs">
+                      {selecionada.rua} {selecionada.numeroImovel ? `Nº ${selecionada.numeroImovel}` : ''}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      {selecionada.microarea} • Quarteirão: <span className="text-emerald-700 font-extrabold">{selecionada.quarteirao}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 px-1">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>Instalada em: {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</span>
+                </div>
+
+                <div className={`p-2.5 rounded-xl border ${sit.corBorda} ${sit.corBg} text-[11px]`}>
+                  <span className={`font-black ${sit.corTexto} block mb-0.5`}>Situação da OV: {sit.titulo}</span>
+                  <p className="text-slate-700 text-[10px] leading-relaxed">{sit.descricao}</p>
+                </div>
+
+                {/* DISTÂNCIAS DAS 3 OVs VIZINHAS MAIS PRÓXIMAS (DIRETRIZ 300m - 400m) */}
+                {vizinhasMaisProximas.length > 0 && (
+                  <div className="bg-slate-50/95 rounded-2xl p-2.5 border border-slate-200/90 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        3 OVs Mais Próximas (Regra 300m-400m)
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">Toque p/ focar</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {vizinhasMaisProximas.map((viz) => (
+                        <button
+                          type="button"
+                          key={viz.armadilha.id}
+                          onClick={() => setSelecionada(viz.armadilha)}
+                          className="w-full text-left flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all cursor-pointer group shadow-2xs"
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-black text-xs text-emerald-700 group-hover:text-emerald-800">
+                                ARM-{viz.armadilha.numero}
+                              </span>
+                              <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-1 rounded">
+                                {viz.armadilha.quarteirao}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 truncate mt-0.5">
+                              {viz.armadilha.moradorNome || viz.armadilha.rua || 'S/N'}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end shrink-0 gap-0.5">
+                            <span className="font-black text-xs text-slate-900">
+                              {viz.distancia} m
+                            </span>
+                            <span
+                              className="text-[9px] font-black px-1.5 py-0.5 rounded-full border whitespace-nowrap"
+                              style={{
+                                backgroundColor: viz.corFundo,
+                                borderColor: viz.corBorda,
+                                color: viz.cor
+                              }}
+                            >
+                              {viz.label}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selecionada.observacoes && (
+                  <p className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                    <span className="text-slate-500 font-bold">Obs:</span> {selecionada.observacoes}
+                  </p>
+                )}
+              </div>
 
             {/* BOTÕES DE AÇÃO: ROTA NO MAPS, WAZE, LABORATÓRIO E EXCLUIR */}
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200">
@@ -302,7 +350,7 @@ export function PainelAcompanhamentoScreen({
 
           </div>
         </div>
-      )}
+      ); })()}
     </div>
   );
 }
