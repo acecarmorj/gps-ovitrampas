@@ -146,7 +146,7 @@ export function PainelAdminScreen({
   };
 
   // Geração do Relatório Consolidado Oficial em PDF
-  const handleGerarPdf = () => {
+  const handleGerarPdf = async () => {
     const filtroDescricao = [
       filtroMicroarea !== 'todas' ? filtroMicroarea : null,
       filtroStatus !== 'todos' ? filtroStatus : null,
@@ -155,7 +155,7 @@ export function PainelAdminScreen({
       .filter(Boolean)
       .join(' • ') || 'Todos os Registros';
 
-    gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
+    await gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
   };
 
   const handleExcluir = async (id, numero) => {

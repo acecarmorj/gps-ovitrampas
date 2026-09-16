@@ -936,3 +936,13 @@ o card de detalhes (isso já funcionava certo).
 Build limpo, commit 9578dc8, push feito, deploy publicado e confirmado no
 ar (200 OK em /mapa).
 ==============================================================================
+
+==============================================================================
+27. [CLAUDE] style: linhas de distancia mais grossas e visiveis
+==============================================================================
+Data/Hora: 15/09/2026 ~22:05
+Almir aprovou a correção da seção 26 e pediu linhas mais grossas/visíveis.
+Ajustado weight/opacity no Leaflet (mapa ao vivo) e lineWidth no canvas do
+relatório PDF - só espessura/opacidade, cores mantidas. Commit 66ce15a,
+deploy publicado e confirmado no ar (200 OK em /mapa).
+==============================================================================

@@ -25,10 +25,6 @@ export function InstalarArmadilhaScreen({
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
 
-  // Assistente de espaçamento (Regra de 300m a 400m entre armadilhas)
-  const vizinhasProximas = findNearbyTraps(localizacao, armadilhas, 3);
-  const vizinhaMaisProxima = vizinhasProximas.length > 0 ? vizinhasProximas[0] : null;
-
   // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
   const handleNumeroArmadilhaChange = (e) => {
     const val = e.target.value;
@@ -75,6 +71,10 @@ export function InstalarArmadilhaScreen({
     accuracy: null,
     isExact: false
   });
+
+  // Assistente de espaçamento (Regra de 300m a 400m entre armadilhas)
+  const vizinhasProximas = findNearbyTraps(localizacao, armadilhas, 3);
+  const vizinhaMaisProxima = vizinhasProximas.length > 0 ? vizinhasProximas[0] : null;
 
   const [gpsStatus, setGpsStatus] = useState('buscando'); // 'buscando' | 'pronto' | 'erro'
   const [gpsErrorMsg, setGpsErrorMsg] = useState('');

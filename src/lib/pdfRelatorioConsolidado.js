@@ -1,7 +1,4 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { findNearbyTraps } from './geoDistance';
-import { gerarCanvasMapaCalor, gerarCanvasMapaDistancias } from './heatmapCanvas';
 
 // Insere uma imagem (canvas) centralizada, respeitando a proporção original,
 // dentro de uma área máxima em mm do PDF.
@@ -21,11 +18,24 @@ function desenharImagemAjustada(doc, canvas, areaX, areaY, areaMaxW, areaMaxH) {
  * @param {Array} armadilhas - Lista de armadilhas registradas
  * @param {Object} opcoes - Filtros e metadados opcionais
  */
-export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
+export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
   if (!armadilhas || armadilhas.length === 0) {
     alert('Nenhuma armadilha registrada para gerar o relatório consolidado.');
     return;
   }
+
+  // jsPDF/jspdf-autotable e o gerador de mapas são carregados sob demanda (só
+  // quando o botão é clicado). Import estático dessas libs no topo do módulo
+  // causava "Cannot access 'X' before initialization" em produção - jsPDF tem
+  // um import circular interno entre seu core e módulos opcionais (html2canvas/
+  // dompurify, que nem usamos) que quebra a ordem de inicialização do bundle
+  // inteiro quando importado estaticamente junto com o resto do app.
+  const [{ default: jsPDF }, { default: autoTable }, { gerarCanvasMapaCalor, gerarCanvasMapaDistancias }] =
+    await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+      import('./heatmapCanvas')
+    ]);
 
   // 1. Inicializa o documento em orientação Paisagem (Landscape A4 - 297mm x 210mm)
   const doc = new jsPDF({
@@ -228,50 +238,20 @@ export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
     }
   });
 
-  // 8. Páginas de Mapas: Calor (densidade/risco) e Distâncias (espaçamento 300-400m)
-  // Sempre enquadram TODAS as armadilhas do filtro atual (bounding box automático).
-  const areaMapaX = 10, areaMapaY = 42, areaMapaMaxW = 277, areaMapaMaxH = 150;
-
+  // 8. Tabela 2: Tabela Completa de Ovitrampas Cadastradas
   doc.addPage();
   desenharCabecalho();
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('2. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO DAS OVITRAMPAS', 10, 38);
-  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1700, height: 1050 });
-  desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Intensidade proporcional à contagem de ovos da última leitura (armadilhas ainda sem leitura aparecem em tom discreto).', 10, areaMapaY + areaMapaMaxH + 6);
-
-  doc.addPage();
-  desenharCabecalho();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('3. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 38);
-  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1700, height: 1050 });
-  desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas, com a distância em metros de cada trecho.`, 10, areaMapaY + areaMapaMaxH + 6);
-
-  // 9. Tabela 2: Tabela Completa de Ovitrampas Cadastradas
-  doc.addPage();
-  desenharCabecalho();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('4. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 38);
+  doc.text('2. REGISTRO INDIVIDUALIZADO DE OVITRAMPAS E ESPAÇAMENTO GEODÉSICO', 10, 38);
   const startYTable2 = 42;
 
   // Prepara as linhas de armadilhas com o cálculo das vizinhas mais próximas
   const linhasArmadilhas = armadilhas.map((arm) => {
     const dataInst = new Date(arm.instaladaEm);
     const dataStr = `${dataInst.toLocaleDateString('pt-BR')} ${dataInst.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    
+
     // Resultado Lab
     let resultadoStr = 'Em campo (Pendente)';
     if (arm.status === 'analisada') {
@@ -351,15 +331,42 @@ export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
     }
   });
 
-  // 9. Seção Final: Observações Técnicas & Assinaturas Oficiais
-  const finalY = doc.lastAutoTable.finalY || 150;
-  let yAssinaturas = finalY + 10;
-  
-  if (finalY > 165) {
-    doc.addPage();
-    desenharCabecalho();
-    yAssinaturas = 50;
-  }
+  // 9. Páginas de Mapas (últimas páginas, depois das tabelas): Calor (densidade/
+  // risco) e Distâncias (espaçamento 300-400m). Sempre enquadram TODAS as
+  // armadilhas do filtro atual (bounding box automático).
+  const areaMapaX = 10, areaMapaY = 42, areaMapaMaxW = 277, areaMapaMaxH = 150;
+
+  doc.addPage();
+  desenharCabecalho();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO DAS OVITRAMPAS', 10, 38);
+  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1700, height: 1050 });
+  desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Intensidade proporcional à contagem de ovos da última leitura (armadilhas ainda sem leitura aparecem em tom discreto).', 10, areaMapaY + areaMapaMaxH + 6);
+
+  doc.addPage();
+  desenharCabecalho();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ DE ESPAÇAMENTO 300m-400m)', 10, 38);
+  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1700, height: 1050 });
+  desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY, areaMapaMaxW, areaMapaMaxH);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${totalLigacoes} ligação(ões) entre vizinhas mais próximas exibidas, com a distância em metros de cada trecho.`, 10, areaMapaY + areaMapaMaxH + 6);
+
+  // 10. Seção Final: Observações Técnicas & Assinaturas Oficiais (sempre em
+  // página nova, depois dos mapas)
+  doc.addPage();
+  desenharCabecalho();
+  const yAssinaturas = 50;
 
   // Bloco de Notas Técnicas Oficiais
   doc.setFillColor(248, 250, 252);
@@ -403,7 +410,7 @@ export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
   doc.setTextColor(100, 116, 139);
   doc.text('Vigilância Entomológica de Ovitrampas', 210, yLinhaAssinatura + 7, { align: 'center' });
 
-  // 10. Numeração de Páginas em Todas as Folhas
+  // 11. Numeração de Páginas em Todas as Folhas
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -418,7 +425,7 @@ export function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {}) {
     );
   }
 
-  // 11. Salva o PDF consolidado num único documento
+  // 12. Salva o PDF consolidado num único documento
   const nomeArquivo = `relatorio_consolidado_ovitrampas_carmo_${dataAtual.toISOString().slice(0, 10)}.pdf`;
   doc.save(nomeArquivo);
 }
