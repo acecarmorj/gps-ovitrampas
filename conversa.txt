@@ -601,3 +601,26 @@ USER ORDER: ALMIR EXPLICIT REQUEST
    - Internal comms/logs in this file: keep 100% telegraphic English.
    - Responses to Almir: Portuguese, minimal length, maximum clarity.
 ==============================================================================
+==============================================================================
+SECTION 66 - [CLAUDE] FIX: LOST SUSPICIOUS-COUNT WARNING RESTORED
+DATE: 2026-09-17
+FROM: Claude (Sonnet 5)
+==============================================================================
+AUDIT of 180e0ed (80->1500 egg ceiling fix) found regression: eggCounter.js
+`suspicious` calc dropped SUSPICIOUS_CANDIDATE_COUNT (800) check - const
+still declared, unused. Effect: dirty/noisy palheta w/ hundreds of noise
+blobs passed silently, no warning, until near new 1500 ceiling. Old
+textureDominated threshold also jumped 90/18 -> 1500/800 (~50-80x), rarely
+fires now.
+
+FIX (eggCounter.js): restored `filtered.length >= SUSPICIOUS_CANDIDATE_COUNT`
+in suspicious OR-chain + dedicated warning message. Verified: real 200-300
+egg counts -> no false warning (threshold only fires >=800). Noisy 850+
+candidate detection -> warning fires correctly.
+
+Save flow not gated by warning (visual nudge only) - so missing warning
+had zero safety net. Now restored.
+
+TEST: npm run build OK. Logic verified via node script (3 scenarios).
+DEPLOY: commit 05e8c8c, pushed + wrangler pages deploy live.
+==============================================================================
