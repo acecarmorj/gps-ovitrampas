@@ -624,3 +624,63 @@ had zero safety net. Now restored.
 TEST: npm run build OK. Logic verified via node script (3 scenarios).
 DEPLOY: commit 05e8c8c, pushed + wrangler pages deploy live.
 ==============================================================================
+==============================================================================
+SECTION 67 - [CLAUDE] EGG COUNTER: MEASURED AGAINST REAL PHOTOS + MANUAL COUNT
+DATE: 2026-09-17
+FROM: Claude (Opus 5)
+==============================================================================
+Almir demanded real verification, not code review. Built test bench: 25 real
+paddle photos run through production code path (1200px downscale, same as app).
+Ground truth: Almir hand-marked every egg on photo 2.jpeg (red=1 egg,
+orange=2 stuck together). Auto-counted his marks: 103 marks -> ~131-150 eggs.
+
+FINDING 1 (fixed, deployed) - woodLike filter was killing the eggs.
+  eggCounter.js woodLike rejects when meanBrown(R-B)>34 AND chroma>34.
+  Measured on real eggs under warm light: brown=44, chroma=44 -> rejected.
+  87 of the 150 darkest components died there. Paddle fiber is LIGHT brown;
+  egg is DARK brown. Fix: filter no longer applies when meanGray <= 42% of
+  background median. Threshold 0.42 calibrated against Almir's manual count.
+  RESULT on 2.jpeg: 22 -> 148 detected (manual: ~131-150).
+  Negative controls unchanged: clean paddle 0->0, low-count 1/3/4 -> 1/3/4.
+  Commit 538e925, deployed.
+
+FINDING 2 (open, IMPORTANT) - total looks right but by luck.
+  Cross-matched detections against Almir's marks position by position:
+    marks found by app: 69/103 -> recall 67%
+    detections landing on a mark: 64/148 -> precision 43%
+  So it misses 1/3 of real eggs AND invents ~84 elsewhere; errors cancel in
+  the total. NOT a trustworthy detector yet - a guess with a good average.
+  Do not treat 148 as accuracy.
+
+FINDING 3 (open) - touching eggs count as 1.
+  No blob-splitting step exists (no watershed/erosion). Measured synthetically:
+  pairs of touching eggs -> merged blob -> rejected entirely (-100%).
+  Almir confirmed touching pairs in real photos. Area-based estimate looks
+  viable (single egg ~75px area; a 207px blob ~ 3 eggs) but NOT implemented:
+  risk of turning a stain into 3 eggs. Needs more labeled photos.
+
+FINDING 4 (wont fix by decision) - horizontal paddle = 0 detections.
+  verticalAligned<0.5 and componentHeight<componentWidth*0.8 reject horizontal
+  eggs. Landscape photos p5/p7/p9/p12 all detect 0. Almir decided paddles will
+  ALWAYS be photographed upright, so the orientation lock STAYS (it also helps
+  reject horizontal wood grain).
+
+FINDING 5 (open) - no undercount warning exists.
+  All warnings trigger on too MANY candidates. Nothing warns on undercount.
+  In all 25 photos: zero warnings, confidence 91-95, including when detecting
+  3 where ~140 eggs existed.
+
+ALSO FIXED (commit 0d3d86b, deployed) - "Galeria" button opened the camera.
+  Both "Tirar Foto" and "Galeria" pointed at the SAME input, which carries
+  capture="environment" - on mobile that forces the camera, gallery never
+  offered. Added a separate input without capture. Fixed in
+  AssistenteContadorOvos.jsx and IdentificadorEspecies.jsx. LaboratorioScreen
+  has no gallery button, unaffected.
+
+SCOPE NOTE: all of the above is the LOCAL on-device detector (eggCounter.js).
+The Gemini Vision path ("Conferir com IA") was not touched.
+
+NEXT (agreed with Almir): run same photo through local count AND Gemini,
+compare both against the 103 manual marks, then decide whether to combine the
+two estimates and flag disagreement for human review.
+==============================================================================
