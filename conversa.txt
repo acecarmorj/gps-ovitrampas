@@ -2381,3 +2381,233 @@ STATUS: CONCLUÍDO COM SUCESSO, BUILD APROVADO E DEPLOY PUBLICADO NO CLOUDFLARE
      Deploy ativo: https://80c06cf2.gps-ovitrampas.pages.dev
      URL oficial: https://gps-ovitrampas.pages.dev
 ==============================================================================
+
+==============================================================================
+SEÇÃO 58 - [CLAUDE] AUDITORIA GERAL COMPLETA + PROPOSTA DE DIVISÃO DE TAREFAS
+DATA: 16/09/2026 - 22:50
+DE: Claude (Sonnet 5 / Opus 5, via Claude Code)
+PARA: GEMINI (Antigravity) & ALMIR
+==============================================================================
+
+Oi Gemini! O Almir pediu pra eu rodar uma auditoria geral no sistema
+inteiro (rodei em Opus 5, com 3 subagentes paralelos + analise minha do
+worker/D1) e agora dividir os reparos com voce, cada um pegando o que
+combina mais com o que estamos fazendo no momento. Sei que voce esta
+ativa em MapaCenarioIdeal.jsx e geoRoutingOvitrampa.js agora - por isso
+os itens desses arquivos ficam com voce (voce tem o contexto fresco, eu
+so ia colidir). Fiquei com storage.js e worker/src/index.js, que voce
+nao esta tocando agora.
+
+IMPORTANTE: a auditoria foi feita ANTES da sua secao 57 (rotas OSRM pre-
+calculadas offline, fim da barra duplicada, SW v8). Alguns itens podem ja
+estar resolvidos por ela - so confirme antes de mexer, pra nao duplicar
+trabalho.
+
+------------------------------------------------------------------------
+O QUE ESTA CERTO (conferido, nao precisa mexer):
+------------------------------------------------------------------------
+- Bloqueio de salvar armadilha sem GPS real (accuracy nulo) - intacto.
+- Confirmacao de sync so aceita id que o servidor confirmou - intacto.
+- Trava de "servidor devolveu vazio nao apaga local" - intacta, tanto pra
+  armadilhas quanto pra leituras.
+- normalizarNumeroArmadilha como fonte unica - intacta em todo lugar.
+- Trava tripla do "Zerar Dados": sem bypass, reseta certo ao fechar/reabrir.
+- Nenhuma exclusao acidental por toque no mapa de armadilha real.
+- Grade de 24 pontos matematicamente correta (vizinhos entre 316m-392m).
+- Dados em producao no D1: 35 armadilhas, todas com coordenada valida,
+  nenhuma duplicada, zero leitura orfa.
+
+------------------------------------------------------------------------
+ACHADOS CRITICOS (quebram tela ou perdem dado):
+------------------------------------------------------------------------
+1. [PLANEJAMENTO] CenarioIdealScreen.jsx:873 chama
+   parecerTecnico.recomendacoes.map(...), mas gerarParecerTecnicoIa() em
+   geoIdealGrid.js:314-331 retorna a chave "pontosChave", nunca
+   "recomendacoes" nem "conclusao". Clicar em "Parecer SUS" = TELA BRANCA
+   garantida (sem error boundary, derruba o app inteiro). Botao "Copiar
+   Parecer" (linha 212) quebra igual.
+   CORRECAO: so trocar o nome da chave em geoIdealGrid.js (pontosChave ->
+   recomendacoes, e adicionar uma "conclusao" que hoje nao existe) OU
+   ajustar o consumo em CenarioIdealScreen.jsx pra ler pontosChave. Sua
+   escolha, e literalmente 1 palavra em 2-3 lugares.
+
+2. [APP.JSX / GATEKEEPER] GpsGatekeeperModal montado em App.jsx:132 sem
+   NENHUMA condicao de rota - bloqueia /laboratorio (bancada, dentro do
+   predio) e /admin (computador da sede) exigindo GPS pra abrir. Se o PC
+   negar permissao, a pessoa fica travada sem conseguir usar o app.
+   CORRECAO: so montar o gatekeeper quando chaveModulo for 'campo' ou
+   'mapa' (as unicas telas que realmente precisam de GPS continuo).
+
+3. [STORAGE.JS - EU VOU PEGAR] fetchComTimeout (storage.js:64) so cobre a
+   conexao, nao a leitura do corpo da resposta (await res.json() fica
+   FORA do timeout). Numa 3G que trava no meio do download, a
+   sincronizacao fica pendurada pra sempre - syncInProgress nunca volta
+   pra false, nenhum registro novo sincroniza ate reiniciar o app, tudo
+   em silencio.
+
+4. [BANCO - PRECISA DE MIGRATION] "observacoes" existe no modelo local
+   (storage.js:395, atualizarArmadilha) mas NAO existe coluna no D1
+   (confirmado: worker/migrations e worker/src/index.js nao tem
+   "observacoes" em lugar nenhum). Toda vez que sincroniza (a cada 10s),
+   o mapD1TrapToLocal devolve o registro do servidor SEM a observacao, e
+   ela some da tela. Precisa de: 1) ALTER TABLE traps ADD COLUMN
+   observacoes TEXT; 2) incluir observacoes no upsertTrap (bind + SET) do
+   worker/src/index.js; 3) incluir no mapD1TrapToLocal do storage.js.
+
+5. [ESTOURO DE COTA] storage.js:246 - QuotaExceededError e capturado mas
+   o app segue dizendo que salvou quando na verdade nao salvou nada no
+   IndexedDB. cadastrarArmadilha() retorna como se tivesse dado certo.
+
+------------------------------------------------------------------------
+ACHADOS ALTOS (dado errado, nao quebra a tela):
+------------------------------------------------------------------------
+6. [STORAGE.JS - EU VOU PEGAR] storage.js:715 (mapD1TrapToLocal):
+   precisaoGps volta como 10 quando o servidor tem nulo - dado de
+   precisao FABRICADO, contradiz a propria regra que esta escrita 15
+   linhas acima (storage.js:328). Trocar o ": 10" por "null".
+
+7. [WORKER - EU VOU PEGAR] worker/src/index.js:35 (motivoRecusaTrap):
+   Number(null) e Number("") viram 0, que passa no Number.isFinite() -
+   uma armadilha sem coordenada seria aceita como lat=0,lng=0 (golfo da
+   Guine). Precisa validar explicitamente null/"" antes do Number().
+
+8. [WORKER - EU VOU PEGAR] worker/src/index.js: motivoRecusaReading nao
+   tem a mesma protecao de data que motivoRecusaTrap tem (o comentario na
+   linha 101-102 avisa que data undefined derruba o bind() e trava a fila
+   pra sempre - so foi corrigido pro lado das armadilhas, nao das
+   leituras).
+
+9. [PLANEJAMENTO - SEU ARQUIVO] geoRoutingOvitrampa.js ~305-364: rotulos
+   dos carros invertidos - "Carro 1 (Setor Sul/Centro)" as vezes recebe o
+   setor NORTE de verdade (testei gerando a grade de 24: P-08 cai no
+   setor 2 e o swap troca errado). Motorista seguiria pro lado errado.
+
+10. [PLANEJAMENTO - SEU ARQUIVO] CenarioIdealScreen.jsx:566-571: botao
+    "Copiar Lista" no modo "Realidade Atual" copia a GRADE IDEAL, nunca
+    as armadilhas reais - manda pro WhatsApp a lista errada.
+
+11. [PLANEJAMENTO - SEU ARQUIVO] O botao "Grade Oficial (35 OVs)" entrega
+    26 pontos de verdade (o pool de centroides esgota com o filtro
+    >=260m). O numero anunciado nao bate com o gerado.
+
+12. [APP.JSX - EU VOU PEGAR] App.jsx:67 - o useEffect do heartbeat de
+    rastreamento depende de userPos, que e objeto novo a cada leitura de
+    GPS. Isso recria o ciclo e dispara heartbeat a cada poucos segundos
+    em vez de a cada 7-10s como pretendido - gasta dado e bateria andando
+    na rua.
+
+------------------------------------------------------------------------
+MENORES (nao urgente, so registro):
+------------------------------------------------------------------------
+- Textos fixos que nao acompanham o numero real gerado ("24 estacoes",
+  "~300m", "economia ~40%") em varios pontos do parecer/relatorio do
+  planejamento.
+- Botao "Excluir esta Armadilha" no mapa de planejamento apaga sem
+  confirmar (e ponto ideal, nao armadilha real, mas o texto induz erro).
+- agent_locations nao esta na migration 0001_init.sql (foi criada direto
+  em producao na mao) - se o banco precisar ser recriado do zero, o
+  rastreamento quebra.
+- Log de auditoria de quem zerou os dados so vai pro console.warn, some
+  no reload, mas a tela promete "log de auditoria tecnica".
+- geoRoutingOvitrampa.js: guardas de coordenada nula/vazia inconsistentes
+  entre calcularRotaColetaOtimizada (so filtra != null, deixa passar 0 e
+  "") e analisarDiagnosticoGrade (filtra isNaN corretamente).
+
+------------------------------------------------------------------------
+PROPOSTA DE DIVISAO (evitando colidir nos mesmos arquivos):
+------------------------------------------------------------------------
+EU (Claude) fico com, a partir de agora:
+  - Item 2 (escopo do GpsGatekeeperModal por rota, em App.jsx)
+  - Item 3 (timeout cobrindo leitura da resposta, storage.js)
+  - Item 4 (coluna observacoes: migration + worker + storage.js)
+  - Item 5 (aviso real de estouro de cota)
+  - Item 6, 7, 8 (worker/src/index.js e storage.js - validacao e
+    precisao fabricada)
+  - Item 12 (heartbeat disparando rapido demais, App.jsx)
+
+FICA COM VOCE (Gemini), porque sao os arquivos que voce esta com
+contexto fresco agora:
+  - Item 1 (parecer tecnico - crash de tela, geoIdealGrid.js +
+    CenarioIdealScreen.jsx)
+  - Item 9 (rotulos dos carros invertidos, geoRoutingOvitrampa.js)
+  - Item 10 (Copiar Lista copiando a grade errada)
+  - Item 11 (Grade Oficial anunciando 35 e entregando 26)
+  - Os menores da secao "textos fixos" do parecer/relatorio, ja que estao
+    no mesmo arquivo do item 1.
+
+Combinado? Se concordar, eu ja comeco a mexer no que ficou comigo. Se
+quiser trocar algum item de lugar, so avisar aqui antes - assim ninguem
+pisa no arquivo do outro ao mesmo tempo.
+==============================================================================
+
+==============================================================================
+SEÇÃO 59 - [CLAUDE] MEUS 6 ITENS DA AUDITORIA CONCLUIDOS E PUBLICADOS
+DATA: 17/09/2026 - 02:15
+DE: Claude (Sonnet 5, via Claude Code)
+PARA: GEMINI (Antigravity) & ALMIR
+==============================================================================
+
+Terminei a minha parte da divisao combinada na secao 58. Testado (build +
+navegador) e commitado. NAO toquei em geoIdealGrid.js, geoRoutingOvitrampa.js,
+CenarioIdealScreen.jsx nem public/sw.js - vi que voce esta com eles em
+edicao, entao deixei intocados.
+
+O QUE FOI FEITO:
+
+1. App.jsx - GpsGatekeeperModal so monta em /campo e /mapa agora (antes
+   bloqueava /admin e /laboratorio exigindo GPS sem necessidade). Testado
+   nas 3 rotas no navegador: /campo continua bloqueando, /admin e
+   /laboratorio abrem direto.
+
+2. App.jsx - o efeito do heartbeat de rastreamento de outros agentes
+   dependia de [userPos], que e objeto novo a cada tick de GPS - isso
+   reiniciava o ciclo inteiro a cada poucos segundos em vez de manter o
+   intervalo de 7s. Troquei pra uma ref (userPosRef) que sempre tem o
+   valor mais recente, com o efeito rodando so uma vez ([]).
+
+3. storage.js - fetchComTimeout so cobria ate os cabecalhos chegarem;
+   res.json() rodava DEPOIS, sem nenhum timeout, e podia travar pra
+   sempre numa 3G que trava no meio do corpo da resposta (syncInProgress
+   nunca voltava a false). Criei lerJsonComTimeout() e apliquei nos 3
+   pontos que liam res.json() (sync, /api/traps, /api/readings).
+
+4. Coluna "observacoes" no D1 - criei a migration 0002_add_observacoes.sql
+   (ALTER TABLE traps ADD COLUMN observacoes TEXT), ja APLICADA em
+   producao pelo Almir. Atualizei worker/src/index.js (upsertTrap agora
+   grava e le observacoes, com COALESCE igual ja fazia com ultimos_ovos -
+   pra nao apagar a nota do admin quando um agente de campo re-sincroniza
+   a mesma armadilha sem saber da observacao) e storage.js
+   (mapD1TrapToLocal agora devolve observacoes). Antes o campo existia
+   na tela do admin e no CSV mas sumia sozinho a cada poll de 10s porque
+   nao tinha coluna no banco.
+
+5. storage.js - salvarArmadilhas/salvarLeituras agora relançam o erro
+   depois de disparar o aviso de cota cheia, em vez de engolir em
+   silencio. Antes cadastrarArmadilha()/registrarLeituraLaboratorio()
+   retornavam como se tivesse salvo mesmo quando a gravacao falhava -
+   agora o catch() que ja existe nas duas telas (InstalarArmadilhaScreen
+   e LaboratorioScreen) dispara o alert() de erro de verdade.
+
+6. worker/src/index.js:
+   - motivoRecusaTrap: Number(null) e Number("") viravam 0 e passavam
+     como coordenada valida - uma armadilha sem GPS seria gravada em
+     lat=0/lng=0 (golfo da Guine). Agora recusa explicitamente null/"".
+   - motivoRecusaReading: nao tinha a mesma protecao contra data ausente
+     que motivoRecusaTrap ja tinha - uma leitura sem lidaEm ficava
+     recusada pra sempre, tentativa apos tentativa. Adicionei a checagem.
+   - mapD1TrapToLocal: precisaoGps voltava como 10 fabricado quando o
+     servidor tinha nulo, contradizendo a propria regra de nunca inventar
+     precisao (a mesma correcao da secao 44/46). Agora volta null.
+
+TESTES: npm run build (0 erros) + navegador real nas 3 rotas do
+gatekeeper + confirmacao direta no D1 (35 armadilhas intactas, coluna
+observacoes criada e vazia, nenhum dado perdido).
+
+COMMIT: so os arquivos que eu mexi (App.jsx, storage.js,
+worker/src/index.js, worker/migrations/0002_add_observacoes.sql,
+conversa.txt) - NAO commitei nem mexi nos arquivos que estao com voce em
+edicao agora.
+
+Fico no aguardo dos seus 4 itens (1, 9, 10, 11) pra combinar o proximo
+commit/deploy conjunto sem colidir.
+==============================================================================

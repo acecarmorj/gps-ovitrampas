@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppPath } from './lib/routing';
 import { Header } from './components/Header';
 import { GuiaScreen } from './features/menu/GuiaScreen';
@@ -63,14 +63,21 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // Monitoramento em tempo real de múltiplos agentes em campo (Carmo-RJ)
+  // Monitoramento em tempo real de múltiplos agentes em campo (Carmo-RJ).
+  // userPos muda de objeto a cada tick de GPS (varias vezes por segundo); se o
+  // efeito dependesse de [userPos], o loop de heartbeat reiniciava a cada tick
+  // em vez de manter o ciclo de 7s. A ref guarda a posicao mais recente sem
+  // recriar o monitoramento.
+  const userPosRef = useRef(userPos);
+  userPosRef.current = userPos;
+
   useEffect(() => {
     const unsubscribe = iniciarMonitoramentoOutrosAgentes(
-      () => userPos,
+      () => userPosRef.current,
       (lista) => setOutrosAgentes(lista)
     );
     return () => unsubscribe();
-  }, [userPos]);
+  }, []);
 
   // GPS Inteligente e Econômico (apenas quando necessário e sem concorrência)
   useEffect(() => {
@@ -129,7 +136,12 @@ export function App() {
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-[#F1F2F5] text-slate-900 font-sans">
-      <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
+      {/* GPS obrigatorio so nas telas de campo (cadastro e mapa em tempo real).
+          Laboratorio e bancada dentro do predio; admin roda no PC da sede -
+          exigir GPS ali travava o uso sem necessidade. */}
+      {(chaveModulo === 'campo' || chaveModulo === 'mapa') && (
+        <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
+      )}
       
       {/* O Guia possui seu próprio cabeçalho completo. Nas telas internas, exibe o Header com botão < Guia */}
       {chaveModulo !== 'guia' && (

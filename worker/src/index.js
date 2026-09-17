@@ -32,6 +32,12 @@ function motivoRecusaTrap(trap) {
   if (!trap || typeof trap !== "object") return "registro vazio";
   if (!trap.id) return "sem id";
   if (trap.numero == null || String(trap.numero).trim() === "") return "sem numero da ovitrampa";
+  // Number(null) e Number("") viram 0, que passa em Number.isFinite() -
+  // sem essa checagem explicita, uma armadilha sem GPS era aceita como
+  // latitude=0/longitude=0 (golfo da Guine) em vez de recusada.
+  if (trap.latitude == null || trap.longitude == null || trap.latitude === "" || trap.longitude === "") {
+    return "sem coordenadas GPS validas";
+  }
   if (!Number.isFinite(Number(trap.latitude)) || !Number.isFinite(Number(trap.longitude))) {
     return "sem coordenadas GPS validas";
   }
@@ -44,6 +50,10 @@ function motivoRecusaReading(reading) {
   if (reading.numeroArmadilha == null || String(reading.numeroArmadilha).trim() === "") {
     return "sem numero da ovitrampa";
   }
+  // Mesma protecao que ja existe pro lado das armadilhas (ver upsertTrap):
+  // data undefined faz o bind() do D1 lancar e o item cai em recusado pra
+  // sempre, tentativa apos tentativa, sem nunca sincronizar.
+  if (!reading.lidaEm) return "sem data da leitura";
   return null;
 }
 
@@ -53,8 +63,8 @@ async function upsertTrap(trap, env) {
        id, numero, palheta, morador_nome, rua, numero_imovel, bairro, microarea,
        quarteirao, latitude, longitude, precisao_gps, tem_foto, status,
        instalada_em, atualizada_em, ultimos_ovos, ultima_palheta, ultima_leitura_em,
-       synced_at
-     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'))
+       observacoes, synced_at
+     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        numero = excluded.numero,
        palheta = excluded.palheta,
@@ -77,6 +87,11 @@ async function upsertTrap(trap, env) {
        ultimos_ovos = COALESCE(excluded.ultimos_ovos, traps.ultimos_ovos),
        ultima_palheta = COALESCE(excluded.ultima_palheta, traps.ultima_palheta),
        ultima_leitura_em = COALESCE(excluded.ultima_leitura_em, traps.ultima_leitura_em),
+       -- Mesmo raciocinio: o aparelho do agente de campo nunca manda
+       -- observacoes (so o admin edita esse campo). Sem o COALESCE, o
+       -- proximo sync do agente reenviando essa armadilha apagaria a nota
+       -- do admin com null.
+       observacoes = COALESCE(excluded.observacoes, traps.observacoes),
        synced_at = datetime('now')
      -- So aceita a versao que chegou se ela for igual ou mais nova que a
      -- gravada. Versao atrasada e ignorada (sem erro) em vez de regredir o
@@ -104,7 +119,8 @@ async function upsertTrap(trap, env) {
       trap.atualizadaEm ?? trap.instaladaEm ?? agoraIso(),
       trap.ultimosOvos != null ? Number(trap.ultimosOvos) : null,
       trap.ultimaPalheta ?? null,
-      trap.ultimaLeituraEm ?? null
+      trap.ultimaLeituraEm ?? null,
+      trap.observacoes ?? null
     )
     .run();
 }

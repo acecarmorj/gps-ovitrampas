@@ -72,6 +72,20 @@ export async function fetchComTimeout(url, options = {}, timeoutMs = 8000) {
   }
 }
 
+/**
+ * Le o corpo JSON de uma resposta com o mesmo limite de tempo do fetch.
+ * fetchComTimeout so protege ate os cabecalhos chegarem - res.json() roda
+ * DEPOIS, sem nenhum timeout. Numa 3G que trava no meio do download do
+ * corpo, essa leitura ficava pendurada pra sempre e syncInProgress nunca
+ * voltava a false, travando toda sincronizacao futura ate reiniciar o app.
+ */
+export async function lerJsonComTimeout(res, timeoutMs = 8000) {
+  return Promise.race([
+    res.json().catch(() => null),
+    new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs))
+  ]);
+}
+
 const SYNC_ERRORS_KEY = 'ovitrampas_sync_errors';
 
 export function getSyncErrors() {
@@ -264,6 +278,10 @@ export async function salvarArmadilhas(lista) {
       }
     }
     console.warn('Erro ao persistir armadilhas:', e);
+    // Repassa o erro: quem chamou (ex: cadastrarArmadilha) precisa saber que
+    // NAO salvou de verdade, em vez de seguir como se tivesse dado certo e
+    // mostrar "registrado com sucesso" pro agente com o dado perdido.
+    throw e;
   }
 }
 
@@ -497,6 +515,9 @@ export async function salvarLeituras(lista) {
       }
     }
     console.warn('Erro ao persistir leituras:', e);
+    // Repassa o erro: quem chamou (ex: registrarLeituraLaboratorio) precisa
+    // saber que NAO salvou de verdade, em vez de mostrar sucesso falso.
+    throw e;
   }
 }
 
@@ -644,7 +665,7 @@ export async function tentarSincronizarEmSegundoPlano() {
       }, 8000);
 
       if (res.ok) {
-        const data = await res.json().catch(() => null);
+        const data = await lerJsonComTimeout(res, 8000);
         // So confia na confirmacao explicita do servidor (lista de ids
         // gravados). Antes bastava res.ok - mas o servidor podia descartar
         // itens em silencio, e portal de wi-fi publico tambem responde 200.
@@ -712,7 +733,10 @@ function mapD1TrapToLocal(row) {
     quarteirao: row.quarteirao || '',
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
-    precisaoGps: row.precisao_gps != null ? Number(row.precisao_gps) : 10,
+    // Mesma regra do cadastro (linha ~345): nunca inventa precisao. Antes
+    // devolvia 10m fabricado para registro sem fix real, indistinguivel de
+    // um fix bom de verdade.
+    precisaoGps: row.precisao_gps != null ? Number(row.precisao_gps) : null,
     temFoto: Boolean(row.tem_foto),
     status: row.status || 'instalada',
     instaladaEm: row.instalada_em,
@@ -720,6 +744,7 @@ function mapD1TrapToLocal(row) {
     ultimosOvos: row.ultimos_ovos != null ? Number(row.ultimos_ovos) : undefined,
     ultimaPalheta: row.ultima_palheta || undefined,
     ultimaLeituraEm: row.ultima_leitura_em || undefined,
+    observacoes: row.observacoes || '',
     syncStatus: 'sincronizado'
   };
 }
@@ -765,7 +790,7 @@ export async function sincronizarLeiturasDoServidor() {
   try {
     const res = await fetchComTimeout(API_READINGS_ENDPOINT, {}, 8000);
     if (!res.ok) return;
-    const data = await res.json();
+    const data = await lerJsonComTimeout(res, 8000);
     if (!data || !Array.isArray(data.readings)) return;
 
     const leiturasLocais = getLeituras();
@@ -814,7 +839,7 @@ export async function sincronizarDadosDoServidor() {
   try {
     const res = await fetchComTimeout(API_TRAPS_ENDPOINT, {}, 8000);
     if (!res.ok) return;
-    const data = await res.json();
+    const data = await lerJsonComTimeout(res, 8000);
     if (!data || !Array.isArray(data.traps)) return;
 
     const armadilhasLocais = getArmadilhas();
