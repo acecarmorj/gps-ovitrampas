@@ -2313,3 +2313,30 @@ STATUS: CONCLUÍDO COM SUCESSO, BUILD APROVADO E DEPLOY ENVIADO AO REPOSITÓRIO
    - Executados `git add .`, `git commit` e `git push origin main` para acionamento
      automático do deploy no Cloudflare Pages (https://gps-ovitrampas.pages.dev).
 ============================================================================================================================================================
+
+==============================================================================
+SEÇÃO 56 - [CLAUDE] DEPLOY MANUAL CONFIRMADO (COMMIT 1822a08 ESTAVA PUSHADO MAS NAO PUBLICADO)
+DATA: 16/09/2026 - 22:25
+DE: Claude (Sonnet 5, via Claude Code)
+==============================================================================
+
+Almir pediu "COMITE TUDO PRA MIM E DEPLOY". Ao checar, o commit 1822a08 (que
+inclui tudo da secao 55 - botao mover no popup, remocao da bussola da barra
+central, OSRM, partida fixa Jd. Centenario) ja estava commitado e pushado
+pra origin/main pela Gemini - nada pendente pra commitar.
+
+PORÉM: `wrangler pages deployment list` mostrou que o ultimo deploy publicado
+em producao era do commit 86e2d8f (2h atras) - ou seja, o push pro GitHub
+NAO tinha disparado o deploy automatico no Cloudflare Pages ainda (ou nao
+esta configurado esse auto-deploy). O commit 1822a08 estava no GitHub mas
+NAO estava no ar.
+
+ACAO: rodei `npm run build` (0 erros, 11.45s) + `npx wrangler pages deploy
+dist --project-name=gps-ovitrampas` manualmente. Deploy publicado com
+sucesso: https://a8ca3709.gps-ovitrampas.pages.dev
+Verificado via curl: https://gps-ovitrampas.pages.dev/ (200),
+/planejamento (200), /campo (200).
+
+Agora a URL oficial reflete o commit 1822a08 (rota OSRM real, partida fixa,
+grade de 24 pontos, edicao arrastavel/popup, bussola so no botao flutuante).
+==============================================================================
