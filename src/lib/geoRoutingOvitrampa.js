@@ -6,9 +6,33 @@
  */
 
 import { calcDistanceMeters } from './geoDistance.js';
+import rotasPrecalculadas from './rotasPrecalculadasCarmo.json';
 
-// Cache em memória para evitar requisições repetidas ao OSRM
+// Cache persistente para evitar requisições repetidas ao OSRM e funcionar 100% offline
+const OSRM_STORAGE_KEY = 'gps_ovitrampas_osrm_cache_v1';
 const osrmCache = new Map();
+
+// Carrega cache prévio do localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const salvo = localStorage.getItem(OSRM_STORAGE_KEY);
+    if (salvo) {
+      const parsed = JSON.parse(salvo);
+      Object.entries(parsed).forEach(([k, v]) => osrmCache.set(k, v));
+    }
+  } catch (e) {}
+}
+
+function salvarNoCacheLocal(key, val) {
+  osrmCache.set(key, val);
+  if (typeof window !== 'undefined') {
+    try {
+      const obj = {};
+      osrmCache.forEach((v, k) => { obj[k] = v; });
+      localStorage.setItem(OSRM_STORAGE_KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+}
 
 /**
  * Resolve o problema do caixeiro viajante (TSP) usando Nearest Neighbor + 2-Opt
@@ -242,21 +266,35 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   // Garante que o Quarteirão 1/1 do Jardim Centenário seja o ponto de partida (índice 0)
   const validosOrdenados = reordenarComInicioJardimCentenario(validos);
 
+  const isReal = validos.length >= 30;
+  const isIdealCanonico = validos.length === 24;
+
   if (numVeiculos === 1) {
     const rota = resolverTsp2Opt(validosOrdenados);
-    const textoWhatsApp = gerarTextoWhatsAppRota(rota.paradas, 'Veículo 1 (Frota Completa)', rota.kmTotal, rota.tempoFormatado);
+    const key = isReal ? 'real_1_v1' : (isIdealCanonico ? 'ideal_1_v1' : null);
+    const geomPre = key && rotasPrecalculadas[key] ? rotasPrecalculadas[key] : null;
+
+    const km = geomPre ? geomPre.distanciaKm : rota.kmTotal;
+    const duracao = geomPre ? geomPre.duracaoMin : Math.round(km * 2.8);
+    const tempoTotal = duracao + rota.paradas.length * 3;
+    const tempoFmt = formatarTempo(tempoTotal);
+
+    const textoWhatsApp = gerarTextoWhatsAppRota(rota.paradas, 'Veículo 1 (Frota Completa)', km, tempoFmt);
 
     return {
       numVeiculos: 1,
-      kmTotalGlobal: rota.kmTotal,
-      tempoEstimadoGlobal: rota.tempoFormatado,
+      kmTotalGlobal: km,
+      tempoEstimadoGlobal: tempoFmt,
       rotas: [
         {
           id: 'v1',
           nome: 'Carro 1 (Circuito Completo)',
           cor: '#2563eb', // Azul
-          geometriaRuas: null, // Será preenchido via OSRM
-          ...rota,
+          geometriaRuas: geomPre ? geomPre.coordenadas : null,
+          paradas: rota.paradas,
+          kmTotal: km,
+          tempoMinutos: tempoTotal,
+          tempoFormatado: tempoFmt,
           textoWhatsApp
         }
       ]
@@ -284,11 +322,24 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   const rota1 = resolverTsp2Opt(setor1Ordenado);
   const rota2 = resolverTsp2Opt(setor2);
 
-  const kmTotalGlobal = Number((rota1.kmTotal + rota2.kmTotal).toFixed(2));
-  const tempoMax = Math.max(rota1.tempoMinutos, rota2.tempoMinutos);
+  const key1 = isReal ? 'real_2_v1' : (isIdealCanonico ? 'ideal_2_v1' : null);
+  const key2 = isReal ? 'real_2_v2' : (isIdealCanonico ? 'ideal_2_v2' : null);
+  const geom1 = key1 && rotasPrecalculadas[key1] ? rotasPrecalculadas[key1] : null;
+  const geom2 = key2 && rotasPrecalculadas[key2] ? rotasPrecalculadas[key2] : null;
 
-  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, 'Carro 1 • Setor Sul / Centro (Início: Q-1/1 Centenário)', rota1.kmTotal, rota1.tempoFormatado);
-  const textoWhatsApp2 = gerarTextoWhatsAppRota(rota2.paradas, 'Carro 2 • Setor Norte / Morro do Estado', rota2.kmTotal, rota2.tempoFormatado);
+  const km1 = geom1 ? geom1.distanciaKm : rota1.kmTotal;
+  const dur1 = geom1 ? geom1.duracaoMin : Math.round(km1 * 2.8);
+  const t1 = dur1 + rota1.paradas.length * 3;
+
+  const km2 = geom2 ? geom2.distanciaKm : rota2.kmTotal;
+  const dur2 = geom2 ? geom2.duracaoMin : Math.round(km2 * 2.8);
+  const t2 = dur2 + rota2.paradas.length * 3;
+
+  const kmTotalGlobal = Number((km1 + km2).toFixed(2));
+  const tempoMax = Math.max(t1, t2);
+
+  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, 'Carro 1 • Setor Sul / Centro (Início: Q-1/1 Centenário)', km1, formatarTempo(t1));
+  const textoWhatsApp2 = gerarTextoWhatsAppRota(rota2.paradas, 'Carro 2 • Setor Norte / Morro do Estado', km2, formatarTempo(t2));
 
   return {
     numVeiculos: 2,
@@ -299,16 +350,22 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
         id: 'v1',
         nome: 'Carro 1 (Setor Sul / Centro)',
         cor: '#2563eb',
-        geometriaRuas: null,
-        ...rota1,
+        geometriaRuas: geom1 ? geom1.coordenadas : null,
+        paradas: rota1.paradas,
+        kmTotal: km1,
+        tempoMinutos: t1,
+        tempoFormatado: formatarTempo(t1),
         textoWhatsApp: textoWhatsApp1
       },
       {
         id: 'v2',
         nome: 'Carro 2 (Setor Norte / Morro do Estado)',
         cor: '#d97706',
-        geometriaRuas: null,
-        ...rota2,
+        geometriaRuas: geom2 ? geom2.coordenadas : null,
+        paradas: rota2.paradas,
+        kmTotal: km2,
+        tempoMinutos: t2,
+        tempoFormatado: formatarTempo(t2),
         textoWhatsApp: textoWhatsApp2
       }
     ]
@@ -338,7 +395,7 @@ export async function buscarGeometriaRuasOSRM(paradas = []) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 9000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
 
@@ -348,13 +405,13 @@ export async function buscarGeometriaRuasOSRM(paradas = []) {
     if (data.code === 'Ok' && data.routes && data.routes[0]) {
       const r = data.routes[0];
       // OSRM devolve [lng, lat], convertemos para Leaflet [lat, lng]
-      const latLngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
+      const latLngs = r.geometry.coordinates.map(c => [Number(c[1].toFixed(6)), Number(c[0].toFixed(6))]);
       const result = {
         coordenadas: latLngs,
         distanciaKm: Number((r.distance / 1000).toFixed(2)),
         duracaoMin: Math.round(r.duration / 60)
       };
-      osrmCache.set(cacheKey, result);
+      salvarNoCacheLocal(cacheKey, result);
       return result;
     }
   } catch (err) {

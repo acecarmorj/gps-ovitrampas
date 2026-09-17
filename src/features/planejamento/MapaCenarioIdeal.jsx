@@ -664,77 +664,40 @@ export function MapaCenarioIdeal({
         }`}
       />
 
-      {/* SELETOR RÁPIDO NO TOPO-ESQUERDA DO MAPA */}
-      <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border border-slate-300 shadow-xl pointer-events-auto flex-wrap gap-1">
-        <button
-          type="button"
-          onClick={() => {
-            setModoAdicionar(false);
-            if (onChangeModoCenario) onChangeModoCenario('atual');
-          }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-            modoCenario === 'atual'
-              ? 'bg-emerald-600 text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-          title="Ver o Cenário Atual (a realidade das armadilhas instaladas)"
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          <span>Realidade ({armadilhasReais.length})</span>
-        </button>
+      {/* FERRAMENTAS CONTEXTUAIS DA GRADE IDEAL NO MAPA */}
+      {modoCenario === 'ideal' && (
+        <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-purple-300 shadow-xl pointer-events-auto gap-2">
+          <button
+            type="button"
+            onClick={() => setModoAdicionar((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
+              modoAdicionar
+                ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 animate-pulse'
+                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-xs'
+            }`}
+            title="Adicionar nova armadilha clicando no mapa"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{modoAdicionar ? 'Clique no Mapa' : 'Adicionar Ponto'}</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setModoAdicionar(false);
-            if (onChangeModoCenario) onChangeModoCenario('ideal');
-          }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-            modoCenario === 'ideal'
-              ? 'bg-purple-600 text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-          title="Ver o Cenário Ideal (~300m regular)"
-        >
-          <Target className="w-3.5 h-3.5" />
-          <span>Grade Ideal ({pontosIdeais.length})</span>
-        </button>
-
-        {modoCenario === 'ideal' && (
-          <div className="flex items-center gap-1.5 ml-1 pl-1.5 border-l border-slate-200">
+          {isCustomizada && (
             <button
               type="button"
-              onClick={() => setModoAdicionar((prev) => !prev)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-                modoAdicionar
-                  ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 animate-pulse'
-                  : 'bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300'
-              }`}
-              title="Adicionar nova armadilha clicando no mapa"
+              onClick={onRestaurarPadrao}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all active:scale-95"
+              title="Restaurar grade padrão de 24 pontos"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{modoAdicionar ? 'Clique no Mapa' : 'Adicionar Ponto'}</span>
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+              <span>Restaurar Grade</span>
             </button>
-          </div>
-        )}
+          )}
 
-        <button
-          type="button"
-          onClick={() => {
-            setModoAdicionar(false);
-            if (onChangeModoCenario) onChangeModoCenario('rota');
-          }}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-            modoCenario === 'rota'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-          title="Rota de Coleta Otimizada para 1 ou 2 veículos"
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Rota de Coleta</span>
-        </button>
-      </div>
+          <div className="hidden sm:flex items-center text-[10px] text-purple-900 font-bold px-1.5">
+            <span>Arraste os pontos para reposicionar</span>
+          </div>
+        </div>
+      )}
 
       {/* BANNER FLUTUANTE DE INSTRUÇÃO QUANDO O MODO ADICIONAR ESTÁ ATIVO */}
       {modoAdicionar && modoCenario === 'ideal' && (
@@ -768,12 +731,12 @@ export function MapaCenarioIdeal({
 
       {/* SELETOR DE VEÍCULOS QUANDO NO MODO ROTA */}
       {modoCenario === 'rota' && (
-        <div className="absolute top-14 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border border-blue-200 shadow-xl pointer-events-auto text-xs font-black">
-          <span className="text-[10px] text-slate-500 uppercase px-2">Veículos:</span>
+        <div className="absolute top-3 left-3 z-20 flex items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-blue-200 shadow-xl pointer-events-auto text-xs font-black gap-1 flex-wrap">
+          <span className="text-[10px] text-slate-500 uppercase px-1.5">Frota:</span>
           <button
             type="button"
             onClick={() => onChangeNumVeiculos && onChangeNumVeiculos(1)}
-            className={`px-3 py-1 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               numVeiculos === 1 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
@@ -782,12 +745,15 @@ export function MapaCenarioIdeal({
           <button
             type="button"
             onClick={() => onChangeNumVeiculos && onChangeNumVeiculos(2)}
-            className={`px-3 py-1 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               numVeiculos === 2 ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
             🚗🚙 2 Carros (Divisão Norte/Sul)
           </button>
+          <div className="hidden sm:flex items-center text-[10px] text-emerald-800 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">
+            <span>🛣️ Ruas Reais de Carmo (OSRM)</span>
+          </div>
         </div>
       )}
 

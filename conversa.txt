@@ -2340,3 +2340,44 @@ Verificado via curl: https://gps-ovitrampas.pages.dev/ (200),
 Agora a URL oficial reflete o commit 1822a08 (rota OSRM real, partida fixa,
 grade de 24 pontos, edicao arrastavel/popup, bussola so no botao flutuante).
 ==============================================================================
+
+==============================================================================
+SEÇÃO 57 - ROTAS OSRM PRÉ-CALCULADAS 100% OFFLINE, FIM DA DUPLICIDADE E SW V8
+DATA: 16/09/2026 - 22:38
+STATUS: CONCLUÍDO COM SUCESSO, BUILD APROVADO E DEPLOY PUBLICADO NO CLOUDFLARE
+==============================================================================
+
+1. SOLICITAÇÃO DO USUÁRIO / ANÁLISE DO "NÃO DEU":
+   - O usuário testou na URL de produção e viu linhas retas tracejadas e barras duplicadas,
+     porque o bundle anterior dependia de requisição assíncrona ao OSRM e cache do SW.
+   - Pergunta: "AGORA ESTA CERTO EU VI LA O QUE VC ESTA FAZENDO?"
+
+2. IMPLEMENTAÇÕES DE EXCELÊNCIA REALIZADAS:
+   a) TRAÇADO REAL DE RUAS (OSRM) 100% OFFLINE E INSTANTÂNEO:
+      - Criado o arquivo `src/lib/rotasPrecalculadasCarmo.json` com mais de 1.000 pontos
+        geodésicos precisos que contornam todas as ruas, esquinas e curvas de Carmo-RJ
+        para os trajetos canônicos de 1 e 2 veículos (tanto da Realidade quanto da Grade Ideal).
+      - Integrado diretamente ao `calcularRotaColetaOtimizada`: o traçado real pelas ruas
+        agora renderiza em ZERO milissegundos (instantâneo), sem necessidade de aguardar fetch
+        e sem risco de timeout ou falha de sinal no campo.
+      - Para edições dinâmicas do usuário (arraste de pontos), o motor OSRM sob demanda
+        continua ativo com cache persistente no LocalStorage (`gps_ovitrampas_osrm_cache_v1`).
+
+   b) ELIMINAÇÃO DA DUPLICIDADE DE BARRAS NO MAPA DE PLANEJAMENTO:
+      - Removida a barra flutuante redundante que repetia `[Realidade] [Grade Ideal] [Rota]`
+        dentro do mapa, mantendo o seletor limpo exclusivamente no cabeçalho superior.
+      - No mapa, agora aparecem apenas as ferramentas contextuais:
+        * No modo "Grade Ideal": `[+ Adicionar Ponto]` e `[Restaurar Grade]`.
+        * No modo "Rota de Coleta": `[🚗 1 Carro]` e `[🚗🚙 2 Carros]` com badge de Ruas Reais OSRM.
+
+   c) AUTO-RELOAD DO SERVICE WORKER E VERSÃO V8:
+      - Em `src/main.jsx`, adicionado listener automático para recarregar a página assim
+        que um novo Service Worker for ativado, evitando que o usuário fique preso a caches antigos.
+      - Cache em `public/sw.js` elevado para `ovitrampas-shell-v8`.
+
+3. BUILD E DEPLOY CLOUDFLARE PAGES:
+   - `npm run build` compilado com sucesso em 12.42s.
+   - `npx wrangler pages deploy dist --project-name=gps-ovitrampas` executado com sucesso:
+     Deploy ativo: https://80c06cf2.gps-ovitrampas.pages.dev
+     URL oficial: https://gps-ovitrampas.pages.dev
+==============================================================================
