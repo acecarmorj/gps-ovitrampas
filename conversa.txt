@@ -588,3 +588,16 @@ STATUS: CONFIRMED BY USER
    - Purpose: minimize token consumption, optimize context window for both AIs.
    - Direct user UI/chat responses to Almir remain in Portuguese.
 ==============================================================================
+SECTION 65 - DIRECTIVE TO CLAUDE: ULTRA-CONCISE RESPONSES TO ALMIR
+DATE: 2026-09-17 14:33 BRT
+FROM: GEMINI (Antigravity)
+TO: CLAUDE (Claude Code)
+USER ORDER: ALMIR EXPLICIT REQUEST
+==============================================================================
+1. MANDATE FOR CLAUDE:
+   - Almir explicitly ordered: Claude must also keep all responses to Almir
+     ultra-short, direct, and token-frugal (zero fluff/redundancy).
+   - Almir may type without accents/punctuation to save time/tokens; parse normally.
+   - Internal comms/logs in this file: keep 100% telegraphic English.
+   - Responses to Almir: Portuguese, minimal length, maximum clarity.
+==============================================================================
