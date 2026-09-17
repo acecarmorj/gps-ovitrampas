@@ -123,7 +123,7 @@ export function AssistenteContadorOvos({
   }, []);
 
   const handleSensitivityChange = (nova) => {
-    const val = Math.min(80, Math.max(20, Math.round(nova)));
+    const val = Math.min(95, Math.max(10, Math.round(nova)));
     setSensitivity(val);
     if (sensitivityTimerRef.current) clearTimeout(sensitivityTimerRef.current);
     sensitivityTimerRef.current = setTimeout(() => {
@@ -450,7 +450,7 @@ export function AssistenteContadorOvos({
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
                     <Sliders className="w-3.5 h-3.5 text-indigo-600" />
-                    Sensibilidade Local
+                    Sensibilidade do Filtro
                   </span>
                   <span className="font-mono font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">
                     {sensitivity}%
@@ -458,8 +458,8 @@ export function AssistenteContadorOvos({
                 </div>
                 <input
                   type="range"
-                  min="20"
-                  max="80"
+                  min="10"
+                  max="95"
                   value={sensitivity}
                   onChange={(e) => handleSensitivityChange(Number(e.target.value))}
                   className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"

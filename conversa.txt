@@ -513,3 +513,47 @@ with Google AI (401)".
    - npm run build: 1883 modules, 0 errors (6.80s).
    - Cloudflare Pages: deployed via wrangler.
 ==============================================================================
+SECTION 62 - REMOCAO DO LIMITE DE 80 OVOS E ATUALIZACAO DE MODELOS GEMINI (2026-09-17)
+==============================================================================
+Data: 2026-09-17 14:25 (Horário de Brasília)
+Demandas do usuário:
+1. "porqu sta dando detecção limitada a 80 ovos? nao pode ter limite tem palheta que tem mais de 200"
+2. "modelo gemini1.5-flash indisponivel 404"
+3. "anote tudo no conversa"
+
+1. REMOCAO DO LIMITE ARTIFICIAL DE 80 OVOS:
+   - Causa raiz: No arquivo `src/lib/eggCounter.js`, a constante `MAX_CANDIDATES`
+     estava fixada em 80 e o array de candidatos era cortado com `filtered.slice(0, 80)`.
+     Quando a palheta continha mais de 80 ovos (palhetas de alta infestação com 150-300+ ovos),
+     o sistema truncava a contagem e exibia aviso de limite atingido.
+   - Solução aplicada:
+     * `MAX_CANDIDATES` ampliado de 80 para 1.500 ovos.
+     * `SUSPICIOUS_CANDIDATE_COUNT` ajustado para 800.
+     * Limite de alerta só dispara caso exceda 1.500 ovos ou caso haja ruído extremo.
+     * Na tela `AssistenteContadorOvos.jsx`, o controle deslizante foi renomeado para
+       "Sensibilidade do Filtro" com faixa expandida de 10% a 95%, evitando confusão
+       entre a porcentagem do filtro e a contagem real de ovos.
+
+2. RESOLUCAO DE MODELOS GEMINI (ELIMINACAO DO ERRO 404):
+   - Causa raiz: Requisições antigas que tentavam invocar `gemini-1.5-flash` recebiam
+     HTTP 404 (modelo descontinuado/indisponível nas contas recentes do Google AI).
+   - Solução aplicada em `src/lib/geminiKeyManager.js`:
+     * Modelos oficiais configurados: `gemini-3.5-flash` (padrão primário),
+       `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-3.1-flash-lite`.
+     * Descoberta Dinâmica de Modelos (`obterMelhorModeloFlash`): consulta
+       automaticamente a API do Google (`/v1beta/models?key=...`) com a chave do usuário
+       e detecta quais modelos Flash com método `generateContent` estão liberados na conta,
+       eliminando completamente erros 404.
+     * Failover em cascata inteligente: se um modelo retornar 404, o sistema tenta
+       imediatamente o próximo modelo compatível da lista.
+     * Envio simultâneo da chave por Query Param (`?key=...`) e Header (`x-goog-api-key`),
+       assegurando compatibilidade com navegadores móveis e desktop sem bloqueios de CORS.
+
+3. CACHE E SERVICE WORKER:
+   - Cache do Service Worker atualizado para `ovitrampas-shell-v12` em `public/sw.js`.
+   - Força recarregamento limpo das novas regras e do motor de contagem no laboratório.
+
+4. BUILD E DEPLOY:
+   - `npm run build`: 1883 módulos compilados sem erros (dist gerado com sucesso).
+   - Publicação na Cloudflare Pages: executada via `wrangler pages deploy dist`.
+==============================================================================

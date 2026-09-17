@@ -7,12 +7,16 @@ const STORAGE_KEY = 'ovitrampas_gemini_key';
 
 // Modelos oficiais do Google Generative Language API
 export const GEMINI_MODELOS = {
+  FLASH_3_5: 'gemini-3.5-flash',
   FLASH_2_5: 'gemini-2.5-flash',
-  FLASH_2_0: 'gemini-2.0-flash',
-  FLASH_1_5: 'gemini-1.5-flash'
+  FLASH_2_5_LITE: 'gemini-2.5-flash-lite',
+  FLASH_3_1_LITE: 'gemini-3.1-flash-lite',
+  FLASH_3_6: 'gemini-3.6-flash',
 };
 
-export const MODELO_PADRAO = GEMINI_MODELOS.FLASH_2_5;
+export const MODELO_PADRAO = GEMINI_MODELOS.FLASH_3_5;
+
+let modeloDetectadoCache = null;
 
 /**
  * Obtém a chave ativa para chamadas ao Gemini
@@ -40,6 +44,7 @@ export function getGeminiApiKey() {
 export function setGeminiApiKey(chave) {
   if (typeof window === 'undefined') return;
   const limpa = String(chave || '').trim();
+  modeloDetectadoCache = null; // reseta cache de modelo ao trocar de chave
   if (limpa) {
     window.localStorage.setItem(STORAGE_KEY, limpa);
   } else {
@@ -52,6 +57,7 @@ export function setGeminiApiKey(chave) {
  */
 export function removerGeminiApiKey() {
   if (typeof window !== 'undefined') {
+    modeloDetectadoCache = null;
     window.localStorage.removeItem(STORAGE_KEY);
   }
 }
@@ -61,6 +67,48 @@ export function removerGeminiApiKey() {
  */
 export function temChaveConfigurada() {
   return Boolean(getGeminiApiKey());
+}
+
+/**
+ * Descobre dinamicamente os modelos Flash disponíveis para a chave fornecida
+ */
+export async function obterMelhorModeloFlash(chave) {
+  if (modeloDetectadoCache) return modeloDetectadoCache;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(chave)}`);
+    if (res.ok) {
+      const data = await res.json();
+      const models = (data.models || [])
+        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => m.name.replace(/^models\//, ''));
+
+      const preferidos = [
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-3.6-flash',
+      ];
+
+      for (const p of preferidos) {
+        if (models.includes(p)) {
+          modeloDetectadoCache = p;
+          return p;
+        }
+      }
+
+      const qualquerFlash = models.find((m) => m.includes('flash'));
+      if (qualquerFlash) {
+        modeloDetectadoCache = qualquerFlash;
+        return qualquerFlash;
+      }
+    }
+  } catch (err) {
+    console.warn('Falha na descoberta dinâmica de modelos, usando padrão:', err);
+  }
+
+  return MODELO_PADRAO;
 }
 
 /**
@@ -77,7 +125,9 @@ export async function testarChaveGemini(chave) {
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
     if (res.ok) {
-      return { ok: true, mensagem: 'Chave válida e autenticada com sucesso no Google AI!' };
+      const data = await res.json().catch(() => null);
+      const totalModelos = data?.models?.length || 0;
+      return { ok: true, mensagem: `Chave válida e ativa! (${totalModelos} modelos disponíveis)` };
     }
 
     const data = await res.json().catch(() => null);
@@ -97,7 +147,7 @@ export async function testarChaveGemini(chave) {
 }
 
 /**
- * Executa requisição generateContent com failover inteligente de modelos
+ * Executa requisição generateContent com failover inteligente de modelos oficiais
  */
 export async function chamarGeminiGenerateContent(payload, chaveManual = null) {
   const chave = chaveManual || getGeminiApiKey();
@@ -107,16 +157,22 @@ export async function chamarGeminiGenerateContent(payload, chaveManual = null) {
     throw erro;
   }
 
-  const modelosTentativa = [
+  // Tenta descobrir o modelo ativo da conta ou usa a lista de prioridades 3.6/3.7/3.5/2.5
+  const melhorModelo = await obterMelhorModeloFlash(chave);
+
+  const modelosTentativa = Array.from(new Set([
+    melhorModelo,
+    GEMINI_MODELOS.FLASH_3_5,
     GEMINI_MODELOS.FLASH_2_5,
-    GEMINI_MODELOS.FLASH_2_0,
-    GEMINI_MODELOS.FLASH_1_5
-  ];
+    GEMINI_MODELOS.FLASH_2_5_LITE,
+    GEMINI_MODELOS.FLASH_3_1_LITE,
+    GEMINI_MODELOS.FLASH_3_6,
+  ]));
 
   let ultimoErro = null;
 
   for (const modelo of modelosTentativa) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(chave)}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -128,6 +184,7 @@ export async function chamarGeminiGenerateContent(payload, chaveManual = null) {
       });
 
       if (response.ok) {
+        modeloDetectadoCache = modelo; // salva o que funcionou
         return await response.json();
       }
 
@@ -141,9 +198,9 @@ export async function chamarGeminiGenerateContent(payload, chaveManual = null) {
         throw erro;
       }
 
-      // Se o modelo específico não foi encontrado (404), tenta o próximo da lista
+      // Se o modelo específico não foi encontrado (404), tenta o próximo modelo oficial
       if (response.status === 404) {
-        ultimoErro = new Error(`Modelo ${modelo} indisponível (404).`);
+        ultimoErro = new Error(`Modelo ${modelo} indisponível no Google AI.`);
         continue;
       }
 

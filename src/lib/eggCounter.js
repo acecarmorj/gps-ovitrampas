@@ -6,8 +6,8 @@
  * Funciona offline, rápido (de 20ms a 80ms) e sem dependências externas.
  */
 
-const MAX_CANDIDATES = 80;
-const SUSPICIOUS_CANDIDATE_COUNT = 36;
+const MAX_CANDIDATES = 1500;
+const SUSPICIOUS_CANDIDATE_COUNT = 800;
 
 function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -527,25 +527,22 @@ export function analyzeEggImage(
   let filtered = suppressOverlapping(candidates).sort(
     (left, right) => right.score - left.score
   );
-  if (filtered.length > 4) {
+  if (filtered.length > 8) {
     const bestScore = filtered[0]?.score ?? 0;
-    const scoreFloor = Math.max(0.42, bestScore - 0.16);
+    const scoreFloor = Math.max(0.32, bestScore - 0.30);
     filtered = filtered.filter((candidate) => candidate.score >= scoreFloor);
   }
-  filtered = filtered.slice(0, MAX_CANDIDATES);
+  if (filtered.length > MAX_CANDIDATES) {
+    filtered = filtered.slice(0, MAX_CANDIDATES);
+  }
 
-  const textureDominated =
-    rawComponents >= 90 && filtered.length >= 18;
-  const suspicious =
-    textureDominated ||
-    filtered.length >= MAX_CANDIDATES ||
-    filtered.length >= SUSPICIOUS_CANDIDATE_COUNT;
+  const textureDominated = rawComponents >= 1500 && filtered.length >= 800;
+  const suspicious = textureDominated || (filtered.length >= MAX_CANDIDATES);
   let warning;
-  if (suspicious) {
-    warning =
-      filtered.length >= MAX_CANDIDATES
-        ? `Detecção limitada a ${MAX_CANDIDATES} candidatos. A textura da palheta pode estar sendo marcada. Aproxime e revise os anéis.`
-        : "Palheta com sulcos acentuados. Revise os anéis marcados ou reduza a sensibilidade se necessário.";
+  if (filtered.length >= MAX_CANDIDATES) {
+    warning = `Contagem atingiu o limite técnico de ${MAX_CANDIDATES} ovos. Verifique se a palheta possui sujeiras ou reduza a sensibilidade.`;
+  } else if (textureDominated) {
+    warning = "Palheta com textura ou ranhuras muito acentuadas. Revise os anéis marcados ou reduza a sensibilidade se necessário.";
   }
 
   return {
@@ -564,10 +561,9 @@ export function analyzeEggImage(
  * @returns {number}
  */
 export function calculateEggConfidence(analysis) {
-  let score = 92;
-  if (analysis.suspicious) score -= 22;
+  let score = 95;
+  if (analysis.suspicious) score -= 15;
   if (analysis.candidates.length === 0) score -= 4;
-  if (analysis.candidates.length > 30) score -= 8;
   if (analysis.warning) score -= 8;
   if (analysis.inspectedPixels < 5000) score -= 6;
   return Math.max(40, Math.min(98, Math.round(score)));
