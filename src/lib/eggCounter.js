@@ -537,12 +537,21 @@ export function analyzeEggImage(
   }
 
   const textureDominated = rawComponents >= 1500 && filtered.length >= 800;
-  const suspicious = textureDominated || (filtered.length >= MAX_CANDIDATES);
+  // SUSPICIOUS_CANDIDATE_COUNT ficou declarado mas fora do calculo de
+  // suspicious na ultima alteracao (80->1500) - sem ele, uma palheta suja
+  // gerando centenas de blobs de ruido passava sem aviso nenhum antes de
+  // chegar perto do teto de 1500. Restaurado.
+  const suspicious =
+    textureDominated ||
+    filtered.length >= MAX_CANDIDATES ||
+    filtered.length >= SUSPICIOUS_CANDIDATE_COUNT;
   let warning;
   if (filtered.length >= MAX_CANDIDATES) {
     warning = `Contagem atingiu o limite técnico de ${MAX_CANDIDATES} ovos. Verifique se a palheta possui sujeiras ou reduza a sensibilidade.`;
   } else if (textureDominated) {
     warning = "Palheta com textura ou ranhuras muito acentuadas. Revise os anéis marcados ou reduza a sensibilidade se necessário.";
+  } else if (filtered.length >= SUSPICIOUS_CANDIDATE_COUNT) {
+    warning = `Contagem incomum (${filtered.length}+ candidatos). Confira se a palheta esta suja ou a foto tem muito ruido antes de salvar.`;
   }
 
   return {
