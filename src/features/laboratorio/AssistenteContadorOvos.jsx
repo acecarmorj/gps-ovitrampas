@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Camera, Upload, ZoomIn, ZoomOut,
   CheckCircle2, X, AlertTriangle, Sparkles, Sliders,
-  RefreshCw, Bot, Check, HelpCircle
+  RefreshCw, Bot, Check, HelpCircle, Key
 } from 'lucide-react';
 import { analyzeEggImage, calculateEggConfidence } from '../../lib/eggCounter';
 import { auditarFotoComGemini } from '../../lib/geminiEggAuditor';
+import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
 
 const MAX_IMAGE_EDGE = 1200;
 const SENSITIVITY_DEFAULT = 45;
@@ -36,6 +37,7 @@ export function AssistenteContadorOvos({
   const [auditandoIA, setAuditandoIA] = useState(false);
   const [laudoIA, setLaudoIA] = useState(null);
   const [erroIA, setErroIA] = useState(null);
+  const [mostrarModalChave, setMostrarModalChave] = useState(false);
 
   useEffect(() => {
     if (fotoInicial) {
@@ -129,7 +131,17 @@ export function AssistenteContadorOvos({
     }, 200);
   };
 
-  // Executa a Auditoria Pericial com IA Gemini 3.6 Flash
+  const handleChaveSalva = (novaChave) => {
+    setMostrarModalChave(false);
+    setErroIA(null);
+    if (novaChave && fotoDataUrl) {
+      setTimeout(() => {
+        handleAuditarComGemini();
+      }, 200);
+    }
+  };
+
+  // Executa a Auditoria Pericial com IA Google Gemini
   const handleAuditarComGemini = async () => {
     if (!fotoDataUrl) return;
     setAuditandoIA(true);
@@ -138,6 +150,7 @@ export function AssistenteContadorOvos({
       const resultado = await auditarFotoComGemini(fotoDataUrl);
       setLaudoIA(resultado);
     } catch (err) {
+      console.error('Erro na auditoria com Gemini:', err);
       setErroIA(err.message || 'Não foi possível conectar com a IA do Google.');
     } finally {
       setAuditandoIA(false);
@@ -286,6 +299,14 @@ export function AssistenteContadorOvos({
                 {laudoIA ? `${laudoIA.ovos} ovos (IA)` : `${markers.length} ovos`}
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => setMostrarModalChave(true)}
+              className="w-8 h-8 rounded-full bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 text-purple-300 hover:text-white flex items-center justify-center transition-colors"
+              title="Configurar Chave da IA Google Gemini"
+            >
+              <Key className="w-4 h-4" />
+            </button>
             <button
               type="button"
               onClick={onFechar}
@@ -477,9 +498,21 @@ export function AssistenteContadorOvos({
 
             {/* ERRO DA IA SE HOUVER */}
             {erroIA && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 rounded-xl flex items-center gap-2 text-xs">
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                <span className="flex-1">{erroIA}</span>
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-2xl space-y-2 text-xs animate-in fade-in">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span className="flex-1 font-semibold leading-relaxed">{erroIA}</span>
+                </div>
+                {(erroIA.includes('401') || erroIA.includes('403') || erroIA.includes('Chave') || erroIA.includes('configurada')) && (
+                  <button
+                    type="button"
+                    onClick={() => setMostrarModalChave(true)}
+                    className="w-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase tracking-wider"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>Configurar Chave Google Gemini</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -535,6 +568,13 @@ export function AssistenteContadorOvos({
         )}
 
       </div>
+
+      {/* MODAL CONFIGURAÇÃO DA CHAVE GEMINI */}
+      <ModalConfigChaveGemini
+        aberto={mostrarModalChave}
+        onFechar={() => setMostrarModalChave(false)}
+        onSalvo={handleChaveSalva}
+      />
     </div>
   );
 }

@@ -2706,6 +2706,60 @@ Status Geral do Sistema: 100% OPERACIONAL E SAUDAVEL
 3. SERVICOS CLOUD E FRONT-END:
    - Cloudflare Pages (https://gps-ovitrampas.pages.dev): HTTP 200 OK.
    - Cloudflare Worker (ovitrampas-api): /api/health OK, /api/traps OK.
-   - Service Worker: Cache v9 ativo com auto-reload.
+   - Service Worker: Cache v10 ativo com auto-reload.
 ==============================================================================
+
+==============================================================================
+SECAO 61 - DIAGNOSTICO E SOLUCAO DO ERRO 401 NO LABORATORIO (IA GEMINI) (2026-09-17)
+==============================================================================
+Data: 17/09/2026 14:10 (Horario de Brasilia)
+Problema reportado pelo usuario:
+  - "so esta dando um problerm ano laboratorio veja flaha na comunicacao"
+  - Imagem enviada mostrando a tela "Assistente de Contagem de Ovos" com o aviso:
+    "Falha na comunicacao com a IA do Google (401)"
+
+1. CAUSA RAIZ IDENTIFICADA:
+   a) A chave padrao b64 hardcoded no codigo (`DEFAULT_KEY_B64`) decodificava para
+      uma credencial de service account desativada/excluida no Google Cloud
+      ("The bound service account is deleted or disabled", HTTP 401).
+   b) A URL da API do Gemini estava apontando para o endpoint inexistente
+      `gemini-3.6-flash:generateContent`.
+   c) Nao havia na interface do app nenhum modal, campo ou botao para o usuario
+      inserir e testar sua propria chave de API do Google Gemini (Google AI Studio).
+
+2. ARQUITETURA E SOLUCAO IMPLEMENTADA:
+   a) Criacao do modulo central `src/lib/geminiKeyManager.js`:
+      - Gerencia a chave via localStorage (`ovitrampas_gemini_key`) e variavel Vite.
+      - Implementa failover inteligente de modelos oficiais do Google:
+        1. `gemini-2.5-flash`
+        2. `gemini-2.0-flash`
+        3. `gemini-1.5-flash`
+      - Funcao `testarChaveGemini(key)`: faz ping direto no endpoint oficial do
+        Google AI para validar a autenticacao da chave em tempo real.
+   b) Criacao do componente `ModalConfigChaveGemini.jsx`:
+      - Modal intuitivo com explicacao tecnica sobre a IA.
+      - Link direto para gerar chave gratuita no Google AI Studio (1 minuto).
+      - Campo de chave com botao de visualizar senha (Eye/EyeOff).
+      - Botao "Testar Chave" com feedback imediato (verde para OK, vermelho explicativo).
+      - Botao "Salvar Chave no Aparelho" e opcao de "Remover Chave".
+   c) Atualizacao dos modulos de IA (`geminiEggAuditor.js`, `geminiSpeciesIdentifier.js`,
+      `geminiAdminIntelligence.js`):
+      - Substituicao de chamadas diretas por `chamarGeminiGenerateContent`.
+      - Mensagens de erro claras e amigaveis quando a chave estiver ausente ou expirada.
+   d) Atualizacao das telas do Laboratorio:
+      - `AssistenteContadorOvos.jsx`: botao de chave no topo e botao direto no
+        banner de erro para abrir o modal de configuracao. Ao salvar a chave,
+        o app ja retenta a auditoria da foto automaticamente.
+      - `IdentificadorEspecies.jsx`: botao de chave no cabecalho e botao de acao
+        rapida no banner de erro 401.
+      - `LaboratorioScreen.jsx`: botao "Chave IA" no cabecalho geral de Entomologia.
+   e) Service Worker:
+      - Incrementado para `ovitrampas-shell-v10` garantindo atualizacao imediata nos
+        celulares e tablets dos agentes e laboratoristas.
+
+3. BUILD E DEPLOY:
+   - `npm run build`: 1883 modulos transformados, 0 erros (6.80s).
+   - Cloudflare Pages: Publicado com sucesso via wrangler.
+==============================================================================
+
 

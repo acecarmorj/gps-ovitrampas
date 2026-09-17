@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import {
   Camera, Upload, Sparkles, Bot, AlertTriangle,
-  CheckCircle2, X, RefreshCw, Share2, ShieldAlert, Bug
+  CheckCircle2, X, RefreshCw, Share2, ShieldAlert, Bug, Key
 } from 'lucide-react';
 import { identificarEspeciePorFoto } from '../../lib/geminiSpeciesIdentifier';
 import { compressImage } from '../../lib/storage';
+import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
 
 export function IdentificadorEspecies() {
   const fileInputRef = useRef(null);
@@ -12,6 +13,7 @@ export function IdentificadorEspecies() {
   const [identificando, setIdentificando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState(null);
+  const [mostrarModalChave, setMostrarModalChave] = useState(false);
 
   const handleFotoChange = async (e) => {
     const file = e.target.files?.[0];
@@ -61,18 +63,28 @@ export function IdentificadorEspecies() {
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm space-y-4">
-      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
-          <Bug className="w-5 h-5" />
+      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
+            <Bug className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+              Identificador de Espécies por IA
+            </h2>
+            <p className="text-[11px] text-slate-500">
+              Fotografe o mosquito adulto ou larva na lâmina
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-            Identificador de Especies por IA
-          </h2>
-          <p className="text-[11px] text-slate-500">
-            Fotografe o mosquito adulto ou larva na lamina
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => setMostrarModalChave(true)}
+          className="w-8 h-8 rounded-2xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-600 flex items-center justify-center transition-colors"
+          title="Configurar Chave da IA Gemini"
+        >
+          <Key className="w-4 h-4" />
+        </button>
       </div>
 
       <input
@@ -153,9 +165,21 @@ export function IdentificadorEspecies() {
       )}
 
       {erro && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-2xl text-xs flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-          <span className="flex-1 font-medium">{erro}</span>
+        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs space-y-2 animate-in fade-in">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span className="flex-1 font-semibold leading-relaxed">{erro}</span>
+          </div>
+          {(erro.includes('401') || erro.includes('403') || erro.includes('Chave') || erro.includes('configurada')) && (
+            <button
+              type="button"
+              onClick={() => setMostrarModalChave(true)}
+              className="w-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase tracking-wider"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Configurar Chave Google Gemini</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -227,6 +251,19 @@ export function IdentificadorEspecies() {
           </div>
         </div>
       )}
+
+      {/* MODAL CONFIGURAÇÃO DA CHAVE GEMINI */}
+      <ModalConfigChaveGemini
+        aberto={mostrarModalChave}
+        onFechar={() => setMostrarModalChave(false)}
+        onSalvo={(nova) => {
+          setMostrarModalChave(false);
+          setErro(null);
+          if (nova && foto) {
+            setTimeout(() => handleIdentificar(), 200);
+          }
+        }}
+      />
     </div>
   );
 }

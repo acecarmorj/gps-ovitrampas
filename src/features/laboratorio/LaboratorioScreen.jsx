@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical, CheckCircle2, Plus, Minus,
-  Camera, X, History, Check, Sparkles, Bot, Bug
+  Camera, X, History, Check, Sparkles, Bot, Bug, Key
 } from 'lucide-react';
 import {
   registrarLeituraLaboratorio,
@@ -11,6 +11,7 @@ import {
 import { playSuccessSound } from '../../lib/soundAlert';
 import { AssistenteContadorOvos } from './AssistenteContadorOvos';
 import { IdentificadorEspecies } from './IdentificadorEspecies';
+import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
 
 export function LaboratorioScreen({
   armadilhas = [],
@@ -34,6 +35,7 @@ export function LaboratorioScreen({
   // Assistente de IA de Ovos
   const [mostrarAssistente, setMostrarAssistente] = useState(false);
   const [laudoAuditoria, setLaudoAuditoria] = useState(null);
+  const [mostrarModalChave, setMostrarModalChave] = useState(false);
 
   // Histórico de Leituras salvas offline
   const [historicoLeituras, setHistoricoLeituras] = useState([]);
@@ -156,9 +158,20 @@ export function LaboratorioScreen({
               <p className="text-[11px] text-slate-500">Contagem de ovos e identificação taxonômica</p>
             </div>
           </div>
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-            ENTOMOLOGIA
-          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMostrarModalChave(true)}
+              className="px-2.5 py-1 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-[10px] font-black flex items-center gap-1 transition-all active:scale-95"
+              title="Configurar Chave da IA Google Gemini"
+            >
+              <Key className="w-3 h-3" />
+              <span>Chave IA</span>
+            </button>
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+              ENTOMOLOGIA
+            </span>
+          </div>
         </div>
 
         {/* SELETOR DE ABA CLEAN */}
@@ -472,6 +485,12 @@ export function LaboratorioScreen({
           onFechar={() => setMostrarAssistente(false)}
         />
       )}
+
+      {/* MODAL CONFIGURAÇÃO DA CHAVE GEMINI */}
+      <ModalConfigChaveGemini
+        aberto={mostrarModalChave}
+        onFechar={() => setMostrarModalChave(false)}
+      />
     </div>
   );
 }

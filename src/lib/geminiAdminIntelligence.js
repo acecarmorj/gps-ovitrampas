@@ -1,24 +1,8 @@
-/**
- * Motor de Inteligência Epidemiológica & Boletins Oficiais
- * Especializado para a Coordenação de Vigilância em Saúde - Carmo RJ.
- * Suporta Google Gemini com Fallback Oficial Local 100% Offline (sem quebras por Erro 401).
- */
-
-const DEFAULT_KEY_B64 = 'QVEuQWI4Uk42S3ZhVGZyLXJ0aFByVkd6ZXNOaWxKdXhqSkhockVTYUJuZW1YVk54Z3JZdXc=';
+import { getGeminiApiKey, chamarGeminiGenerateContent } from './geminiKeyManager';
 
 function obterChaveAtiva() {
-  if (typeof window !== 'undefined') {
-    const custom = window.localStorage.getItem('ovitrampas_gemini_key');
-    if (custom && custom.trim()) return custom.trim();
-  }
-  try {
-    return atob(DEFAULT_KEY_B64);
-  } catch {
-    return '';
-  }
+  return getGeminiApiKey();
 }
-
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 /**
  * Gerador Oficial Local (Padrão SES-RJ / Ministério da Saúde)
