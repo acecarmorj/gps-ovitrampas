@@ -136,10 +136,11 @@ export function App() {
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-[#F1F2F5] text-slate-900 font-sans">
-      {/* GPS obrigatorio so nas telas de campo (cadastro e mapa em tempo real).
-          Laboratorio e bancada dentro do predio; admin roda no PC da sede -
-          exigir GPS ali travava o uso sem necessidade. */}
-      {(chaveModulo === 'campo' || chaveModulo === 'mapa') && (
+      {/* GPS obrigatorio so na tela de cadastro em campo, onde a coordenada
+          precisa ser real pra nao gravar a posicao errada. As demais telas
+          (mapa, laboratorio, admin) so exibem/consultam dado ja existente,
+          nao precisam travar o uso exigindo GPS. */}
+      {chaveModulo === 'campo' && (
         <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
       )}
       
