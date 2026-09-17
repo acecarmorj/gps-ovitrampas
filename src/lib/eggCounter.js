@@ -478,7 +478,15 @@ export function analyzeEggImage(
       if (!blurredRice) continue;
     }
 
-    const woodLike = meanBrown > brownMax && meanAchroma > achromaMax;
+    // O filtro de madeira existe pra descartar a fibra da palheta, que e
+    // marrom. So que o ovo tambem e marrom-escuro: sob luz quente/amarelada
+    // ele media marrom 44 e croma 44 (limite 34) e era descartado junto -
+    // medido em foto real, 87 de 150 ovos morriam aqui e a contagem dava 22
+    // onde havia ~140. A fibra e marrom CLARA; o ovo e bem mais escuro que o
+    // fundo. Entao nao aplica o filtro a quem for bem escuro.
+    const bemEscuro = meanGray <= roi.medianGray * 0.42;
+    const woodLike =
+      !bemEscuro && meanBrown > brownMax && meanAchroma > achromaMax;
     if (woodLike) continue;
 
     if (groovePitch >= 6) {
