@@ -480,15 +480,7 @@ export function InstalarArmadilhaScreen({
       {/* Recolhível: no celular ele cobre quase todo o mapa, então o agente
           pode ocultar para enxergar as armadilhas e as linhas de distância. */}
       <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
-        {!painelAberto && (
-          <div className="mb-2 pointer-events-auto">
-            <BussolaOrientacao
-              userPos={localizacao}
-              armadilhas={armadilhas}
-              compacto={true}
-            />
-          </div>
-        )}
+
         {!painelAberto && (
           <button
             type="button"
@@ -590,11 +582,6 @@ export function InstalarArmadilhaScreen({
             </div>
           )}
 
-          {/* BÚSSOLA E GUIA CARDEAL DE DESLOCAMENTO (NORTE / SUL / LESTE / OESTE) */}
-          <BussolaOrientacao
-            userPos={localizacao}
-            armadilhas={armadilhas}
-          />
 
           {/* ASSISTENTE DE GEORREFERENCIAMENTO: DISTÂNCIA DAS OVs MAIS PRÓXIMAS (REGRA 300M - 400M) */}
           {vizinhasProximas && vizinhasProximas.length > 0 ? (

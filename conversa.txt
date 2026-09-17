@@ -2202,3 +2202,114 @@ IMPLEMENTACOES REALIZADAS:
      URL oficial: https://gps-ovitrampas.pages.dev
      URL da versao: https://gps-ovitrampas.pages.dev/planejamento
 ==============================================================================
+
+==============================================================================
+SEÇÃO 53 - STATUS DAS DEMANDAS, AUDITORIA DA GRADE E ROTEIRIZAÇÃO OSRM
+DATA: 16/09/2026 - 21:59
+STATUS DO CÓDIGO DO APP: CONGELADO / SEM ALTERAÇÕES (ORDEM EXPRESSA DO USUÁRIO)
+==============================================================================
+
+1. SOLICITAÇÕES RECEBIDAS DO USUÁRIO:
+   a) Ajustar grade para evitar buracos e evitar armadilhas a 200m (respeitar regra 300m-400m).
+   b) Cobrir casas no Centro Q-23 (estrada Carmo-Cantagalo) e no final das 3 linhas vermelhas.
+   c) Rota de carro seguir o traçado real das ruas (como GPS de carro / OSRM).
+   d) Ponto de partida fixo para rotas no Quarteirão 1/1 do Jardim Centenário.
+   e) No Mapa de Planejamento na Grade Ideal poder arrastar/mover armadilhas diretamente no mapa,
+      com o raio de 175m e as linhas de distância acompanhando o movimento dinamicamente,
+      e poder adicionar/excluir armadilhas clicando no mapa.
+   f) Ordem expressa recente: "OI ESPERE", "NAO EXECUTE MAIS ALTERAÇÕES NO APP",
+      apresentar balanço de tudo o que foi pedido, o que foi feito e o que falta, e atualizar txt e md.
+
+2. O QUE JÁ FOI FEITO:
+   - Auditoria geográfica completa dos 119 quarteirões habitados e vias extremas (Centro Q-23, RJ-148 Norte, Morro do Estado alto).
+   - Otimização e validação de uma grade com 24 pontos ideais onde todas as distâncias entre vizinhos ficam estritamente entre ~300m e ~400m (sem redundância de 200m e sem buracos na malha habitada contígua).
+   - Inclusão do ponto P-08 no Quarteirão Q-1/1 do Jardim Centenário (-21.9298, -42.6088).
+   - Atualização do arquivo `src/lib/pontosIdeaisCarmo.json` com os 24 pontos canônicos.
+   - Atualização de `src/lib/geoIdealGrid.js` com o gerador sincronizado para a grade perfeita.
+   - Implementação das funções `buscarGeometriaRuasOSRM` e `enriquecerRotaComRuasOSRM` em `src/lib/geoRoutingOvitrampa.js` com cache em memória e fallback seguro.
+
+3. O QUE FICOU PENDENTE / EM PAUSA (NENHUMA ALTERAÇÃO FEITA NO CÓDIGO):
+   - Amarração final do ponto de partida fixo (Q-1/1 Jardim Centenário) no loop inicial do TSP.
+   - Renderização visual da polilinha curva da geometria das ruas (OSRM) na camada Leaflet do modo rota.
+   - Modo de edição interativa da grade no mapa:
+     * Marcadores arrastáveis (draggable: true).
+     * Círculo de cobertura (175m) e linhas de distância seguindo o movimento em tempo real.
+     * Botão/Modo para adicionar armadilha clicando no mapa.
+     * Botão no popup/card para excluir armadilha.
+==============================================================================
+
+==============================================================================
+SEÇÃO 54 - CONCLUSÃO INTEGRAL DAS 3 TAREFAS PENDENTES
+DATA: 16/09/2026 - 22:09
+STATUS: TODAS AS 3 TAREFAS CONCLUÍDAS COM SUCESSO E BUILD APROVADO (EXIT CODE 0)
+==============================================================================
+
+1. SOLICITAÇÃO DO USUÁRIO:
+   "QUERO QUE TERMINE TUDO O QUE AINDA FALTA ME INFORMANDO A CADA CONCLUSAO DAS 3 TAREFAS"
+
+2. CONCLUSÃO DA TAREFA 1: PONTO DE PARTIDA FIXO NO Q-1/1 JARDIM CENTENÁRIO
+   - Implementada a função `reordenarComInicioJardimCentenario` em `src/lib/geoRoutingOvitrampa.js`.
+   - Coordenada canônica fixada: latitude -21.9298, longitude -42.6088 (Quarteirão 1/1 do Jardim Centenário / Ponto P-08 / Rua Alceu Mattos).
+   - Modo 1 Veículo: o circuito inicia estritamente na Parada #1 no Q-1/1 Jardim Centenário.
+   - Modo 2 Veículos: o Carro 1 (Setor Sul / Centro) contém o Jardim Centenário e inicia obrigatoriamente no Q-1/1 do Jardim Centenário.
+   - Verificado via testes automatizados.
+
+3. CONCLUSÃO DA TAREFA 2: TRAÇADO REAL DE RUAS (OSRM) VISÍVEL NO MAPA DE COLETA
+   - Em `src/features/planejamento/CenarioIdealScreen.jsx`, a rota de coleta é enriquecida com o motor `enriquecerRotaComRuasOSRM`.
+   - Em `src/features/planejamento/MapaCenarioIdeal.jsx`, a rota veicular é renderizada seguindo as curvas das ruas de Carmo-RJ (OSRM), com contorno de 7.5px e linha principal de 4.5px (estilo GPS veicular).
+   - Parada #1 destacada com ícone de bandeira quadriculada de largada (🏁), anel dourado (#fef08a) e etiqueta "PONTO DE PARTIDA (Q-1/1 Centenário)".
+   - Fallback automático caso não haja conexão.
+
+4. CONCLUSÃO DA TAREFA 3: MODO DE EDIÇÃO INTERATIVA TOTAL NO MAPA (GRADE IDEAL)
+   - Marcadores Arrastáveis: no modo "Grade Ideal", todas as armadilhas são arrastáveis (`draggable: true`).
+   - Círculo de Raio (175m) e Linhas de Distância: acompanham o movimento do cursor em tempo real com metragens recalculadas via `requestAnimationFrame`.
+   - Ao soltar o marcador (`dragend`): detecção automática do novo bairro/quarteirão e salvamento no `localStorage`.
+   - Adicionar Armadilha com Clique: botão "+ Adicionar Ponto" na barra superior ativa cursor em mira (`cursor-crosshair`) e banner orientador; clique no mapa cria armadilha na coordenada com código e raio automáticos. Suporte a menu de contexto no botão direito.
+   - Excluir Armadilha: botão "🗑️ Excluir esta Armadilha" no popup de cada marcador com remoção imediata.
+   - Botão "Restaurar Padrão" disponível caso o usuário queira restaurar a grade canônica de 24 pontos.
+
+5. VERIFICAÇÃO:
+   - `npm run build` executado e compilado com sucesso (código 0, 10.01s).
+==============================================================================
+
+==============================================================================
+SEÇÃO 55 - BOTÃO MODIFICAR POSIÇÃO NO POPUP, BÚSSOLA EXCLUSIVA NO TOPO E DEPLOY
+DATA: 16/09/2026 - 22:18
+STATUS: CONCLUÍDO COM SUCESSO, BUILD APROVADO E DEPLOY ENVIADO AO REPOSITÓRIO
+==============================================================================
+
+1. SOLICITAÇÕES RECEBIDAS DO USUÁRIO:
+   a) "NESTA JANELA TE QUE TER AOPCAO MODIFICAR POSIÇÃO E AI EU POSSO MOVER A ARMADILHA PELO MAPA QUERO ISSO PORUQE NAO FOI AINDA?"
+   b) "EU ACHO QUE A BUSSULA DA BARRA CENTRAL PODE SAIR E FICAR SOMENTE AQUEL AQUE APARECE EM CIMA QUANDO CLICO NO BOTAO"
+   c) "ACHO QUE NA OFUNCIOU PORQU EVC ATUALIZOU NAO SUBIU AI FICA DIFICIL NE"
+   d) "DEPOIS QUE TERMINAR COMMIT DEPLOY E ATUALIZE TXT"
+
+2. IMPLEMENTAÇÕES REALIZADAS:
+   a) BOTÃO "MODIFICAR POSIÇÃO (MOVER NO MAPA)" NO POPUP DA GRADE IDEAL:
+      - Em `src/features/planejamento/MapaCenarioIdeal.jsx`, adicionado botão roxo proeminente
+        `[✋ Modificar Posição (Mover no Mapa)]` dentro do popup que abre ao clicar na armadilha.
+      - Ao clicar no botão, o popup se fecha e ativa o modo `pontoEmMovimento`: surge no topo
+        da tela um banner roxo orientando o usuário: "Mover Armadilha P-XX: Clique no novo local
+        do mapa para onde deseja movê-la (ou arraste-a diretamente)".
+      - Ao clicar no novo ponto do mapa, a armadilha se desloca instantaneamente para lá,
+        recalculando o bairro, quarteirão, círculo de 175m e linhas de conexão.
+      - O arraste direto (drag-and-drop) continua habilitado e sincronizado em tempo real.
+
+   b) REMOÇÃO DA BÚSSOLA DA BARRA CENTRAL (INSTALAR EM CAMPO):
+      - Em `src/features/campo/InstalarArmadilhaScreen.jsx`, removida a `<BussolaOrientacao>`
+        de dentro da gaveta/painel central de instalação e da barra recolhida inferior.
+      - A bússola agora só é aberta quando o usuário clica expressamente no botão flutuante
+        `[🧭 Bússola]` no canto superior da tela, abrindo o card tático cardeal no topo com
+        botão de fechar (X).
+      - A tela de instalação ficou 100% limpa e objetiva, dando foco ao endereço GPS,
+        distância das vizinhas e campos do morador/número da OV/palheta.
+
+   c) ATUALIZAÇÃO DO SERVICE WORKER E CACHE BUSTING:
+      - Versão do cache em `public/sw.js` elevada para `ovitrampas-shell-v7`, garantindo
+        a invalidação dos bundles antigos em todos os dispositivos dos usuários.
+
+3. VERIFICAÇÃO E DEPLOY:
+   - `npm run build` executado com sucesso (código 0, 9.09s).
+   - Executados `git add .`, `git commit` e `git push origin main` para acionamento
+     automático do deploy no Cloudflare Pages (https://gps-ovitrampas.pages.dev).
+============================================================================================================================================================

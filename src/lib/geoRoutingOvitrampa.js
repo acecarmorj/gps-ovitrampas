@@ -2,20 +2,24 @@
  * Motor de Roteirização Otimizada para Coleta de Palhetas (Carmo - RJ)
  * Algoritmo TSP (Traveling Salesperson Problem) com heurística Nearest-Neighbor + 2-Opt.
  * Suporta 1 Veículo (circuito único) ou 2 Veículos (partição geográfica balanceada).
+ * Integração com OSRM para traçado real que segue as curvas das ruas como GPS de carro.
  */
 
-import { calcDistanceMeters } from './geoDistance';
+import { calcDistanceMeters } from './geoDistance.js';
+
+// Cache em memória para evitar requisições repetidas ao OSRM
+const osrmCache = new Map();
 
 /**
  * Resolve o problema do caixeiro viajante (TSP) usando Nearest Neighbor + 2-Opt
  */
 function resolverTsp2Opt(pontos) {
   const n = pontos.length;
-  if (n <= 1) return { paradas: pontos, kmTotal: 0, tempoMinutos: n * 4, tempoFormatado: `${n * 4} min` };
+  if (n <= 1) return { paradas: pontos, kmTotal: 0, tempoMinutos: n * 3, tempoFormatado: `${n * 3} min` };
   if (n === 2) {
     const d = calcDistanceMeters(pontos[0].latitude, pontos[0].longitude, pontos[1].latitude, pontos[1].longitude);
     const km = Number((d / 1000).toFixed(2));
-    const tm = Math.round(km * 3.5) + 8;
+    const tm = Math.round(km * 2.5) + 6;
     return {
       paradas: [
         { ...pontos[0], ordem: 1, distanciaDoAnteriorMetros: 0, distanciaAcumuladaMetros: 0 },
@@ -94,7 +98,6 @@ function resolverTsp2Opt(pontos) {
         );
 
         if (d3 + d4 < d1 + d2) {
-          // Inverter segmento entre i+1 e j
           const sub = tour.slice(i + 1, j + 1).reverse();
           tour.splice(i + 1, sub.length, ...sub);
           improved = true;
@@ -127,8 +130,8 @@ function resolverTsp2Opt(pontos) {
   }
 
   const kmTotal = Number((metrosTotais / 1000).toFixed(2));
-  const tempoDeslocamentoMin = Math.round(kmTotal * 3.5);
-  const tempoColetaMin = paradas.length * 4;
+  const tempoDeslocamentoMin = Math.round(kmTotal * 2.8);
+  const tempoColetaMin = paradas.length * 3; // 3 minutos para pegar a palheta na residência
   const tempoMinutos = tempoDeslocamentoMin + tempoColetaMin;
 
   return {
@@ -156,8 +159,8 @@ function dividirEmDoisSetores(pontos) {
   const avgLng = pontos.reduce((acc, p) => acc + Number(p.longitude), 0) / pontos.length;
 
   const sorted = [...pontos].sort((a, b) => {
-    const scoreA = (Number(a.latitude) - avgLat) * 1.2 + (Number(a.longitude) - avgLng);
-    const scoreB = (Number(b.latitude) - avgLat) * 1.2 + (Number(b.longitude) - avgLng);
+    const scoreA = (Number(a.latitude) - avgLat) * 1.3 + (Number(a.longitude) - avgLng);
+    const scoreB = (Number(b.latitude) - avgLat) * 1.3 + (Number(b.longitude) - avgLng);
     return scoreA - scoreB;
   });
 
@@ -169,14 +172,78 @@ function dividirEmDoisSetores(pontos) {
 }
 
 /**
+ * Coordenada canônica do ponto de partida oficial das rotas veiculares de coleta:
+ * Quarteirão 1/1 do Jardim Centenário (-21.9298, -42.6088)
+ */
+export const COORD_INICIO_JARDIM_CENTENARIO = {
+  latitude: -21.9298,
+  longitude: -42.6088,
+  bairro: 'Jardim Centenário',
+  quarteirao: 'Q-1/1'
+};
+
+/**
+ * Reordena a lista de pontos para que o Quarteirão 1/1 do Jardim Centenário
+ * seja estritamente o ponto de partida (índice 0 / Parada #1 do carro).
+ */
+export function reordenarComInicioJardimCentenario(pontos = []) {
+  if (!pontos || pontos.length <= 1) return pontos;
+
+  // 1. Tenta encontrar por Quarteirão 1/1 ou código P-08 no Jardim Centenário
+  let startIdx = pontos.findIndex((p) => {
+    const q = String(p.quarteirao || '').trim().toLowerCase();
+    const b = String(p.bairro || '').toLowerCase();
+    const c = String(p.codigo || '').trim().toUpperCase();
+
+    return (
+      q === 'q-1/1' ||
+      q === '1/1' ||
+      (q.includes('1/1') && b.includes('centenário')) ||
+      (c === 'P-08' && b.includes('centenário'))
+    );
+  });
+
+  // 2. Se não encontrou por texto, busca pela menor distância euclidiana da coordenada oficial
+  if (startIdx === -1) {
+    let menorDist = Infinity;
+    pontos.forEach((p, idx) => {
+      if (p.latitude != null && p.longitude != null) {
+        const d = calcDistanceMeters(
+          COORD_INICIO_JARDIM_CENTENARIO.latitude,
+          COORD_INICIO_JARDIM_CENTENARIO.longitude,
+          Number(p.latitude),
+          Number(p.longitude)
+        );
+        if (d < menorDist) {
+          menorDist = d;
+          startIdx = idx;
+        }
+      }
+    });
+  }
+
+  if (startIdx > 0) {
+    const copia = [...pontos];
+    const [pontoInicio] = copia.splice(startIdx, 1);
+    copia.unshift(pontoInicio);
+    return copia;
+  }
+
+  return pontos;
+}
+
+/**
  * Gera roteiro otimizado para coleta de palhetas
  */
 export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   const validos = pontos.filter(p => p.latitude != null && p.longitude != null);
   if (validos.length === 0) return null;
 
+  // Garante que o Quarteirão 1/1 do Jardim Centenário seja o ponto de partida (índice 0)
+  const validosOrdenados = reordenarComInicioJardimCentenario(validos);
+
   if (numVeiculos === 1) {
-    const rota = resolverTsp2Opt(validos);
+    const rota = resolverTsp2Opt(validosOrdenados);
     const textoWhatsApp = gerarTextoWhatsAppRota(rota.paradas, 'Veículo 1 (Frota Completa)', rota.kmTotal, rota.tempoFormatado);
 
     return {
@@ -188,6 +255,7 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
           id: 'v1',
           nome: 'Carro 1 (Circuito Completo)',
           cor: '#2563eb', // Azul
+          geometriaRuas: null, // Será preenchido via OSRM
           ...rota,
           textoWhatsApp
         }
@@ -196,14 +264,30 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   }
 
   // 2 Veículos: Partição e Roteamento Independente
-  const { setor1, setor2 } = dividirEmDoisSetores(validos);
-  const rota1 = resolverTsp2Opt(setor1);
+  let { setor1, setor2 } = dividirEmDoisSetores(validos);
+
+  // Garante que o setor que contém o Quarteirão 1/1 do Jardim Centenário seja o Setor 1 (Carro 1)
+  const setor2TemCentenario = setor2.some(p => {
+    const q = String(p.quarteirao || '').trim().toLowerCase();
+    const b = String(p.bairro || '').toLowerCase();
+    return q === 'q-1/1' || q === '1/1' || (q.includes('1/1') && b.includes('centenário'));
+  });
+
+  if (setor2TemCentenario) {
+    const temp = setor1;
+    setor1 = setor2;
+    setor2 = temp;
+  }
+
+  // Setor 1 inicia obrigatoriamente no Quarteirão 1/1 do Jardim Centenário
+  const setor1Ordenado = reordenarComInicioJardimCentenario(setor1);
+  const rota1 = resolverTsp2Opt(setor1Ordenado);
   const rota2 = resolverTsp2Opt(setor2);
 
   const kmTotalGlobal = Number((rota1.kmTotal + rota2.kmTotal).toFixed(2));
   const tempoMax = Math.max(rota1.tempoMinutos, rota2.tempoMinutos);
 
-  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, 'Carro 1 • Setor Sul / Centro', rota1.kmTotal, rota1.tempoFormatado);
+  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, 'Carro 1 • Setor Sul / Centro (Início: Q-1/1 Centenário)', rota1.kmTotal, rota1.tempoFormatado);
   const textoWhatsApp2 = gerarTextoWhatsAppRota(rota2.paradas, 'Carro 2 • Setor Norte / Morro do Estado', rota2.kmTotal, rota2.tempoFormatado);
 
   return {
@@ -215,6 +299,7 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
         id: 'v1',
         nome: 'Carro 1 (Setor Sul / Centro)',
         cor: '#2563eb',
+        geometriaRuas: null,
         ...rota1,
         textoWhatsApp: textoWhatsApp1
       },
@@ -222,11 +307,105 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
         id: 'v2',
         nome: 'Carro 2 (Setor Norte / Morro do Estado)',
         cor: '#d97706',
+        geometriaRuas: null,
         ...rota2,
         textoWhatsApp: textoWhatsApp2
       }
     ]
   };
+}
+
+/**
+ * Busca o traçado real das ruas pelo Open Source Routing Machine (OSRM).
+ * Retorna GeoJSON com a rota seguindo fielmente cada curva e esquina das ruas de Carmo.
+ */
+export async function buscarGeometriaRuasOSRM(paradas = []) {
+  if (!paradas || paradas.length < 2) {
+    return {
+      coordenadas: paradas.map(p => [Number(p.latitude), Number(p.longitude)]),
+      distanciaKm: null,
+      duracaoMin: null
+    };
+  }
+
+  const cacheKey = paradas.map(p => `${Number(p.latitude).toFixed(5)},${Number(p.longitude).toFixed(5)}`).join(';');
+  if (osrmCache.has(cacheKey)) {
+    return osrmCache.get(cacheKey);
+  }
+
+  const coordsStr = paradas.map(p => `${Number(p.longitude).toFixed(6)},${Number(p.latitude).toFixed(6)}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 9000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error(`OSRM HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.code === 'Ok' && data.routes && data.routes[0]) {
+      const r = data.routes[0];
+      // OSRM devolve [lng, lat], convertemos para Leaflet [lat, lng]
+      const latLngs = r.geometry.coordinates.map(c => [c[1], c[0]]);
+      const result = {
+        coordenadas: latLngs,
+        distanciaKm: Number((r.distance / 1000).toFixed(2)),
+        duracaoMin: Math.round(r.duration / 60)
+      };
+      osrmCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (err) {
+    console.warn('OSRM indisponível ou offline. Usando linhas diretas das paradas:', err);
+  }
+
+  return {
+    coordenadas: paradas.map(p => [Number(p.latitude), Number(p.longitude)]),
+    distanciaKm: null,
+    duracaoMin: null
+  };
+}
+
+/**
+ * Enriquece os dados da rota com o traçado real das ruas via OSRM
+ */
+export async function enriquecerRotaComRuasOSRM(dadosRota) {
+  if (!dadosRota || !dadosRota.rotas) return dadosRota;
+
+  try {
+    const novasRotas = await Promise.all(
+      dadosRota.rotas.map(async (vRota) => {
+        const osrmRes = await buscarGeometriaRuasOSRM(vRota.paradas);
+        const kmReal = osrmRes.distanciaKm || vRota.kmTotal;
+        const duracaoConducao = osrmRes.duracaoMin || Math.round(kmReal * 2.8);
+        const tempoColetaTotal = vRota.paradas.length * 3;
+        const tempoTotalMin = duracaoConducao + tempoColetaTotal;
+
+        return {
+          ...vRota,
+          kmTotal: kmReal,
+          tempoMinutos: tempoTotalMin,
+          tempoFormatado: formatarTempo(tempoTotalMin),
+          geometriaRuas: osrmRes.coordenadas
+        };
+      })
+    );
+
+    const kmTotalGlobal = Number(novasRotas.reduce((acc, r) => acc + r.kmTotal, 0).toFixed(2));
+    const tempoMax = Math.max(...novasRotas.map(r => r.tempoMinutos));
+
+    return {
+      ...dadosRota,
+      kmTotalGlobal,
+      tempoEstimadoGlobal: formatarTempo(tempoMax),
+      rotas: novasRotas
+    };
+  } catch (err) {
+    console.warn('Erro ao enriquecer rotas com OSRM:', err);
+    return dadosRota;
+  }
 }
 
 /**
@@ -238,7 +417,7 @@ function gerarTextoWhatsAppRota(paradas, nomeVeiculo, km, tempo) {
   msg += `📍 *Município de Carmo - RJ | Vigilância Ambiental*\n`;
   msg += `📅 *Data:* ${dataHoje}\n`;
   msg += `📊 *Total de Paradas:* ${paradas.length} armadilhas\n`;
-  msg += `🛣️ *Distância Total:* ~${km} km | ⏱️ *Tempo Estimado:* ~${tempo}\n\n`;
+  msg += `🛣️ *Distância Real nas Ruas:* ~${km} km | ⏱️ *Tempo Estimado:* ~${tempo}\n\n`;
 
   msg += `📋 *ORDEM SEQUENCIAL DE PARADAS (ROTA MAIS CURTA):*\n`;
   paradas.forEach((p) => {

@@ -12,7 +12,10 @@ import {
   gerarGuiaWhatsApp,
   gerarParecerTecnicoIa
 } from '../../lib/geoIdealGrid';
-import { calcularRotaColetaOtimizada } from '../../lib/geoRoutingOvitrampa';
+import {
+  calcularRotaColetaOtimizada,
+  enriquecerRotaComRuasOSRM
+} from '../../lib/geoRoutingOvitrampa';
 
 export function CenarioIdealScreen({
   armadilhas = [],
@@ -27,8 +30,52 @@ export function CenarioIdealScreen({
   // Quantidade de veículos para coleta: 1 ou 2
   const [numVeiculos, setNumVeiculos] = useState(1);
 
-  // Grade ativa calculada
-  const [gradeCustomizada, setGradeCustomizada] = useState(null);
+  // Grade ativa calculada (com persistência de alterações manuais no localStorage)
+  const [gradeCustomizada, setGradeCustomizada] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('gps_ovitrampas_grade_customizada');
+      if (salvo) {
+        const parsed = JSON.parse(salvo);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar grade personalizada salva:', e);
+    }
+    return null;
+  });
+
+  const salvarGrade = (novaGrade) => {
+    setGradeCustomizada(novaGrade);
+    try {
+      localStorage.setItem('gps_ovitrampas_grade_customizada', JSON.stringify(novaGrade));
+    } catch (e) {
+      console.warn('Erro ao salvar grade no localStorage:', e);
+    }
+  };
+
+  const handleUpdatePonto = (pontoAtualizado) => {
+    const lista = gradeCustomizada || getPontosIdeais();
+    const novaGrade = lista.map((p) =>
+      p.codigo === pontoAtualizado.codigo ? { ...p, ...pontoAtualizado } : p
+    );
+    salvarGrade(novaGrade);
+    showToast(`📍 Armadilha ${pontoAtualizado.codigo} reposicionada em ${pontoAtualizado.bairro} (${pontoAtualizado.quarteirao})!`);
+  };
+
+  const handleAddPonto = (novoPonto) => {
+    const lista = gradeCustomizada || getPontosIdeais();
+    const novaGrade = [...lista, novoPonto];
+    salvarGrade(novaGrade);
+    showToast(`✨ Armadilha ${novoPonto.codigo} inserida com sucesso no ${novoPonto.bairro}!`);
+  };
+
+  const handleDeletePonto = (codigo) => {
+    const lista = gradeCustomizada || getPontosIdeais();
+    const novaGrade = lista.filter((p) => p.codigo !== codigo);
+    salvarGrade(novaGrade);
+    if (pontoSelecionado?.codigo === codigo) setPontoSelecionado(null);
+    showToast(`🗑️ Armadilha ${codigo} excluída.`);
+  };
 
   // Pontos ideais ativos
   const pontosIdeais = useMemo(() => gradeCustomizada || getPontosIdeais(), [gradeCustomizada]);
@@ -36,10 +83,31 @@ export function CenarioIdealScreen({
   // Diagnóstico geodésico
   const diagnostico = useMemo(() => analisarDiagnosticoGrade(armadilhas, pontosIdeais), [armadilhas, pontosIdeais]);
 
-  // Rota de Coleta Otimizada calculada em tempo real para as armadilhas de campo
-  const dadosRota = useMemo(() => {
-    return calcularRotaColetaOtimizada(armadilhas, numVeiculos);
-  }, [armadilhas, numVeiculos]);
+  // Rota de Coleta Otimizada calculada em tempo real e enriquecida com traçado real de ruas (OSRM)
+  const [dadosRota, setDadosRota] = useState(null);
+
+  React.useEffect(() => {
+    const pontosBase = armadilhas && armadilhas.length > 0 ? armadilhas : pontosIdeais;
+    const rotaInicial = calcularRotaColetaOtimizada(pontosBase, numVeiculos);
+    setDadosRota(rotaInicial);
+
+    if (!rotaInicial) return;
+
+    let ativo = true;
+    enriquecerRotaComRuasOSRM(rotaInicial)
+      .then((rotaEnriquecida) => {
+        if (ativo && rotaEnriquecida) {
+          setDadosRota(rotaEnriquecida);
+        }
+      })
+      .catch((err) => {
+        console.warn('Fallback para rota direta:', err);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [armadilhas, pontosIdeais, numVeiculos]);
 
   const [pontoSelecionado, setPontoSelecionado] = useState(null);
   const [armadilhaSelecionada, setArmadilhaSelecionada] = useState(null);
@@ -69,7 +137,7 @@ export function CenarioIdealScreen({
     else n = qtd;
 
     const novaGrade = gerarGradeIdealDinamica('custom', n);
-    setGradeCustomizada(novaGrade);
+    salvarGrade(novaGrade);
     setModoCenario('ideal');
     setPontoSelecionado(null);
     setArmadilhaSelecionada(null);
@@ -78,11 +146,14 @@ export function CenarioIdealScreen({
   };
 
   const handleRestaurarPadrao = () => {
+    try {
+      localStorage.removeItem('gps_ovitrampas_grade_customizada');
+    } catch (e) {}
     setGradeCustomizada(null);
     setPontoSelecionado(null);
     setArmadilhaSelecionada(null);
     setModalGeradorAberto(false);
-    showToast(`✅ Grade oficial de 35 pontos restaurada.`);
+    showToast(`✅ Grade otimizada oficial restaurada.`);
   };
 
   // Filtragem rápida
@@ -400,6 +471,11 @@ export function CenarioIdealScreen({
               dadosRota={dadosRota}
               numVeiculos={numVeiculos}
               onChangeNumVeiculos={(n) => setNumVeiculos(n)}
+              onUpdatePonto={handleUpdatePonto}
+              onAddPonto={handleAddPonto}
+              onDeletePonto={handleDeletePonto}
+              onRestaurarPadrao={handleRestaurarPadrao}
+              isCustomizada={Boolean(gradeCustomizada)}
             />
 
             {/* CARD INFORMATIVO QUANDO NO MODO ROTA */}
