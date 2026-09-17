@@ -10,6 +10,7 @@ import {
   gerarGradeIdealDinamica,
   analisarDiagnosticoGrade,
   gerarGuiaWhatsApp,
+  gerarGuiaWhatsAppRealidade,
   gerarParecerTecnicoIa
 } from '../../lib/geoIdealGrid';
 import {
@@ -77,6 +78,7 @@ export function CenarioIdealScreen({
     showToast(`🗑️ Armadilha ${codigo} excluída.`);
   };
 
+
   // Pontos ideais ativos
   const pontosIdeais = useMemo(() => gradeCustomizada || getPontosIdeais(), [gradeCustomizada]);
   
@@ -131,12 +133,15 @@ export function CenarioIdealScreen({
 
   // Aplica geração dinâmica do zero
   const handleAplicarGeracao = (tipo, qtd) => {
-    let n = 26;
-    if (tipo === 'recomendado') n = 26;
-    else if (tipo === 'completo') n = 35;
-    else n = qtd;
+    let novaGrade;
+    if (tipo === 'recomendado') {
+      novaGrade = getPontosIdeais(); // 24 pontos canônicos perfeitos (300m-400m)
+    } else if (tipo === 'completo') {
+      novaGrade = gerarGradeIdealDinamica('denso', 30);
+    } else {
+      novaGrade = gerarGradeIdealDinamica('custom', qtd);
+    }
 
-    const novaGrade = gerarGradeIdealDinamica('custom', n);
     salvarGrade(novaGrade);
     setModoCenario('ideal');
     setPontoSelecionado(null);
@@ -153,7 +158,7 @@ export function CenarioIdealScreen({
     setPontoSelecionado(null);
     setArmadilhaSelecionada(null);
     setModalGeradorAberto(false);
-    showToast(`✅ Grade otimizada oficial restaurada.`);
+    showToast(`🔄 Grade canônica padrão (24 pontos) restaurada com sucesso!`);
   };
 
   // Filtragem rápida
@@ -198,21 +203,23 @@ export function CenarioIdealScreen({
   const parecerTecnico = useMemo(() => gerarParecerTecnicoIa(diagnostico), [diagnostico]);
 
   const handleCopiarParecer = () => {
+    if (!parecerTecnico) return;
+    const recs = parecerTecnico.recomendacoes || parecerTecnico.pontosChave || [];
     const texto = [
-      `🏛️ ${parecerTecnico.titulo.toUpperCase()}`,
-      `📍 ${parecerTecnico.municipio} | Data: ${parecerTecnico.data}`,
+      `🏛️ ${parecerTecnico.titulo?.toUpperCase() || 'PARECER TÉCNICO'}`,
+      `📍 ${parecerTecnico.municipio || 'Carmo - RJ'} | Data: ${parecerTecnico.data || ''}`,
       ``,
       `📋 RESUMO EXECUTIVO:`,
-      parecerTecnico.resumoExecutivo,
+      parecerTecnico.resumoExecutivo || '',
       ``,
       `🔬 FUNDAMENTAÇÃO TÉCNICA (MINISTÉRIO DA SAÚDE / SUS):`,
-      parecerTecnico.fundamentacao,
+      parecerTecnico.fundamentacao || '',
       ``,
       `🎯 RECOMENDAÇÕES PARA O PRÓXIMO CICLO:`,
-      ...parecerTecnico.recomendacoes.map((r, i) => `${i + 1}. ${r}`),
+      ...recs.map((r, i) => `${i + 1}. ${r}`),
       ``,
       `💡 CONCLUSÃO:`,
-      parecerTecnico.conclusao
+      parecerTecnico.conclusao || ''
     ].join('\n');
 
     navigator.clipboard.writeText(texto);
@@ -564,10 +571,15 @@ export function CenarioIdealScreen({
                   <button
                     type="button"
                     onClick={() => {
-                      const t = modoCenario === 'atual' ? 'Realidade' : 'Grade Ideal';
-                      const texto = gerarGuiaWhatsApp(armadilhas, pontosIdeais, t);
+                      let texto;
+                      if (modoCenario === 'atual') {
+                        texto = gerarGuiaWhatsAppRealidade(armadilhas);
+                        showToast(`📋 Lista com ${armadilhas.length} armadilhas reais copiada!`);
+                      } else {
+                        texto = gerarGuiaWhatsApp(armadilhas, pontosIdeais, `Grade Ideal (${pontosIdeais.length} Pontos)`);
+                        showToast(`📋 Grade ideal de ${pontosIdeais.length} pontos copiada!`);
+                      }
                       navigator.clipboard.writeText(texto);
-                      showToast('Lista copiada!');
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-black transition-all border border-slate-200"
                   >
@@ -728,11 +740,11 @@ export function CenarioIdealScreen({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-black text-slate-900 text-xs">Grade Equilibrada (~26 OVs)</span>
+                      <span className="font-black text-slate-900 text-xs">Grade Equilibrada (24 OVs)</span>
                       <span className="text-[9px] font-black bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded">Recomendada</span>
                     </div>
                     <p className="text-[11px] text-slate-600 mt-0.5 leading-tight">
-                      Espaçamento regular de ~300m a 350m cobrindo toda a cidade sem sobreposições.
+                      Espaçamento regular rigorosamente entre 300m e 400m cobrindo 100% dos bairros sem sobreposições.
                     </p>
                   </div>
                 </div>
@@ -749,9 +761,9 @@ export function CenarioIdealScreen({
                     {geradorTipo === 'completo' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
                   <div>
-                    <span className="font-black text-slate-900 text-xs">Grade Oficial (35 OVs)</span>
+                    <span className="font-black text-slate-900 text-xs">Grade Expandida (30 OVs)</span>
                     <p className="text-[11px] text-slate-600 mt-0.5 leading-tight">
-                      Grade completa com 35 armadilhas distribuídas por toda a extensão municipal.
+                      Malha densificada para períodos epidêmicos de alta infestação vetorial.
                     </p>
                   </div>
                 </div>
@@ -774,8 +786,8 @@ export function CenarioIdealScreen({
                     </div>
                     <input
                       type="range"
-                      min={15}
-                      max={45}
+                      min={16}
+                      max={35}
                       step={1}
                       value={geradorQtd}
                       onChange={(e) => {
@@ -797,7 +809,7 @@ export function CenarioIdealScreen({
                 className="flex items-center gap-1 text-slate-600 hover:text-slate-900 text-xs font-bold hover:bg-slate-200 px-2.5 py-1.5 rounded-xl transition-all"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restaurar 35 Padrão</span>
+                <span>Restaurar Grade Padrão (24 OVs)</span>
               </button>
 
               <div className="flex items-center gap-2">
@@ -870,7 +882,7 @@ export function CenarioIdealScreen({
                   Recomendações Operacionais
                 </h4>
                 <ul className="space-y-1.5">
-                  {parecerTecnico.recomendacoes.map((rec, idx) => (
+                  {(parecerTecnico?.recomendacoes || parecerTecnico?.pontosChave || []).map((rec, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-slate-700">
                       <span className="w-4 h-4 rounded-full bg-purple-100 text-purple-800 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
@@ -880,6 +892,17 @@ export function CenarioIdealScreen({
                   ))}
                 </ul>
               </div>
+
+              {parecerTecnico?.conclusao && (
+                <div className="bg-purple-50/80 p-3.5 rounded-2xl border border-purple-200">
+                  <h4 className="text-xs font-black text-purple-950 uppercase tracking-wide mb-1">
+                    Conclusão e Impacto Operacional
+                  </h4>
+                  <p className="text-xs text-purple-900 leading-relaxed font-medium">
+                    {parecerTecnico.conclusao}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="bg-slate-50 border-t border-slate-200 p-3.5 flex items-center justify-end gap-2 shrink-0">

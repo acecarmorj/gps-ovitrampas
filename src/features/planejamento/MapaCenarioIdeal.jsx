@@ -457,7 +457,7 @@ export function MapaCenarioIdeal({
               <span>✋ Modificar Posição (Mover no Mapa)</span>
             </button>
             <button id="btn-del-ponto-${p.codigo}" style="width:100%;margin-top:6px;padding:6px 10px;background:#ef4444;color:#ffffff;border:none;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all;">
-              <span>🗑️ Excluir esta Armadilha</span>
+              <span>🗑️ Remover Ponto do Cenário</span>
             </button>
           </div>
         `;
@@ -475,8 +475,10 @@ export function MapaCenarioIdeal({
         if (btnDel) {
           btnDel.onclick = (ev) => {
             ev.stopPropagation();
-            map.closePopup();
-            if (onDeletePonto) onDeletePonto(p.codigo);
+            if (window.confirm(`Deseja remover o ponto ${p.codigo} (${p.quarteirao}) deste planejamento?`)) {
+              map.closePopup();
+              if (onDeletePonto) onDeletePonto(p.codigo);
+            }
           };
         }
 

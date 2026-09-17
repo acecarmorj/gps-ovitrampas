@@ -260,7 +260,11 @@ export function reordenarComInicioJardimCentenario(pontos = []) {
  * Gera roteiro otimizado para coleta de palhetas
  */
 export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
-  const validos = pontos.filter(p => p.latitude != null && p.longitude != null);
+  const validos = pontos.filter(p => {
+    const lat = Number(p?.latitude);
+    const lng = Number(p?.longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0;
+  });
   if (validos.length === 0) return null;
 
   // Garante que o Quarteirão 1/1 do Jardim Centenário seja o ponto de partida (índice 0)
@@ -322,6 +326,14 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   const rota1 = resolverTsp2Opt(setor1Ordenado);
   const rota2 = resolverTsp2Opt(setor2);
 
+  // Determina nomes geográficos fiéis com base na latitude média real dos pontos de cada carro
+  // (No Brasil / hemisfério sul: latitude mais negativa = Sul; menos negativa = Norte)
+  const avgLat1 = setor1.reduce((acc, p) => acc + Number(p.latitude), 0) / setor1.length;
+  const avgLat2 = setor2.reduce((acc, p) => acc + Number(p.latitude), 0) / setor2.length;
+  const setor1EhSul = avgLat1 <= avgLat2;
+  const nomeSetor1 = setor1EhSul ? 'Setor Sul / Centro' : 'Setor Norte / Progresso';
+  const nomeSetor2 = setor1EhSul ? 'Setor Norte / Morro do Estado' : 'Setor Sul / Centro';
+
   const key1 = isReal ? 'real_2_v1' : (isIdealCanonico ? 'ideal_2_v1' : null);
   const key2 = isReal ? 'real_2_v2' : (isIdealCanonico ? 'ideal_2_v2' : null);
   const geom1 = key1 && rotasPrecalculadas[key1] ? rotasPrecalculadas[key1] : null;
@@ -338,8 +350,8 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
   const kmTotalGlobal = Number((km1 + km2).toFixed(2));
   const tempoMax = Math.max(t1, t2);
 
-  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, 'Carro 1 • Setor Sul / Centro (Início: Q-1/1 Centenário)', km1, formatarTempo(t1));
-  const textoWhatsApp2 = gerarTextoWhatsAppRota(rota2.paradas, 'Carro 2 • Setor Norte / Morro do Estado', km2, formatarTempo(t2));
+  const textoWhatsApp1 = gerarTextoWhatsAppRota(rota1.paradas, `Carro 1 • ${nomeSetor1} (Início: Q-1/1 Centenário)`, km1, formatarTempo(t1));
+  const textoWhatsApp2 = gerarTextoWhatsAppRota(rota2.paradas, `Carro 2 • ${nomeSetor2}`, km2, formatarTempo(t2));
 
   return {
     numVeiculos: 2,
@@ -348,7 +360,7 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
     rotas: [
       {
         id: 'v1',
-        nome: 'Carro 1 (Setor Sul / Centro)',
+        nome: `Carro 1 (${nomeSetor1})`,
         cor: '#2563eb',
         geometriaRuas: geom1 ? geom1.coordenadas : null,
         paradas: rota1.paradas,
@@ -359,7 +371,7 @@ export function calcularRotaColetaOtimizada(pontos = [], numVeiculos = 1) {
       },
       {
         id: 'v2',
-        nome: 'Carro 2 (Setor Norte / Morro do Estado)',
+        nome: `Carro 2 (${nomeSetor2})`,
         cor: '#d97706',
         geometriaRuas: geom2 ? geom2.coordenadas : null,
         paradas: rota2.paradas,
