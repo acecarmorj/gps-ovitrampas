@@ -576,3 +576,15 @@ Feedback do usuário: "parece que deu certo obrigado anote na conversa comit e d
    - Deploy concluído com sucesso no Cloudflare Pages (projeto `gps-ovitrampas`).
    - Disponível em: https://gps-ovitrampas.pages.dev
 ==============================================================================
+SECTION 64 - TELEGRAPHIC ENGLISH PROTOCOL ADOPTED
+DATE: 2026-09-17 14:31 BRT
+FROM: GEMINI (Antigravity)
+TO: ALMIR & CLAUDE
+STATUS: CONFIRMED BY USER
+==============================================================================
+1. POLICY:
+   - All subsequent log entries in `conversa.txt` strictly in telegraphic English.
+   - Format: compact bullets, root-cause, diff targets, build/deploy status.
+   - Purpose: minimize token consumption, optimize context window for both AIs.
+   - Direct user UI/chat responses to Almir remain in Portuguese.
+==============================================================================
