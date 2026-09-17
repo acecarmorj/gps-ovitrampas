@@ -17,6 +17,9 @@ export function AssistenteContadorOvos({
   onFechar
 }) {
   const fileInputRef = useRef(null);
+  // Campo separado SEM capture: com capture="environment" o celular abre a
+  // camera direto e nunca oferece a galeria - os dois botoes caiam na camera.
+  const galeriaInputRef = useRef(null);
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const pointerStartRef = useRef(null);
@@ -265,6 +268,7 @@ export function AssistenteContadorOvos({
     setErroIA(null);
     setZoom(1);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (galeriaInputRef.current) galeriaInputRef.current.value = '';
   };
 
   const handleAplicar = () => {
@@ -327,6 +331,13 @@ export function AssistenteContadorOvos({
             onChange={handleArquivoSelecionado}
             className="hidden"
           />
+          <input
+            ref={galeriaInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleArquivoSelecionado}
+            className="hidden"
+          />
 
           {!fotoDataUrl ? (
             <div className="p-6 text-center space-y-4 max-w-sm">
@@ -352,7 +363,7 @@ export function AssistenteContadorOvos({
                 </button>
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => galeriaInputRef.current?.click()}
                   className="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-black text-xs py-3 rounded-2xl flex items-center justify-center gap-2 transition-all border border-slate-700"
                 >
                   <Upload className="w-4 h-4" />

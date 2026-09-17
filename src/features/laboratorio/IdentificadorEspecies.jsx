@@ -9,6 +9,7 @@ import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
 
 export function IdentificadorEspecies() {
   const fileInputRef = useRef(null);
+  const galeriaInputRef = useRef(null);
   const [foto, setFoto] = useState(null);
   const [identificando, setIdentificando] = useState(false);
   const [resultado, setResultado] = useState(null);
@@ -47,6 +48,7 @@ export function IdentificadorEspecies() {
     setResultado(null);
     setErro(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (galeriaInputRef.current) galeriaInputRef.current.value = '';
   };
 
   const compartilharWhatsApp = () => {
@@ -95,6 +97,15 @@ export function IdentificadorEspecies() {
         onChange={handleFotoChange}
         className="hidden"
       />
+      {/* Campo separado SEM capture: com capture o celular abre a camera
+          direto e nunca oferece a galeria. */}
+      <input
+        type="file"
+        ref={galeriaInputRef}
+        accept="image/*"
+        onChange={handleFotoChange}
+        className="hidden"
+      />
 
       {!foto ? (
         <div className="p-6 text-center space-y-3.5 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
@@ -120,7 +131,7 @@ export function IdentificadorEspecies() {
             </button>
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => galeriaInputRef.current?.click()}
               className="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs"
             >
               <Upload className="w-3.5 h-3.5" />
