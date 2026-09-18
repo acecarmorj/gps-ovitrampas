@@ -1,9 +1,13 @@
 /**
  * Motor de Cálculo da Situação Epidemiológica da Ovitrampa
- * Baseado nas regras oficiais do programa de Ovitrampas de Carmo/RJ (D:\ALL\Ovitrampas).
+ * Baseado nas regras oficiais do programa de Ovitrampas de Carmo/RJ.
  * 
- * Ciclo Padrão: 5 dias de exposição no imóvel.
+ * Ciclo Oficial: 6 dias de exposição no imóvel (evita recolhimento em fins de semana).
+ * - Quarta-feira (Cidade/Sede) -> Troca na Terça-feira (22/09)
+ * - Quinta-feira (Distritos) -> Troca na Quarta-feira seguinte (23/09)
  */
+
+export const DIAS_CICLO_PADRAO = 6;
 
 export function parseData(dataStr) {
   if (!dataStr) return new Date();
@@ -22,11 +26,20 @@ export function diasDesde(dataStr) {
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export function calcularDataPrevistaRecolhimento(dataInstalacaoStr) {
+export function calcularDataPrevistaRecolhimento(dataInstalacaoStr, diasCiclo = DIAS_CICLO_PADRAO) {
   const data = parseData(dataInstalacaoStr);
   const prevista = new Date(data);
-  prevista.setDate(prevista.getDate() + 5);
+  prevista.setDate(prevista.getDate() + diasCiclo);
   return prevista;
+}
+
+export function formatarDataETrocaPalheta(dataInstalacaoStr, diasCiclo = DIAS_CICLO_PADRAO) {
+  if (!dataInstalacaoStr) return 'N/D';
+  const prevista = calcularDataPrevistaRecolhimento(dataInstalacaoStr, diasCiclo);
+  const dataFmt = prevista.toLocaleDateString('pt-BR');
+  const diaSemana = prevista.toLocaleDateString('pt-BR', { weekday: 'short' });
+  const semCapitalizada = diaSemana.replace('.', '').charAt(0).toUpperCase() + diaSemana.replace('.', '').slice(1);
+  return `${dataFmt} (${semCapitalizada})`;
 }
 
 export function classificarRiscoOvos(ovos) {
@@ -117,22 +130,25 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 2. Está em campo aguardando término dos 5 dias de exposição
+  // 2. Está em campo aguardando término dos 6 dias de exposição
   const diasCorridos = diasDesde(armadilha.instaladaEm);
-  const diasRestantes = 5 - diasCorridos;
-  const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm);
+  const diasRestantes = DIAS_CICLO_PADRAO - diasCorridos;
+  const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_PADRAO);
   const dataPrevistaFormatada = dataPrevista.toLocaleDateString('pt-BR');
+  const diaSemanaRaw = dataPrevista.toLocaleDateString('pt-BR', { weekday: 'long' });
+  const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
-  // Atrasada (mais de 5 dias sem recolher)
+  // Atrasada (mais de 6 dias sem recolher)
   if (diasRestantes < 0) {
     const diasAtraso = Math.abs(diasRestantes);
     return {
       fase: 'atrasada',
       titulo: `Atrasada (${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso)`,
-      descricao: `Prazo de 5 dias venceu em ${dataPrevistaFormatada}. Necessário recolher a palheta com urgência!`,
+      descricao: `Prazo de 6 dias venceu em ${dataPrevistaFormatada} (${diaSemana}). Trocar palheta com urgência para evitar eclosão!`,
       diasCorridos,
       diasRestantes,
       dataPrevistaFormatada,
+      diaSemana,
       corTexto: 'text-rose-400',
       corBg: 'bg-rose-500/20',
       corBorda: 'border-rose-500/40',
@@ -140,15 +156,16 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Hoje (exatamente 5 dias)
+  // Hoje (exatamente 6 dias)
   if (diasRestantes === 0) {
     return {
       fase: 'hoje',
-      titulo: 'Recolher Hoje! (Ciclo Completo)',
-      descricao: 'A armadilha completou 5 dias de exposição hoje. Pronta para recolher a palheta.',
+      titulo: 'Trocar Palheta Hoje! (6 Dias de Campo)',
+      descricao: `A armadilha completou 6 dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Pronta para troca da palheta.`,
       diasCorridos,
       diasRestantes: 0,
       dataPrevistaFormatada,
+      diaSemana,
       corTexto: 'text-amber-400',
       corBg: 'bg-amber-500/20',
       corBorda: 'border-amber-500/40',
@@ -156,15 +173,16 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Véspera (4º dia)
+  // Véspera (5º dia, falta 1 dia)
   if (diasRestantes === 1) {
     return {
       fase: 'vespera',
-      titulo: 'Recolher Amanhã (Dia 4 de 5)',
-      descricao: `Armadilha em campo há 4 dias. Recolhimento previsto para amanhã (${dataPrevistaFormatada}).`,
+      titulo: 'Trocar Palheta Amanhã (Dia 5 de 6)',
+      descricao: `Armadilha em campo há 5 dias. Troca da palheta prevista para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
       diasCorridos,
       diasRestantes: 1,
       dataPrevistaFormatada,
+      diaSemana,
       corTexto: 'text-amber-300',
       corBg: 'bg-amber-500/15',
       corBorda: 'border-amber-500/30',
@@ -172,14 +190,15 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Em campo normal (dias 0 a 3)
+  // Em campo normal (dias 0 a 4)
   return {
     fase: 'em_campo',
     titulo: `Em Campo: Faltam ${diasRestantes} dias`,
-    descricao: `Armadilha instalada (Dia ${diasCorridos} de 5). Recolhimento previsto para ${dataPrevistaFormatada}.`,
+    descricao: `Armadilha instalada (Dia ${diasCorridos} de 6). Troca prevista para ${diaSemana}, ${dataPrevistaFormatada}.`,
     diasCorridos,
     diasRestantes,
     dataPrevistaFormatada,
+    diaSemana,
     corTexto: 'text-emerald-400',
     corBg: 'bg-emerald-500/20',
     corBorda: 'border-emerald-500/40',

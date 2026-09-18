@@ -79,18 +79,19 @@ async function upsertTrap(trap, env) {
        precisao_gps = excluded.precisao_gps,
        tem_foto = excluded.tem_foto,
        status = excluded.status,
+       instalada_em = COALESCE(excluded.instalada_em, traps.instalada_em),
        atualizada_em = excluded.atualizada_em,
-       -- Nunca apaga resultado de laboratorio ja gravado: se o aparelho que
-       -- esta enviando nao conhece a leitura (campo nulo), mantem o que o D1
-       -- ja tem. Protege o caso do agente que ficou offline o dia todo e
-       -- sincroniza depois do laboratorio ter lancado os ovos.
-       ultimos_ovos = COALESCE(excluded.ultimos_ovos, traps.ultimos_ovos),
+       -- Se a palheta foi trocada e voltou para 'instalada', inicia novo ciclo (zera ultimos_ovos da trap)
+       -- Leituras anteriores continuam permanentemente salvas na tabela 'readings'.
+       ultimos_ovos = CASE 
+         WHEN excluded.palheta != traps.palheta AND excluded.status = 'instalada' THEN NULL 
+         ELSE COALESCE(excluded.ultimos_ovos, traps.ultimos_ovos) 
+       END,
        ultima_palheta = COALESCE(excluded.ultima_palheta, traps.ultima_palheta),
-       ultima_leitura_em = COALESCE(excluded.ultima_leitura_em, traps.ultima_leitura_em),
-       -- Mesmo raciocinio: o aparelho do agente de campo nunca manda
-       -- observacoes (so o admin edita esse campo). Sem o COALESCE, o
-       -- proximo sync do agente reenviando essa armadilha apagaria a nota
-       -- do admin com null.
+       ultima_leitura_em = CASE 
+         WHEN excluded.palheta != traps.palheta AND excluded.status = 'instalada' THEN NULL 
+         ELSE COALESCE(excluded.ultima_leitura_em, traps.ultima_leitura_em) 
+       END,
        observacoes = COALESCE(excluded.observacoes, traps.observacoes),
        synced_at = datetime('now')
      -- So aceita a versao que chegou se ela for igual ou mais nova que a

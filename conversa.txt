@@ -684,3 +684,58 @@ NEXT (agreed with Almir): run same photo through local count AND Gemini,
 compare both against the 103 manual marks, then decide whether to combine the
 two estimates and flag disagreement for human review.
 ==============================================================================
+SECTION 68: DISTRICT MAP PAGES IN PDF, 6-DAY CYCLE, RETRIEVAL DATES, HIGH-CONTRAST PIN/MAP LABELS & PADDLE REPLACEMENT ROUTINE
+Date: 2026-09-17 / 2026-09-18
+Requested by Almir:
+- Traps included today in districts must appear in generated PDF admin report with individual territory maps formatted identically to the city.
+- Traps must stay in field for 6 days (avoids weekend collection). Sede installed Wednesday (16/09) -> swap Tuesday (22/09). Districts installed Thursday (17/09) -> swap Wednesday (23/09). Adjust in all map info and trap badges.
+- In reports, include exact installation date, 6-day replacement date and remaining time.
+- In map labels/pins, show remaining days clearly.
+- In app, support paddle replacement routine (keeps same trap number, resident, address, GPS while restarting 6-day cycle).
+- Make map labels in PDF prints much larger and readable.
+
+Implemented Changes:
+1. D1 Database Audit:
+   - Queried remote Cloudflare D1 traps table: 56 active traps verified.
+   - Sede (35 traps): ARM-01 to ARM-35 installed 16/09 (Wed). Replacement: 22/09 (Tue).
+   - Influencia (6 traps): ARM-36, 37, 38, 52, 53, 54 installed 17/09 (Thu). Replacement: 23/09 (Wed).
+   - Ilha dos Pombos (4 traps): ARM-39, 40, 41, 55 installed 17/09 (Thu). Replacement: 23/09 (Wed).
+   - Porto Velho do Cunha (5 traps): ARM-42, 43, 44, 45, 46 installed 17/09 (Thu). Replacement: 23/09 (Wed).
+   - Corrego da Prata (3 traps): ARM-47, 48, 49 installed 17/09 (Thu). Replacement: 23/09 (Wed).
+   - Barra de Sao Francisco (3 traps): ARM-56, 57, 58 installed 17/09 (Thu). Replacement: 23/09 (Wed).
+
+2. Territorial Maps in PDF (src/lib/heatmapCanvas.js & src/lib/pdfRelatorioConsolidado.js):
+   - Territory classification enhanced to inspect bairro, microarea and rua.
+   - Binds directly to official Carmo district polygon boundaries (poly-19 to poly-23).
+   - Top-left institutional badge on each map: e.g. "DISTRITO DE INFLUENCIA (2o DISTRITO) - 6 OV(s) MONITORADA(S)".
+   - Dynamic map pages in PDF for each territory present: Heatmap + Distance Map with 2,000m max distance for small district networks.
+   - Trap labels and pins overhauled for A4 print legibility: 7.5px radius marker with double border, 13.5px bold font, crisp white rounded badge with solid dark border.
+
+3. Official 6-Day Exposure Cycle & Dates (src/lib/situacaoOvitrampa.js):
+   - Standardized on DIAS_CICLO_PADRAO = 6.
+   - Exact replacement dates calculated: formatarDataETrocaPalheta formats e.g. "22/09 (Ter)" and "23/09 (Qua)".
+   - Situacao calculation outputs detailed phases: hoje ("Trocar Hoje!"), vespera ("Falta 1d"), em_campo ("Faltam Xd"), atrasada ("Atrasada Xd").
+
+4. Table 2 in Consolidated PDF (src/lib/pdfRelatorioConsolidado.js):
+   - Dedicated columns added:
+     * INSTALADA (e.g. 16/09/2026, 17/09/2026)
+     * TROCA PALHETA (6 DIAS) (e.g. 22/09 (Ter), 23/09 (Qua))
+     * SITUACAO / TEMPO RESTANTE (color-coded: Faltam 5d, Trocar Hoje!, Positiva X ovos)
+   - Cleaned redundant signature label.
+
+5. Interactive Map Pin Labels (src/maps/leafletIcons.js):
+   - High-contrast white pill tag displaying explicit remaining days (e.g. "Faltam 5d", "Trocar Hoje", "Falta 1d", "Atrasada 1d") in bold emerald/amber/red.
+
+6. Paddle Replacement Routine (src/lib/storage.js, worker/src/index.js, PainelAcompanhamentoScreen.jsx):
+   - Added trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao }).
+   - Preserves trap identity: numero, morador, logradouro, coordenadas GPS, quarteirao, microarea.
+   - Updates palheta to new paddle code, sets ultimaPalheta to previous paddle, resets instaladaEm to start new 6-day cycle, sets status to 'instalada' and clears active ovos count (historical count preserved in readings and historicoPalhetas).
+   - D1 Worker upsertTrap updated: updates instalada_em and resets active ultimos_ovos when paddle changes on status 'instalada'.
+   - Dedicated action button in trap card: "TROCAR PALHETA (NOVO CICLO 6 DIAS)".
+   - Modal with auto-incremented suggestion (e.g. PL-01 -> PL-02), datetime picker, notes, and one-click execution.
+
+7. Verification & Deployment:
+   - Worker deployed to Cloudflare Workers (https://ovitrampas-api.acecarmorj.workers.dev).
+   - Frontend built with Vite (0 errors) and deployed to Cloudflare Pages (https://44b1e15f.gps-ovitrampas.pages.dev).
+==============================================================================
+

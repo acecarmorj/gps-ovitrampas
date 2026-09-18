@@ -1,4 +1,97 @@
 import { findNearbyTraps } from './geoDistance';
+import { formatarDataETrocaPalheta, calcularSituacaoArmadilha } from './situacaoOvitrampa';
+
+const SEDE_BAIRROS = new Set([
+  'centro', 'progresso', 'jardim centenário', 'jardim centenario',
+  'morro do estado', 'val paraíso', 'val paraiso', 'caixa d\'água',
+  'caixa d\'agua', 'boa ideia', 'botafogo'
+]);
+
+export function classificarTerritorio(arm) {
+  const b = `${arm.bairro || ''} ${arm.microarea || ''} ${arm.rua || ''}`.trim().toLowerCase();
+  if (b.includes('influência') || b.includes('influencia')) {
+    return {
+      id: 'influencia',
+      nome: 'DISTRITO DE INFLUÊNCIA (2º DISTRITO)',
+      distritoKey: 'influência',
+      ordem: 2
+    };
+  }
+  if (b.includes('prata')) {
+    return {
+      id: 'corrego_da_prata',
+      nome: 'DISTRITO DE CÓRREGO DA PRATA (3º DISTRITO)',
+      distritoKey: 'córrego da prata',
+      ordem: 3
+    };
+  }
+  if (b.includes('porto velho')) {
+    return {
+      id: 'porto_velho',
+      nome: 'DISTRITO DE PORTO VELHO DO CUNHA (4º DISTRITO)',
+      distritoKey: 'porto velho do cunha',
+      ordem: 4
+    };
+  }
+  if (b.includes('pombo')) {
+    return {
+      id: 'ilha_dos_pombos',
+      nome: 'LOCALIDADE DE ILHA DOS POMBOS',
+      distritoKey: 'ilha dos pombos',
+      ordem: 5
+    };
+  }
+  if (b.includes('barra')) {
+    return {
+      id: 'barra_sao_francisco',
+      nome: 'LOCALIDADE DE BARRA DE SÃO FRANCISCO',
+      distritoKey: 'barra de são francisco',
+      ordem: 6
+    };
+  }
+  if (SEDE_BAIRROS.has(b)) {
+    return {
+      id: 'sede',
+      nome: 'CARMO (SEDE URBANA)',
+      distritoKey: null,
+      ordem: 1
+    };
+  }
+
+  const lat = Number(arm.latitude);
+  const lng = Number(arm.longitude);
+  if (lat < -21.90 && lat > -21.96 && lng < -42.59 && lng > -42.63) {
+    return {
+      id: 'sede',
+      nome: 'CARMO (SEDE URBANA)',
+      distritoKey: null,
+      ordem: 1
+    };
+  }
+
+  return {
+    id: 'outro_' + b,
+    nome: (arm.bairro || arm.microarea || 'Outro Território').toUpperCase(),
+    distritoKey: null,
+    ordem: 99
+  };
+}
+
+export function agruparArmadilhasPorTerritorio(armadilhas) {
+  const grupos = {};
+  armadilhas.forEach((arm) => {
+    const t = classificarTerritorio(arm);
+    if (!grupos[t.id]) {
+      grupos[t.id] = {
+        ...t,
+        armadilhas: []
+      };
+    }
+    grupos[t.id].armadilhas.push(arm);
+  });
+
+  return Object.values(grupos).sort((a, b) => a.ordem - b.ordem);
+}
 
 // Insere uma imagem (canvas) centralizada, respeitando a proporção original,
 // dentro de uma área máxima em mm do PDF.
@@ -301,12 +394,22 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   // Prepara as linhas de armadilhas com o cálculo das vizinhas mais próximas
   const linhasArmadilhas = armadilhas.map((arm) => {
     const dataInst = new Date(arm.instaladaEm);
-    const dataStr = `${dataInst.toLocaleDateString('pt-BR')} ${dataInst.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    const dataInstStr = `${dataInst.toLocaleDateString('pt-BR')}`;
+    const trocaPalhetaStr = formatarDataETrocaPalheta(arm.instaladaEm, 6);
+    const sit = calcularSituacaoArmadilha(arm);
 
-    // Resultado Lab
-    let resultadoStr = 'Em campo (Pendente)';
+    // Situação / Tempo Restante
+    let situacaoStr = '';
     if (arm.status === 'analisada') {
-      resultadoStr = arm.ultimosOvos > 0 ? `Positiva (${arm.ultimosOvos} ovos)` : 'Negativa (0 ovos)';
+      situacaoStr = arm.ultimosOvos > 0 ? `Positiva (${arm.ultimosOvos} ovos)` : 'Negativa (0 ovos)';
+    } else if (sit.fase === 'hoje') {
+      situacaoStr = 'Trocar Hoje! (6d)';
+    } else if (sit.fase === 'vespera') {
+      situacaoStr = 'Trocar Amanhã (Falta 1d)';
+    } else if (sit.fase === 'atrasada') {
+      situacaoStr = `Atrasada (${Math.abs(sit.diasRestantes)}d)`;
+    } else {
+      situacaoStr = `Em campo (Faltam ${sit.diasRestantes}d)`;
     }
 
     // Calcula vizinhas mais próximas
@@ -318,19 +421,22 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     }
 
     const gpsCoords = arm.latitude && arm.longitude
-      ? `${Number(arm.latitude).toFixed(5)}, ${Number(arm.longitude).toFixed(5)} (±${arm.precisaoGps || 5}m)`
-      : 'Não capturado';
+      ? `${Number(arm.latitude).toFixed(5)}, ${Number(arm.longitude).toFixed(5)}`
+      : 'Sem GPS';
+
+    const enderecoComGps = `${arm.rua || 'S/N'}${arm.numeroImovel ? ' Nº ' + arm.numeroImovel : ''}\nGPS: ${gpsCoords}`;
+    const territorioNome = arm.bairro || arm.microarea || 'Carmo';
 
     return [
       `ARM-${arm.numero}`,
       arm.moradorNome || 'Não informado',
       arm.palheta || 'P-01',
-      `${arm.rua || 'S/N'}${arm.numeroImovel ? ' Nº ' + arm.numeroImovel : ''}`,
-      arm.microarea || 'N/D',
+      enderecoComGps,
+      territorioNome,
       arm.quarteirao || 'N/D',
-      gpsCoords,
-      dataStr,
-      resultadoStr,
+      dataInstStr,
+      trocaPalhetaStr,
+      situacaoStr,
       vizinhaStr
     ];
   });
@@ -342,13 +448,13 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       'OV',
       'MORADOR',
       'PALHETA',
-      'LOGRADOURO / ENDEREÇO',
-      'MICROÁREA',
+      'ENDEREÇO E COORDENADAS GPS',
+      'BAIRRO / DISTRITO',
       'QUART.',
-      'COORDENADAS GPS',
-      'DATA/HORA INSTALAÇÃO',
-      'SITUAÇÃO / RESULTADO',
-      'OV MAIS PRÓXIMA (300m-400m)'
+      'INSTALADA',
+      'TROCA PALHETA (6 DIAS)',
+      'SITUAÇÃO / TEMPO RESTANTE',
+      'OV MAIS PRÓXIMA (300-400m)'
     ]],
     body: linhasArmadilhas,
     theme: 'grid',
@@ -364,37 +470,48 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       cellPadding: 1.8
     },
     columnStyles: {
-      0: { fontStyle: 'bold', halign: 'center', textColor: [5, 150, 105], width: 16 },
-      1: { fontStyle: 'bold', width: 34 },
-      2: { halign: 'center', width: 14 },
-      3: { width: 44 },
-      4: { width: 22 },
-      5: { halign: 'center', fontStyle: 'bold', width: 15 },
-      6: { fontSize: 6.2, width: 42 },
-      7: { fontSize: 6.2, halign: 'center', width: 30 },
-      8: { fontStyle: 'bold', halign: 'center', width: 28 },
-      9: { fontSize: 6.2, width: 32 }
+      0: { fontStyle: 'bold', halign: 'center', textColor: [5, 150, 105], width: 14 },
+      1: { fontStyle: 'bold', width: 30 },
+      2: { halign: 'center', width: 13 },
+      3: { fontSize: 6.2, width: 48 },
+      4: { width: 26 },
+      5: { halign: 'center', fontStyle: 'bold', width: 14 },
+      6: { fontSize: 6.5, halign: 'center', width: 22 },
+      7: { fontStyle: 'bold', fontSize: 6.5, halign: 'center', width: 26 },
+      8: { fontStyle: 'bold', fontSize: 6.5, halign: 'center', width: 38 },
+      9: { fontSize: 6.2, width: 46 }
     },
     didParseCell: (data) => {
       if (data.section === 'body') {
-        if (data.column.index === 8) { // Coluna de Resultado
+        if (data.column.index === 7) { // Coluna de Troca de Palheta
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [15, 23, 42];
+        }
+        if (data.column.index === 8) { // Coluna de Situação / Tempo Restante
           const txt = String(data.cell.raw || '');
           if (txt.includes('Positiva')) {
             data.cell.styles.textColor = [225, 29, 72]; // vermelho/coral
             data.cell.styles.fontStyle = 'bold';
           } else if (txt.includes('Negativa')) {
             data.cell.styles.textColor = [5, 150, 105]; // verde esmeralda
+          } else if (txt.includes('Atrasada')) {
+            data.cell.styles.textColor = [225, 29, 72]; // vermelho
+            data.cell.styles.fontStyle = 'bold';
+          } else if (txt.includes('Hoje')) {
+            data.cell.styles.textColor = [217, 119, 6]; // âmbar
+            data.cell.styles.fontStyle = 'bold';
+          } else if (txt.includes('Faltam')) {
+            data.cell.styles.textColor = [5, 150, 105]; // verde
           }
         }
         if (data.column.index === 9) { // Coluna de OV Mais Próxima
           const txt = String(data.cell.raw || '');
           if (txt.includes('Ideal')) {
             data.cell.styles.textColor = [5, 150, 105];
-            data.cell.styles.fontStyle = 'bold';
-          } else if (txt.includes('<300m')) {
-            data.cell.styles.textColor = [217, 119, 6];
           } else if (txt.includes('>400m')) {
             data.cell.styles.textColor = [225, 29, 72];
+          } else if (txt.includes('<300m')) {
+            data.cell.styles.textColor = [217, 119, 6];
           }
         }
       }
@@ -406,37 +523,65 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     }
   });
 
-  // 9. Páginas de Mapas (últimas páginas, depois das tabelas): Calor e Distâncias.
+  // 9. Páginas de Mapas Territoriais: Calor e Distâncias para a Cidade e para cada Distrito.
   // EM RETRATO (A4 210x297mm) com enquadramento proporcional e respiro no rodapé.
   const areaMapaX = 10, areaMapaY = 48, areaMapaMaxW = 190, areaMapaMaxH = 195;
+  const gruposTerritoriais = agruparArmadilhasPorTerritorio(armadilhas);
 
-  doc.addPage('a4', 'portrait');
-  desenharCabecalho();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('3. MAPA DE CALOR — DENSIDADE E RISCO ENTOMOLÓGICO', 10, 43);
-  const { canvas: canvasCalor } = gerarCanvasMapaCalor(armadilhas, { width: 1250, height: 1550 });
-  const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text('• Intensidade de calor proporcional à contagem de ovos da última leitura de laboratório.', 10, posCalor.y + posCalor.h + 5);
-  doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência.', 10, posCalor.y + posCalor.h + 9);
+  let secaoMapaNum = 3;
+  for (const grupo of gruposTerritoriais) {
+    const armsGrupo = grupo.armadilhas;
+    if (!armsGrupo || armsGrupo.length === 0) continue;
 
-  doc.addPage('a4', 'portrait');
-  desenharCabecalho();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('4. MAPA DE DISTÂNCIAS ENTRE OVITRAMPAS (DIRETRIZ 300m - 400m)', 10, 43);
-  const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armadilhas, { width: 1250, height: 1550 });
-  const posDist = desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`• Total de ${totalLigacoes} ligação(ões) geodésicas calculadas entre as vizinhas mais próximas.`, 10, posDist.y + posDist.h + 5);
-  doc.text('• Metragem indicada no centro de cada trecho (Verde = 300-400m ideal; Vermelho = >400m; Âmbar = <300m).', 10, posDist.y + posDist.h + 9);
+    // 9.A - Mapa de Calor do Território
+    doc.addPage('a4', 'portrait');
+    desenharCabecalho();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${secaoMapaNum}. MAPA DE CALOR — ${grupo.nome}`, 10, 43);
+
+    const { canvas: canvasCalor } = gerarCanvasMapaCalor(armsGrupo, {
+      width: 1250,
+      height: 1550,
+      tituloTerritorio: grupo.nome,
+      distritoKey: grupo.distritoKey
+    });
+    const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`• Intensidade de calor proporcional à contagem de ovos da última leitura de laboratório (${armsGrupo.length} armadilha(s) monitorada(s)).`, 10, posCalor.y + posCalor.h + 5);
+    doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência territorial.', 10, posCalor.y + posCalor.h + 9);
+
+    secaoMapaNum += 1;
+
+    // 9.B - Mapa de Distâncias do Território
+    doc.addPage('a4', 'portrait');
+    desenharCabecalho();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${secaoMapaNum}. MAPA DE DISTÂNCIAS — ${grupo.nome} (DIRETRIZ 300m - 400m)`, 10, 43);
+
+    const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armsGrupo, {
+      width: 1250,
+      height: 1550,
+      tituloTerritorio: grupo.nome,
+      distritoKey: grupo.distritoKey,
+      maxDistance: armsGrupo.length <= 8 ? 2000 : 900
+    });
+    const posDist = desenharImagemAjustada(doc, canvasDistancias, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`• Total de ${totalLigacoes} ligação(ões) geodésicas calculadas entre as vizinhas mais próximas do território.`, 10, posDist.y + posDist.h + 5);
+    doc.text('• Metragem indicada no centro de cada trecho (Verde = 300-400m ideal; Vermelho = >400m; Âmbar = <300m).', 10, posDist.y + posDist.h + 9);
+
+    secaoMapaNum += 1;
+  }
 
   // 10. Seção Final: Observações Técnicas & Assinaturas Oficiais (Paisagem A4)
   doc.addPage('a4', 'landscape');
@@ -495,10 +640,6 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
   doc.text('Homologação do Relatório Oficial', 236, yLinhaAssinatura + 7.5, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Vigilância Entomológica de Ovitrampas', 210, yLinhaAssinatura + 7, { align: 'center' });
 
   // 11. Numeração de Páginas em Todas as Folhas (centralizado conforme a
   // largura real de cada página - paisagem ou retrato nas páginas de mapa)

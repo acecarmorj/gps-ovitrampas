@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
   MapPin, Navigation, Calendar, CheckCircle2,
   AlertTriangle, X, Search, Filter, Trash2,
-  ExternalLink, Layers, Eye, FlaskConical, Clock
+  ExternalLink, Layers, Eye, FlaskConical, Clock, RotateCw
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
 import { Users, User, Radio, Tag, EyeOff } from 'lucide-react';
-import { excluirArmadilha } from '../../lib/storage';
+import { excluirArmadilha, trocarPalhetaArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
 
@@ -28,6 +28,8 @@ export function PainelAcompanhamentoScreen({
   const [mostrarRotulos, setMostrarRotulos] = useState(true);
   const [mostrarPainelFlutuante, setMostrarPainelFlutuante] = useState(true);
   const [modalSeletorAberto, setModalSeletorAberto] = useState(false);
+  const [modalTrocaPalhetaAberto, setModalTrocaPalhetaAberto] = useState(false);
+  const [armadilhaParaTroca, setArmadilhaParaTroca] = useState(null);
   const [meuAgente, setMeuAgenteState] = useState(getMeuAgente);
 
   useEffect(() => {
@@ -326,9 +328,37 @@ export function PainelAcompanhamentoScreen({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 px-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>Instalada em: {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})</span>
+                {/* IDENTIFICAÇÃO DA PALHETA ATUAL */}
+                <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-[10px] uppercase font-bold text-slate-500">Palheta em Campo:</span>
+                  </div>
+                  <span className="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
+                    {selecionada.palheta || 'P-01'}
+                  </span>
+                </div>
+
+                {/* CICLO OFICIAL DE 6 DIAS */}
+                <div className="flex flex-col gap-1.5 text-[11px] text-slate-600 bg-slate-50/90 p-2.5 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-slate-500">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      Instalação:
+                    </span>
+                    <span className="font-bold text-slate-800">
+                      {new Date(selecionada.instaladaEm).toLocaleDateString('pt-BR')} ({new Date(selecionada.instaladaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/70">
+                    <span className="flex items-center gap-1 text-slate-500">
+                      <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                      Troca da Palheta (6 dias):
+                    </span>
+                    <span className="font-black text-emerald-700">
+                      {sit.dataPrevistaFormatada || 'N/D'} ({sit.diaSemana || ''})
+                    </span>
+                  </div>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${sit.corBorda} ${sit.corBg} text-[11px]`}>
@@ -396,7 +426,7 @@ export function PainelAcompanhamentoScreen({
                 )}
               </div>
 
-            {/* BOTÕES DE AÇÃO: ROTA NO MAPS, WAZE, LABORATÓRIO E EXCLUIR */}
+            {/* BOTÕES DE AÇÃO: ROTA NO MAPS, WAZE, TROCAR PALHETA, LABORATÓRIO E EXCLUIR */}
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200">
               <button
                 type="button"
@@ -414,6 +444,19 @@ export function PainelAcompanhamentoScreen({
               >
                 <Navigation className="w-3.5 h-3.5 text-cyan-600" />
                 <span>Waze</span>
+              </button>
+
+              {/* BOTÃO PRINCIPAL: TROCA DE PALHETA (NOVO CICLO 6 DIAS) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setArmadilhaParaTroca(selecionada);
+                  setModalTrocaPalhetaAberto(true);
+                }}
+                className="col-span-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-700/20 active:scale-[0.98]"
+              >
+                <RotateCw className="w-4 h-4" />
+                <span>TROCAR PALHETA (NOVO CICLO 6 DIAS)</span>
               </button>
 
               <button
@@ -515,6 +558,142 @@ export function PainelAcompanhamentoScreen({
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL DE TROCA DE PALHETA (MANTÉM O MESMO NÚMERO DE ARMADILHA) */}
+      {modalTrocaPalhetaAberto && armadilhaParaTroca && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                  <RotateCw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Trocar Palheta — ARM-{armadilhaParaTroca.numero}</h3>
+                  <p className="text-[11px] text-slate-500">Mantém ponto GPS, imóvel e morador cadastrados</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalTrocaPalhetaAberto(false);
+                  setArmadilhaParaTroca(null);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-blue-50/80 rounded-2xl p-3 border border-blue-200/80 space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-bold">Imóvel:</span>
+                <span className="font-bold text-slate-800 text-right">{armadilhaParaTroca.rua || 'S/N'}{armadilhaParaTroca.numeroImovel ? ', Nº ' + armadilhaParaTroca.numeroImovel : ''}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-bold">Morador(a):</span>
+                <span className="font-bold text-slate-800">{armadilhaParaTroca.moradorNome || 'Não informado'}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-blue-200/60">
+                <span className="text-slate-500 font-bold">Palheta Atual (recolhida):</span>
+                <span className="font-black text-rose-700 bg-white px-2 py-0.5 rounded border border-rose-200">{armadilhaParaTroca.palheta || 'P-01'}</span>
+              </div>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target;
+              const novaPalheta = form.novaPalheta.value.trim();
+              const dataTroca = form.dataTroca.value;
+              const observacao = form.observacao.value.trim();
+
+              if (!novaPalheta) {
+                alert('Informe o código da nova palheta instalada!');
+                return;
+              }
+
+              const atualizada = await trocarPalhetaArmadilha(armadilhaParaTroca.id, {
+                novaPalheta,
+                dataTroca: dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString(),
+                observacao
+              });
+
+              if (atualizada) {
+                setSelecionada(atualizada);
+              }
+              setModalTrocaPalhetaAberto(false);
+              setArmadilhaParaTroca(null);
+              alert(`Palheta trocada com sucesso para ${novaPalheta}! Novo ciclo de 6 dias iniciado.`);
+            }} className="space-y-3">
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Código da Nova Palheta Instalada *
+                </label>
+                <input
+                  type="text"
+                  name="novaPalheta"
+                  required
+                  defaultValue={(() => {
+                    const p = armadilhaParaTroca.palheta || 'P-01';
+                    const match = p.match(/^(.*?)(\d+)$/);
+                    if (match) {
+                      const nextNum = parseInt(match[2], 10) + 1;
+                      return `${match[1]}${String(nextNum).padStart(match[2].length, '0')}`;
+                    }
+                    return 'P-02';
+                  })()}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ex: P-02, PL-02"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Data e Hora da Troca (Início do Novo Ciclo de 6 dias)
+                </label>
+                <input
+                  type="datetime-local"
+                  name="dataTroca"
+                  defaultValue={new Date().toISOString().slice(0, 16)}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1">
+                  Observações da Troca (Opcional)
+                </label>
+                <input
+                  type="text"
+                  name="observacao"
+                  placeholder="Ex: Palheta recolhida úmida, infusão renovada"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalTrocaPalhetaAberto(false);
+                    setArmadilhaParaTroca(null);
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-blue-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span>Confirmar Troca</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

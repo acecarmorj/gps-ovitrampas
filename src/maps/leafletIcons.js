@@ -96,16 +96,19 @@ export function ovitrampaIcon(armadilha, semRotulo = false) {
 
   if (situacao.fase === 'lida') {
     emoji = armadilha.ultimosOvos > 0 ? '🔴' : '⚪';
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#0f172a;padding:0 5px;border-radius:4px;font-size:10px;font-weight:900;">${armadilha.ultimosOvos} ovos</span>`;
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#0f172a;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">${armadilha.ultimosOvos} ovos</span>`;
   } else if (situacao.fase === 'atrasada') {
     emoji = '⚠️';
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#991b1b;padding:0 5px;border-radius:4px;font-size:10px;font-weight:900;">Atrasada</span>`;
-  } else if (situacao.fase === 'hoje' || situacao.fase === 'vespera') {
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#991b1b;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Atrasada ${Math.abs(situacao.diasRestantes)}d</span>`;
+  } else if (situacao.fase === 'hoje') {
     emoji = '⏳';
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:0 5px;border-radius:4px;font-size:10px;font-weight:900;">Recolher</span>`;
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Trocar Hoje</span>`;
+  } else if (situacao.fase === 'vespera') {
+    emoji = '⏳';
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Falta 1d</span>`;
   } else {
-    // Em campo normal
-    infoBadge = `<span style="margin-left:4px;background:rgba(255,255,255,0.25);color:#ffffff;padding:0 4px;border-radius:4px;font-size:9px;font-weight:800;">${situacao.diasRestantes}d</span>`;
+    // Em campo normal (dias 0 a 4 restantes)
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#047857;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Faltam ${situacao.diasRestantes}d</span>`;
   }
 
   return L.divIcon({

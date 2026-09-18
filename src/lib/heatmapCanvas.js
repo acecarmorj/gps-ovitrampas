@@ -49,14 +49,14 @@ function corDoGradiente(t) {
 
 /**
  * Monta a base compartilhada: bounding box territorial + função de projeção
- * lat/lng -> pixel, e desenha o fundo claro com o contorno dos quarteirões.
+ * lat/lng -> pixel, e desenha o fundo claro com o contorno dos quarteirões e distritos.
  */
-function montarBaseTerritorial(armadilhas, width, height) {
+function montarBaseTerritorial(armadilhas, width, height, options = {}) {
+  const { tituloTerritorio = '', distritoKey = null } = options;
   const polygons = getAllPolygons();
   const pontos = (armadilhas || []).filter((a) => a.latitude != null && a.longitude != null);
 
-  // Enquadramento SEMPRE pelas armadilhas (não pelo território inteiro do município,
-  // que é bem maior e deixaria o mapa minúsculo no meio de espaço vazio).
+  // Enquadramento SEMPRE pelas armadilhas e pelo polígono do distrito correspondente
   let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
   const acumula = (lat, lng) => {
     if (lat < minLat) minLat = lat;
@@ -66,20 +66,31 @@ function montarBaseTerritorial(armadilhas, width, height) {
   };
   pontos.forEach((a) => acumula(Number(a.latitude), Number(a.longitude)));
 
+  // Se houver chave de distrito correspondente, garante que o polígono oficial do distrito seja enquadrado
+  if (distritoKey) {
+    const keyLower = String(distritoKey).toLowerCase().trim();
+    const dPoly = polygons.find((p) =>
+      p.folder === 'DISTRITOS' &&
+      (p.name.toLowerCase().includes(keyLower) || keyLower.includes(p.name.toLowerCase()))
+    );
+    if (dPoly && Array.isArray(dPoly.coordinates)) {
+      dPoly.coordinates.forEach(([lat, lng]) => acumula(lat, lng));
+    }
+  }
+
   if (!isFinite(minLat)) {
     // Sem armadilhas: fallback no centro de Carmo
     minLat = -21.945; maxLat = -21.925; minLng = -42.62; maxLng = -42.60;
   }
 
-  // Padding generoso (mínimo ~120m) para não cortar os pontos nas bordas e dar
-  // contexto de rua ao redor, mesmo quando as armadilhas estão muito próximas.
-  const padLat = Math.max((maxLat - minLat) * 0.18, 0.0012);
-  const padLng = Math.max((maxLng - minLng) * 0.18, 0.0012);
+  // Padding generoso (mínimo ~150m) para não cortar os pontos nas bordas e dar
+  // contexto de rua e limites territoriais ao redor.
+  const padLat = Math.max((maxLat - minLat) * 0.16, 0.0015);
+  const padLng = Math.max((maxLng - minLng) * 0.16, 0.0015);
   minLat -= padLat; maxLat += padLat;
   minLng -= padLng; maxLng += padLng;
 
-  // Só desenha os polígonos territoriais que realmente caem dentro (ou perto) da
-  // área enquadrada - os demais (outras pontas do município) ficam de fora.
+  // Desenha os polígonos territoriais que caem dentro da área enquadrada
   const polygonsNaArea = polygons.filter((poly) =>
     (poly.coordinates || []).some(
       ([lat, lng]) => lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng
@@ -113,7 +124,7 @@ function montarBaseTerritorial(armadilhas, width, height) {
   ctx.fillStyle = '#F8FAFC';
   ctx.fillRect(0, 0, W, H);
 
-  // Desenha os quarteirões territoriais oficiais com preenchimento sutil e bordas nítidas
+  // Desenha os quarteirões territoriais e perímetros de distritos com preenchimento sutil
   polygonsNaArea.forEach((poly) => {
     const coords = poly.coordinates;
     if (!coords || coords.length < 3) return;
@@ -124,26 +135,74 @@ function montarBaseTerritorial(armadilhas, width, height) {
       else ctx.lineTo(x, y);
     });
     ctx.closePath();
-    ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
 
-    // Rótulo discreto do Quarteirão no centroide quando a área estiver focada
-    if (poly.properties?.quarteirao && polygonsNaArea.length <= 40) {
+    const isDistrito = poly.territoryType === 'distrito' || poly.folder === 'DISTRITOS';
+    if (isDistrito) {
+      ctx.fillStyle = 'rgba(236, 253, 245, 0.65)'; // emerald-50 sutil
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(5, 150, 105, 0.75)'; // emerald-600
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // Rótulo oficial do distrito no centroide
       let cLat = 0, cLng = 0;
       coords.forEach(([lat, lng]) => { cLat += lat; cLng += lng; });
       cLat /= coords.length;
       cLng /= coords.length;
       const [cx, cy] = project(cLat, cLng);
-      ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
-      ctx.font = 'bold 9px Arial';
+      ctx.fillStyle = 'rgba(4, 120, 87, 0.55)';
+      ctx.font = 'bold 11px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(poly.properties.quarteirao, cx, cy + 3);
+      ctx.fillText(poly.name.toUpperCase(), cx, cy + 3);
       ctx.textAlign = 'start';
+    } else {
+      ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Rótulo discreto do Quarteirão no centroide quando a área estiver focada
+      if (poly.properties?.quarteirao && polygonsNaArea.length <= 40) {
+        let cLat = 0, cLng = 0;
+        coords.forEach(([lat, lng]) => { cLat += lat; cLng += lng; });
+        cLat /= coords.length;
+        cLng /= coords.length;
+        const [cx, cy] = project(cLat, cLng);
+        ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
+        ctx.font = 'bold 9px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(poly.properties.quarteirao, cx, cy + 3);
+        ctx.textAlign = 'start';
+      }
     }
   });
+
+  // Badge institucional superior com o nome do território e contagem de armadilhas
+  if (tituloTerritorio) {
+    const badgeTitulo = String(tituloTerritorio).toUpperCase();
+    const badgeSub = `${pontos.length} OVITRAMPA(S) MONITORADA(S)`;
+    ctx.font = 'bold 10px Arial';
+    const textW = Math.max(ctx.measureText(badgeTitulo).width, ctx.measureText(badgeSub).width);
+    const bW = textW + 22;
+    const bH = 34;
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(14, 14, bW, bH, 5) : ctx.rect(14, 14, bW, bH);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9.5px Arial';
+    ctx.fillText(badgeTitulo, 24, 28);
+
+    ctx.fillStyle = '#34d399';
+    ctx.font = 'bold 8px Arial';
+    ctx.fillText(badgeSub, 24, 40);
+  }
 
   return { canvas, ctx, W, H, project, pontos };
 }
@@ -224,8 +283,8 @@ function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA') {
 /**
  * Mapa de calor: densidade/risco de ovos das armadilhas sobre o contorno de Carmo.
  */
-export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950 } = {}) {
-  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height);
+export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null } = {}) {
+  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
 
   const heat = document.createElement('canvas');
   heat.width = W;
@@ -269,26 +328,39 @@ export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 9
 
   pontos.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
+
+    // Ponto marcador central destacado com aro duplo
     ctx.beginPath();
-    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#0f172a';
+    ctx.arc(x, y, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = arm.ultimosOvos > 0 ? '#e11d48' : '#0f172a';
     ctx.fill();
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
 
-    // Rótulo da OV com fundo branco nítido
+    // Etiqueta da OV ampliada, com alto contraste e nitidez para impressão A4
     const label = `OV-${arm.numero}`;
-    ctx.font = 'bold 9.5px Arial';
-    const lw = ctx.measureText(label).width + 6;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(x + 6, y - 13, lw, 12);
-    ctx.strokeStyle = 'rgba(203, 213, 225, 0.85)';
-    ctx.lineWidth = 0.8;
-    ctx.strokeRect(x + 6, y - 13, lw, 12);
+    ctx.font = 'bold 13.5px Arial';
+    const textW = ctx.measureText(label).width;
+    const badgeW = textW + 14;
+    const badgeH = 21;
+    const badgeX = x + 10;
+    const badgeY = y - 11;
 
+    // Fundo branco sólido com borda nítida
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    ctx.fill();
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // Texto da armadilha em preto chapado
     ctx.fillStyle = '#0f172a';
-    ctx.fillText(label, x + 9, y - 4);
+    ctx.textAlign = 'center';
+    ctx.fillText(label, badgeX + badgeW / 2, badgeY + 15);
+    ctx.textAlign = 'start';
   });
 
   // Desenha Rosa dos Ventos / Norte no canto superior direito
@@ -308,10 +380,11 @@ export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 9
  * Mapa de distâncias: linhas metrificadas ligando as armadilhas próximas
  * (mesma regra de 300-400m usada no mapa ao vivo do app), com legenda.
  */
-export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, height = 950, maxNeighbors = 3, maxDistance = 900 } = {}) {
-  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height);
+export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, height = 950, maxNeighbors = 3, maxDistance = null, tituloTerritorio = '', distritoKey = null } = {}) {
+  const effectiveMaxDistance = maxDistance != null ? maxDistance : (armadilhas.length <= 8 ? 2000 : 900);
+  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
 
-  const edges = buildTrapDistanceNetwork(pontos, maxNeighbors, maxDistance);
+  const edges = buildTrapDistanceNetwork(pontos, maxNeighbors, effectiveMaxDistance);
 
   ctx.lineWidth = 3.5;
   ctx.font = 'bold 11px Arial';
@@ -348,26 +421,39 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
 
   pontos.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
+
+    // Ponto marcador central verde destacado com aro branco duplo
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, 7.5, 0, Math.PI * 2);
     ctx.fillStyle = '#059669';
     ctx.fill();
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
 
-    // Rótulo da OV com fundo branco nítido
+    // Etiqueta da OV ampliada, com alto contraste e nitidez para impressão A4
     const label = `OV-${arm.numero}`;
-    ctx.font = 'bold 10px Arial';
-    const lw = ctx.measureText(label).width + 6;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    ctx.fillRect(x + 7, y - 14, lw, 13);
-    ctx.strokeStyle = 'rgba(203, 213, 225, 0.9)';
-    ctx.lineWidth = 0.8;
-    ctx.strokeRect(x + 7, y - 14, lw, 13);
+    ctx.font = 'bold 13.5px Arial';
+    const textW = ctx.measureText(label).width;
+    const badgeW = textW + 14;
+    const badgeH = 21;
+    const badgeX = x + 10;
+    const badgeY = y - 11;
 
+    // Fundo branco sólido com borda nítida
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    ctx.fill();
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // Texto da armadilha em preto chapado
     ctx.fillStyle = '#0f172a';
-    ctx.fillText(label, x + 10, y - 4);
+    ctx.textAlign = 'center';
+    ctx.fillText(label, badgeX + badgeW / 2, badgeY + 15);
+    ctx.textAlign = 'start';
   });
 
   // Desenha Rosa dos Ventos / Norte no canto superior direito

@@ -404,6 +404,7 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
     ...anterior,
     numero: dadosAtualizados.numero !== undefined ? normalizarNumeroArmadilha(dadosAtualizados.numero) : anterior.numero,
     palheta: dadosAtualizados.palheta !== undefined ? String(dadosAtualizados.palheta).trim() : anterior.palheta,
+    ultimaPalheta: dadosAtualizados.ultimaPalheta !== undefined ? String(dadosAtualizados.ultimaPalheta).trim() : anterior.ultimaPalheta,
     moradorNome: dadosAtualizados.moradorNome !== undefined ? String(dadosAtualizados.moradorNome).trim() : anterior.moradorNome,
     rua: dadosAtualizados.rua !== undefined ? String(dadosAtualizados.rua).trim() : anterior.rua,
     numeroImovel: dadosAtualizados.numeroImovel !== undefined ? String(dadosAtualizados.numeroImovel).trim() : (anterior.numeroImovel || ''),
@@ -412,6 +413,8 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
     quarteirao: dadosAtualizados.quarteirao !== undefined ? String(dadosAtualizados.quarteirao).trim() : anterior.quarteirao,
     observacoes: dadosAtualizados.observacoes !== undefined ? String(dadosAtualizados.observacoes).trim() : (anterior.observacoes || ''),
     status: dadosAtualizados.status !== undefined ? dadosAtualizados.status : anterior.status,
+    instaladaEm: dadosAtualizados.instaladaEm !== undefined ? dadosAtualizados.instaladaEm : anterior.instaladaEm,
+    historicoPalhetas: dadosAtualizados.historicoPalhetas !== undefined ? dadosAtualizados.historicoPalhetas : (anterior.historicoPalhetas || []),
     ultimosOvos: dadosAtualizados.ultimosOvos !== undefined
       ? (dadosAtualizados.ultimosOvos === '' || dadosAtualizados.ultimosOvos === null ? null : Math.max(0, parseInt(dadosAtualizados.ultimosOvos, 10) || 0))
       : anterior.ultimosOvos,
@@ -426,6 +429,41 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
   tentarSincronizarEmSegundoPlano();
 
   return armadilhaAtualizada;
+}
+
+/**
+ * Realiza a troca de palheta mantendo integralmente a identidade da armadilha
+ * (mesmo número, mesmo morador, mesmo endereço, mesmas coordenadas GPS).
+ * Inicia um novo ciclo de campo oficial de 6 dias.
+ */
+export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao } = {}) {
+  if (!id) return null;
+  const todas = getArmadilhas();
+  const arm = todas.find((a) => a.id === id);
+  if (!arm) return null;
+
+  const dataInicioCiclo = dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString();
+  const palhetaAtual = String(novaPalheta || '').trim() || `PL-${arm.numero}`;
+
+  const itemHistorico = {
+    palhetaAnterior: arm.palheta || 'P-01',
+    trocadaEm: dataInicioCiclo,
+    novaPalheta: palhetaAtual,
+    ovosCicloAnterior: arm.ultimosOvos != null ? arm.ultimosOvos : null,
+    observacao: observacao || ''
+  };
+
+  const historicoAtualizado = [itemHistorico, ...(arm.historicoPalhetas || [])];
+
+  return atualizarArmadilha(id, {
+    palheta: palhetaAtual,
+    ultimaPalheta: arm.palheta || 'P-01',
+    status: 'instalada',
+    ultimosOvos: null,
+    instaladaEm: dataInicioCiclo,
+    historicoPalhetas: historicoAtualizado,
+    observacoes: observacao ? `${arm.observacoes ? arm.observacoes + ' | ' : ''}${observacao}` : arm.observacoes
+  });
 }
 
 export async function excluirArmadilha(id) {
