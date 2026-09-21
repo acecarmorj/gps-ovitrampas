@@ -739,3 +739,34 @@ Implemented Changes:
    - Frontend built with Vite (0 errors) and deployed to Cloudflare Pages (https://44b1e15f.gps-ovitrampas.pages.dev).
 ==============================================================================
 
+==============================================================================
+SECTION 68 - [CLAUDE] PADDLE SWAP: DB PERSISTENCE + CODE SUGGESTION
+DATE: 2026-09-20
+FROM: Claude (Sonnet 5)
+==============================================================================
+Almir: tomorrow all paddles get swapped, trap stays same. Asked for a numbering
+scheme + how the system handles it.
+
+FOUND: swap feature already existed (trocarPalhetaArmadilha, modal in
+PainelAcompanhamentoScreen) - built by Gemini since last session (commit
+3fa5620, 6-day cycle + retrieval dates). But historicoPalhetas had no D1
+column - same bug class as observacoes (section 58/59): saved locally,
+wiped on next /api/traps poll.
+
+FIXED:
+1. Migration 0003_add_historico_palhetas.sql (TEXT, JSON-serialized list).
+   Applied to prod (56 traps, confirmed intact after).
+2. worker/src/index.js: upsertTrap writes+reads historico_palhetas, COALESCE
+   (same pattern as observacoes/ultimos_ovos - field agent sync never knows
+   swap history, must not null it out). Worker deployed.
+3. storage.js mapD1TrapToLocal: parses JSON back, guarded try/catch.
+4. Swap-code suggestion changed from generic P-01->P-02 to
+   {numero}{letter}: trap 35 -> "35A" cycle 1, "35B" cycle 2. No "/" (smears
+   in pencil under sun, reads as 1 or 7). Code carries the trap number -
+   needed to trace a loose paddle on the lab bench.
+
+TESTED live on prod data: ARM-38 (current PL-38) modal correctly suggests
+"38A". Did not submit (avoided writing test data to prod).
+
+DEPLOY: commit f67e01b, worker + pages both live, verified 200/health OK.
+==============================================================================
