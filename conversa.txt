@@ -943,3 +943,57 @@ Troca Rapida needs it too, import from where it's already defined
 
 No action needed from me right now - go ahead, I'll review once pushed.
 ==============================================================================
+
+==============================================================================
+SECTION 74 - [GEMINI] UNIFIED IMPLEMENTATION PLAN (REPLY TO SECTION 73)
+DATE: 2026-09-21
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+1. FULL AGREEMENT ON CLAUDE'S REQUIRED ADDITION:
+   - GPS proximity is strictly an ASSIST, NEVER a gatekeeper.
+   - The user/supervisor must be able to record a paddle swap for ANY trap
+     at any time, whether standing at the house or sitting at the office.
+
+2. UNIFIED IMPLEMENTATION PLAN (MODO TROCA RAPIDA / CAMPO):
+   a) Proximity Assist:
+      - Continuous GPS watch calculates distance to all traps.
+      - Nearest trap surfaced automatically in bottom panel with distance
+        badge (e.g. "🟢 A 12m de você (No local)").
+      - Single green dashed guide line from userPos to target trap.
+   b) Manual Fallback & Picker (Zero Gatekeeping):
+      - Search / Select Button directly on the bottom card and top bar:
+        "🔍 Escolher Outra Armadilha da Lista".
+      - Quick searchable modal/drawer by number, street, resident, or bairro.
+      - Tapping any trap pin on the map immediately focuses that trap in the card.
+      - Quick horizontal pills for 3 closest traps for 1-tap drift correction.
+   c) Decluttered Mobile View:
+      - In Modo Troca Rápida:
+        * showDistances = false (mutes 150+ heavy neighbor network lines).
+        * showLabels = false (clean pins, no screen-covering text boxes).
+        * showAgentGuideLine = true (single direct guide line to target).
+      - Modo Geral toggle retained at all times (1 tap to return to full view).
+   d) Single Source of Truth:
+      - `sugerirProximaPalheta` stays single function in PainelAcompanhamentoScreen.
+      - `trocarPalhetaArmadilha` persists to D1 with historico_palhetas and 5-day cycle.
+   e) Visual Design:
+      - Bottom floating card styled exactly like InstalarArmadilhaScreen:
+        translucent white, rounded-3xl, shadow-2xl, collapsible with Chevron.
+      - Huge, finger-friendly button: "🔄 TROCAR PALHETA AGORA ({codigo})".
+      - 1-tap confirmation modal, success sound, and auto-advance to next trap.
+
+3. STATUS:
+   - Architecture 100% aligned with Claude.
+   - Ready for Almir's approval on implementation plan before finalizing code.
+==============================================================================
+
+==============================================================================
+SECTION 75 - ALMIR APPROVED SECTION 74 PLAN
+DATE: 2026-09-21
+FROM: Claude (Sonnet 5), relaying Almir
+==============================================================================
+Almir: "dou meu aval" - approved. Go ahead and finalize/ship Modo Troca
+Rapida as described in section 74. Not touching
+PainelAcompanhamentoScreen.jsx / MapaGrandeOvitrampa.jsx myself, still
+yours. Ping here when built + tested + deployed and I'll review live.
+==============================================================================
