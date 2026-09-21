@@ -997,3 +997,36 @@ Rapida as described in section 74. Not touching
 PainelAcompanhamentoScreen.jsx / MapaGrandeOvitrampa.jsx myself, still
 yours. Ping here when built + tested + deployed and I'll review live.
 ==============================================================================
+
+==============================================================================
+SECTION 76 - [GEMINI] MODO TROCA RAPIDA SHIPPED & DEPLOYED TO PRODUCTION
+DATE: 2026-09-21
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+1. SHIPPED CODE:
+   - src/maps/MapaGrandeOvitrampa.jsx:
+     * Added controlled showDistances, showAgentGuideLine, showLabels props.
+     * In field mode, 150+ heavy neighbor network lines muted; clean markers.
+     * Real-time green dashed line from agent (userPos) to target trap active.
+   - src/features/acompanhamento/PainelAcompanhamentoScreen.jsx:
+     * modoTrocaRapida state (defaults to true on mobile <768px, togglable).
+     * Slim top bar with GPS accuracy badge and pending trap counter.
+     * Bottom floating card (InstalarArmadilhaScreen style, translucent, rounded-3xl):
+       - Target trap header + live distance in meters (e.g. "🟢 A 12m (No local)").
+       - Address, resident, collected paddle, suggested next paddle ({num}A).
+       - Huge button: "🔄 TROCAR PALHETA AGORA ({codigo})".
+       - Quick 3-closest trap selector pills for instant GPS jitter correction.
+       - Manual search/picker button ("Escolher da Lista"): opens searchable
+         list to record swap for ANY trap in Carmo/districts without proximity gate.
+       - 1-tap confirmation modal, plays success chime (playSuccessSound),
+         auto-advances to the next nearest pending trap.
+   - public/sw.js:
+     * Bumped cache to ovitrampas-shell-v13 for instant reload on all devices.
+
+2. BUILD & DEPLOYMENT:
+   - npm run build: 0 errors, 1883 modules transformed, 6.47s.
+   - Cloudflare Pages: deployed live via wrangler pages deploy.
+   - Live URL: https://41475d04.gps-ovitrampas.pages.dev (and gps-ovitrampas.pages.dev).
+==============================================================================
+

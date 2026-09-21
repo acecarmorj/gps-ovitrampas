@@ -22,11 +22,19 @@ export function MapaGrandeOvitrampa({
   showLabels,
   onToggleLabels,
   showPanel,
-  onTogglePanel
+  onTogglePanel,
+  showDistances: propShowDistances,
+  onToggleDistances: propOnToggleDistances,
+  showAgentGuideLine = true
 }) {
   const [internalShowLabels, setInternalShowLabels] = useState(true);
   const effectiveShowLabels = showLabels !== undefined ? showLabels : internalShowLabels;
   const handleToggleLabels = onToggleLabels || (() => setInternalShowLabels((prev) => !prev));
+
+  const [internalShowDistances, setInternalShowDistances] = useState(true);
+  const effectiveShowDistances = propShowDistances !== undefined ? propShowDistances : internalShowDistances;
+  const handleToggleDistances = propOnToggleDistances || (() => setInternalShowDistances((prev) => !prev));
+
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
@@ -42,7 +50,6 @@ export function MapaGrandeOvitrampa({
   });
 
   const [satellite, setSatellite] = useState(false);
-  const [showDistances, setShowDistances] = useState(true);
   const [showCircles, setShowCircles] = useState(false);
 
   // 1. Inicialização do Mapa Leaflet
@@ -352,10 +359,8 @@ export function MapaGrandeOvitrampa({
 
     distanceLayer.clearLayers();
 
-    if (!showDistances) return;
-
     // 6.1. Linhas retas entre as armadilhas cadastradas (conforme desenho do usuário)
-    if (armadilhas && armadilhas.length >= 2) {
+    if (effectiveShowDistances && armadilhas && armadilhas.length >= 2) {
       const edges = buildTrapDistanceNetwork(armadilhas, 3, 900);
 
       edges.forEach((edge) => {
@@ -390,18 +395,27 @@ export function MapaGrandeOvitrampa({
       });
     }
 
-    // 6.2. Linha guia em tempo real: Agente (Você) ➔ Armadilha mais próxima
-    if (userPos?.latitude && userPos?.longitude && armadilhas && armadilhas.length > 0) {
-      const nearby = findNearbyTraps(userPos, armadilhas, 1);
-      if (nearby && nearby.length > 0) {
-        const closest = nearby[0];
+    // 6.2. Linha guia em tempo real: Agente (Você) ➔ Armadilha mais próxima (ou selecionada)
+    if (showAgentGuideLine && userPos?.latitude && userPos?.longitude && armadilhas && armadilhas.length > 0) {
+      const targetTrap = (armadilhaSelecionada && armadilhaSelecionada.latitude && armadilhaSelecionada.longitude)
+        ? armadilhaSelecionada
+        : findNearbyTraps(userPos, armadilhas, 1)[0]?.armadilha;
+
+      if (targetTrap && targetTrap.latitude && targetTrap.longitude) {
+        const dist = calcDistanceMeters(
+          userPos.latitude,
+          userPos.longitude,
+          targetTrap.latitude,
+          targetTrap.longitude
+        );
+
         const agentLine = L.polyline(
           [
             [userPos.latitude, userPos.longitude],
-            [closest.armadilha.latitude, closest.armadilha.longitude]
+            [targetTrap.latitude, targetTrap.longitude]
           ],
           {
-            color: closest.cor,
+            color: '#059669',
             weight: 4.5,
             dashArray: '7, 6',
             opacity: 0.95
@@ -410,13 +424,13 @@ export function MapaGrandeOvitrampa({
         agentLine.addTo(distanceLayer);
 
         const agentMidpoint = [
-          (Number(userPos.latitude) + Number(closest.armadilha.latitude)) / 2,
-          (Number(userPos.longitude) + Number(closest.armadilha.longitude)) / 2
+          (Number(userPos.latitude) + Number(targetTrap.latitude)) / 2,
+          (Number(userPos.longitude) + Number(targetTrap.longitude)) / 2
         ];
 
         const agentBadgeIcon = L.divIcon({
           className: '',
-          html: `<div class="distance-pill ${closest.badgeClass}" style="box-shadow:0 3px 10px rgba(0,0,0,0.25);">Você ➔ OV-${closest.armadilha.numero}: ${closest.distancia}m</div>`,
+          html: `<div class="distance-pill distance-pill-ideal" style="box-shadow:0 3px 10px rgba(0,0,0,0.25);">Você ➔ ARM-${targetTrap.numero}: ${dist}m</div>`,
           iconSize: [140, 22],
           iconAnchor: [70, 11]
         });
@@ -469,7 +483,7 @@ export function MapaGrandeOvitrampa({
       });
       colegaBadge.addTo(distanceLayer);
     }
-  }, [armadilhas, showDistances, userPos, agenteSelecionado]);
+  }, [armadilhas, effectiveShowDistances, showAgentGuideLine, userPos, armadilhaSelecionada, agenteSelecionado]);
 
   // 6.5. Renderização dos Círculos de Raio de Cobertura (175m)
   useEffect(() => {
@@ -521,8 +535,8 @@ export function MapaGrandeOvitrampa({
         onRecenter={handleRecenter}
         satellite={satellite}
         onToggleSatellite={() => setSatellite(!satellite)}
-        showDistances={showDistances}
-        onToggleDistances={() => setShowDistances(!showDistances)}
+        showDistances={effectiveShowDistances}
+        onToggleDistances={handleToggleDistances}
         showCircles={showCircles}
         onToggleCircles={() => setShowCircles(!showCircles)}
         showLabels={effectiveShowLabels}

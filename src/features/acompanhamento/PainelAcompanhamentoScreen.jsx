@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   MapPin, Navigation, Calendar, CheckCircle2,
   AlertTriangle, X, Search, Filter, Trash2,
-  ExternalLink, Layers, Eye, FlaskConical, Clock, RotateCw
+  ExternalLink, Layers, Eye, FlaskConical, Clock, RotateCw,
+  Zap, ChevronUp, ChevronDown, Compass, Users, User, Radio, Tag, EyeOff
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
-import { Users, User, Radio, Tag, EyeOff } from 'lucide-react';
 import { excluirArmadilha, trocarPalhetaArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
-import { findNearbyTraps } from '../../lib/geoDistance';
+import { findNearbyTraps, calcDistanceMeters } from '../../lib/geoDistance';
+import { playSuccessSound } from '../../lib/soundAlert';
 
 // Sugere o codigo da proxima palheta como numero-da-armadilha + letra do
 // ciclo (ex: armadilha 35 -> 35A no 1o ciclo, 35B no 2o...). Sem barra "/"
@@ -49,6 +50,16 @@ export function PainelAcompanhamentoScreen({
   onExcluirArmadilha,
   onIrParaLaboratorio
 }) {
+  // Modo Campo (Troca Rápida por Proximidade GPS)
+  // Em telas de celular (< 768px), inicia ativo por padrão para que o agente tenha a tela limpa e rápida
+  const [modoTrocaRapida, setModoTrocaRapida] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 768 : true;
+  });
+  const [painelProximidadeAberto, setPainelProximidadeAberto] = useState(true);
+  const [armadilhaFocadaId, setArmadilhaFocadaId] = useState(null);
+  const [apenasPendentes, setApenasPendentes] = useState(false);
+  const [sucessoTrocaMsg, setSucessoTrocaMsg] = useState(null);
+
   const [selecionada, setSelecionada] = useState(null);
   const [agenteSelecionado, setAgenteSelecionado] = useState(null);
   const [filtroTexto, setFiltroTexto] = useState('');
@@ -70,6 +81,59 @@ export function PainelAcompanhamentoScreen({
     return () => window.removeEventListener('ovitrampas_agente_alterado', handleAgenteAlterado);
   }, []);
 
+  const hoje = new Date().toISOString().slice(0, 10);
+  const foiTrocadaHoje = (arm) => {
+    if (!arm) return false;
+    if (arm.historicoPalhetas && arm.historicoPalhetas.length > 0) {
+      const u = arm.historicoPalhetas[0];
+      if (u?.trocadaEm && u.trocadaEm.slice(0, 10) === hoje) return true;
+    }
+    return false;
+  };
+
+  const totalArmadilhas = armadilhas.length;
+  const totalTrocadasHoje = armadilhas.filter(foiTrocadaHoje).length;
+  const totalPendentesTroca = totalArmadilhas - totalTrocadasHoje;
+  const totalAnalisadas = armadilhas.filter((a) => a.status === 'analisada').length;
+  const totalPositivas = armadilhas.filter((a) => a.ultimosOvos && a.ultimosOvos > 0).length;
+
+  // Armadilhas consideradas para detecção de proximidade
+  const armadilhasParaProximidade = useMemo(() => {
+    if (apenasPendentes) {
+      const pendentes = armadilhas.filter((a) => !foiTrocadaHoje(a));
+      return pendentes.length > 0 ? pendentes : armadilhas;
+    }
+    return armadilhas;
+  }, [armadilhas, apenasPendentes]);
+
+  // Lista das armadilhas mais próximas da posição atual do usuário (GPS)
+  const armadilhasMaisProximas = useMemo(() => {
+    if (!userPos?.latitude || !userPos?.longitude) return [];
+    return findNearbyTraps(userPos, armadilhasParaProximidade, 4);
+  }, [userPos?.latitude, userPos?.longitude, armadilhasParaProximidade]);
+
+  // Armadilha atualmente em foco no painel de troca rápida:
+  // Se o usuário selecionou uma armadilha manualmente (ou clicou no pino), usa ela.
+  // Senão, usa automaticamente a 1ª mais próxima do GPS!
+  const armadilhaAlvoProximidade = useMemo(() => {
+    if (armadilhaFocadaId) {
+      const encontrada = armadilhas.find((a) => a.id === armadilhaFocadaId);
+      if (encontrada) return encontrada;
+    }
+    return armadilhasMaisProximas[0]?.armadilha || armadilhas[0] || null;
+  }, [armadilhaFocadaId, armadilhas, armadilhasMaisProximas]);
+
+  // Distância exata em metros da armadilha alvo até o usuário
+  const distanciaAlvoMetros = useMemo(() => {
+    if (!userPos?.latitude || !userPos?.longitude || !armadilhaAlvoProximidade) return null;
+    return calcDistanceMeters(
+      userPos.latitude,
+      userPos.longitude,
+      armadilhaAlvoProximidade.latitude,
+      armadilhaAlvoProximidade.longitude
+    );
+  }, [userPos?.latitude, userPos?.longitude, armadilhaAlvoProximidade]);
+
   // Filtragem
   const armadilhasFiltradas = armadilhas.filter((arm) => {
     const matchTexto =
@@ -86,10 +150,6 @@ export function PainelAcompanhamentoScreen({
 
     return matchTexto && matchStatus;
   });
-
-  const totalArmadilhas = armadilhas.length;
-  const totalAnalisadas = armadilhas.filter((a) => a.status === 'analisada').length;
-  const totalPositivas = armadilhas.filter((a) => a.ultimosOvos && a.ultimosOvos > 0).length;
 
   const handleAbrirGoogleMaps = (lat, lng) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
@@ -114,17 +174,24 @@ export function PainelAcompanhamentoScreen({
         <MapaGrandeOvitrampa
           userPos={userPos}
           armadilhas={armadilhasFiltradas}
-          armadilhaSelecionada={selecionada}
+          armadilhaSelecionada={modoTrocaRapida ? armadilhaAlvoProximidade : selecionada}
           onSelectArmadilha={(arm) => {
-            setSelecionada(arm);
-            setAgenteSelecionado(null);
+            if (modoTrocaRapida) {
+              setArmadilhaFocadaId(arm.id);
+              setPainelProximidadeAberto(true);
+            } else {
+              setSelecionada(arm);
+              setAgenteSelecionado(null);
+            }
           }}
-          mostrarTodosPontos={true}
-          controlTop={mostrarPainelFlutuante ? 108 : 16}
-          showLabels={mostrarRotulos}
-          onToggleLabels={() => setMostrarRotulos((prev) => !prev)}
-          showPanel={mostrarPainelFlutuante}
-          onTogglePanel={() => setMostrarPainelFlutuante((prev) => !prev)}
+          mostrarTodosPontos={!modoTrocaRapida}
+          controlTop={modoTrocaRapida ? 76 : (mostrarPainelFlutuante ? 108 : 16)}
+          showLabels={modoTrocaRapida ? false : mostrarRotulos}
+          onToggleLabels={modoTrocaRapida ? undefined : () => setMostrarRotulos((prev) => !prev)}
+          showPanel={modoTrocaRapida ? false : mostrarPainelFlutuante}
+          onTogglePanel={modoTrocaRapida ? undefined : () => setMostrarPainelFlutuante((prev) => !prev)}
+          showDistances={!modoTrocaRapida}
+          showAgentGuideLine={true}
           outrosAgentes={outrosAgentes}
           agenteSelecionado={agenteSelecionado}
           onSelectAgente={(ag) => {
@@ -134,8 +201,65 @@ export function PainelAcompanhamentoScreen({
         />
       </div>
 
-      {/* 2. BARRA MINIMALISTA QUANDO JANELA ESTIVER OCULTA */}
-      {!mostrarPainelFlutuante && (
+      {/* 2. MODO TROCA RÁPIDA (CAMPO): BARRA SUPERIOR ULTRA SLIM */}
+      {modoTrocaRapida && (
+        <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-col gap-1.5 pointer-events-none max-w-lg mx-auto">
+          <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-900/10 flex items-center justify-between pointer-events-auto text-xs">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => setModoTrocaRapida(false)}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2.5 py-1.5 rounded-xl shadow-xs active:scale-95 transition-all text-xs"
+                title="Toque para alternar para o modo completo com mapa de vizinhas e estatísticas"
+              >
+                <Zap className="w-3.5 h-3.5 fill-white text-white" />
+                <span>Troca Rápida</span>
+              </button>
+
+              {userPos?.accuracy !== null && userPos?.accuracy !== undefined && (
+                <span className={`text-[10px] font-black px-2 py-1 rounded-lg border flex items-center gap-1 ${
+                  userPos.accuracy <= 10
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : userPos.accuracy <= 25
+                    ? 'bg-sky-100 text-sky-800 border-sky-300'
+                    : 'bg-amber-100 text-amber-800 border-amber-300'
+                }`}>
+                  <span>{userPos.accuracy <= 10 ? '🎯' : '📡'}</span>
+                  <span>±{userPos.accuracy}m</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setApenasPendentes((prev) => !prev)}
+                className={`text-[11px] font-black px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${
+                  apenasPendentes
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                }`}
+                title="Filtrar apenas armadilhas com troca de palheta pendente"
+              >
+                {apenasPendentes ? `Pendentes (${totalPendentesTroca})` : `${totalTrocadasHoje}/${totalArmadilhas} trocadas`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModoTrocaRapida(false)}
+                className="text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                title="Abrir Modo Geral Completo"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Modo Geral</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2.1. BARRA MINIMALISTA NO MODO GERAL QUANDO JANELA ESTIVER OCULTA */}
+      {!modoTrocaRapida && !mostrarPainelFlutuante && (
         <div className="absolute top-2.5 left-3 z-20 flex items-center gap-2 pointer-events-auto">
           <button
             type="button"
@@ -146,11 +270,20 @@ export function PainelAcompanhamentoScreen({
             <Eye className="w-3.5 h-3.5 text-blue-600" />
             <span>Janela de Dados ({totalArmadilhas} OVs)</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setModoTrocaRapida(true)}
+            className="bg-emerald-600 text-white px-3 py-2 rounded-2xl text-xs font-black shadow-md flex items-center gap-1.5 active:scale-95 hover:bg-emerald-500 transition-all"
+            title="Ativar Troca Rápida de Campo"
+          >
+            <Zap className="w-3.5 h-3.5 fill-white" />
+            <span>Troca Rápida</span>
+          </button>
         </div>
       )}
 
-      {/* 2. TOPO FLUTUANTE: RESUMO E BUSCA (OTIMIZADO PARA TABLET SAMSUNG E MOBILE) */}
-      {mostrarPainelFlutuante && (
+      {/* 2.2. TOPO FLUTUANTE DO MODO GERAL: RESUMO E BUSCA (OTIMIZADO PARA TABLET SAMSUNG E DESKTOP) */}
+      {!modoTrocaRapida && mostrarPainelFlutuante && (
       <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none max-w-lg md:max-w-2xl mx-auto">
         {/* Resumo Rápido */}
         <div className="bg-white/95 backdrop-blur-md text-slate-800 px-3.5 py-2.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center justify-between pointer-events-auto text-xs">
@@ -161,17 +294,28 @@ export function PainelAcompanhamentoScreen({
             </div>
             <div className="w-px h-6 bg-slate-200" />
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Lidas (Lab)</span>
-              <span className="font-black text-blue-600 text-sm sm:text-base">{totalAnalisadas}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Trocadas Hoje</span>
+              <span className="font-black text-emerald-600 text-sm sm:text-base">{totalTrocadasHoje}</span>
             </div>
             <div className="w-px h-6 bg-slate-200" />
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Positivas</span>
-              <span className="font-black text-rose-600 text-sm sm:text-base">{totalPositivas}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Lidas (Lab)</span>
+              <span className="font-black text-blue-600 text-sm sm:text-base">{totalAnalisadas}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Botão para ativar Modo Troca Rápida */}
+            <button
+              type="button"
+              onClick={() => setModoTrocaRapida(true)}
+              className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shadow-xs"
+              title="Ativar Modo Troca Rápida por Proximidade GPS (Ideal para celular)"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span className="hidden sm:inline">Troca Rápida</span>
+            </button>
+
             {/* Seletor do meu crachá ACE */}
             <button
               type="button"
@@ -253,61 +397,352 @@ export function PainelAcompanhamentoScreen({
       </div>
       )}
 
-      {/* 3. MODAL DE LISTA DE ARMADILHAS (LADO DIREITO NO TABLET / CENTRAL NO MOBILE) */}
+      {/* 3. MODAL DE LISTA DE ARMADILHAS (BUSCA MANUAL UNIVERSAL) */}
       {mostrarLista && (
-        <div className="absolute top-28 left-3 right-3 bottom-20 md:top-24 md:left-auto md:right-4 md:bottom-6 md:w-[440px] md:max-w-none z-30 max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-2xl p-4 flex flex-col pointer-events-auto overflow-hidden text-slate-800">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
-              Armadilhas Registradas ({armadilhasFiltradas.length})
-            </h3>
-            <button
-              onClick={() => setMostrarLista(false)}
-              className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
-            >
-              <X className="w-4 h-4" />
-            </button>
+        <div className="absolute top-20 left-3 right-3 bottom-16 md:top-24 md:left-auto md:right-4 md:bottom-6 md:w-[440px] md:max-w-none z-30 max-w-lg mx-auto bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-2xl p-4 flex flex-col pointer-events-auto overflow-hidden text-slate-800">
+          <div className="pb-2.5 border-b border-slate-200 mb-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <span>{modoTrocaRapida ? '🎯 Escolher Armadilha para Troca' : 'Armadilhas Registradas'}</span>
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                  {armadilhasFiltradas.length}
+                </span>
+              </h3>
+              <button
+                onClick={() => setMostrarLista(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Campo de busca interno na lista para celular e modo rápido */}
+            <div className="flex items-center gap-2 bg-slate-100 px-3 py-2 rounded-xl border border-slate-200">
+              <Search className="w-4 h-4 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                placeholder="Filtrar por Nº, morador, rua..."
+                value={filtroTexto}
+                onChange={(e) => setFiltroTexto(e.target.value)}
+                className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full font-medium"
+                autoFocus
+              />
+              {filtroTexto && (
+                <button onClick={() => setFiltroTexto('')}>
+                  <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
             {armadilhasFiltradas.length === 0 ? (
               <p className="text-center text-xs text-slate-400 py-8">Nenhuma armadilha encontrada com esses filtros.</p>
             ) : (
-              armadilhasFiltradas.map((arm) => (
-                <div
-                  key={arm.id}
-                  onClick={() => {
-                    setSelecionada(arm);
-                    setMostrarLista(false);
-                  }}
-                  className="bg-slate-50 hover:bg-slate-100 border border-slate-200/80 hover:border-emerald-500/50 p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 shadow-xs"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-emerald-700 text-sm">ARM-{arm.numero}</span>
-                      <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-700 font-bold">
-                        {arm.quarteirao}
-                      </span>
-                      {arm.status === 'analisada' && (
-                        <span className="text-[10px] bg-blue-100 border border-blue-200 text-blue-800 font-bold px-1.5 py-0.5 rounded">
-                          {arm.ultimosOvos} ovos
+              armadilhasFiltradas.map((arm) => {
+                const trocada = foiTrocadaHoje(arm);
+                const distM = (userPos?.latitude && userPos?.longitude && arm.latitude && arm.longitude)
+                  ? calcDistanceMeters(userPos.latitude, userPos.longitude, arm.latitude, arm.longitude)
+                  : null;
+
+                return (
+                  <div
+                    key={arm.id}
+                    onClick={() => {
+                      if (modoTrocaRapida) {
+                        setArmadilhaFocadaId(arm.id);
+                        setPainelProximidadeAberto(true);
+                        setMostrarLista(false);
+                      } else {
+                        setSelecionada(arm);
+                        setMostrarLista(false);
+                      }
+                    }}
+                    className="bg-slate-50 hover:bg-slate-100 border border-slate-200/80 hover:border-emerald-500/50 p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 shadow-xs active:scale-[0.99]"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-emerald-700 text-sm">ARM-{arm.numero}</span>
+                        <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-700 font-bold">
+                          {arm.quarteirao}
+                        </span>
+                        {trocada && (
+                          <span className="text-[10px] bg-emerald-100 border border-emerald-300 text-emerald-800 font-black px-1.5 py-0.5 rounded">
+                            ✓ Trocada hoje ({arm.palheta})
+                          </span>
+                        )}
+                        {!trocada && (
+                          <span className="text-[10px] bg-amber-50 border border-amber-200 text-amber-800 font-bold px-1.5 py-0.5 rounded">
+                            Pendente ({sugerirProximaPalheta(arm)})
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 truncate mt-0.5">
+                        {arm.moradorNome ? <span className="font-bold text-slate-900 mr-1.5">{arm.moradorNome} •</span> : ''}
+                        {arm.rua} {arm.numeroImovel ? `Nº ${arm.numeroImovel}` : ''} • {arm.microarea}
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                      {distM != null && (
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                          distM <= 50
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}>
+                          {distM}m
                         </span>
                       )}
+                      <Eye className="w-4 h-4 text-slate-400" />
                     </div>
-                    <p className="text-xs text-slate-600 truncate mt-0.5">
-                      {arm.moradorNome ? <span className="font-bold text-slate-900 mr-1.5">{arm.moradorNome} •</span> : ''}
-                      {arm.rua} {arm.numeroImovel ? `Nº ${arm.numeroImovel}` : ''} • {arm.microarea}
-                    </p>
                   </div>
-                  <Eye className="w-4 h-4 text-slate-400 shrink-0" />
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       )}
 
-      {/* 4. CARD FLUTUANTE DE DETALHES DA ARMADILHA SELECIONADA (FLUTUA À DIREITA NO TABLET) */}
-      {selecionada && (() => {
+      {/* 4. MODO TROCA RÁPIDA: PAINEL DE PROXIMIDADE FLUTUANTE (ESTILO INSTALARA RMADILHA) */}
+      {modoTrocaRapida && armadilhaAlvoProximidade && (
+        <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
+          {/* 4.1. SE RECOLHIDO: BARRA SLIM INFERIOR */}
+          {!painelProximidadeAberto && (
+            <button
+              type="button"
+              onClick={() => setPainelProximidadeAberto(true)}
+              className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
+            >
+              <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
+                <RotateCw className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-slate-900 leading-tight flex items-center gap-1.5">
+                  <span>ARM-{armadilhaAlvoProximidade.numero}</span>
+                  {distanciaAlvoMetros != null && (
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                      distanciaAlvoMetros <= 50
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {distanciaAlvoMetros}m
+                    </span>
+                  )}
+                </p>
+                <p className="text-[11px] text-slate-600 truncate leading-tight mt-0.5">
+                  {armadilhaAlvoProximidade.moradorNome ? `${armadilhaAlvoProximidade.moradorNome} • ` : ''}
+                  {armadilhaAlvoProximidade.rua}
+                </p>
+              </div>
+              <span className="text-xs font-black text-blue-600 shrink-0 flex items-center gap-1">
+                <span>Trocar</span>
+                <ChevronUp className="w-4 h-4" />
+              </span>
+            </button>
+          )}
+
+          {/* 4.2. SE EXPANDIDO: PAINEL COMPLETO DE PROXIMIDADE E TROCA */}
+          <div
+            className={`bg-white/98 sm:bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/20 border border-slate-300 p-3.5 sm:p-4 space-y-2.5 pointer-events-auto text-slate-900 max-h-[82dvh] overflow-y-auto ${
+              painelProximidadeAberto ? '' : 'hidden'
+            }`}
+          >
+            {/* Alça para recolher */}
+            <button
+              type="button"
+              onClick={() => setPainelProximidadeAberto(false)}
+              className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 active:scale-95 transition-all"
+            >
+              <ChevronDown className="w-4 h-4" />
+              <span>Ocultar e ver o mapa limpo</span>
+            </button>
+
+            {/* Alerta de sucesso se acabou de trocar */}
+            {sucessoTrocaMsg && (
+              <div className="bg-emerald-600 text-white px-3.5 py-2 rounded-2xl shadow-md flex items-center gap-2 text-xs font-bold animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span className="flex-1">{sucessoTrocaMsg}</span>
+                <button onClick={() => setSucessoTrocaMsg(null)} className="p-0.5 text-emerald-100">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* CABEÇALHO DO CARD: NÚMERO + DISTÂNCIA */}
+            <div className="flex items-center justify-between bg-slate-50 px-3.5 py-2.5 rounded-2xl border border-slate-200">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base sm:text-lg font-black text-emerald-700">
+                    ARM-{armadilhaAlvoProximidade.numero}
+                  </span>
+                  <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2 py-0.5 rounded-md">
+                    {armadilhaAlvoProximidade.quarteirao || 'Q-01'}
+                  </span>
+                  {foiTrocadaHoje(armadilhaAlvoProximidade) && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-black px-2 py-0.5 rounded-md">
+                      ✓ Trocada hoje
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-700 truncate font-semibold mt-0.5">
+                  {armadilhaAlvoProximidade.moradorNome ? (
+                    <span>Morador: <b>{armadilhaAlvoProximidade.moradorNome}</b></span>
+                  ) : (
+                    <span className="text-slate-400">Morador não informado</span>
+                  )}
+                </p>
+              </div>
+
+              {distanciaAlvoMetros != null ? (
+                <div className="text-right shrink-0">
+                  <span className={`text-xs font-black px-2.5 py-1 rounded-xl border inline-block ${
+                    distanciaAlvoMetros <= 50
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300 animate-pulse'
+                      : distanciaAlvoMetros <= 150
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-slate-100 text-slate-800 border-slate-300'
+                  }`}>
+                    {distanciaAlvoMetros <= 50 ? '🟢 ' : distanciaAlvoMetros <= 150 ? '🟡 ' : '📍 '}
+                    {distanciaAlvoMetros} metros
+                  </span>
+                  <p className="text-[9px] text-slate-500 font-bold mt-0.5">
+                    {distanciaAlvoMetros <= 50 ? 'Você está no local!' : 'Distância de você'}
+                  </p>
+                </div>
+              ) : (
+                <span className="text-[10px] text-slate-400 font-bold">Buscando GPS...</span>
+              )}
+            </div>
+
+            {/* ENDEREÇO */}
+            <div className="flex items-start gap-2 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/80 text-xs">
+              <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-slate-900 text-xs">
+                  {armadilhaAlvoProximidade.rua || 'Logradouro não informado'} {armadilhaAlvoProximidade.numeroImovel ? `Nº ${armadilhaAlvoProximidade.numeroImovel}` : ''}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  {armadilhaAlvoProximidade.microarea} • Quarteirão: <span className="text-emerald-700 font-extrabold">{armadilhaAlvoProximidade.quarteirao}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* IDENTIFICAÇÃO DA PALHETA ATUAL E PRÓXIMA SUGERIDA */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">
+                  Palheta Recolhida
+                </span>
+                <span className="font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-block">
+                  {armadilhaAlvoProximidade.palheta || 'PL-01'}
+                </span>
+              </div>
+
+              <div className="bg-blue-50/80 p-2.5 rounded-xl border border-blue-200">
+                <span className="text-[10px] uppercase font-bold text-blue-600 block mb-0.5">
+                  Nova Palheta Sugerida
+                </span>
+                <span className="font-black text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-300 inline-block">
+                  {sugerirProximaPalheta(armadilhaAlvoProximidade)}
+                </span>
+              </div>
+            </div>
+
+            {/* BOTÃO PRINCIPAL GIGANTE: TROCAR PALHETA AGORA */}
+            <button
+              type="button"
+              onClick={() => {
+                setArmadilhaParaTroca(armadilhaAlvoProximidade);
+                setModalTrocaPalhetaAberto(true);
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-blue-700/25 flex items-center justify-center gap-2 transition-all"
+            >
+              <RotateCw className="w-5 h-5" />
+              <span>TROCAR PALHETA AGORA ({sugerirProximaPalheta(armadilhaAlvoProximidade)})</span>
+            </button>
+
+            {/* ATALHOS RÁPIDOS DE NAVEGAÇÃO, BUSCA MANUAL E LABORATÓRIO */}
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setMostrarLista(true)}
+                className="col-span-2 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 px-2 rounded-xl text-[11px] font-black flex items-center justify-center gap-1.5 border border-slate-300 active:scale-95 transition-all"
+                title="Buscar e selecionar qualquer armadilha da lista completa"
+              >
+                <Search className="w-3.5 h-3.5 text-slate-600" />
+                <span>Escolher da Lista</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAbrirGoogleMaps(armadilhaAlvoProximidade.latitude, armadilhaAlvoProximidade.longitude)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-slate-200"
+              >
+                <Navigation className="w-3 h-3 text-blue-600" />
+                <span>Maps</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onIrParaLaboratorio) onIrParaLaboratorio(armadilhaAlvoProximidade);
+                }}
+                className="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border border-emerald-300"
+              >
+                <FlaskConical className="w-3 h-3 text-emerald-700" />
+                <span>Lab</span>
+              </button>
+            </div>
+
+            {/* SELETOR RÁPIDO DE ARMADILHAS MAIS PRÓXIMAS (ATALHO PARA TROCA CASO O GPS OSCILE) */}
+            {armadilhasMaisProximas.length > 0 && (
+              <div className="pt-1.5 border-t border-slate-200 space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold px-0.5">
+                  <span>Mais próximas de você (toque para focar):</span>
+                  {armadilhaFocadaId && (
+                    <button
+                      type="button"
+                      onClick={() => setArmadilhaFocadaId(null)}
+                      className="text-blue-600 font-black hover:underline"
+                    >
+                      ↺ Voltar ao Mais Próximo
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                  {armadilhasMaisProximas.map((item, idx) => {
+                    const isAtiva = armadilhaAlvoProximidade.id === item.armadilha.id;
+                    const trocada = foiTrocadaHoje(item.armadilha);
+                    return (
+                      <button
+                        type="button"
+                        key={item.armadilha.id}
+                        onClick={() => setArmadilhaFocadaId(item.armadilha.id)}
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold shrink-0 border flex items-center gap-1.5 transition-all ${
+                          isAtiva
+                            ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                            : trocada
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        <span>{idx + 1}º ARM-{item.armadilha.numero}</span>
+                        <span className={`text-[10px] font-black ${isAtiva ? 'text-blue-200' : 'text-slate-500'}`}>
+                          ({item.distancia}m)
+                        </span>
+                        {trocada && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. CARD FLUTUANTE DE DETALHES NO MODO GERAL (FLUTUA À DIREITA NO TABLET) */}
+      {!modoTrocaRapida && selecionada && (() => {
         const vizinhasMaisProximas = findNearbyTraps(selecionada, armadilhas, 3, selecionada.id);
         const sit = calcularSituacaoArmadilha(selecionada);
 
@@ -514,7 +949,7 @@ export function PainelAcompanhamentoScreen({
         </div>
       ); })()}
 
-      {/* 2.1. PAINEL FLUTUANTE DE COLEGAS ACE ATIVOS EM TEMPO REAL */}
+      {/* 6. PAINEL FLUTUANTE DE COLEGAS ACE ATIVOS EM TEMPO REAL */}
       {mostrarColegas && (
         <div className="absolute top-28 left-3 right-3 z-30 max-w-md mx-auto bg-white/98 backdrop-blur-md rounded-3xl p-4 border border-blue-200 shadow-2xl space-y-3 animate-in slide-in-from-top-4 duration-200 pointer-events-auto">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -591,7 +1026,7 @@ export function PainelAcompanhamentoScreen({
         </div>
       )}
 
-      {/* MODAL DE TROCA DE PALHETA (MANTÉM O MESMO NÚMERO DE ARMADILHA) */}
+      {/* 7. MODAL DE TROCA DE PALHETA (MANTÉM O MESMO NÚMERO DE ARMADILHA) */}
       {modalTrocaPalhetaAberto && armadilhaParaTroca && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-slate-800 animate-in zoom-in-95 duration-200">
@@ -652,10 +1087,14 @@ export function PainelAcompanhamentoScreen({
 
               if (atualizada) {
                 setSelecionada(atualizada);
+                playSuccessSound();
+                setSucessoTrocaMsg(`Palheta ARM-${armadilhaParaTroca.numero} trocada com sucesso para ${novaPalheta}!`);
+                setTimeout(() => setSucessoTrocaMsg(null), 5000);
               }
               setModalTrocaPalhetaAberto(false);
               setArmadilhaParaTroca(null);
-              alert(`Palheta trocada com sucesso para ${novaPalheta}! Novo ciclo de ${DIAS_CICLO_PADRAO} dias iniciado.`);
+              // Limpa foco manual para que o assistente GPS aponte automaticamente para a próxima mais próxima pendente!
+              setArmadilhaFocadaId(null);
             }} className="space-y-3">
               <div>
                 <label className="block text-xs font-black text-slate-700 mb-1">
@@ -719,7 +1158,7 @@ export function PainelAcompanhamentoScreen({
         </div>
       )}
 
-      {/* MODAL SELETOR DE IDENTIFICAÇÃO DE AGENTE (QUEM É VOCÊ?) */}
+      {/* 8. MODAL SELETOR DE IDENTIFICAÇÃO DE AGENTE (QUEM É VOCÊ?) */}
       <SeletorAgenteModal
         aberto={modalSeletorAberto}
         onClose={() => setModalSeletorAberto(false)}
