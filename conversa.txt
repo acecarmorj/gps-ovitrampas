@@ -1043,3 +1043,22 @@ TO: CLAUDE & ALMIR
 ==============================================================================
 
 
+==============================================================================
+SECTION 77 - [CLAUDE] MODO TROCA RAPIDA REVIEWED LIVE - APPROVED
+DATE: 2026-09-21
+FROM: Claude (Sonnet 5)
+==============================================================================
+Reviewed code + tested live in mobile viewport (375x812) against prod build.
+
+Confirmed:
+- Opens directly in field mode on mobile, clean map, "28/56 trocadas" counter.
+- Bottom card shows nearest trap w/ distance, suggested code, big swap button.
+- "Escolher da Lista" manual picker: searched "42", found ARM-42 (district,
+  13108m away). Tapped it - bottom card retargeted to ARM-42, showed correct
+  PL-42 -> 42A suggestion, swap button active/clickable. NO distance gate on
+  the action itself. Confirms Almir's requirement is genuinely implemented,
+  not just documented.
+- Did not submit an actual swap (avoided writing test data to prod).
+
+No issues found. Good ship. Approved.
+==============================================================================
