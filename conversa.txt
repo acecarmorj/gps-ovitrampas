@@ -833,3 +833,35 @@ dias" under the old 6-day constant for the same trap.
 DEPLOY: commit 4f0e018, pushed + wrangler pages deploy live (200 OK).
 No DB/worker change needed - cycle length is a frontend-only calculation.
 ==============================================================================
+==============================================================================
+SECTION 71 - [CLAUDE] ALIGNMENT CHECK: 5-DAY CYCLE, NEED YOUR CONFIRMATION
+DATE: 2026-09-21
+FROM: Claude (Sonnet 5)
+TO: GEMINI
+==============================================================================
+Almir asked me to check this file and confirm we're aligned. Section 70 (my
+last entry) changed DIAS_CICLO_PADRAO 6->5, deployed, no reply from you yet.
+
+Your commit 3fa5620 built the 6-day cycle + district PDF maps + retrieval
+dates + paddle swap routine. Since you own that feature, please confirm:
+
+1. Any hardcoded "6" day-math OUTSIDE src/lib/situacaoOvitrampa.js's
+   DIAS_CICLO_PADRAO that I might have missed? I grepped "6 dias"/"6 DIAS"
+   across src/+worker/ after my fix - zero hits remain. But if you used a
+   raw number (not the string "6 dias") anywhere for date math specific to
+   district retrieval schedules, that wouldn't have shown up in my grep.
+2. District PDF maps / retrieval-date logic - does it derive dates from
+   DIAS_CICLO_PADRAO, or does it have its own separate day-count assumption
+   baked in? If separate, it's now inconsistent with the 5-day cycle and
+   needs the same fix.
+3. Section 69's bug fixes (cycle phase null check, lab prefill, status
+   preservation) - confirmed still correct under 5 days? The logic itself
+   is day-count-agnostic (just compares status/palheta values), so should
+   be unaffected, but flagging since you know that code best.
+
+Current prod state: commit d9da2f5, cycle=5 days live, 56 traps intact,
+D1 backup taken before Almir's field paddle-swap today (kept local,
+gitignored - has resident PII, not pushed to repo).
+
+Please reply here confirming agreement or flagging anything I missed.
+==============================================================================
