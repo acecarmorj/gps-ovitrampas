@@ -1,13 +1,11 @@
 /**
  * Motor de Cálculo da Situação Epidemiológica da Ovitrampa
  * Baseado nas regras oficiais do programa de Ovitrampas de Carmo/RJ.
- * 
- * Ciclo Oficial: 6 dias de exposição no imóvel (evita recolhimento em fins de semana).
- * - Quarta-feira (Cidade/Sede) -> Troca na Terça-feira (22/09)
- * - Quinta-feira (Distritos) -> Troca na Quarta-feira seguinte (23/09)
+ *
+ * Ciclo Oficial: 5 dias de exposição no imóvel.
  */
 
-export const DIAS_CICLO_PADRAO = 6;
+export const DIAS_CICLO_PADRAO = 5;
 
 export function parseData(dataStr) {
   if (!dataStr) return new Date();
@@ -130,7 +128,7 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 2. Está em campo aguardando término dos 6 dias de exposição
+  // 2. Está em campo aguardando término dos DIAS_CICLO_PADRAO dias de exposição
   const diasCorridos = diasDesde(armadilha.instaladaEm);
   const diasRestantes = DIAS_CICLO_PADRAO - diasCorridos;
   const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_PADRAO);
@@ -138,13 +136,13 @@ export function calcularSituacaoArmadilha(armadilha) {
   const diaSemanaRaw = dataPrevista.toLocaleDateString('pt-BR', { weekday: 'long' });
   const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
-  // Atrasada (mais de 6 dias sem recolher)
+  // Atrasada (mais de DIAS_CICLO_PADRAO dias sem recolher)
   if (diasRestantes < 0) {
     const diasAtraso = Math.abs(diasRestantes);
     return {
       fase: 'atrasada',
       titulo: `Atrasada (${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso)`,
-      descricao: `Prazo de 6 dias venceu em ${dataPrevistaFormatada} (${diaSemana}). Trocar palheta com urgência para evitar eclosão!`,
+      descricao: `Prazo de ${DIAS_CICLO_PADRAO} dias venceu em ${dataPrevistaFormatada} (${diaSemana}). Trocar palheta com urgência para evitar eclosão!`,
       diasCorridos,
       diasRestantes,
       dataPrevistaFormatada,
@@ -156,12 +154,12 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Hoje (exatamente 6 dias)
+  // Hoje (exatamente DIAS_CICLO_PADRAO dias)
   if (diasRestantes === 0) {
     return {
       fase: 'hoje',
-      titulo: 'Trocar Palheta Hoje! (6 Dias de Campo)',
-      descricao: `A armadilha completou 6 dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Pronta para troca da palheta.`,
+      titulo: `Trocar Palheta Hoje! (${DIAS_CICLO_PADRAO} Dias de Campo)`,
+      descricao: `A armadilha completou ${DIAS_CICLO_PADRAO} dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Pronta para troca da palheta.`,
       diasCorridos,
       diasRestantes: 0,
       dataPrevistaFormatada,
@@ -173,12 +171,12 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Véspera (5º dia, falta 1 dia)
+  // Véspera (penúltimo dia, falta 1 dia)
   if (diasRestantes === 1) {
     return {
       fase: 'vespera',
-      titulo: 'Trocar Palheta Amanhã (Dia 5 de 6)',
-      descricao: `Armadilha em campo há 5 dias. Troca da palheta prevista para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
+      titulo: `Trocar Palheta Amanhã (Dia ${DIAS_CICLO_PADRAO - 1} de ${DIAS_CICLO_PADRAO})`,
+      descricao: `Armadilha em campo há ${DIAS_CICLO_PADRAO - 1} dias. Troca da palheta prevista para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
       diasCorridos,
       diasRestantes: 1,
       dataPrevistaFormatada,
@@ -194,7 +192,7 @@ export function calcularSituacaoArmadilha(armadilha) {
   return {
     fase: 'em_campo',
     titulo: `Em Campo: Faltam ${diasRestantes} dias`,
-    descricao: `Armadilha instalada (Dia ${diasCorridos} de 6). Troca prevista para ${diaSemana}, ${dataPrevistaFormatada}.`,
+    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Troca prevista para ${diaSemana}, ${dataPrevistaFormatada}.`,
     diasCorridos,
     diasRestantes,
     dataPrevistaFormatada,

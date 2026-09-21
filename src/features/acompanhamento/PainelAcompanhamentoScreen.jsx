@@ -9,7 +9,7 @@ import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
 import { Users, User, Radio, Tag, EyeOff } from 'lucide-react';
 import { excluirArmadilha, trocarPalhetaArmadilha } from '../../lib/storage';
-import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
+import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
 
 // Sugere o codigo da proxima palheta como numero-da-armadilha + letra do
@@ -369,7 +369,7 @@ export function PainelAcompanhamentoScreen({
                   </span>
                 </div>
 
-                {/* CICLO OFICIAL DE 6 DIAS */}
+                {/* CICLO OFICIAL DE DIAS_CICLO_PADRAO DIAS */}
                 <div className="flex flex-col gap-1.5 text-[11px] text-slate-600 bg-slate-50/90 p-2.5 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1 text-slate-500">
@@ -383,7 +383,7 @@ export function PainelAcompanhamentoScreen({
                   <div className="flex items-center justify-between pt-1 border-t border-slate-200/70">
                     <span className="flex items-center gap-1 text-slate-500">
                       <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                      Troca da Palheta (6 dias):
+                      Troca da Palheta ({DIAS_CICLO_PADRAO} dias):
                     </span>
                     <span className="font-black text-emerald-700">
                       {sit.dataPrevistaFormatada || 'N/D'} ({sit.diaSemana || ''})
@@ -476,7 +476,7 @@ export function PainelAcompanhamentoScreen({
                 <span>Waze</span>
               </button>
 
-              {/* BOTÃO PRINCIPAL: TROCA DE PALHETA (NOVO CICLO 6 DIAS) */}
+              {/* BOTÃO PRINCIPAL: TROCA DE PALHETA (NOVO CICLO DIAS_CICLO_PADRAO DIAS) */}
               <button
                 type="button"
                 onClick={() => {
@@ -486,7 +486,7 @@ export function PainelAcompanhamentoScreen({
                 className="col-span-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-700/20 active:scale-[0.98]"
               >
                 <RotateCw className="w-4 h-4" />
-                <span>TROCAR PALHETA (NOVO CICLO 6 DIAS)</span>
+                <span>TROCAR PALHETA (NOVO CICLO {DIAS_CICLO_PADRAO} DIAS)</span>
               </button>
 
               <button
@@ -655,7 +655,7 @@ export function PainelAcompanhamentoScreen({
               }
               setModalTrocaPalhetaAberto(false);
               setArmadilhaParaTroca(null);
-              alert(`Palheta trocada com sucesso para ${novaPalheta}! Novo ciclo de 6 dias iniciado.`);
+              alert(`Palheta trocada com sucesso para ${novaPalheta}! Novo ciclo de ${DIAS_CICLO_PADRAO} dias iniciado.`);
             }} className="space-y-3">
               <div>
                 <label className="block text-xs font-black text-slate-700 mb-1">
@@ -673,7 +673,7 @@ export function PainelAcompanhamentoScreen({
 
               <div>
                 <label className="block text-xs font-black text-slate-700 mb-1">
-                  Data e Hora da Troca (Início do Novo Ciclo de 6 dias)
+                  Data e Hora da Troca (Início do Novo Ciclo de {DIAS_CICLO_PADRAO} dias)
                 </label>
                 <input
                   type="datetime-local"

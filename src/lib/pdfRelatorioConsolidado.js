@@ -1,5 +1,5 @@
 import { findNearbyTraps } from './geoDistance';
-import { formatarDataETrocaPalheta, calcularSituacaoArmadilha } from './situacaoOvitrampa';
+import { formatarDataETrocaPalheta, calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from './situacaoOvitrampa';
 
 const SEDE_BAIRROS = new Set([
   'centro', 'progresso', 'jardim centenário', 'jardim centenario',
@@ -452,7 +452,7 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       'BAIRRO / DISTRITO',
       'QUART.',
       'INSTALADA',
-      'TROCA PALHETA (6 DIAS)',
+      `TROCA PALHETA (${DIAS_CICLO_PADRAO} DIAS)`,
       'SITUAÇÃO / TEMPO RESTANTE',
       'OV MAIS PRÓXIMA (300-400m)'
     ]],

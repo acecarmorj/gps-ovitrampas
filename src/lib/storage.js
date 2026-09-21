@@ -434,7 +434,8 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
 /**
  * Realiza a troca de palheta mantendo integralmente a identidade da armadilha
  * (mesmo número, mesmo morador, mesmo endereço, mesmas coordenadas GPS).
- * Inicia um novo ciclo de campo oficial de 6 dias.
+ * Inicia um novo ciclo de campo oficial (DIAS_CICLO_PADRAO, hoje 5 dias -
+ * ver src/lib/situacaoOvitrampa.js).
  */
 export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao } = {}) {
   if (!id) return null;
