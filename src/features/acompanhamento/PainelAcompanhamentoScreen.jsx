@@ -19,8 +19,12 @@ import { findNearbyTraps } from '../../lib/geoDistance';
 // junto na palheta - essencial pra rastrear ela solta na bancada.
 function sugerirProximaPalheta(armadilha) {
   const numero = armadilha?.numero || '';
+  const numInt = parseInt(numero, 10);
   const atual = String(armadilha?.palheta || '').trim().toUpperCase();
-  const match = atual.match(new RegExp(`^${numero}([A-Z]+)$`));
+  const regex = Number.isNaN(numInt)
+    ? new RegExp(`^${numero}([A-Z]+)$`)
+    : new RegExp(`^(?:${numero}|0*${numInt})([A-Z]+)$`);
+  const match = atual.match(regex);
   if (match) {
     const letras = match[1].split('');
     let i = letras.length - 1;

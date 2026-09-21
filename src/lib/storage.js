@@ -599,15 +599,20 @@ export async function registrarLeituraLaboratorio({
   );
 
   if (index !== -1) {
+    const arm = todasArmadilhas[index];
+    const isLeituraPalhetaAtual = !arm.palheta || arm.palheta.toLowerCase() === novaLeitura.numeroPalheta.toLowerCase();
+
     todasArmadilhas[index] = {
-      ...todasArmadilhas[index],
-      status: 'analisada',
-      ultimosOvos: qtdOvos,
+      ...arm,
+      // Se a leitura for da palheta que está atualmente em campo, marca como analisada.
+      // Se for de uma palheta anterior que foi recolhida, preserva o status 'instalada' do novo ciclo em campo.
+      status: isLeituraPalhetaAtual ? 'analisada' : arm.status,
+      ultimosOvos: isLeituraPalhetaAtual ? qtdOvos : arm.ultimosOvos,
       ultimaPalheta: novaLeitura.numeroPalheta,
       ultimaLeituraEm: novaLeitura.lidaEm,
       atualizadaEm: new Date().toISOString(),
       syncStatus: 'pendente',
-      leituras: [novaLeitura, ...(todasArmadilhas[index].leituras || [])]
+      leituras: [novaLeitura, ...(arm.leituras || [])]
     };
     await salvarArmadilhas(todasArmadilhas);
   }

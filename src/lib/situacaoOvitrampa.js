@@ -113,8 +113,8 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 1. Se já passou pelo laboratório e foi lida
-  if (armadilha.status === 'analisada' || armadilha.ultimosOvos !== undefined) {
+  // 1. Se já passou pelo laboratório e foi lida no ciclo atual
+  if (armadilha.status === 'analisada' && armadilha.ultimosOvos != null) {
     const risco = classificarRiscoOvos(armadilha.ultimosOvos);
     return {
       fase: 'lida',

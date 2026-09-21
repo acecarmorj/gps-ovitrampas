@@ -770,3 +770,39 @@ TESTED live on prod data: ARM-38 (current PL-38) modal correctly suggests
 
 DEPLOY: commit f67e01b, worker + pages both live, verified 200/health OK.
 ==============================================================================
+
+==============================================================================
+SECTION 69 - APP AUDIT: CYCLE PHASE NULL BUG, LAB PREFILL & D1 PERSISTENCE
+DATE: 2026-09-20 / 2026-09-21
+FROM: GEMINI (Antigravity)
+==============================================================================
+FULL AUDIT PERFORMED per Almir's request ("AUDITE O APP LEIA O TXT"):
+
+1. D1 Database & Remote State Audit:
+   - 56 active traps verified in prod DB (35 city + 21 in 5 districts).
+   - 0 readings in readings table (paddles currently in field on cycle 1).
+   - Columns: historico_palhetas present and functional (migration 0003 verified).
+   - Worker API triggers responding healthy at https://ovitrampas-api.acecarmorj.workers.dev.
+
+2. CRITICAL BUG FOUND & FIXED (src/lib/situacaoOvitrampa.js):
+   - In calcularSituacaoArmadilha, condition `armadilha.status === 'analisada' || armadilha.ultimosOvos !== undefined` had a major defect:
+     When trocarPalhetaArmadilha sets `ultimosOvos: null`, JS evaluates `null !== undefined` as TRUE!
+     This falsely classified active traps with swapped paddles as `fase: 'lida'`, `titulo: 'Leitura Concluida: null ovos'`, `diasRestantes: 0` (gray pin), completely bypassing the `em_campo` 6-day cycle countdown!
+   - Fixed: condition changed to `armadilha.status === 'analisada' && armadilha.ultimosOvos != null`. Traps in status 'instalada' now correctly show "Faltam Xd" and green pin.
+
+3. LAB PADDLE PREFILL SYNC (src/features/laboratorio/LaboratorioScreen.jsx):
+   - When a trap had its paddle swapped in field (e.g. from PL-01 to 01A), selecting ARM-01 in LaboratorioScreen prefilled `armadilha.palheta` (01A, the new paddle in field), rather than `armadilha.ultimaPalheta` (PL-01, the collected paddle physically on the lab bench).
+   - Fixed: LaboratorioScreen now prefills `arm.ultimaPalheta || arm.palheta || 'P-01'`.
+
+4. STATUS PRESERVATION ON LAB READING (src/lib/storage.js):
+   - When registering a lab reading for an old collected paddle (`novaLeitura.numeroPalheta !== arm.palheta`), storage.js previously unconditionally set `status: 'analisada'`.
+   - Fixed: checks `isLeituraPalhetaAtual`. If reading is for a previous paddle, reading is recorded in readings/leituras, but trap in field keeps `status: 'instalada'` and its active exposure countdown.
+
+5. PADDLE CODE SUGGESTION RESILIENCE (src/features/acompanhamento/PainelAcompanhamentoScreen.jsx):
+   - Regex updated in `sugerirProximaPalheta` to handle both padded and unpadded trap numbers (`01` and `1`).
+
+6. DEPLOYMENT & VERIFICATION:
+   - npm run build clean (0 errors, 7.84s).
+   - Deployed to Cloudflare Pages: https://94560caf.gps-ovitrampas.pages.dev.
+==============================================================================
+
