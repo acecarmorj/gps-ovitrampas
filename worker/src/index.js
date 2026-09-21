@@ -63,8 +63,8 @@ async function upsertTrap(trap, env) {
        id, numero, palheta, morador_nome, rua, numero_imovel, bairro, microarea,
        quarteirao, latitude, longitude, precisao_gps, tem_foto, status,
        instalada_em, atualizada_em, ultimos_ovos, ultima_palheta, ultima_leitura_em,
-       observacoes, synced_at
-     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'))
+       observacoes, historico_palhetas, synced_at
+     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        numero = excluded.numero,
        palheta = excluded.palheta,
@@ -93,6 +93,11 @@ async function upsertTrap(trap, env) {
          ELSE COALESCE(excluded.ultima_leitura_em, traps.ultima_leitura_em) 
        END,
        observacoes = COALESCE(excluded.observacoes, traps.observacoes),
+       -- Mesmo raciocinio do observacoes: o aparelho do agente de campo
+       -- nunca manda historico de troca (so o admin troca palheta). Sem o
+       -- COALESCE, o proximo sync do agente reenviando essa armadilha
+       -- apagaria o historico com null.
+       historico_palhetas = COALESCE(excluded.historico_palhetas, traps.historico_palhetas),
        synced_at = datetime('now')
      -- So aceita a versao que chegou se ela for igual ou mais nova que a
      -- gravada. Versao atrasada e ignorada (sem erro) em vez de regredir o
@@ -121,7 +126,13 @@ async function upsertTrap(trap, env) {
       trap.ultimosOvos != null ? Number(trap.ultimosOvos) : null,
       trap.ultimaPalheta ?? null,
       trap.ultimaLeituraEm ?? null,
-      trap.observacoes ?? null
+      trap.observacoes ?? null,
+      // Lista de trocas de palheta serializada em JSON (coluna e TEXT).
+      // Vazio/ausente vira null, nao "[]" - assim o COALESCE acima nao
+      // sobrescreve um historico ja existente com uma lista vazia.
+      Array.isArray(trap.historicoPalhetas) && trap.historicoPalhetas.length > 0
+        ? JSON.stringify(trap.historicoPalhetas)
+        : null
     )
     .run();
 }

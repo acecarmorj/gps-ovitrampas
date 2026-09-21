@@ -12,6 +12,32 @@ import { excluirArmadilha, trocarPalhetaArmadilha } from '../../lib/storage';
 import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
 
+// Sugere o codigo da proxima palheta como numero-da-armadilha + letra do
+// ciclo (ex: armadilha 35 -> 35A no 1o ciclo, 35B no 2o...). Sem barra "/"
+// de proposito: em papel a lapis sob sol, "/" borra e vira 1 ou 7. A letra
+// nao se confunde com os digitos do numero, e o numero da armadilha vai
+// junto na palheta - essencial pra rastrear ela solta na bancada.
+function sugerirProximaPalheta(armadilha) {
+  const numero = armadilha?.numero || '';
+  const atual = String(armadilha?.palheta || '').trim().toUpperCase();
+  const match = atual.match(new RegExp(`^${numero}([A-Z]+)$`));
+  if (match) {
+    const letras = match[1].split('');
+    let i = letras.length - 1;
+    while (i >= 0) {
+      if (letras[i] !== 'Z') {
+        letras[i] = String.fromCharCode(letras[i].charCodeAt(0) + 1);
+        break;
+      }
+      letras[i] = 'A';
+      i -= 1;
+    }
+    if (i < 0) letras.unshift('A');
+    return `${numero}${letras.join('')}`;
+  }
+  return `${numero}A`;
+}
+
 export function PainelAcompanhamentoScreen({
   armadilhas = [],
   userPos,
@@ -635,15 +661,7 @@ export function PainelAcompanhamentoScreen({
                   type="text"
                   name="novaPalheta"
                   required
-                  defaultValue={(() => {
-                    const p = armadilhaParaTroca.palheta || 'P-01';
-                    const match = p.match(/^(.*?)(\d+)$/);
-                    if (match) {
-                      const nextNum = parseInt(match[2], 10) + 1;
-                      return `${match[1]}${String(nextNum).padStart(match[2].length, '0')}`;
-                    }
-                    return 'P-02';
-                  })()}
+                  defaultValue={sugerirProximaPalheta(armadilhaParaTroca)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   placeholder="Ex: P-02, PL-02"
                 />

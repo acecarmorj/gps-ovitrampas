@@ -783,6 +783,15 @@ function mapD1TrapToLocal(row) {
     ultimaPalheta: row.ultima_palheta || undefined,
     ultimaLeituraEm: row.ultima_leitura_em || undefined,
     observacoes: row.observacoes || '',
+    historicoPalhetas: (() => {
+      if (!row.historico_palhetas) return [];
+      try {
+        const parsed = JSON.parse(row.historico_palhetas);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    })(),
     syncStatus: 'sincronizado'
   };
 }
