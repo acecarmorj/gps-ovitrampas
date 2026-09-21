@@ -806,3 +806,30 @@ FULL AUDIT PERFORMED per Almir's request ("AUDITE O APP LEIA O TXT"):
    - Deployed to Cloudflare Pages: https://94560caf.gps-ovitrampas.pages.dev.
 ==============================================================================
 
+==============================================================================
+SECTION 70 - [CLAUDE] CYCLE CHANGED 6 -> 5 DAYS
+DATE: 2026-09-21
+FROM: Claude (Sonnet 5)
+==============================================================================
+Almir: decided cycle is now 5 days, apply everywhere.
+
+DIAS_CICLO_PADRAO (situacaoOvitrampa.js) already single source of truth for
+phase math (em_campo/vespera/hoje/atrasada) - changing 6->5 cascades
+correctly on its own. Only hardcoded display STRINGS needed manual fixes
+(they said "6 dias" literally instead of using the constant):
+  - PainelAcompanhamentoScreen.jsx: trap detail badge, swap button, swap
+    alert, swap modal date label. Now imports DIAS_CICLO_PADRAO.
+  - pdfRelatorioConsolidado.js: table header "TROCA PALHETA (X DIAS)".
+  - storage.js: comment only.
+
+Verified no other file references (checked planning/routing module hits -
+all false positives, .toFixed(6) GPS decimals). Admin panel doesn't touch
+this module at all.
+
+TESTED live: ARM-38 (installed 09-17 10:16) -> badge "Faltam 2 dias",
+detail "Troca da Palheta (5 dias): 22/09/2026 (Terca-feira)". Was "Faltam 3
+dias" under the old 6-day constant for the same trap.
+
+DEPLOY: commit 4f0e018, pushed + wrangler pages deploy live (200 OK).
+No DB/worker change needed - cycle length is a frontend-only calculation.
+==============================================================================
