@@ -47,16 +47,94 @@ function corDoGradiente(t) {
   ];
 }
 
+function latLngToTileFraction(lat, lng, zoom) {
+  const n = Math.pow(2, zoom);
+  const x = ((lng + 180) / 360) * n;
+  const latRad = (lat * Math.PI) / 180;
+  const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+  return { x, y };
+}
+
+function tileToLatLng(x, y, zoom) {
+  const n = Math.pow(2, zoom);
+  const lng = (x / n) * 360 - 180;
+  const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+  const lat = (latRad * 180) / Math.PI;
+  return { lat, lng };
+}
+
+function carregarImagemAsync(url) {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      return resolve(null);
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+    setTimeout(() => resolve(null), 2500);
+  });
+}
+
+async function desenharTilesBaseMapa(ctx, minLat, maxLat, minLng, maxLng, W, H, project) {
+  try {
+    const latRad1 = (minLat * Math.PI) / 180;
+    const latRad2 = (maxLat * Math.PI) / 180;
+    const y1 = Math.log(Math.tan(Math.PI / 4 + latRad1 / 2));
+    const y2 = Math.log(Math.tan(Math.PI / 4 + latRad2 / 2));
+    const dy = Math.abs(y2 - y1);
+    let zoom = Math.floor(Math.log2((H * 2 * Math.PI) / (256 * dy)));
+    zoom = Math.max(13, Math.min(16, zoom));
+
+    const pNW = latLngToTileFraction(maxLat, minLng, zoom);
+    const pSE = latLngToTileFraction(minLat, maxLng, zoom);
+
+    const minTileX = Math.floor(pNW.x);
+    const maxTileX = Math.floor(pSE.x);
+    const minTileY = Math.floor(pNW.y);
+    const maxTileY = Math.floor(pSE.y);
+
+    const tilePromises = [];
+    for (let ty = minTileY; ty <= maxTileY; ty++) {
+      for (let tx = minTileX; tx <= maxTileX; tx++) {
+        const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${zoom}/${ty}/${tx}`;
+        tilePromises.push(
+          carregarImagemAsync(url).then((img) => {
+            if (!img) return null;
+            const nw = tileToLatLng(tx, ty, zoom);
+            const se = tileToLatLng(tx + 1, ty + 1, zoom);
+            return { img, nw, se };
+          })
+        );
+      }
+    }
+
+    const tiles = await Promise.all(tilePromises);
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    for (const t of tiles) {
+      if (!t || !t.img) continue;
+      const [x1, y1] = project(t.nw.lat, t.nw.lng);
+      const [x2, y2] = project(t.se.lat, t.se.lng);
+      ctx.drawImage(t.img, x1, y1, x2 - x1, y2 - y1);
+    }
+    ctx.restore();
+  } catch (err) {
+    console.warn('[PDF MAP] Falha ao carregar tiles base (usando vetor puro):', err);
+  }
+}
+
 /**
  * Monta a base compartilhada: bounding box territorial + função de projeção
- * lat/lng -> pixel, e desenha o fundo claro com o contorno dos quarteirões e distritos.
+ * lat/lng -> pixel, tiles cartográficos (ruas e casas) e contorno dos quarteirões e distritos.
  */
-function montarBaseTerritorial(armadilhas, width, height, options = {}) {
+async function montarBaseTerritorial(armadilhas, width, height, options = {}) {
   const { tituloTerritorio = '', distritoKey = null } = options;
   const polygons = getAllPolygons();
   const pontos = (armadilhas || []).filter((a) => a.latitude != null && a.longitude != null);
 
-  // Enquadramento SEMPRE pelas armadilhas e pelo polígono do distrito correspondente
+  // Enquadramento SEMPRE pelas armadilhas
   let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
   const acumula = (lat, lng) => {
     if (lat < minLat) minLat = lat;
@@ -66,29 +144,32 @@ function montarBaseTerritorial(armadilhas, width, height, options = {}) {
   };
   pontos.forEach((a) => acumula(Number(a.latitude), Number(a.longitude)));
 
-  // Se houver chave de distrito correspondente, garante que o polígono oficial do distrito seja enquadrado
-  if (distritoKey) {
-    const keyLower = String(distritoKey).toLowerCase().trim();
-    const dPoly = polygons.find((p) =>
-      p.folder === 'DISTRITOS' &&
-      (p.name.toLowerCase().includes(keyLower) || keyLower.includes(p.name.toLowerCase()))
-    );
-    if (dPoly && Array.isArray(dPoly.coordinates)) {
-      dPoly.coordinates.forEach(([lat, lng]) => acumula(lat, lng));
+  if (isFinite(minLat)) {
+    // Garante vão mínimo de ~0.007 graus (~770m) para que localidades ou distritos
+    // com poucas armadilhas não fiquem excessivamente aproximados nem cortem
+    // as circunferências de 175m de raio e os rótulos
+    const spanLat = maxLat - minLat;
+    const spanLng = maxLng - minLng;
+    const minSpan = 0.007;
+    if (spanLat < minSpan) {
+      const diff = (minSpan - spanLat) / 2;
+      minLat -= diff;
+      maxLat += diff;
     }
-  }
+    if (spanLng < minSpan) {
+      const diff = (minSpan - spanLng) / 2;
+      minLng -= diff;
+      maxLng += diff;
+    }
 
-  if (!isFinite(minLat)) {
+    const padLat = Math.max((maxLat - minLat) * 0.18, 0.0025);
+    const padLng = Math.max((maxLng - minLng) * 0.18, 0.0025);
+    minLat -= padLat; maxLat += padLat;
+    minLng -= padLng; maxLng += padLng;
+  } else {
     // Sem armadilhas: fallback no centro de Carmo
     minLat = -21.945; maxLat = -21.925; minLng = -42.62; maxLng = -42.60;
   }
-
-  // Padding generoso (mínimo ~150m) para não cortar os pontos nas bordas e dar
-  // contexto de rua e limites territoriais ao redor.
-  const padLat = Math.max((maxLat - minLat) * 0.16, 0.0015);
-  const padLng = Math.max((maxLng - minLng) * 0.16, 0.0015);
-  minLat -= padLat; maxLat += padLat;
-  minLng -= padLng; maxLng += padLng;
 
   // Desenha os polígonos territoriais que caem dentro da área enquadrada
   const polygonsNaArea = polygons.filter((poly) =>
@@ -117,12 +198,19 @@ function montarBaseTerritorial(armadilhas, width, height, options = {}) {
     return [x, y];
   };
 
+  // Raio exato em pixels correspondente a 175 metros na projeção
+  const grausLat175m = 175 / 111139;
+  const raio175px = (grausLat175m / alturaGeo) * H;
+
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#F8FAFC';
   ctx.fillRect(0, 0, W, H);
+
+  // 1. Desenha os tiles oficiais de mapa (ruas, casas, estradas de Carmo e distritos)
+  await desenharTilesBaseMapa(ctx, minLat, maxLat, minLng, maxLng, W, H, project);
 
   // Desenha os quarteirões territoriais e perímetros de distritos com preenchimento sutil
   polygonsNaArea.forEach((poly) => {
@@ -204,7 +292,7 @@ function montarBaseTerritorial(armadilhas, width, height, options = {}) {
     ctx.fillText(badgeSub, 24, 40);
   }
 
-  return { canvas, ctx, W, H, project, pontos };
+  return { canvas, ctx, W, H, project, pontos, raio175px };
 }
 
 // Rosa dos Ventos / Indicador Oficial de Norte Cartográfico
@@ -270,10 +358,21 @@ function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA') {
 
   itens.forEach((item, idx) => {
     const y = y0 + padding + 24 + idx * lineH;
-    ctx.fillStyle = item.cor;
-    ctx.beginPath();
-    ctx.arc(x0 + padding + 6, y - 4, 6, 0, Math.PI * 2);
-    ctx.fill();
+    if (item.isRing) {
+      ctx.save();
+      ctx.strokeStyle = item.cor;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(x0 + padding + 6, y - 4, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = item.cor;
+      ctx.beginPath();
+      ctx.arc(x0 + padding + 6, y - 4, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.fillStyle = '#334155';
     ctx.font = '11px Arial';
     ctx.fillText(item.label, x0 + padding + 20, y);
@@ -283,8 +382,23 @@ function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA') {
 /**
  * Mapa de calor: densidade/risco de ovos das armadilhas sobre o contorno de Carmo.
  */
-export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null } = {}) {
-  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
+export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null } = {}) {
+  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
+
+  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico)
+  pontos.forEach((arm) => {
+    const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, raio175px, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.75)'; // Indigo nítido
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.07)';
+    ctx.fill();
+    ctx.restore();
+  });
 
   const heat = document.createElement('canvas');
   heat.width = W;
@@ -367,6 +481,7 @@ export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 9
   desenharNorte(ctx, W - 30, 30);
 
   desenharLegenda(ctx, W, H, [
+    { cor: 'rgba(99, 102, 241, 0.85)', label: 'Raio de referência (175m)', isRing: true },
     { cor: 'rgb(37,99,235)', label: 'Sem leitura / negativa' },
     { cor: 'rgb(16,185,129)', label: 'Baixo risco (1-20 ovos)' },
     { cor: 'rgb(234,179,8)', label: 'Médio risco (21-50 ovos)' },
@@ -380,9 +495,24 @@ export function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 9
  * Mapa de distâncias: linhas metrificadas ligando as armadilhas próximas
  * (mesma regra de 300-400m usada no mapa ao vivo do app), com legenda.
  */
-export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, height = 950, maxNeighbors = 3, maxDistance = null, tituloTerritorio = '', distritoKey = null } = {}) {
+export async function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, height = 950, maxNeighbors = 3, maxDistance = null, tituloTerritorio = '', distritoKey = null } = {}) {
   const effectiveMaxDistance = maxDistance != null ? maxDistance : (armadilhas.length <= 8 ? 2000 : 900);
-  const { canvas, ctx, W, H, project, pontos } = montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
+  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
+
+  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico)
+  pontos.forEach((arm) => {
+    const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, raio175px, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(124, 58, 237, 0.7)'; // Violeta nítido
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 5]);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.08)';
+    ctx.fill();
+    ctx.restore();
+  });
 
   const edges = buildTrapDistanceNetwork(pontos, maxNeighbors, effectiveMaxDistance);
 
@@ -460,6 +590,7 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
   desenharNorte(ctx, W - 30, 30);
 
   desenharLegenda(ctx, W, H, [
+    { cor: 'rgba(124, 58, 237, 0.85)', label: 'Raio de atração (175m)', isRing: true },
     { cor: 'rgb(5,150,105)', label: 'Ideal (300m - 400m)' },
     { cor: 'rgb(217,119,6)', label: 'Abaixo do ideal (< 300m)' },
     { cor: 'rgb(225,29,72)', label: 'Acima do ideal (> 400m)' }
@@ -467,3 +598,4 @@ export function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500, heigh
 
   return { canvas, width: W, height: H, totalLigacoes: edges.length };
 }
+

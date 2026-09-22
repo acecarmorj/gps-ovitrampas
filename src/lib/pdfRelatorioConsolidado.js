@@ -541,7 +541,7 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     doc.setTextColor(15, 23, 42);
     doc.text(`${secaoMapaNum}. MAPA DE CALOR — ${grupo.nome}`, 10, 43);
 
-    const { canvas: canvasCalor } = gerarCanvasMapaCalor(armsGrupo, {
+    const { canvas: canvasCalor } = await gerarCanvasMapaCalor(armsGrupo, {
       width: 1250,
       height: 1550,
       tituloTerritorio: grupo.nome,
@@ -553,7 +553,8 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(`• Intensidade de calor proporcional à contagem de ovos da última leitura de laboratório (${armsGrupo.length} armadilha(s) monitorada(s)).`, 10, posCalor.y + posCalor.h + 5);
-    doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência territorial.', 10, posCalor.y + posCalor.h + 9);
+    doc.text('• Circunferência tracejada de 175m em cada armadilha indica o raio de atração e cobertura oficial entomológica.', 10, posCalor.y + posCalor.h + 9);
+    doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência territorial.', 10, posCalor.y + posCalor.h + 13);
 
     secaoMapaNum += 1;
 
@@ -565,7 +566,7 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     doc.setTextColor(15, 23, 42);
     doc.text(`${secaoMapaNum}. MAPA DE DISTÂNCIAS — ${grupo.nome} (DIRETRIZ 300m - 400m)`, 10, 43);
 
-    const { canvas: canvasDistancias, totalLigacoes } = gerarCanvasMapaDistancias(armsGrupo, {
+    const { canvas: canvasDistancias, totalLigacoes } = await gerarCanvasMapaDistancias(armsGrupo, {
       width: 1250,
       height: 1550,
       tituloTerritorio: grupo.nome,
@@ -578,7 +579,8 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(`• Total de ${totalLigacoes} ligação(ões) geodésicas calculadas entre as vizinhas mais próximas do território.`, 10, posDist.y + posDist.h + 5);
-    doc.text('• Metragem indicada no centro de cada trecho (Verde = 300-400m ideal; Vermelho = >400m; Âmbar = <300m).', 10, posDist.y + posDist.h + 9);
+    doc.text('• Circunferência de 175m indica o raio de atração entomológica (quando duas se tocam = 350m ideal).', 10, posDist.y + posDist.h + 9);
+    doc.text('• Metragem indicada no centro de cada trecho (Verde = 300-400m ideal; Vermelho = >400m; Âmbar = <300m).', 10, posDist.y + posDist.h + 13);
 
     secaoMapaNum += 1;
   }

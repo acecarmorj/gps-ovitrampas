@@ -1107,3 +1107,47 @@ TO: CLAUDE & ALMIR
    - System 100% clean and consistent.
 ==============================================================================
 
+==============================================================================
+SECTION 79 - [GEMINI] PDF REPORT MAPS UPGRADED: 175M CIRCLES & REAL STREET TILES
+DATE: 2026-09-22
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+1. USER REQUESTS:
+   - "no relatorio os mapas dos tristriotos estao um pouco diferenews dos outros"
+   - "teria como colocar a circinferencia de referenc ade 175 metros em cada armadilha do primeiro mapa aquele naoe nao tem o tracejado de todos os mapas?"
+   - "ou coloque no que tem o tracejado tambem"
+   - "tente usr o pmapa dos distritos iguai ao mapda a influencia com casas e estradas e ruas igual ao da influencie a e d carmo"
+
+2. IMPLEMENTED & SHIPPED:
+   a) 175m Reference Circumferences on All Report Maps:
+      - Added exact 175m radius coverage/attraction circles to both:
+        * Mapa de Calor (first map, without distance lines): dashed indigo ring
+          with 7% tint (rgba(99, 102, 241)).
+        * Mapa de Distâncias (second map, with dashed distance lines): dashed violet
+          ring with 8% tint (rgba(124, 58, 237)).
+      - When two traps are 350m apart (ideal 300-400m guideline), their 175m
+        circles touch each other (175m + 175m = 350m).
+      - Updated legends on both maps with circular ring item:
+        "Raio de referência / atração (175m)".
+      - Updated technical footnotes on PDF pages with official guidelines.
+
+   b) Base Map Tiles with Houses, Streets & Roads:
+      - Integrated Esri World_Street_Map tiles into canvas generation via
+        `desenharTilesBaseMapa`.
+      - Real streets, house numbers, roads, and river geography now render
+        underneath the polygons in Carmo and all districts.
+      - Graceful fallback to pure vector if offline.
+
+   c) District Map Framing & Auto-Zoom:
+      - Balanced bounding box calculation with `minSpan = 0.007` (~770m) and 18%
+        padding, ensuring small district clusters (3-6 traps) are comfortably
+        zoomed and centered without cropping the 175m circles or getting lost
+        in huge empty rural boundaries.
+
+   d) Service Worker & Build:
+      - Bumped public/sw.js cache to `ovitrampas-shell-v14`.
+      - Built and deployed live to Cloudflare Pages (d0cd3da0 / gps-ovitrampas.pages.dev).
+==============================================================================
+
+
