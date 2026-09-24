@@ -1151,3 +1151,108 @@ TO: CLAUDE & ALMIR
 ==============================================================================
 
 
+
+==============================================================================
+SECTION 80 - [CLAUDE] LOCK: WORKING ON LAB EGG COUNTER (DO NOT TOUCH)
+DATE: 2026-09-24
+FROM: Claude (Opus 5.5)
+TO: GEMINI
+==============================================================================
+Almir approved: (1) number eggs 01..N in reading order instead of rings,
+(2) stop AI count silently overriding manual corrections + persist AI
+fields on save, (3) Gemini audit per tile (grid) returning egg POINTS,
+matched vs local markers. Files locked until my next section:
+src/features/laboratorio/AssistenteContadorOvos.jsx, LaboratorioScreen.jsx,
+src/lib/geminiEggAuditor.js, src/lib/eggCounter.js, new src/lib/eggAudit.js,
+registrarLeituraLaboratorio in src/lib/storage.js. Please avoid these.
+==============================================================================
+
+==============================================================================
+SECTION 81 - [CLAUDE] LAB EGG COUNTER: NUMBERED EGGS, "FOLHA" SHEET, GEMINI
+             AUDIT PER TILE (POINTS), AI NO LONGER OVERRIDES MANUAL FIXES
+DATE: 2026-09-24
+FROM: Claude (Opus 5.5)
+TO: GEMINI & ALMIR
+==============================================================================
+LOCK FROM SECTION 80 RELEASED. Files free again.
+
+WHY (Almir, live test on 2.jpeg): app 148, Gemini 134 "95% confianca",
+neither found big dark glued eggs on right edge. Old Gemini flow sent whole
+photo @1200px, got back ONE number -> eggs were 3-4px, AI estimated, and
+nobody could see what it counted. Also found 2 real bugs (below).
+
+SHIPPED (all live: worker e34a2b49, pages b40b06cd, sw cache v15):
+1) Numbering: markers drawn as small dot + number 01..N in READING order
+   (horizontal bands ~1.5 egg-lengths, top->bottom, left->right inside
+   band). Canvas now drawn at 2x internal so numbers stay sharp; zoom max
+   3x -> 6x. Tap hit radius now in SCREEN px (16px) so high zoom doesn't
+   delete the neighbor egg. Recomputed live on every tap.
+2) Display modes button cycles: Numeros -> Circulos -> Folha.
+   "Folha" = Almir request: blank paddle (outline auto-detected by
+   column/row brightness vs dark background, fallback full frame) with
+   each egg drawn as ellipse at measured size/angle + number, like printed
+   on paper. Download button saves PNG with header "Palheta · N ovos ·
+   data". Useful side effect: false positives outside the paddle stand out.
+3) BUG FIX: after "Conferir com IA", Confirmar used the AI number and
+   silently dropped technician's manual taps. Now saved total is ALWAYS
+   what's marked on the photo (markers.length).
+4) BUG FIX: registrarLeituraLaboratorio ignored laudoIA/confiancaIA - AI
+   data never stored anywhere. Now reading has `laudoAuditoria` JSON:
+   {metodo:'app'|'app+ia', final, automaticos, manuais, sensibilidade,
+    ia:{modelo, quadros, ovosIA, concordancia, concordamNaConferencia,
+        soAppRestantes, soIARestantes} | null}.
+   D1: migration 0004_add_laudo_auditoria (readings.laudo_auditoria TEXT,
+   APPLIED remote). Worker upsertReading writes it with COALESCE.
+   mapD1ReadingToLocal already parsed laudo_auditoria.
+   Also fixed mapD1ReadingToLocal reading `lida_por` (never existed) ->
+   now tecnico_nome (fallback kept).
+5) Gemini audit per TILE (src/lib/geminiEggAuditor.js rewritten,
+   old auditarFotoComGemini removed -> localizarOvosComGemini):
+   - Source kept at up to 2400px (fonteIARef) separate from the 1200px
+     working/saved image (local detector is calibrated at 1200 - untouched).
+   - gradeDeQuadros: ~12 near-square tiles (portrait 3x4), 12% overlap.
+     Each tile has "nucleo" (grid cell) + "recorte" (cell+margin sent to
+     AI). Point kept only if inside its tile's nucleo -> overlap never
+     double counts (tested).
+   - Prompt asks one point PER egg (glued eggs -> one point each), coords
+     {y,x} 0-1000 relative to tile, responseSchema enforced. 3 concurrent
+     calls, 1 retry per tile; any tile failing aborts the whole audit (a
+     missing tile would make real eggs look "only app" -> tech deletes
+     real eggs).
+   - Real model shown from response modelVersion (UI said "3.6 Flash"
+     while code preferred 3.5).
+6) Cross app x AI (src/lib/eggAudit.js, pure, testable):
+   greedy nearest-pair 1:1 matching, radius = 1 typical egg length
+   (measured on 2.jpeg vs Almir's 103 marks: true pairs <10px, beyond
+   ~1 egg it's the neighbor). Result colors: blue = both agree,
+   ORANGE = only app, PURPLE = only AI (added to count), GREEN = manual
+   (never flagged). Card lists the numbers to check ("Confira: 12, 45...").
+   Glued pair marked once by app -> 1 pair + 1 purple = split for free.
+   Orange/purple stay in the count until tech deletes them. Removed fake
+   "confianca" (local started at 95% no matter what; AI self-reported,
+   default 90). Now "% de acordo" = pairs / (pairs+only app+only AI).
+   Sensitivity change after audit re-crosses the same AI points (no new
+   API calls).
+
+TESTED (no prod writes, no real key used):
+- Node/browser unit page: numbering is a permutation 1..N; tile nucleos
+  cover image exactly once; overlap dedupe 111/111; invalid coords
+  dropped; manual never flagged; re-audit idempotent.
+- Full UI in local vite (F: project) with 2.jpeg: numbers, circles,
+  folha, PNG export (intercepted, not downloaded), and whole AI path with
+  MOCKED generativelanguage fetch: 12 tile calls with schema, dedupe,
+  colors, card, Confirmar carries 160 incl. manual mark. Fake key removed.
+- NOT tested: real Gemini accuracy per tile. Almir needs to run
+  "Conferir com IA" on 2.jpeg with his key and report ovosIA vs his ~103+.
+
+NOT DONE / NEXT (need Almir OK):
+- Local detector fill fix for dark eggs (measured 59% -> 76% recall on
+  2.jpeg, clean paddle p1 stays 0) - still NOT in eggCounter.js.
+- Blob size prior (tiny = not egg, ~2x = 2 eggs).
+- Gemini key still client-side (localStorage + ?key= in URL). Proper fix:
+  proxy through worker with key as Cloudflare secret (same plan as
+  Conta Ovos key).
+- Known minor: deleting a purple then moving sensitivity slider brings it
+  back (re-cross uses stored AI points).
+- Cost: audit = 12 generateContent calls/photo instead of 1 (~15-20s).
+==============================================================================

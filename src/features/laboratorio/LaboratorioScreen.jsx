@@ -112,8 +112,7 @@ export function LaboratorioScreen({
         ovos: qtdOvos,
         tecnicoNome: 'Laboratório Carmo',
         fotoPalhetaDataUrl: fotoPalheta,
-        laudoIA: laudoAuditoria?.laudo || null,
-        confiancaIA: laudoAuditoria?.confianca || null
+        laudoAuditoria
       });
 
       playSuccessSound();
@@ -399,10 +398,13 @@ export function LaboratorioScreen({
                         <Bot className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <span className="font-black text-indigo-900 block">
-                            Laudo IA: {laudoAuditoria.ovos} ovos ({laudoAuditoria.confianca}% confiança)
+                            Contagem na foto: {laudoAuditoria.final} ovos
                           </span>
                           <span className="text-[11px] text-slate-600 block leading-tight mt-0.5">
-                            {laudoAuditoria.laudo}
+                            {laudoAuditoria.ia
+                              ? `IA marcou ${laudoAuditoria.ia.ovosIA} · ${laudoAuditoria.ia.concordancia}% de acordo com o app`
+                              : 'Sem conferência da IA'}
+                            {laudoAuditoria.manuais ? ` · ${laudoAuditoria.manuais} marcado(s) à mão` : ''}
                           </span>
                         </div>
                       </div>
@@ -449,9 +451,9 @@ export function LaboratorioScreen({
                       <div>
                         <span className="font-black text-slate-900 text-xs">OV-{leit.numeroArmadilha}</span>
                         <span className="text-[10px] text-slate-500 ml-2">({leit.numeroPalheta})</span>
-                        {leit.confiancaIA && (
+                        {leit.laudoAuditoria?.ia && (
                           <span className="text-[9px] font-extrabold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full ml-1.5">
-                            IA {leit.confiancaIA}%
+                            IA {leit.laudoAuditoria.ia.concordancia}% acordo
                           </span>
                         )}
                       </div>

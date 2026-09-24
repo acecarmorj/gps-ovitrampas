@@ -141,8 +141,8 @@ async function upsertReading(reading, env) {
   await env.DB.prepare(
     `INSERT INTO readings (
        id, armadilha_id, numero_armadilha, numero_palheta, ovos, positiva,
-       tecnico_nome, lida_em, synced_at
-     ) VALUES (?,?,?,?,?,?,?,?, datetime('now'))
+       tecnico_nome, lida_em, laudo_auditoria, synced_at
+     ) VALUES (?,?,?,?,?,?,?,?,?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        armadilha_id = excluded.armadilha_id,
        numero_armadilha = excluded.numero_armadilha,
@@ -151,6 +151,7 @@ async function upsertReading(reading, env) {
        positiva = excluded.positiva,
        tecnico_nome = excluded.tecnico_nome,
        lida_em = excluded.lida_em,
+       laudo_auditoria = COALESCE(excluded.laudo_auditoria, readings.laudo_auditoria),
        synced_at = datetime('now')`
   )
     .bind(
@@ -161,7 +162,8 @@ async function upsertReading(reading, env) {
       Number(reading.ovos ?? 0),
       reading.positiva ? 1 : 0,
       reading.tecnicoNome ?? null,
-      reading.lidaEm
+      reading.lidaEm,
+      reading.laudoAuditoria ? JSON.stringify(reading.laudoAuditoria) : null
     )
     .run();
 }

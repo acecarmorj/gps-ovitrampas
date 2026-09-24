@@ -566,7 +566,8 @@ export async function registrarLeituraLaboratorio({
   numeroPalheta,
   ovos,
   tecnicoNome,
-  fotoPalhetaDataUrl
+  fotoPalhetaDataUrl,
+  laudoAuditoria = null
 }) {
   const leituraId = 'leit-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
   const qtdOvos = Math.max(0, parseInt(ovos, 10) || 0);
@@ -579,6 +580,10 @@ export async function registrarLeituraLaboratorio({
     ovos: qtdOvos,
     positiva: qtdOvos > 0,
     tecnicoNome: tecnicoNome || 'Laboratório Carmo',
+    // Como a contagem foi feita (app, IA, correções à mão). Antes os campos
+    // da IA chegavam aqui e eram descartados - nenhuma leitura guardava de
+    // onde veio o número. Vai para o D1 como JSON (coluna laudo_auditoria).
+    laudoAuditoria: laudoAuditoria || null,
     syncStatus: 'pendente',
     lidaEm: new Date().toISOString()
   };
@@ -826,7 +831,8 @@ function mapD1ReadingToLocal(row) {
     numeroPalheta: String(row.numero_palheta || 'P-01').trim(),
     ovos: Number(row.ovos || 0),
     positiva: Boolean(row.positiva),
-    tecnicoNome: row.lida_por || 'Laboratório Carmo',
+    // A coluna do D1 e tecnico_nome; lida_por nunca existiu (o nome se perdia ao puxar).
+    tecnicoNome: row.tecnico_nome || row.lida_por || 'Laboratório Carmo',
     observacao: row.observacao || '',
     fotoPalheta: row.foto_palheta || null,
     lidaEm: row.lida_em,
