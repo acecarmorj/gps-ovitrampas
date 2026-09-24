@@ -39,22 +39,122 @@ function isBrightBackground(red, green, blue, gray) {
   return gray >= 214 || (red >= 220 && green >= 218 && blue >= 216);
 }
 
+// Antes o raio de exclusao crescia com o tamanho do ovo, entao um ovo grande
+// "apagava" o vizinho a ate ~25px - na foto 2.jpeg ovos grandes e nitidos
+// morriam assim. Componentes conexos ja sao disjuntos; o que sobra para
+// suprimir sao pedacos do MESMO ovo cortado por uma fibra, com centros bem
+// proximos. Entao a distancia e fixa: 0.65 do comprimento tipico de ovo
+// (0.5 deixava passar ovo partido em 2 pedacos a ~10px um do outro).
 function suppressOverlapping(candidates) {
+  if (!candidates.length) return [];
+  const tipico = median(candidates.map((c) => 2 * (c.rx ?? c.radius)));
+  const limite = Math.max(3, tipico * 0.65);
   const sorted = [...candidates].sort((left, right) => right.score - left.score);
   const kept = [];
 
   for (const candidate of sorted) {
-    const overlaps = kept.some((other) => {
-      const distance = Math.hypot(candidate.x - other.x, candidate.y - other.y);
-      const mergeDistance =
-        ((candidate.rx ?? candidate.radius) + (other.rx ?? other.radius)) * 0.9 +
-        ((candidate.ry ?? candidate.radius) + (other.ry ?? other.radius)) * 0.35;
-      return distance < mergeDistance;
-    });
+    const overlaps = kept.some(
+      (other) => Math.hypot(candidate.x - other.x, candidate.y - other.y) < limite
+    );
     if (!overlaps) kept.push(candidate);
   }
 
   return kept;
+}
+
+function percentil(values, p) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+}
+
+// Conta manchas de ovos colados pelo COMPRIMENTO/LARGURA, com a regua
+// tirada dos ovos isolados da propria foto. Area nao serve: medido na
+// 2.jpeg, a mancha de um unico ovo vai de 25 a 116 px e ovos isolados
+// grandes viravam 3. Usa o percentil 75 (ovo inteiro, nao o pedaco que
+// sobrou visivel) e so divide com folga: 1.7x a regua para contar 2.
+// So divide AGLOMERADO (mancha que reprovou como ovo unico). Ovo isolado
+// que passou no filtro de forma fica 1 mesmo se for comprido - o Almir
+// conferiu um desses (12x33px) e era um ovo so.
+function dividirAglomerados(candidates) {
+  const isolados = candidates.filter((c) => !c.aglomerado);
+  const base = isolados.length >= 5 ? isolados : candidates;
+  const comprimentoTipico = percentil(
+    base.map((c) => Math.max(c.bbox.maxX - c.bbox.minX, c.bbox.maxY - c.bbox.minY) + 1),
+    0.75
+  );
+  const larguraTipica = percentil(
+    base.map((c) => Math.min(c.bbox.maxX - c.bbox.minX, c.bbox.maxY - c.bbox.minY) + 1),
+    0.75
+  );
+  const saida = [];
+
+  for (const c of candidates) {
+    const { minX, maxX, minY, maxY } = c.bbox;
+    const largura = maxX - minX + 1;
+    const altura = maxY - minY + 1;
+    const porComprimento =
+      comprimentoTipico > 0 ? Math.max(largura, altura) / comprimentoTipico : 1;
+    const porLargura = larguraTipica > 0 ? Math.min(largura, altura) / larguraTipica : 1;
+    if (!c.aglomerado) {
+      saida.push(c);
+      continue;
+    }
+    // Aglomerado pode ser fila (o "S") ou ovos lado a lado.
+    const emFila = porComprimento >= porLargura;
+    const partes = clamp(Math.floor((emFila ? porComprimento : porLargura) + 0.3), 1, 4);
+    // Mancha escura torta que nao chega a 2 ovos: segue descartada, como antes.
+    if (partes === 1) continue;
+    // Fila divide ao longo do lado maior; lado a lado, ao longo do menor.
+    const ladoMaiorVertical = altura >= largura;
+    const dividirNaAltura = emFila ? ladoMaiorVertical : !ladoMaiorVertical;
+    for (let i = 0; i < partes; i += 1) {
+      const t = (i + 0.5) / partes;
+      const rx = Math.max(3, (dividirNaAltura ? altura / partes : altura) / 2 + 1.2);
+      const ry = Math.max(2.2, (dividirNaAltura ? largura : largura / partes) / 2 + 1);
+      saida.push({
+        ...c,
+        x: dividirNaAltura ? c.x : minX + t * largura,
+        y: dividirNaAltura ? minY + t * altura : c.y,
+        radius: rx,
+        rx,
+        ry,
+        angle: -Math.PI / 2,
+        area: c.area / partes,
+        parteDeAglomerado: partes,
+      });
+    }
+  }
+
+  return saida;
+}
+
+// Brilho do miolo da mancha (25% pixels mais escuros da caixa) dividido
+// pelo brilho do fundo em volta (moldura fora da caixa). Ovo de verdade tem
+// o miolo quase preto: conferido pelo Almir num quadrado da 2.jpeg, os
+// ovos ficaram entre 0.05 e 0.18 e as sombras/fibras que o app contava
+// como ovo entre 0.24 e 0.36. Relativo ao fundo, vale com qualquer luz.
+function nucleoSobreFundo(gray, width, height, minX, maxX, minY, maxY) {
+  const dentro = [];
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) dentro.push(gray[y * width + x]);
+  }
+  dentro.sort((a, b) => a - b);
+  const n = Math.max(3, Math.round(dentro.length * 0.25));
+  let soma = 0;
+  for (let i = 0; i < n && i < dentro.length; i += 1) soma += dentro[i];
+  const nucleo = soma / Math.min(n, dentro.length);
+  const anel = [];
+  for (let y = minY - 6; y <= maxY + 6; y += 1) {
+    if (y < 0 || y >= height) continue;
+    for (let x = minX - 6; x <= maxX + 6; x += 1) {
+      if (x < 0 || x >= width) continue;
+      if (x >= minX - 2 && x <= maxX + 2 && y >= minY - 2 && y <= maxY + 2) continue;
+      anel.push(gray[y * width + x]);
+    }
+  }
+  const fundo = median(anel) || 1;
+  return nucleo / fundo;
 }
 
 function findPaddleRoi(gray, red, green, blue, width, height) {
@@ -396,22 +496,54 @@ export function analyzeEggImage(
     const longSide = Math.max(componentWidth, componentHeight);
     const bboxAspect = longSide / Math.max(1, shortSide);
 
-    if (
+    // O filtro de madeira existe pra descartar a fibra da palheta, que e
+    // marrom. So que o ovo tambem e marrom-escuro: sob luz quente/amarelada
+    // ele media marrom 44 e croma 44 (limite 34) e era descartado junto -
+    // medido em foto real, 87 de 150 ovos morriam aqui e a contagem dava 22
+    // onde havia ~140. A fibra e marrom CLARA; o ovo e bem mais escuro que o
+    // fundo. Entao nao aplica o filtro a quem for bem escuro.
+    const bemEscuro = meanGray <= roi.medianGray * 0.42;
+
+    // "Fill" = quanto da caixa em volta a mancha ocupa. Ovo escuro meio
+    // escondido por fibra, ou torto no sulco, ocupa pouco da caixa e morria
+    // aqui: na foto 2.jpeg foi o motivo de 31 dos 42 ovos perdidos. Para
+    // quem e bem escuro o minimo cai de 0.45 para 0.30 (medido: acerto 59%
+    // -> 76%, palheta limpa continua 0).
+    const fillMinimo = bemEscuro ? 0.3 : 0.45;
+    const reprovaComoOvoUnico =
       area < minimumArea ||
       area > maximumArea ||
       shortSide < minShort ||
       longSide > maxLong ||
       componentWidth > maxLong ||
-      fill < 0.45 ||
+      fill < fillMinimo ||
       componentHeight < componentWidth * 0.8 ||
       meanDarkness < contrastThreshold * 0.85 ||
       meanGray > darkPixelLimit ||
       meanGray > roi.medianGray * darkFraction ||
       minGray > roi.medianGray * 0.5 ||
       isBlueInk(meanRed, meanGreen, meanBlue) ||
-      meanBlue > meanRed + 18
-    ) {
-      continue;
+      meanBlue > meanRed + 18;
+
+    // Ovos colados formam uma mancha torta ou larga (o "S" preto, dois ovos
+    // lado a lado) que reprova como ovo unico. Se for bem escura e do
+    // tamanho de 2+ ovos, nao descarta: segue pelos filtros de madeira e
+    // ranhura e depois e contada pela area (ver dividirAglomerados).
+    const podeSerAglomerado =
+      bemEscuro &&
+      minGray <= roi.medianGray * 0.38 &&
+      area >= minimumArea * 2 &&
+      area <= maximumArea &&
+      longSide <= maxLong * 1.6 &&
+      fill >= 0.2 &&
+      meanDarkness >= contrastThreshold * 0.85 &&
+      !isBlueInk(meanRed, meanGreen, meanBlue) &&
+      meanBlue <= meanRed + 18;
+
+    let aglomerado = false;
+    if (reprovaComoOvoUnico) {
+      if (!podeSerAglomerado) continue;
+      aglomerado = true;
     }
 
     let mxx = 0;
@@ -458,10 +590,11 @@ export function analyzeEggImage(
         : bboxAspect;
 
     if (
-      riceAspect < 1.52 ||
-      riceAspect > 3.95 ||
-      (bboxAspect < 1.38 && momentAspect < 1.52) ||
-      verticalAligned < 0.5
+      !aglomerado &&
+      (riceAspect < 1.52 ||
+        riceAspect > 3.95 ||
+        (bboxAspect < 1.38 && momentAspect < 1.52) ||
+        verticalAligned < 0.5)
     ) {
       const veryDark =
         minGray <= roi.medianGray * 0.38 &&
@@ -475,19 +608,16 @@ export function analyzeEggImage(
         componentHeight >= componentWidth * 0.85 &&
         meanAchroma < 24 &&
         meanBrown < 22;
-      if (!blurredRice) continue;
+      if (!blurredRice) {
+        if (!podeSerAglomerado) continue;
+        aglomerado = true;
+      }
     }
 
-    // O filtro de madeira existe pra descartar a fibra da palheta, que e
-    // marrom. So que o ovo tambem e marrom-escuro: sob luz quente/amarelada
-    // ele media marrom 44 e croma 44 (limite 34) e era descartado junto -
-    // medido em foto real, 87 de 150 ovos morriam aqui e a contagem dava 22
-    // onde havia ~140. A fibra e marrom CLARA; o ovo e bem mais escuro que o
-    // fundo. Entao nao aplica o filtro a quem for bem escuro.
-    const bemEscuro = meanGray <= roi.medianGray * 0.42;
     const woodLike =
       !bemEscuro && meanBrown > brownMax && meanAchroma > achromaMax;
     if (woodLike) continue;
+    if (nucleoSobreFundo(gray, width, height, minX, maxX, minY, maxY) > 0.22) continue;
 
     if (groovePitch >= 6) {
       let periodicHits = 0;
@@ -529,6 +659,9 @@ export function analyzeEggImage(
         shapeScore * 0.1 +
         isolationScore * 0.08,
       source: "automatic",
+      area,
+      aglomerado,
+      bbox: { minX, maxX, minY, maxY },
     });
   }
 
@@ -540,6 +673,7 @@ export function analyzeEggImage(
     const scoreFloor = Math.max(0.32, bestScore - 0.30);
     filtered = filtered.filter((candidate) => candidate.score >= scoreFloor);
   }
+  filtered = dividirAglomerados(filtered);
   if (filtered.length > MAX_CANDIDATES) {
     filtered = filtered.slice(0, MAX_CANDIDATES);
   }
