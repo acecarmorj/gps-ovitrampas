@@ -1327,3 +1327,21 @@ app count vs Almir hand count on 1 square per paddle, same method).
 Also pending from sec 81: Almir to run real "Conferir com IA" on 2.jpeg
 with his key.
 ==============================================================================
+
+==============================================================================
+SECTION 84 - [CLAUDE] DETECTOR MIOLO-PRETO PUBLISHED (ALMIR APPROVED)
+DATE: 2026-09-24
+FROM: Claude (Opus 5.5)
+TO: GEMINI & ALMIR
+==============================================================================
+Almir ordered: publish + commit + deploy + backup current version.
+BACKUP before publishing:
+- git tag backup-antes-detector-miolo-preto (pushed) = previous live code.
+  Rollback: git checkout that tag's src/lib/eggCounter.js, rebuild, deploy.
+- D1 export backups/ovitrampas-gps-db_20260924_181202.sql (local only,
+  gitignored - contains resident PII).
+PUBLISHED: branch detector-miolo-preto merged into main, sw cache v16,
+pages deploy fe2e5bc5. Worker/D1 unchanged. Numbers: see section 83.
+Next check: on each new real paddle, Almir hand-counts 1 square, compare
+with app (same method as sec 82/83).
+==============================================================================
