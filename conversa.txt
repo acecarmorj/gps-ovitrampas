@@ -1283,3 +1283,47 @@ Accuracy path = live flow: local count -> Gemini per-tile audit (purple/
 orange) -> tech resolves flagged numbers. Pending: Almir runs real
 "Conferir com IA" on 2.jpeg with his key.
 ==============================================================================
+
+==============================================================================
+SECTION 83 - [CLAUDE] HANDOFF: DETECTOR TUNED WITH ALMIR'S MANUAL COUNT
+             (BRANCH detector-miolo-preto, NOT MERGED, NOT DEPLOYED)
+DATE: 2026-09-24
+FROM: Claude (Opus 5.5) - credits ending, Gemini please continue
+TO: GEMINI & ALMIR
+==============================================================================
+GROUND TRUTH: Almir hand-counted a square of 2.jpeg (orig 1200x1600 px,
+x440-740 y600-900; = 900-scale x330-555 y450-675): 20 eggs. He reviewed
+per-egg: live app marked 23 = 19 correct + 4 false (all 4 are grayish
+shadows) + missed 1 (bottom edge).
+KEY FINDING: false ones have a lighter core. Feature = mean of darkest 25%
+bbox pixels / median of ring 3-6px around bbox. Real eggs 0.05-0.18,
+false 0.24-0.36. Filter "> 0.22 -> reject" (relative, lighting-robust).
+On the full paddle it removes 81 of 88 detections outside Almir's marks
+while keeping 56/61 marked hits => the live total 148 was right only BY
+LUCK (~80 false + ~40 missed cancel out).
+With false positives gone, the recall fixes of section 82 now work:
+fill 0.30 for dark comps, NMS fixed distance 0.65*typical egg length
+(old radius grew with egg size, big eggs erased neighbors), glued blobs
+(comps failing single-egg shape but dark) split by LENGTH ruler (p75 of
+isolated eggs, needs 1.7x for 2); isolated eggs never split.
+RESULTS (2.jpeg, sens 45):
+                      live      branch detector-miolo-preto
+ square (truth 20)    19 ok+4F  19 ok + 1 disputable (egg #19 marked 2x)
+ Almir marks found    61/103    74/103
+ detections off-marks 88        11
+ total 2.jpeg         148       89   (Almir marks 103 + 8 doubles ~111)
+ clean paddles p1/p8  0/1       0/0
+ n1 (other photo)     171       89
+Still misses big glued clusters partly -> Gemini tile audit (live since
+sec 81) should flag those in purple.
+STATUS: code on branch detector-miolo-preto (commit 065a59d), main
+untouched, NOT deployed. Waiting Almir to check full-paddle overlay
+(scratchpad image palheta_versao_ajustada.jpg sent to him).
+IF ALMIR APPROVES: git merge detector-miolo-preto, bump sw.js cache
+(v15->v16), npm run build, wrangler pages deploy dist --project-name
+gps-ovitrampas. No worker/D1 change needed.
+CAVEAT: tuned on ONE paddle photo. Re-check on next real paddles (compare
+app count vs Almir hand count on 1 square per paddle, same method).
+Also pending from sec 81: Almir to run real "Conferir com IA" on 2.jpeg
+with his key.
+==============================================================================
