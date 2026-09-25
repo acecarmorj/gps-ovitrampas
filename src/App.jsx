@@ -5,7 +5,7 @@ import { GuiaScreen } from './features/menu/GuiaScreen';
 import { InstalarArmadilhaScreen } from './features/campo/InstalarArmadilhaScreen';
 import { PainelAcompanhamentoScreen } from './features/acompanhamento/PainelAcompanhamentoScreen';
 import { LaboratorioScreen } from './features/laboratorio/LaboratorioScreen';
-import { PainelAdminScreen } from './features/admin/PainelAdminScreen';
+import { PainelAdminSimples as PainelAdminScreen } from './features/admin/PainelAdminSimples';
 import { CenarioIdealScreen } from './features/planejamento/CenarioIdealScreen';
 import {
   getArmadilhas,
