@@ -891,6 +891,6 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   }
 
   // Salva o PDF consolidado com nome oficial padronizado
-  const nomeArquivo = `RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO_${dataAtual.toISOString().slice(0, 10)}.pdf`;
+  const nomeArquivo = opcoes.nomeArquivo || 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf';
   doc.save(nomeArquivo);
 }

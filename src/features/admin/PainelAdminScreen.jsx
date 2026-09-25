@@ -269,12 +269,31 @@ export function PainelAdminScreen({
     document.body.removeChild(link);
   };
 
+  // Geração do Relatório Entomológico Oficial (Fotos de Satélite Google + Nevoeiro Radiante)
+  const handleGerarRelatorioEntomologico = async () => {
+    try {
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Entomológico Oficial (Fotos de Satélite Google + Nevoeiro)...' });
+      const filtroDescricao = 'Vigilância Entomológica • Cobertura Municipal Completa (56 Armadilhas) • Base Satélite';
+      await gerarRelatorioPdfConsolidado(armadilhas, {
+        filtroDescricao,
+        nomeArquivo: 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf'
+      });
+      setToastMensagem({ tipo: 'sucesso', texto: 'Relatório Entomológico baixado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório entomológico:', err);
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório entomológico. Tente novamente.' });
+    }
+  };
+
   // Geração do Relatório Consolidado Oficial Completo em PDF (com Mapas de Satélite e Nevoeiro)
   const handleGerarRelatorioConsolidado = async () => {
     try {
       setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Consolidado com Mapas de Satélite e Nevoeiro...' });
       const filtroDescricao = 'Consolidação Municipal Oficial • 56 Ovitrampas • Base Satélite';
-      await gerarRelatorioPdfConsolidado(armadilhas, { filtroDescricao });
+      await gerarRelatorioPdfConsolidado(armadilhas, {
+        filtroDescricao,
+        nomeArquivo: 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf'
+      });
       setToastMensagem({ tipo: 'sucesso', texto: 'Relatório Consolidado baixado com sucesso!' });
     } catch (err) {
       console.error('Erro ao gerar relatório consolidado:', err);
@@ -474,26 +493,27 @@ export function PainelAdminScreen({
               <span className="hidden sm:inline">Excel</span>
             </button>
 
-            {/* BOTÃO RELATÓRIO CONSOLIDADO OFICIAL (MAPAS DE SATÉLITE + NEVOEIRO) */}
+            {/* BOTÃO RELATÓRIO ENTOMOLÓGICO OFICIAL (FOTOS DE SATÉLITE + NEVOEIRO) */}
             <button
               type="button"
-              onClick={handleGerarRelatorioConsolidado}
+              onClick={handleGerarRelatorioEntomologico}
               className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-700/20 border border-emerald-400/40"
-              title="Gerar Relatório Consolidado Oficial (6 Páginas com Mapas de Calor em Satélite e Nevoeiro)"
+              title="Baixar Relatório Entomológico Oficial (6 Páginas com Mapas de Calor em Foto de Satélite Google e Nevoeiro)"
             >
               <Satellite className="w-4 h-4 text-emerald-200" />
               <Flame className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>Relatório Consolidado</span>
+              <span>Relatório Entomológico</span>
             </button>
 
+            {/* BOTÃO RELATÓRIO CONSOLIDADO / PDF */}
             <button
               type="button"
-              onClick={handleGerarPdf}
+              onClick={handleGerarRelatorioConsolidado}
               className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs border border-slate-700"
-              title="Gerar relatório técnico consolidado em PDF"
+              title="Gerar Relatório Consolidado Oficial em PDF"
             >
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Relatório PDF</span>
+              <FileText className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Relatório Consolidado</span>
             </button>
 
             {/* BOTÃO PARA ZERAR DADOS DE TESTE / INICIAR NOVO CICLO */}
