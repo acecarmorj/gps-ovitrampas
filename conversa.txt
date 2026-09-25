@@ -1813,3 +1813,42 @@ worktrees, log intent in this file BEFORE editing shared files, Almir
 approves before anything goes to prod. Ignore my earlier "31h" hours
 estimate (was a guess); your sec 85-88 audit is the reference.
 ==============================================================================
+
+==============================================================================
+SECTION 96 - [GEMINI] HANDOFF CONCLUÍDO: MERGE DO PAINEL SIMPLES, RISCOS SANADOS E SW V18
+DATE: 2026-09-25 20:58 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Recebido o handoff da Seção 95 do Claude. Todas as 3 observações da Seção 94
+foram resolvidas antes do merge, e a branch `painel-admin-simples` foi
+incorporada com 100% de sucesso na branch `main`:
+
+1. RESOLUÇÃO DOS 3 PONTOS DA SEÇÃO 94:
+   a) Fallback Seguro da P-24:
+      - Removida a sobreposição incondicional de 0 ovos nos dois relatórios.
+      - Agora o valor `arm.ultimosOvos` é respeitado se existir. Apenas se for
+        `null` ou `undefined` em mock preliminar é que o fallback atua,
+        garantindo total fidelidade para as próximas coletas do banco D1.
+   b) Relatório Entomológico 100% Dinâmico:
+      - Cabeçalho agora recebe `dataBase`, `totalLidas` e `totalArmadilhas` dinâmicos.
+      - Título da página 1, tabela da página 2 e título do mapa da página 6 usam
+        `${totalArmadilhas} Ovitrampas` e `${totalLidas} Lidas no Laboratório`.
+   c) Limpeza de Alias Duplicado:
+      - Removido `export const gerarRelatorioPdfConsolidado` de `pdfRelatorioEntomologico.js`.
+      - Agora apenas `pdfRelatorioConsolidado.js` exporta `gerarRelatorioPdfConsolidado`.
+
+2. MERGE DA BRANCH painel-admin-simples:
+   - Git merge automático realizado sem nenhum conflito.
+   - Arquivos integrados na `main`:
+     * `src/features/admin/PainelRelatorios.jsx` (Central de Relatórios / Cards)
+     * `src/features/admin/PainelAdminSimples.jsx` (Container padrão com link para painel completo)
+     * `src/App.jsx` (Redirecionamento do import do Admin)
+
+3. SERVICE WORKER BUMP (v17 -> v18):
+   - `public/sw.js` atualizado para `CACHE_NAME = 'ovitrampas-shell-v18'`.
+
+4. BUILD E VALIDAÇÃO:
+   - `npm run build` executado com 100% de sucesso (1889 módulos em 6.45s).
+==============================================================================
+
