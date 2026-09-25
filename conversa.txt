@@ -1345,3 +1345,145 @@ pages deploy fe2e5bc5. Worker/D1 unchanged. Numbers: see section 83.
 Next check: on each new real paddle, Almir hand-counts 1 square, compare
 with app (same method as sec 82/83).
 ==============================================================================
+
+==============================================================================
+SECTION 85 - [GEMINI] AUDIT OF ALMIR'S WORK HOURS (ORIGIN D:\ + LIVE F:\)
+DATE: 2026-09-24 19:03 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Per Almir's explicit instruction, audited the entire timeline tracing back
+to the original Ovitrampas codebase in D:\ (D:\ALL\Ovitrampas), including
+the technical base, SESRJ course demo, and Etapas 1-12.
+
+Criteria requested by Almir:
+1. EXCLUDE outdoor field work (driving to districts, physical trap hanging).
+2. INCLUDE all software engineering, data architecture, prompting & review.
+3. INCLUDE all laboratory bench work, microscopy and lupa ground truth counting.
+4. OMIT AI attributions (focus strictly on Almir's hours and technical dedication).
+
+Timeline summary:
+- Phase 1 (D:\ALL\Ovitrampas, 2026-07-29 to 2026-08-21): 20h 50min.
+  Base Carmo architecture, QR workflow, outdoor UX, lab bench mode, SESRJ
+  course demo, BASE_TECNICA.md, geodata generation, and Etapas 1 to 12
+  (Auth, Offline sync, R2 lab photos, Operational intel, Territorial history,
+  Round planning, Individual identity, Real-time panel, RBAC, Smart lab,
+  Transparency reports, and Homologation).
+- Phase 2 (F:\Desktop\GPS OVITRAMPAS, 2026-09-15 to 2026-09-24): 28h 38min.
+  Offline-first PWA, D1 sync, 300m ideal grid, OSRM offline, Modo Troca Rapida,
+  trap renumbering 1-56, 175m PDF maps, lab AI 401 fix, lupa/microscopy manual
+  ground truth count (2.jpeg 103 eggs / 20 square), and detector miolo-preto v16.
+
+Total consolidated dev & lab time dedicated by Almir: 49h 28min.
+Reports generated:
+- RELATORIO_HORAS_TRABALHO_ALMIR.txt (text)
+- RELATORIO_HORAS_TRABALHO_ALMIR.pdf (executive 2-page PDF document)
+==============================================================================
+
+==============================================================================
+SECTION 86 - [GEMINI] NON-BILLING VOLUNTARY DECLARATION & DESKTOP SYNC
+DATE: 2026-09-24 19:56 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Per Almir's emphatic instructions:
+1. Under no circumstance should the report resemble an invoice, overtime claim,
+   timesheet claim, or billing to the municipality ("NAO PODE DE FORMA ALGUMA
+   PARECER COBRANÇA").
+2. Explicitly registered that it was 100% spontaneous and voluntary work, done
+   at his own home, using his personal computer, electricity, and internet,
+   during off-hours, weekends, and rest time, WITHOUT ANYONE HAVING ASKED OR
+   DEMANDED IT ("SEM QUE NINGUEM TENHA PEDIDO").
+3. Stated unequivocally that it constitutes a technical historic account
+   (memória técnica) and non-billing prestação de contas, renouncing any
+   claim to financial compensation, overtime, or bank of hours.
+4. Highlighted the massive structural and financial benefit delivered to the
+   Municipality of Carmo (zero cost to public coffers, custom high-precision
+   vector platform, 56 traps covering 5 districts, 175m radius maps, OSRM,
+   GPS-proximity quick swap mode).
+5. Document formatted as a 2-page executive report (zero signature lines)
+   and distributed directly to Almir's Desktop (C:\Users\Almir LK\Desktop and
+   F:\Desktop) under:
+   - RELATORIO_TECNICO_CHEFIA_ALMIR_LEMGRUBER.pdf
+   - RELATORIO_HORAS_TRABALHO_ALMIR.pdf
+   - RELATO_VOLUNTARIO_ALMIR_CHEFIA.pdf
+   - RELATORIO_HORAS_TRABALHO_ALMIR.txt
+==============================================================================
+
+==============================================================================
+SECTION 87 - [GEMINI] PLATFORM TEMPORARY CESSION & TABLET LAB NOTE
+DATE: 2026-09-24 20:05 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Per Almir's explicit additions:
+1. PLATAFORMA CEDIDA (NÃO DOADA): Plataforma de software foi CEDIDA
+   temporariamente para uso do Município de Carmo no período de 01/09/2026
+   a 01/01/2027 a título gratuito (sem ônus ao erário municipal).
+2. BANCADA / MICROSCOPIA SOB LUPA (24/09/2026 15:30-17:00, 1h 30m):
+   Explicitly noted in the table and institutional declarations that this
+   activity was performed during regular work hours at the workplace, but
+   utilizing Almir's PERSONAL TABLET.
+3. Updated both PDF (strictly 2 pages) and TXT, deployed to:
+   - C:\Users\Almir LK\Desktop\RELATORIO_TECNICO_CHEFIA_ALMIR_LEMGRUBER.pdf
+   - C:\Users\Almir LK\Desktop\RELATORIO_HORAS_TRABALHO_ALMIR.pdf
+   - C:\Users\Almir LK\Desktop\INFORME_TECNICO_CHEFIA_ALMIR.pdf
+   - C:\Users\Almir LK\Desktop\RELATORIO_HORAS_TRABALHO_ALMIR.txt
+   - F:\Desktop (mirrored copies)
+==============================================================================
+
+==============================================================================
+SECTION 88 - [GEMINI] 17/09 LAB SESSION ON PERSONAL TABLET IN WORKPLACE
+DATE: 2026-09-24 20:21 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Per Almir's explicit instruction:
+1. 17/09/2026 (13:50 às 16:00 - 2h 10m): Added operational note that this
+   lab testing session was ALSO performed during work hours in the work
+   environment utilizing Almir's PERSONAL TABLET.
+2. Laboratory & Bench subtotal (3h 40m = 2h 10m on 17/09 + 1h 30m on 24/09)
+   now consistently documented as performed during work hours on Almir's
+   personal tablet, while software development (45h 48m) was done at home
+   during off-hours/weekends.
+3. Updated PDF (2 pages) and TXT recompiled and synced to Desktop, Downloads,
+   and Documents folders.
+==============================================================================
+
+==============================================================================
+SECTION 89 - [GEMINI] HEATMAP GRADIENT REFINEMENT & SATELLITE THERMAL FOG
+DATE: 2026-09-25 12:35 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Per Almir's explicit instructions and visual reference (Prefeitura de Amparo):
+1. MAP 1 (5 OFFICIAL LEVELS, STREET BASE) - GRADIENT HALO FIXED:
+   - Eliminated erroneous blue/cold halo around critical foci (>100 eggs).
+   - High-infestation spots (P-23 with 147 eggs, P-21 with 100 eggs) now strictly
+     radiate from Dark Red in core -> Vivid Red -> Orange -> Yellow at the perimeter
+     -> Fades cleanly into transparency (ZERO BLUE AT THE BORDER).
+   - Blue is exclusively reserved for negative traps (0 eggs / cold area).
+   - Official 175m Ministry of Health coverage rings and labels preserved.
+   - Updated both standalone engine and app's src/lib/heatmapCanvas.js.
+
+2. MAP 2 (CONTINUOUS THERMAL SMOG / NEVOEIRO ON SATELLITE BASE):
+   - Created a continuous thermal haze ("nevoeiro térmico") inspired directly
+     by the official standard of Prefeitura de Amparo.
+   - Base layer: High-resolution ESRI World Imagery (satellite photography).
+   - Smooth continuous thermal cloud radiating over Carmo's urban landscape:
+     Crimson/Dark Red over heavy foci (Progresso, Centro, Boa Ideia) -> Vivid
+     Orange -> Golden Amber -> Smooth yellow dissipation over satellite terrain.
+   - Distinct rounded pill badges for central neighborhoods (CENTRO, PROGRESSO,
+     JARDIM CENTENÁRIO, BOA IDEIA, CAIXA D'ÁGUA) and prominent hotspot pins.
+
+3. CONSOLIDATED 4-PAGE EPIDEMIOLOGICAL REPORT & HIGH-RES ASSETS:
+   - Page 1: Executive Overview, Indicators (IPO 53.8%, IDO 44.4), Ranking of 14
+     hotspots, Neighborhood Territorial Analysis, D1 integrity audit.
+   - Page 2: Full individual table of the 26 analyzed traps with official 5 levels.
+   - Page 3: Map 1 (5 Official Levels, Street Base - Corrected).
+   - Page 4: Map 2 (Thermal Fog / Nevoeiro, Satellite Base - Amparo Style).
+   - Saved and mirrored to Desktop:
+     * RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf
+     * MAPA_DE_CALOR_CARMO_5_NIVEIS_CORRIGIDO.jpg
+     * MAPA_DE_CALOR_NEVOEIRO_SATELITE_CARMO.jpg
+==============================================================================

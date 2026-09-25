@@ -269,17 +269,37 @@ export function PainelAdminScreen({
     document.body.removeChild(link);
   };
 
-  // Geração do Relatório Consolidado Oficial em PDF
-  const handleGerarPdf = async () => {
-    const filtroDescricao = [
-      filtroMicroarea !== 'todas' ? filtroMicroarea : null,
-      filtroStatus !== 'todos' ? filtroStatus : null,
-      filtroTexto.trim() || null
-    ]
-      .filter(Boolean)
-      .join(' • ') || 'Todos os Registros';
+  // Geração do Relatório Consolidado Oficial Completo em PDF (com Mapas de Satélite e Nevoeiro)
+  const handleGerarRelatorioConsolidado = async () => {
+    try {
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Consolidado com Mapas de Satélite e Nevoeiro...' });
+      const filtroDescricao = 'Consolidação Municipal Oficial • 56 Ovitrampas • Base Satélite';
+      await gerarRelatorioPdfConsolidado(armadilhas, { filtroDescricao });
+      setToastMensagem({ tipo: 'sucesso', texto: 'Relatório Consolidado baixado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório consolidado:', err);
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório. Tente novamente.' });
+    }
+  };
 
-    await gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
+  // Geração do Relatório PDF (respeitando filtros atuais de busca/bairro)
+  const handleGerarPdf = async () => {
+    try {
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório em PDF...' });
+      const filtroDescricao = [
+        filtroMicroarea !== 'todas' ? filtroMicroarea : null,
+        filtroStatus !== 'todos' ? filtroStatus : null,
+        filtroTexto.trim() || null
+      ]
+        .filter(Boolean)
+        .join(' • ') || 'Todos os Registros';
+
+      await gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
+      setToastMensagem({ tipo: 'sucesso', texto: 'Relatório PDF baixado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório PDF:', err);
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar PDF. Tente novamente.' });
+    }
   };
 
   return (
@@ -454,10 +474,22 @@ export function PainelAdminScreen({
               <span className="hidden sm:inline">Excel</span>
             </button>
 
+            {/* BOTÃO RELATÓRIO CONSOLIDADO OFICIAL (MAPAS DE SATÉLITE + NEVOEIRO) */}
+            <button
+              type="button"
+              onClick={handleGerarRelatorioConsolidado}
+              className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-700/20 border border-emerald-400/40"
+              title="Gerar Relatório Consolidado Oficial (6 Páginas com Mapas de Calor em Satélite e Nevoeiro)"
+            >
+              <Satellite className="w-4 h-4 text-emerald-200" />
+              <Flame className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>Relatório Consolidado</span>
+            </button>
+
             <button
               type="button"
               onClick={handleGerarPdf}
-              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs"
+              className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs border border-slate-700"
               title="Gerar relatório técnico consolidado em PDF"
             >
               <FileText className="w-4 h-4" />

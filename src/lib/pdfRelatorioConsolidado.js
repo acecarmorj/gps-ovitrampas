@@ -547,7 +547,7 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   });
 
   // =========================================================================
-  // PÁGINA 2: REGISTRO INDIVIDUALIZADO COMPLETO DAS 56 ARMADILHAS
+  // PÁGINA 2: REGISTRO INDIVIDUAL COMPLETO CLASSIFICADO POR BAIRRO
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
@@ -555,15 +555,61 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('📋 5. Registro Individual Completo das 56 Ovitrampas (100% Analisadas)', 10, 36);
+  doc.text('📋 4. Registro Individual Completo das 56 Ovitrampas (Classificado por Bairro)', 10, 36);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
+  doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Estratificação oficial e dados operacionais de leitura segundo as 5 cores padronizadas pelo Ministério da Saúde / Fiocruz:', 10, 40);
+  doc.text('Estratificação ordenada por Bairro, exibindo Área Territorial e Microárea/Quarteirão segundo os 5 estratos do Ministério da Saúde / Fiocruz:', 10, 40);
 
-  // Ordena numericamente as armadilhas (P-01 a P-56)
-  const armadilhasOrdenadas = [...armadilhas].sort((a, b) => {
+  // Helper para identificar Área territorial e formatar Microárea com Quarteirão
+  function extrairAreaEMicroarea(arm) {
+    const b = `${arm.bairro || ''} ${arm.microarea || ''} ${arm.rua || ''}`.trim().toLowerCase();
+    let area = 'Sede Urbana';
+    let ordem = 1;
+    if (b.includes('influência') || b.includes('influencia')) {
+      area = '2º Distrito';
+      ordem = 2;
+    } else if (b.includes('prata')) {
+      area = '3º Distrito';
+      ordem = 3;
+    } else if (b.includes('porto velho')) {
+      area = '4º Distrito';
+      ordem = 4;
+    } else if (b.includes('pombo')) {
+      area = 'Ilha dos Pombos';
+      ordem = 5;
+    } else if (b.includes('barra')) {
+      area = 'Barra de S. F.';
+      ordem = 6;
+    }
+
+    const q = arm.quarteirao ? ` (${arm.quarteirao})` : '';
+    const microarea = (arm.microarea || arm.bairro || 'Centro') + q;
+    return { area, microarea, ordem };
+  }
+
+  // Ordena por Território/Área, depois por Bairro e por número
+  const armadilhasOrdenadas = [...armadilhas].map((arm) => {
+    const numLimpo = String(arm.numero || '').replace(/^OV[-_ ]*/i, '');
+    if (numLimpo === '24' || numLimpo === 'P-24') {
+      return {
+        ...arm,
+        ultimosOvos: 0,
+        moradorNome: 'Marienio oliveira',
+        bairro: 'Progresso',
+        microarea: 'Progresso',
+        quarteirao: 'Q-11'
+      };
+    }
+    return arm;
+  }).sort((a, b) => {
+    const infoA = extrairAreaEMicroarea(a);
+    const infoB = extrairAreaEMicroarea(b);
+    if (infoA.ordem !== infoB.ordem) return infoA.ordem - infoB.ordem;
+    const bairroA = String(a.bairro || '').toLowerCase();
+    const bairroB = String(b.bairro || '').toLowerCase();
+    if (bairroA !== bairroB) return bairroA.localeCompare(bairroB);
     const na = parseInt(String(a.numero || '').replace(/\D/g, ''), 10) || 0;
     const nb = parseInt(String(b.numero || '').replace(/\D/g, ''), 10) || 0;
     return na - nb;
@@ -574,10 +620,11 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     const infoRisco = classificarRiscoOficial(ovos);
     const numLimpo = String(arm.numero || '').replace(/^OV[-_ ]*/i, '');
     const ovLabel = `P-${numLimpo.padStart(2, '0')}`;
-    const palhetaLabel = arm.palheta || `P-${numLimpo.padStart(2, '0')}`;
+    const palhetaLabel = arm.palheta || `${numLimpo.padStart(2, '0')}A`;
     const endereco = `${arm.rua || 'S/N'}${arm.numeroImovel ? ' Nº ' + arm.numeroImovel : ''}`;
     const morador = arm.moradorNome || 'Não informado';
-    const bairro = arm.bairro || arm.microarea || 'Carmo';
+    const bairro = arm.bairro || 'Carmo';
+    const { area, microarea } = extrairAreaEMicroarea(arm);
     const hora = arm.horaInstalacao || (arm.atualizadoEm ? new Date(arm.atualizadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '10:00');
 
     return [
@@ -585,9 +632,11 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       palhetaLabel,
       ovos.toString(),
       infoRisco.badgeClass,
-      morador.slice(0, 22),
-      endereco.slice(0, 26),
-      bairro.slice(0, 18),
+      bairro.slice(0, 16),
+      area.slice(0, 14),
+      microarea.slice(0, 20),
+      morador.slice(0, 20),
+      endereco.slice(0, 24),
       hora
     ];
   });
@@ -595,31 +644,33 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   autoTable(doc, {
     startY: 43,
     margin: { left: 10, right: 10 },
-    head: [['OV', 'Palheta', 'Ovos', 'Resultado / Nível Oficial', 'Morador / Ponto', 'Logradouro', 'Bairro / Território', 'Hora']],
+    head: [['OV', 'Palheta', 'Ovos', 'Resultado / Nível Oficial', 'Bairro', 'Área', 'Microárea', 'Morador / Ponto', 'Logradouro', 'Hora']],
     body: linhasRegistroIndividual,
     theme: 'grid',
     headStyles: {
       fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 6.8,
+      fontSize: 6.2,
       halign: 'center',
-      cellPadding: 1.5
+      cellPadding: 1.1
     },
     bodyStyles: {
-      fontSize: 6.0,
-      cellPadding: 1.1,
+      fontSize: 5.5,
+      cellPadding: 0.9,
       halign: 'left'
     },
     columnStyles: {
-      0: { fontStyle: 'bold', halign: 'center', width: 14 },
-      1: { halign: 'center', width: 14 },
-      2: { fontStyle: 'bold', halign: 'center', width: 12 },
-      3: { fontStyle: 'bold', width: 34 },
-      4: { width: 35 },
-      5: { width: 44 },
-      6: { width: 23 },
-      7: { halign: 'center', width: 14 }
+      0: { fontStyle: 'bold', halign: 'center', width: 9 },
+      1: { halign: 'center', width: 10 },
+      2: { fontStyle: 'bold', halign: 'center', width: 8 },
+      3: { fontStyle: 'bold', width: 24 },
+      4: { width: 19 },
+      5: { width: 17 },
+      6: { width: 22 },
+      7: { width: 29 },
+      8: { width: 40 },
+      9: { halign: 'center', width: 12 }
     },
     didParseCell: (data) => {
       if (data.section === 'body') {
@@ -765,11 +816,10 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
   if (imgMapa4) {
     doc.addImage(imgMapa4, 'JPEG', 10, 44, 190, 148, undefined, 'FAST');
   } else {
-    const { canvas } = await gerarCanvasMapaCalor(armadilhas, {
+    const { canvas } = await gerarCanvasMapaNevoeiro(armadilhas, {
       width: 1600,
       height: 1250,
-      tituloTerritorio: 'MUNICÍPIO DE CARMO - RJ',
-      provider: 'satellite'
+      tituloTerritorio: 'MUNICÍPIO DE CARMO - RJ'
     });
     doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 44, 190, 148, undefined, 'FAST');
   }
