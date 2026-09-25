@@ -559,28 +559,30 @@ export function MapaGrandeOvitrampa({
 
         const heatPoints = armadilhasVerificadas.map((a) => {
           const ovos = Number(a.ultimosOvos || 0);
-          let intensidade = 0.18; // 0 ovos (negativa) = verde suave
-          if (ovos > 100) intensidade = 1.0;
-          else if (ovos > 50) intensidade = 0.85;
-          else if (ovos > 20) intensidade = 0.65;
-          else if (ovos > 0) intensidade = 0.40;
+          let intensidade = 0.10; // 0 ovos (negativa) = azul frio
+          if (ovos >= 100) intensidade = 1.0; // >100 ovos = vermelho intenso
+          else if (ovos >= 51) intensidade = 0.78; // 51-99 ovos = laranja forte
+          else if (ovos >= 21) intensidade = 0.55; // 21-50 ovos = amarelo
+          else if (ovos > 0) intensidade = 0.32;  // 1-20 ovos = verde
 
           return [Number(a.latitude), Number(a.longitude), intensidade];
         });
 
         if (LeafletLib.heatLayer) {
           const heat = LeafletLib.heatLayer(heatPoints, {
-            radius: 48,
-            blur: 32,
-            maxZoom: 17,
+            radius: 22,
+            blur: 14,
+            maxZoom: 18,
             max: 1.0,
-            minOpacity: 0.35,
+            minOpacity: 0.40,
             gradient: {
-              0.15: '#22c55e', // Verde (Negativa / Baixo)
-              0.35: '#84cc16', // Verde-amarelado
-              0.55: '#eab308', // Amarelo (Médio)
-              0.75: '#f97316', // Laranja (Alto)
-              1.00: '#ef4444'  // Vermelho vivo (Foco Crítico)
+              0.08: '#2563eb', // Azul vivo (Zero ovos - Negativa / Frio)
+              0.22: '#0284c7', // Azul cerúleo
+              0.38: '#16a34a', // Verde (1 a 20 ovos - Baixo)
+              0.58: '#eab308', // Amarelo (21 a 50 ovos - Moderado)
+              0.76: '#ea580c', // Laranja (51 a 99 ovos - Alto)
+              0.92: '#dc2626', // Vermelho vivo (>100 ovos - Foco Crítico Máximo)
+              1.00: '#991b1b'  // Vermelho escuro
             }
           });
 
@@ -655,12 +657,13 @@ export function MapaGrandeOvitrampa({
           <div className="text-[10px] text-slate-600 mb-2 font-medium leading-relaxed">
             Calculado <b>apenas com as 26 armadilhas lidas</b>. Foco crítico: Progresso (P-23: 147 ovos, P-21: 100 ovos).
           </div>
-          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#22c55e] via-[#eab308] via-[#f97316] to-[#ef4444] shadow-inner mb-1.5" />
+          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#2563eb] via-[#16a34a] via-[#eab308] via-[#ea580c] to-[#dc2626] shadow-inner mb-1.5" />
           <div className="flex justify-between text-[9px] font-black text-slate-500">
-            <span className="text-emerald-700">0 (Neg.)</span>
-            <span className="text-amber-600">1-20</span>
-            <span className="text-orange-600">21-50</span>
-            <span className="text-rose-600">&gt;50 Crítico</span>
+            <span className="text-blue-600 font-extrabold">0 (Azul)</span>
+            <span className="text-emerald-700">1-20</span>
+            <span className="text-amber-600">21-50</span>
+            <span className="text-orange-600">51-99</span>
+            <span className="text-rose-600 font-extrabold">&gt;100 (Vermelho)</span>
           </div>
         </div>
       )}

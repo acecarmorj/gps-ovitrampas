@@ -14,22 +14,22 @@ function intensidadePorArmadilha(arm) {
   const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
   if (!isAnalisada) return 0; // Armadilhas não analisadas NÃO geram calor
   const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
-  if (ovos === 0) return 0.15; // Monitorada negativa: verde suave
-  if (ovos <= 10) return 0.35; // Verde
-  if (ovos <= 25) return 0.50; // Verde-amarelo
-  if (ovos <= 50) return 0.70; // Amarelo
-  if (ovos <= 100) return 0.88; // Laranja
-  return 1.0; // Vermelho intenso (Hotspot >100 ovos)
+  if (ovos === 0) return 0.10; // Monitorada negativa (zero ovos): azul frio
+  if (ovos <= 20) return 0.35; // Poucos ovos (1 a 20): verde
+  if (ovos <= 50) return 0.58; // Moderado (21 a 50): amarelo
+  if (ovos < 100) return 0.78; // Alto (51 a 99): laranja
+  return 1.0; // Foco Crítico (>= 100 ovos): vermelho intenso
 }
 
-// Gradiente de calor idêntico à imagem de referência: verde suave -> amarelo -> laranja -> vermelho intenso
+// Gradiente térmico: Azul (0 ovos) -> Verde (1-20) -> Amarelo (21-50) -> Laranja (51-99) -> Vermelho (>100)
 function corDoGradiente(t) {
   const stops = [
-    { p: 0.0, c: [34, 197, 94] },   // verde esmeralda (#22c55e)
-    { p: 0.30, c: [132, 204, 22] }, // verde-limão (#84cc16)
-    { p: 0.50, c: [234, 179, 8] },  // amarelo (#eab308)
-    { p: 0.75, c: [249, 115, 22] }, // laranja (#f97316)
-    { p: 1.0, c: [239, 68, 68] }    // vermelho (#ef4444)
+    { p: 0.0, c: [37, 99, 235] },   // azul (#2563eb) - zero ovos
+    { p: 0.22, c: [2, 132, 199] },  // azul cerúleo (#0284c7)
+    { p: 0.40, c: [22, 163, 74] },  // verde (#16a34a) - 1-20 ovos
+    { p: 0.62, c: [234, 179, 8] },  // amarelo (#eab308) - 21-50 ovos
+    { p: 0.80, c: [234, 88, 12] },  // laranja (#ea580c) - 51-99 ovos
+    { p: 1.0, c: [220, 38, 38] }    // vermelho vivo (#dc2626) - >100 ovos
   ];
   let a = stops[0];
   let b = stops[stops.length - 1];
@@ -413,7 +413,7 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   heat.width = W;
   heat.height = H;
   const hctx = heat.getContext('2d');
-  const raioBase = Math.max(34, Math.min(W, H) * 0.055);
+  const raioBase = Math.max(18, Math.min(W, H) * 0.026);
 
   // GERAÇÃO DO CALOR: EXCLUSIVAMENTE SOBRE AS ARMADILHAS JÁ VERIFICADAS
   const pontosCalor = pontos.filter((arm) => arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined));
@@ -422,7 +422,7 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     const intensidade = intensidadePorArmadilha(arm);
     if (intensidade <= 0) return;
-    const raio = raioBase * (0.8 + intensidade * 0.7);
+    const raio = raioBase * (0.7 + intensidade * 0.6);
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
     grad.addColorStop(0, `rgba(0,0,0,${intensidade})`);
