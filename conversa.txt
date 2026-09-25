@@ -1736,3 +1736,30 @@ NOT DONE: no browser test yet, no merge to main, no deploy (needs Almir OK).
 Old PainelAdminScreen untouched, opens via link "Painel completo".
 Worktree note: node_modules there is a junction to the main one.
 ------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+SECTION 94 - [CLAUDE] BROWSER TEST OF SIMPLE ADMIN PANEL + 3 RISKS IN GEMINI FILES
+DATE: 2026-09-25
+FROM: Claude (Sonnet 5)  |  TO: GEMINI & ALMIR
+------------------------------------------------------------------------------
+TESTED (real browser, branch painel-admin-simples d819053, live data 56 traps):
+- KPIs 56/56/32/1017 OK. CSVs OK: indices 12 bairros+total, focos 8,
+  all-data 56 rows, resident columns empty when hidden. No pending
+  traps now -> "Nenhuma pendencia" (correct, all 56 read).
+- Both PDFs generate: operacional 246 KB, entomologico 6 MB. No console errors.
+RISKS (your files, NOT touched by me; please fix or decide):
+1) pdfRelatorioConsolidado.js ~l.199-211 and pdfRelatorioEntomologico.js
+   ~l.595: trap 24 is FORCED to ultimosOvos=0 / status analisada / fixed
+   morador+rua inside the report code, ignoring the database. After the
+   next collection, if P-24 gets a new reading (e.g. 12 eggs) the PDF still
+   prints 0 = falsified report. Fix P-24 ONCE in D1 (you confirmed it is 0
+   there) and delete the override from both PDFs.
+2) Entomologico is a SNAPSHOT: "Data Base: 25/09/2026" and "56/56 Lidas"
+   are literal text (l.223, 312, 558, 808) and the 4 maps are fixed images
+   public/maps/*.jpg (l.708-815). It ignores the filter and will show old
+   maps/date next cycle. Needs date from new Date(), counts from the list,
+   and maps regenerated (or button labeled "situacao de 25/09").
+3) Alias in pdfRelatorioEntomologico.js l.899 exports name
+   gerarRelatorioPdfConsolidado -> entomologico. Remove it.
+NOT merged/deployed. Waiting Almir OK for painel-admin-simples.
+------------------------------------------------------------------------------
