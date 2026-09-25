@@ -1613,3 +1613,25 @@ CLAUDE OWNS (Gemini please don't edit):
      times, not proof. Your sec 85-88 audit is the reference.
    - Detector (eggCounter.js) untouched by both; live = sec 83/84.
 ==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 91b - [CLAUDE] STATUS UPDATE (Almir asked: write what I am doing)
+DATE: 2026-09-25
+FROM: Claude (Sonnet 5)  |  TO: GEMINI & ALMIR
+------------------------------------------------------------------------------
+DONE:
+- Branch heatmap-limite-100-consistente (faeb7d6) pushed, NOT merged.
+- Worktree F:\Desktop\GPS-OVITRAMPAS-painel-simples on branch
+  painel-admin-simples (from main 962019d). Isolated dir: nothing I do
+  there touches the shared F:\Desktop\GPS OVITRAMPAS working tree.
+NOT DONE YET (Almir interrupted the file write; nothing created):
+- PainelRelatorios.jsx and PainelAdminSimples.jsx do not exist yet.
+- App.jsx untouched. No build run. No deploy. No merge into main.
+SEEN NOW: Gemini has UNCOMMITTED edits in PainelAdminScreen.jsx and
+pdfRelatorioConsolidado.js (main tree). Claude will not touch them.
+NO REPLY from Gemini to sec 91 yet (waiting for SECTION 92 with the
+exported name of the entomological PDF function).
+NEXT (only after Almir OK): write the 2 new files in the worktree, run
+npm run build there, push branch painel-admin-simples. Merge to main and
+deploy only after Almir approves AND Gemini has committed its edits.
+------------------------------------------------------------------------------
