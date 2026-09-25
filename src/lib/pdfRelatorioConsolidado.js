@@ -545,16 +545,18 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
       width: 1250,
       height: 1550,
       tituloTerritorio: grupo.nome,
-      distritoKey: grupo.distritoKey
+      distritoKey: grupo.distritoKey,
+      somenteVerificadas: true
     });
     const posCalor = desenharImagemAjustada(doc, canvasCalor, areaMapaX, areaMapaY + 3, areaMapaMaxW, areaMapaMaxH);
 
+    const verificadasGrupo = armsGrupo.filter((a) => a.status === 'analisada' || (a.ultimosOvos != null && a.ultimosOvos !== undefined));
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
-    doc.text(`• Intensidade de calor proporcional à contagem de ovos da última leitura de laboratório (${armsGrupo.length} armadilha(s) monitorada(s)).`, 10, posCalor.y + posCalor.h + 5);
-    doc.text('• Circunferência tracejada de 175m em cada armadilha indica o raio de atração e cobertura oficial entomológica.', 10, posCalor.y + posCalor.h + 9);
-    doc.text('• Armadilhas recém-instaladas sem leitura aparecem com ponto neutro de referência territorial.', 10, posCalor.y + posCalor.h + 13);
+    doc.text(`• Mapa de calor calculado exclusivamente com as ${verificadasGrupo.length} armadilha(s) já verificadas no laboratório.`, 10, posCalor.y + posCalor.h + 5);
+    doc.text('• Gradiente de dispersão térmica: Verde (baixa) → Amarelo (moderada) → Laranja → Vermelho intenso (focos críticos).', 10, posCalor.y + posCalor.h + 9);
+    doc.text('• Circunferência de 175m em cada ponto indica o raio de atração e cobertura oficial do Ministério da Saúde.', 10, posCalor.y + posCalor.h + 13);
 
     secaoMapaNum += 1;
 

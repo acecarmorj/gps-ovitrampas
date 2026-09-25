@@ -11,23 +11,25 @@ import { buildTrapDistanceNetwork } from './geoDistance';
  */
 
 function intensidadePorArmadilha(arm) {
-  if (arm.status !== 'analisada' || arm.ultimosOvos == null) return 0.25; // instalada, aguardando leitura
-  const ovos = arm.ultimosOvos;
-  if (ovos === 0) return 0.35;
-  if (ovos <= 20) return 0.55;
-  if (ovos <= 50) return 0.75;
-  if (ovos <= 100) return 0.9;
-  return 1.0;
+  const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
+  if (!isAnalisada) return 0; // Armadilhas não analisadas NÃO geram calor
+  const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
+  if (ovos === 0) return 0.15; // Monitorada negativa: verde suave
+  if (ovos <= 10) return 0.35; // Verde
+  if (ovos <= 25) return 0.50; // Verde-amarelo
+  if (ovos <= 50) return 0.70; // Amarelo
+  if (ovos <= 100) return 0.88; // Laranja
+  return 1.0; // Vermelho intenso (Hotspot >100 ovos)
 }
 
-// Gradiente de cor do mapa de calor (estilo clássico: azul -> ciano -> verde -> amarelo -> vermelho)
+// Gradiente de calor idêntico à imagem de referência: verde suave -> amarelo -> laranja -> vermelho intenso
 function corDoGradiente(t) {
   const stops = [
-    { p: 0.0, c: [37, 99, 235] },   // azul
-    { p: 0.35, c: [6, 182, 212] },  // ciano
-    { p: 0.55, c: [16, 185, 129] }, // verde esmeralda
-    { p: 0.75, c: [234, 179, 8] },  // amarelo
-    { p: 1.0, c: [225, 29, 72] }    // vermelho/rosa
+    { p: 0.0, c: [34, 197, 94] },   // verde esmeralda (#22c55e)
+    { p: 0.30, c: [132, 204, 22] }, // verde-limão (#84cc16)
+    { p: 0.50, c: [234, 179, 8] },  // amarelo (#eab308)
+    { p: 0.75, c: [249, 115, 22] }, // laranja (#f97316)
+    { p: 1.0, c: [239, 68, 68] }    // vermelho (#ef4444)
   ];
   let a = stops[0];
   let b = stops[stops.length - 1];
@@ -382,10 +384,17 @@ function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA') {
 /**
  * Mapa de calor: densidade/risco de ovos das armadilhas sobre o contorno de Carmo.
  */
-export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null } = {}) {
-  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhas, width, height, { tituloTerritorio, distritoKey });
+export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null, somenteVerificadas = true } = {}) {
+  // Filtra somente as armadilhas verificadas/analisadas quando solicitado
+  const todasComCoords = (armadilhas || []).filter((a) => a.latitude != null && a.longitude != null);
+  const verificadas = todasComCoords.filter((a) => a.status === 'analisada' || (a.ultimosOvos != null && a.ultimosOvos !== undefined));
+  
+  // Base territorial: se tiver verificadas e flag ativa, enquadra nas verificadas; senão em todas
+  const armadilhasEnquadramento = (somenteVerificadas && verificadas.length > 0) ? verificadas : todasComCoords;
 
-  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico)
+  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhasEnquadramento, width, height, { tituloTerritorio, distritoKey });
+
+  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico) apenas para armadilhas exibidas
   pontos.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     ctx.save();
@@ -395,7 +404,7 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(99, 102, 241, 0.07)';
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.06)';
     ctx.fill();
     ctx.restore();
   });
@@ -404,12 +413,16 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   heat.width = W;
   heat.height = H;
   const hctx = heat.getContext('2d');
-  const raioBase = Math.max(28, Math.min(W, H) * 0.045);
+  const raioBase = Math.max(34, Math.min(W, H) * 0.055);
 
-  pontos.forEach((arm) => {
+  // GERAÇÃO DO CALOR: EXCLUSIVAMENTE SOBRE AS ARMADILHAS JÁ VERIFICADAS
+  const pontosCalor = pontos.filter((arm) => arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined));
+
+  pontosCalor.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     const intensidade = intensidadePorArmadilha(arm);
-    const raio = raioBase * (0.7 + intensidade * 0.6);
+    if (intensidade <= 0) return;
+    const raio = raioBase * (0.8 + intensidade * 0.7);
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
     grad.addColorStop(0, `rgba(0,0,0,${intensidade})`);
@@ -432,46 +445,61 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     px[i] = r;
     px[i + 1] = g;
     px[i + 2] = b;
-    px[i + 3] = Math.min(255, Math.round(alpha * 235));
+    px[i + 3] = Math.min(255, Math.round(alpha * 240));
   }
   hctx.putImageData(imgData, 0, 0);
 
-  ctx.globalAlpha = 0.82;
+  ctx.globalAlpha = 0.85;
   ctx.drawImage(heat, 0, 0);
   ctx.globalAlpha = 1;
 
+  // Renderização dos Pins e Etiquetas
   pontos.forEach((arm) => {
+    const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
+    const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
 
-    // Ponto marcador central destacado com aro duplo
+    // Cor do Pin
+    let pinCor = '#94a3b8'; // cinza neutro se não analisada
+    if (isAnalisada) {
+      if (ovos > 50) pinCor = '#ef4444'; // vermelho
+      else if (ovos > 20) pinCor = '#f97316'; // laranja
+      else if (ovos > 0) pinCor = '#eab308'; // amarelo
+      else pinCor = '#10b981'; // verde (0 ovos)
+    }
+
+    // Ponto marcador central com borda branca destacada
     ctx.beginPath();
-    ctx.arc(x, y, 7.5, 0, Math.PI * 2);
-    ctx.fillStyle = arm.ultimosOvos > 0 ? '#e11d48' : '#0f172a';
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = pinCor;
     ctx.fill();
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = '#ffffff';
     ctx.stroke();
 
-    // Etiqueta da OV ampliada, com alto contraste e nitidez para impressão A4
-    const label = `OV-${arm.numero}`;
-    ctx.font = 'bold 13.5px Arial';
+    // Etiqueta detalhada da OV com número de ovos
+    const label = isAnalisada
+      ? `OV-${arm.numero}: ${ovos} ovo${ovos === 1 ? '' : 's'}`
+      : `OV-${arm.numero} (Pendente)`;
+
+    ctx.font = 'bold 12.5px Arial';
     const textW = ctx.measureText(label).width;
     const badgeW = textW + 14;
-    const badgeH = 21;
+    const badgeH = 22;
     const badgeX = x + 10;
     const badgeY = y - 11;
 
-    // Fundo branco sólido com borda nítida
+    // Fundo branco sólido com borda colorida por gravidade
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
     ctx.fill();
-    ctx.strokeStyle = '#0f172a';
+    ctx.strokeStyle = isAnalisada && ovos > 0 ? (ovos > 50 ? '#ef4444' : '#f97316') : '#0f172a';
     ctx.lineWidth = 1.4;
     ctx.stroke();
 
-    // Texto da armadilha em preto chapado
-    ctx.fillStyle = '#0f172a';
+    // Texto da armadilha
+    ctx.fillStyle = isAnalisada && ovos > 50 ? '#991b1b' : '#0f172a';
     ctx.textAlign = 'center';
     ctx.fillText(label, badgeX + badgeW / 2, badgeY + 15);
     ctx.textAlign = 'start';
@@ -481,12 +509,12 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   desenharNorte(ctx, W - 30, 30);
 
   desenharLegenda(ctx, W, H, [
-    { cor: 'rgba(99, 102, 241, 0.85)', label: 'Raio de referência (175m)', isRing: true },
-    { cor: 'rgb(37,99,235)', label: 'Sem leitura / negativa' },
-    { cor: 'rgb(16,185,129)', label: 'Baixo risco (1-20 ovos)' },
-    { cor: 'rgb(234,179,8)', label: 'Médio risco (21-50 ovos)' },
-    { cor: 'rgb(225,29,72)', label: 'Alto / crítico (>50 ovos)' }
-  ], 'NÍVEL DE RISCO');
+    { cor: 'rgba(99, 102, 241, 0.85)', label: 'Raio de atração (175m)', isRing: true },
+    { cor: 'rgb(239, 68, 68)', label: 'Foco Crítico (> 50 ovos)' },
+    { cor: 'rgb(249, 115, 22)', label: 'Médio/Alto (21 a 50 ovos)' },
+    { cor: 'rgb(234, 179, 8)', label: 'Baixo (1 a 20 ovos)' },
+    { cor: 'rgb(34, 197, 94)', label: 'Negativa (0 ovos verificados)' }
+  ], 'MAPA DE CALOR (OVOS)');
 
   return { canvas, width: W, height: H };
 }

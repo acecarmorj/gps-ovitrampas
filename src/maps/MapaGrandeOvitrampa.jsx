@@ -6,6 +6,7 @@ import { calcDistanceMeters } from '../lib/geoDistance';
 import { makeAutoFit } from './mapFit';
 import { MapControlButtons } from './MapControlButtons';
 import { buildTrapDistanceNetwork, findNearbyTraps } from '../lib/geoDistance';
+import { ensureLeafletHeat } from '../lib/leafletHeatHelper';
 
 export function MapaGrandeOvitrampa({
   userPos,
@@ -25,6 +26,8 @@ export function MapaGrandeOvitrampa({
   onTogglePanel,
   showDistances: propShowDistances,
   onToggleDistances: propOnToggleDistances,
+  showHeatmap: propShowHeatmap,
+  onToggleHeatmap: propOnToggleHeatmap,
   showAgentGuideLine = true
 }) {
   const [internalShowLabels, setInternalShowLabels] = useState(true);
@@ -34,6 +37,10 @@ export function MapaGrandeOvitrampa({
   const [internalShowDistances, setInternalShowDistances] = useState(true);
   const effectiveShowDistances = propShowDistances !== undefined ? propShowDistances : internalShowDistances;
   const handleToggleDistances = propOnToggleDistances || (() => setInternalShowDistances((prev) => !prev));
+
+  const [internalShowHeatmap, setInternalShowHeatmap] = useState(false);
+  const effectiveShowHeatmap = propShowHeatmap !== undefined ? propShowHeatmap : internalShowHeatmap;
+  const handleToggleHeatmap = propOnToggleHeatmap || (() => setInternalShowHeatmap((prev) => !prev));
 
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -46,7 +53,8 @@ export function MapaGrandeOvitrampa({
     distanceLinesLayer: null,
     circlesLayer: null,
     trapsLayer: null,
-    otherAgentsLayer: null
+    otherAgentsLayer: null,
+    heatLayer: null
   });
 
   const [satellite, setSatellite] = useState(false);
@@ -114,6 +122,9 @@ export function MapaGrandeOvitrampa({
         }
         if (layersRef.current.otherAgentsLayer) {
           map.removeLayer(layersRef.current.otherAgentsLayer);
+        }
+        if (layersRef.current.heatLayer) {
+          map.removeLayer(layersRef.current.heatLayer);
         }
         map.remove();
       } catch (e) {}
@@ -509,6 +520,89 @@ export function MapaGrandeOvitrampa({
     });
   }, [armadilhas, showCircles]);
 
+  // 6.6. Renderização do Mapa de Calor (SOMENTE Armadilhas Já Verificadas / Analisadas)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (!effectiveShowHeatmap) {
+      if (layersRef.current.heatLayer) {
+        try {
+          map.removeLayer(layersRef.current.heatLayer);
+        } catch (e) {}
+        layersRef.current.heatLayer = null;
+      }
+      return;
+    }
+
+    let cancelado = false;
+    ensureLeafletHeat()
+      .then((LeafletLib) => {
+        if (cancelado || !mapInstanceRef.current) return;
+
+        if (layersRef.current.heatLayer) {
+          try {
+            map.removeLayer(layersRef.current.heatLayer);
+          } catch (e) {}
+          layersRef.current.heatLayer = null;
+        }
+
+        // Filtra ESTRITAMENTE as armadilhas já verificadas
+        const armadilhasVerificadas = armadilhas.filter(
+          (a) =>
+            (a.status === 'analisada' || (a.ultimosOvos !== undefined && a.ultimosOvos !== null)) &&
+            a.latitude &&
+            a.longitude
+        );
+
+        if (armadilhasVerificadas.length === 0) return;
+
+        const heatPoints = armadilhasVerificadas.map((a) => {
+          const ovos = Number(a.ultimosOvos || 0);
+          let intensidade = 0.18; // 0 ovos (negativa) = verde suave
+          if (ovos > 100) intensidade = 1.0;
+          else if (ovos > 50) intensidade = 0.85;
+          else if (ovos > 20) intensidade = 0.65;
+          else if (ovos > 0) intensidade = 0.40;
+
+          return [Number(a.latitude), Number(a.longitude), intensidade];
+        });
+
+        if (LeafletLib.heatLayer) {
+          const heat = LeafletLib.heatLayer(heatPoints, {
+            radius: 48,
+            blur: 32,
+            maxZoom: 17,
+            max: 1.0,
+            minOpacity: 0.35,
+            gradient: {
+              0.15: '#22c55e', // Verde (Negativa / Baixo)
+              0.35: '#84cc16', // Verde-amarelado
+              0.55: '#eab308', // Amarelo (Médio)
+              0.75: '#f97316', // Laranja (Alto)
+              1.00: '#ef4444'  // Vermelho vivo (Foco Crítico)
+            }
+          });
+
+          heat.addTo(map);
+          layersRef.current.heatLayer = heat;
+        }
+      })
+      .catch((err) => {
+        console.warn('Erro ao carregar leaflet.heat:', err);
+      });
+
+    return () => {
+      cancelado = true;
+      if (layersRef.current.heatLayer && mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.removeLayer(layersRef.current.heatLayer);
+        } catch (e) {}
+        layersRef.current.heatLayer = null;
+      }
+    };
+  }, [armadilhas, effectiveShowHeatmap]);
+
   // Centraliza suavemente na armadilha quando for selecionada
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -539,6 +633,8 @@ export function MapaGrandeOvitrampa({
         onToggleDistances={handleToggleDistances}
         showCircles={showCircles}
         onToggleCircles={() => setShowCircles(!showCircles)}
+        showHeatmap={effectiveShowHeatmap}
+        onToggleHeatmap={handleToggleHeatmap}
         showLabels={effectiveShowLabels}
         onToggleLabels={handleToggleLabels}
         showPanel={showPanel}
@@ -546,6 +642,28 @@ export function MapaGrandeOvitrampa({
         top={controlTop}
         right={12}
       />
+
+      {/* Legenda Flutuante do Mapa de Calor */}
+      {effectiveShowHeatmap && (
+        <div className="absolute bottom-4 left-4 z-[900] bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 shadow-xl max-w-[290px] pointer-events-auto">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+            <span className="text-xs font-black text-slate-900 leading-tight">
+              🔥 Mapa de Calor Epidemiológico
+            </span>
+          </div>
+          <div className="text-[10px] text-slate-600 mb-2 font-medium leading-relaxed">
+            Calculado <b>apenas com as 26 armadilhas lidas</b>. Foco crítico: Progresso (P-23: 147 ovos, P-21: 100 ovos).
+          </div>
+          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#22c55e] via-[#eab308] via-[#f97316] to-[#ef4444] shadow-inner mb-1.5" />
+          <div className="flex justify-between text-[9px] font-black text-slate-500">
+            <span className="text-emerald-700">0 (Neg.)</span>
+            <span className="text-amber-600">1-20</span>
+            <span className="text-orange-600">21-50</span>
+            <span className="text-rose-600">&gt;50 Crítico</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

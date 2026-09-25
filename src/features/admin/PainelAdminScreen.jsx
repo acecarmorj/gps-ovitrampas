@@ -5,7 +5,7 @@ import {
   FlaskConical, CheckCircle2, AlertTriangle, AlertCircle,
   X, Layers, ExternalLink, Trash2, BellRing,
   PieChart, Activity, User, FileText, Pencil, RotateCcw,
-  Save, Check, Info
+  Save, Check, Info, Flame
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { excluirArmadilha, atualizarArmadilha, limparTodasArmadilhas } from '../../lib/storage';
@@ -380,6 +380,19 @@ export function PainelAdminScreen({
               </button>
               <button
                 type="button"
+                onClick={() => setModoVisualizacao('calor')}
+                className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
+                  modoVisualizacao === 'calor'
+                    ? 'bg-gradient-to-r from-orange-600 to-rose-600 text-white shadow-md shadow-orange-600/25'
+                    : 'text-orange-700 bg-orange-50/80 hover:bg-orange-100'
+                }`}
+                title="Exibir Mapa de Calor das Armadilhas Verificadas"
+              >
+                <Flame className="w-4 h-4 text-orange-500 animate-bounce" />
+                <span>🔥 Mapa de Calor</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setModoVisualizacao('resumo_gps')}
                 className={`px-3 sm:px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95 ${
                   modoVisualizacao === 'resumo_gps'
@@ -548,6 +561,57 @@ export function PainelAdminScreen({
       ) : modoVisualizacao === 'resumo_gps' ? (
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/70">
           <PainelResumoGpsCampo armadilhas={armadilhas} />
+        </div>
+      ) : modoVisualizacao === 'calor' ? (
+        <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col">
+          {/* BANNER DO MAPA DE CALOR */}
+          <div className="bg-gradient-to-r from-orange-600 via-rose-600 to-red-700 text-white px-3 sm:px-4 py-2 sm:py-2.5 shadow-md flex flex-wrap items-center justify-between gap-2.5 shrink-0 z-20">
+            <div className="flex items-center gap-2.5">
+              <span className="p-1.5 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Flame className="w-5 h-5 text-amber-200 animate-bounce" />
+              </span>
+              <div>
+                <div className="text-xs sm:text-sm font-black flex items-center gap-2">
+                  <span>MAPA DE CALOR EPIDEMIOLÓGICO — 26 ARMADILHAS VERIFICADAS</span>
+                  <span className="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase">
+                    Focos Reais
+                  </span>
+                </div>
+                <div className="text-[11px] text-orange-100 flex items-center gap-3 mt-0.5 flex-wrap">
+                  <span>🥚 <b>{totalOvos} ovos</b> apurados</span>
+                  <span>📊 <b>IPO: {ipo}%</b> ({totalPositivas} pos. / {totalNegativas} neg.)</span>
+                  <span>📈 <b>IDO: {ido}</b> ovos/arm. positiva</span>
+                  <span>🔥 Focos: <b>P-23 (147)</b> e <b>P-21 (100)</b> em Progresso</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleGerarPdf}
+                className="bg-white text-orange-700 hover:bg-orange-50 active:scale-95 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <FileText className="w-4 h-4 text-orange-600" />
+                <span>Baixar Relatório com Mapa de Calor (PDF)</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 relative w-full h-full">
+            <MapaGrandeOvitrampa
+              userPos={userPos}
+              armadilhas={armadilhas}
+              armadilhaSelecionada={armadilhaSelecionada}
+              onSelectArmadilha={(arm) => setArmadilhaSelecionada(arm)}
+              mostrarTodosPontos={true}
+              outrosAgentes={outrosAgentes}
+              showHeatmap={true}
+              showLabels={mostrarRotulosAdmin}
+              onToggleLabels={() => setMostrarRotulosAdmin((prev) => !prev)}
+              showPanel={false}
+            />
+          </div>
         </div>
       ) : (
         <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col lg:flex-row">

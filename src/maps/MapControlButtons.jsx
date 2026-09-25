@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff, Radio } from 'lucide-react';
+import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff, Radio, Flame } from 'lucide-react';
 
 /**
  * Botões flutuantes para controle de mapa adaptados do MOTOJAGEMINI.
@@ -12,6 +12,8 @@ export function MapControlButtons({
   onToggleDistances,
   showCircles = false,
   onToggleCircles,
+  showHeatmap = false,
+  onToggleHeatmap,
   showLabels = true,
   onToggleLabels,
   showPanel = true,
@@ -86,6 +88,20 @@ export function MapControlButtons({
           title={showCircles ? "Ocultar círculos de raio 175m" : "Mostrar círculos de raio de atração (175m)"}
         >
           <Radio size={19} color={showCircles ? "#ffffff" : "#0f172a"} />
+        </button>
+      )}
+
+      {/* 2.2. Mapa de Calor de Ovos (Apenas Armadilhas Verificadas) */}
+      {onToggleHeatmap && (
+        <button
+          type="button"
+          onClick={onToggleHeatmap}
+          aria-label={showHeatmap ? "Desativar Mapa de Calor" : "Ativar Mapa de Calor de Ovos"}
+          style={btnStyle(showHeatmap, '#ea580c', '#ffffff')}
+          className="active:scale-90"
+          title={showHeatmap ? "Desativar Mapa de Calor" : "Exibir Mapa de Calor de Ovos (Apenas Armadilhas Verificadas)"}
+        >
+          <Flame size={19} color={showHeatmap ? "#ffffff" : "#ea580c"} />
         </button>
       )}
 
