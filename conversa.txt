@@ -1763,3 +1763,53 @@ RISKS (your files, NOT touched by me; please fix or decide):
    gerarRelatorioPdfConsolidado -> entomologico. Remove it.
 NOT merged/deployed. Waiting Almir OK for painel-admin-simples.
 ------------------------------------------------------------------------------
+
+==============================================================================
+SECTION 95 - [CLAUDE] HANDOFF TO GEMINI (Claude credits ending)
+DATE: 2026-09-25
+FROM: Claude (Sonnet 5)  |  TO: GEMINI (continue from here) & ALMIR
+==============================================================================
+STATE OF EVERYTHING (verified, not assumed):
+- main = live. Prod sw cache v17. Detector "miolo preto" live since 24/09
+  (sec 83/84). Backup tag: backup-antes-detector-miolo-preto. D1 backup
+  local: backups/ovitrampas-gps-db_20260924_181202.sql (PII, gitignored).
+- Branch heatmap-limite-100-consistente (faeb7d6): you already applied it
+  by hand in sec 92 -> can be deleted (git push origin --delete ...).
+- Branch painel-admin-simples (d819053): READY, tested in browser (sec 94),
+  NOT merged, NOT deployed. Almir has not yet approved.
+
+TO DO, IN THIS ORDER:
+1) Fix the 3 risks of sec 94 in YOUR files (P-24 forced to 0 inside both
+   PDFs; entomologico hard-coded date/56 and static maps; alias l.899).
+   Most important: fix P-24 in D1 once, remove override from PDFs.
+2) Ask Almir: "merge painel-admin-simples and deploy?" On yes:
+   git checkout main && git pull && git merge painel-admin-simples
+   (only 3 files: PainelRelatorios.jsx, PainelAdminSimples.jsx, App.jsx
+   1 import line) -> npm run build -> bump public/sw.js cache v17->v18 ->
+   wrangler pages deploy dist --project-name gps-ovitrampas -> curl the
+   live sw.js to confirm v18. Commit files BY NAME, never git add -A.
+3) Optional cleanup after merge: remove worktree
+   F:\Desktop\GPS-OVITRAMPAS-painel-simples with `git worktree remove`.
+   CAUTION: its node_modules is a JUNCTION to the real one. Never rm -rf
+   it; remove the link with `cmd /c rmdir <path>` only, or the real
+   node_modules is deleted.
+
+OPEN IDEAS (Almir asked for suggestions; none started):
+- Heat map: painel Leaflet uses fixed-pixel radius (varies with zoom) vs
+  PDF 175 m real; show egg count on pins; legend note "0 eggs = result of
+  that trap only".
+- Add a card for "Ficha da armadilha" and "Comparativo entre ciclos"
+  (only meaningful after next collection).
+- .gitignore: traps_*, readings_*, full_joined_*, audit_*. Repo is PUBLIC
+  and already contains traps_verified_official.json + audit_resultado.txt
+  (resident names/addresses/GPS). Almir: residents authorized use, no
+  publication; he said not to worry now, but consider making repo private
+  before the final report. Ask him.
+- Detector: still needs 1 hand-counted square per new paddle (method sec
+  82/83). Gemini key still client-side; plan = worker secret proxy.
+
+RULES THAT WORKED: file ownership (sec 91/92), separate branches or
+worktrees, log intent in this file BEFORE editing shared files, Almir
+approves before anything goes to prod. Ignore my earlier "31h" hours
+estimate (was a guess); your sec 85-88 audit is the reference.
+==============================================================================
