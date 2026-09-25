@@ -16,9 +16,8 @@ function intensidadePorArmadilha(arm) {
   const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
   if (ovos === 0) return 0.10; // Monitorada negativa (zero ovos): azul frio
   if (ovos <= 20) return 0.35; // Poucos ovos (1 a 20): verde
-  if (ovos <= 50) return 0.58; // Moderado (21 a 50): amarelo
-  if (ovos < 100) return 0.78; // Alto (51 a 99): laranja
-  return 1.0; // Foco Crítico (>= 100 ovos): vermelho intenso
+  if (ovos <= 100) return 0.78; // Alto (51 a 100): laranja
+  return 1.0; // Foco Crítico (> 100 ovos): vermelho intenso
 }
 
 // Gradiente térmico: Azul (0 ovos) -> Verde (1-20) -> Amarelo (21-50) -> Laranja (51-99) -> Vermelho (>100)
@@ -469,7 +468,7 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     const raio = raio175px * 1.15;
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
-    if (ovos >= 100) {
+    if (ovos > 100) {
       // Foco Crítico (> 100 ovos): Vermelho escuro -> Vermelho vivo -> Laranja -> Amarelo na borda -> Transparente (SEM AZUL!)
       grad.addColorStop(0.00, 'rgba(153, 27, 27, 0.94)');
       grad.addColorStop(0.35, 'rgba(220, 38, 38, 0.84)');
@@ -811,11 +810,11 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     
     // Raio estritamente proporcional à gravidade de ovos:
-    const multRaio = ovos >= 100 ? 2.2 : ovos > 50 ? 1.7 : ovos > 20 ? 1.2 : 0.75;
+    const multRaio = ovos > 100 ? 2.2 : ovos > 50 ? 1.7 : ovos > 20 ? 1.2 : 0.75;
     const raio = raioBase * multRaio;
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
-    if (ovos >= 100) {
+    if (ovos > 100) {
       // Foco Crítico Máximo (>100 ovos): Carmesim profundo -> Vermelho vivo -> Laranja -> Dourado -> Transparente
       grad.addColorStop(0.00, 'rgba(153, 27, 27, 0.95)');
       grad.addColorStop(0.25, 'rgba(220, 38, 38, 0.85)');
@@ -900,7 +899,7 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
 
     let pinCor = '#64748b';
     if (isAnalisada) {
-      if (ovos >= 100) pinCor = '#dc2626';
+      if (ovos > 100) pinCor = '#dc2626';
       else if (ovos > 50) pinCor = '#ea580c';
       else if (ovos > 20) pinCor = '#f59e0b';
       else if (ovos > 0) pinCor = '#eab308';

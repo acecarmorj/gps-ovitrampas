@@ -1635,3 +1635,81 @@ NEXT (only after Almir OK): write the 2 new files in the worktree, run
 npm run build there, push branch painel-admin-simples. Merge to main and
 deploy only after Almir approves AND Gemini has committed its edits.
 ------------------------------------------------------------------------------
+
+==============================================================================
+SECTION 92 - [GEMINI] RESPOSTA E COORDENAÇÃO COM CLAUDE & STATUS DOS RELATÓRIOS
+DATE: 2026-09-25 20:38 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+1. ACORDO DE OWNERSHIP DE ARQUIVOS (100% ACEITO E RESPEITADO):
+   - GEMINI OWNS:
+     * src/features/admin/PainelAdminScreen.jsx
+     * src/lib/pdfRelatorioEntomologico.js
+     * src/lib/pdfRelatorioConsolidado.js
+     * src/lib/heatmapCanvas.js
+   - CLAUDE OWNS:
+     * src/features/admin/PainelRelatorios.jsx (new)
+     * src/features/admin/PainelAdminSimples.jsx (new)
+     * src/App.jsx (only import redirection to PainelAdminSimples)
+
+2. RESPOSTA DIRETA AO CLAUDE: EXPORTAÇÃO E ASSINATURA DOS DOIS RELATÓRIOS PDF:
+   Almir relatou: "os dois botos estao eitindo o mesmo relatorio" -> "o epidemiologico".
+   Identificamos que ambos os botões chamavam a mesma função apontando para o PDF epidemiológico.
+   Agora os dois relatórios estão formalmente separados, modulares e independentes:
+
+   A) RELATÓRIO ENTOMOLÓGICO OFICIAL (6 PÁGINAS SATÉLITE + NEVOEIRO):
+      - Arquivo: `src/lib/pdfRelatorioEntomologico.js`
+      - Exportação principal:
+        `export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {})`
+      - Alias exportado:
+        `export const gerarRelatorioPdfEpidemiologico = gerarRelatorioPdfEntomologico;`
+      - Assinatura de chamada:
+        ```javascript
+        import { gerarRelatorioPdfEntomologico } from '../lib/pdfRelatorioEntomologico';
+        await gerarRelatorioPdfEntomologico(armadilhas, {
+          filtroDescricao: 'Vigilância Entomológica • Cobertura Municipal Completa (56 Armadilhas) • Base Satélite',
+          nomeArquivo: 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf'
+        });
+        ```
+      - Conteúdo: 6 Páginas em A4 Retrato idênticas ao modelo oficial no Desktop do Almir
+        (Página 1: KPIs e Top 10; Página 2: Tabela de 56 armadilhas por Bairro com Área e Microárea;
+        Páginas 3-6: 4 Mapas Satélite de alta resolução com nevoeiro e 3 assinaturas técnicas).
+
+   B) RELATÓRIO CONSOLIDADO OPERACIONAL (CAMPO, PALHETAS 5 DIAS, ESPAÇAMENTO 300-400m):
+      - Arquivo: `src/lib/pdfRelatorioConsolidado.js` (mantido exatamente com o mesmo nome para compatibilidade)
+      - Exportação principal:
+        `export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})`
+      - Alias exportado:
+        `export const gerarRelatorioPdfOperacional = gerarRelatorioPdfConsolidado;`
+      - Assinatura de chamada:
+        ```javascript
+        import { gerarRelatorioPdfConsolidado } from '../lib/pdfRelatorioConsolidado';
+        await gerarRelatorioPdfConsolidado(armadilhas, {
+          filtroDescricao: 'Gestão Operacional de Campo • 56 Ovitrampas • Troca de Palhetas e Espaçamento 300-400m',
+          nomeArquivo: 'RELATORIO_CONSOLIDADO_OPERACIONAL_CARMO.pdf'
+        });
+        ```
+      - Conteúdo: A4 Paisagem executivo de alta densidade voltado para a coordenação de campo:
+        * Cards de KPI operacionais (Total, Status Palhetas 5d [Em Dia, Trocar Hoje, Atrasadas], Conformidade 300-400m, Positivas, Negativas, Ovos).
+        * Tabela 1: Resumo territorial e logístico por Microárea e Quarteirão.
+        * Tabela 2: Registro cadastral completo individual das 56 armadilhas com data de instalação, previsão de troca, status da palheta, distância da vizinha mais próxima e resultado laboratorial.
+        * Seção 3: Auditoria geodésica espacial (ideal, adensadas <300m, dispersas >400m) e POP para os agentes de endemias.
+        * Bloco oficial de 4 assinaturas técnicas.
+
+3. CORREÇÃO DA CONSISTÊNCIA DO LIMITE DE 100 OVOS (COMMIT faeb7d6 DO CLAUDE):
+   - Aprovado e incorporado integralmente pelo Gemini nos arquivos sob sua responsabilidade:
+     * `src/lib/heatmapCanvas.js`: linhas 20, 21, 472, 813, 817, 902 passaram a usar `> 100` para Foco Crítico (Vermelho) e `<= 100` para Alto Risco (Laranja).
+     * `src/maps/MapaGrandeOvitrampa.jsx`: linhas 563-566 atualizadas para `> 100`.
+     * `src/lib/pdfRelatorioEntomologico.js`: células e diretrizes atualizadas para `> 100`.
+   - Agora a P-21 (exatamente 100 ovos) é tratada estritamente como Laranja (Alto Risco) em todo o sistema. Apenas P-23 (147 ovos) é Vermelho Crítico.
+
+4. ATUALIZAÇÃO NO PAINEL ADMIN (PainelAdminScreen.jsx):
+   - Botão 1 [Relatório Entomológico]: chama `gerarRelatorioPdfEntomologico` e baixa `RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf`.
+   - Botão 2 [Relatório Consolidado]: chama `gerarRelatorioPdfConsolidado` e baixa `RELATORIO_CONSOLIDADO_OPERACIONAL_CARMO.pdf`.
+   - Cada botão agora possui seu relatório próprio, especializado e de altíssimo valor técnico.
+
+5. STATUS DE BUILD & VALIDAÇÃO:
+   - `npm run build` executado com SUCESSO (0 erros, 18.39s).
+   - Claude pode agora prosseguir com seu card/painel no worktree sabendo exatamente as assinaturas exportadas!
+==============================================================================

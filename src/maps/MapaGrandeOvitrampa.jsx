@@ -560,9 +560,9 @@ export function MapaGrandeOvitrampa({
         const heatPoints = armadilhasVerificadas.map((a) => {
           const ovos = Number(a.ultimosOvos || 0);
           let intensidade = 0.10; // 0 ovos (negativa) = azul frio
-          if (ovos >= 100) intensidade = 1.0; // >100 ovos = vermelho intenso
-          else if (ovos >= 51) intensidade = 0.78; // 51-99 ovos = laranja forte
-          else if (ovos >= 21) intensidade = 0.55; // 21-50 ovos = amarelo
+          if (ovos > 100) intensidade = 1.0; // >100 ovos = vermelho intenso
+          else if (ovos > 50) intensidade = 0.78; // 51-100 ovos = laranja forte
+          else if (ovos > 20) intensidade = 0.55; // 21-50 ovos = amarelo
           else if (ovos > 0) intensidade = 0.32;  // 1-20 ovos = verde
 
           return [Number(a.latitude), Number(a.longitude), intensidade];

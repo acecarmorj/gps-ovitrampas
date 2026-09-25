@@ -12,6 +12,7 @@ import { excluirArmadilha, atualizarArmadilha, limparTodasArmadilhas } from '../
 import { playNewRequestSound } from '../../lib/soundAlert';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
+import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
 import { PainelInteligenciaIA } from './PainelInteligenciaIA';
 import { PainelResumoGpsCampo } from './PainelResumoGpsCampo';
 import { Satellite } from 'lucide-react';
@@ -274,7 +275,7 @@ export function PainelAdminScreen({
     try {
       setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Entomológico Oficial (Fotos de Satélite Google + Nevoeiro)...' });
       const filtroDescricao = 'Vigilância Entomológica • Cobertura Municipal Completa (56 Armadilhas) • Base Satélite';
-      await gerarRelatorioPdfConsolidado(armadilhas, {
+      await gerarRelatorioPdfEntomologico(armadilhas, {
         filtroDescricao,
         nomeArquivo: 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf'
       });
@@ -285,26 +286,26 @@ export function PainelAdminScreen({
     }
   };
 
-  // Geração do Relatório Consolidado Oficial Completo em PDF (com Mapas de Satélite e Nevoeiro)
+  // Geração do Relatório Consolidado Oficial (Gestão Operacional de Campo, Troca de Palhetas e Espaçamento 300-400m)
   const handleGerarRelatorioConsolidado = async () => {
     try {
-      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Consolidado com Mapas de Satélite e Nevoeiro...' });
-      const filtroDescricao = 'Consolidação Municipal Oficial • 56 Ovitrampas • Base Satélite';
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Consolidado Operacional de Campo...' });
+      const filtroDescricao = 'Gestão Operacional de Campo • 56 Ovitrampas • Troca de Palhetas e Espaçamento 300-400m';
       await gerarRelatorioPdfConsolidado(armadilhas, {
         filtroDescricao,
-        nomeArquivo: 'RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf'
+        nomeArquivo: 'RELATORIO_CONSOLIDADO_OPERACIONAL_CARMO.pdf'
       });
       setToastMensagem({ tipo: 'sucesso', texto: 'Relatório Consolidado baixado com sucesso!' });
     } catch (err) {
       console.error('Erro ao gerar relatório consolidado:', err);
-      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório. Tente novamente.' });
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório operacional. Tente novamente.' });
     }
   };
 
   // Geração do Relatório PDF (respeitando filtros atuais de busca/bairro)
   const handleGerarPdf = async () => {
     try {
-      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório em PDF...' });
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Entomológico em PDF...' });
       const filtroDescricao = [
         filtroMicroarea !== 'todas' ? filtroMicroarea : null,
         filtroStatus !== 'todos' ? filtroStatus : null,
@@ -313,7 +314,7 @@ export function PainelAdminScreen({
         .filter(Boolean)
         .join(' • ') || 'Todos os Registros';
 
-      await gerarRelatorioPdfConsolidado(armadilhasFiltradas, { filtroDescricao });
+      await gerarRelatorioPdfEntomologico(armadilhasFiltradas, { filtroDescricao });
       setToastMensagem({ tipo: 'sucesso', texto: 'Relatório PDF baixado com sucesso!' });
     } catch (err) {
       console.error('Erro ao gerar relatório PDF:', err);
@@ -505,12 +506,12 @@ export function PainelAdminScreen({
               <span>Relatório Entomológico</span>
             </button>
 
-            {/* BOTÃO RELATÓRIO CONSOLIDADO / PDF */}
+            {/* BOTÃO RELATÓRIO CONSOLIDADO OPERACIONAL */}
             <button
               type="button"
               onClick={handleGerarRelatorioConsolidado}
               className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs border border-slate-700"
-              title="Gerar Relatório Consolidado Oficial em PDF"
+              title="Gerar Relatório Consolidado Operacional de Campo em PDF (Ciclo de Palhetas de 5 dias e Espaçamento 300-400m)"
             >
               <FileText className="w-4 h-4 text-emerald-400" />
               <span className="hidden sm:inline">Relatório Consolidado</span>
