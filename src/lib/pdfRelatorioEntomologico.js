@@ -182,7 +182,7 @@ async function carregarImagemDataUrl(caminhoRelativo) {
 /**
  * Desenha o cabeçalho institucional oficial no topo da folha A4 Retrato
  */
-function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao }) {
+function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao, dataBase, totalLidas, totalArmadilhas }) {
   const pageW = doc.internal.pageSize.getWidth();
   const barW = pageW - 20;
   const barH = 22;
@@ -217,10 +217,15 @@ function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDes
   doc.setTextColor(255, 255, 255);
   doc.text('RELATÓRIO EPIDEMIOLÓGICO OFICIAL', direitaX, 14.5, { align: 'right' });
 
+  const txtDataBase = dataBase || dataFormatada;
+  const statusStr = totalLidas != null && totalArmadilhas != null
+    ? `Status: ${totalLidas}/${totalArmadilhas} Lidas`
+    : 'Status: 100% Concluído';
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(203, 213, 225);
-  doc.text('Data Base: 25/09/2026 • Status: 100% Concluído (56/56 Lidas)', direitaX, 18.5, { align: 'right' });
+  doc.text(`Data Base: ${txtDataBase} • ${statusStr}`, direitaX, 18.5, { align: 'right' });
   doc.text(`Emissão: ${dataFormatada} às ${horaFormatada}`, direitaX, 22.5, { align: 'right' });
   doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', direitaX, 26.5, { align: 'right' });
 }
@@ -295,10 +300,19 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   const percLidas = totalArmadilhas > 0 ? ((totalLidas / totalArmadilhas) * 100).toFixed(0) : '0';
   const percNeg = totalLidas > 0 ? ((totalNegativas / totalLidas) * 100).toFixed(1) : '0.0';
 
+  const cabecalhoParams = {
+    dataFormatada,
+    horaFormatada,
+    filtroDescricao,
+    dataBase: opcoes.dataBase,
+    totalLidas,
+    totalArmadilhas
+  };
+
   // =========================================================================
   // PÁGINA 1: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO & TOP 10 FOCOS CRÍTICOS
   // =========================================================================
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   // Título e Subtítulo
   doc.setFont('helvetica', 'bold');
@@ -309,7 +323,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105); // slate-600
-  doc.text('Consolidação Analítica de Postura das 56 Ovitrampas Lidas no Laboratório — Sede e Distritos de Carmo/RJ', 10, 40);
+  doc.text(`Consolidação Analítica de Postura das ${totalArmadilhas} Ovitrampas (${totalLidas} Lidas no Laboratório) — Sede e Distritos de Carmo/RJ`, 10, 40);
 
   // 1.1 Bloco de 5 Cards KPI
   doc.setFont('helvetica', 'bold');
@@ -550,12 +564,12 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   // PÁGINA 2: REGISTRO INDIVIDUAL COMPLETO CLASSIFICADO POR BAIRRO
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('📋 4. Registro Individual Completo das 56 Ovitrampas (Classificado por Bairro)', 10, 36);
+  doc.text(`📋 4. Registro Individual das ${totalArmadilhas} Ovitrampas (Classificado por Bairro)`, 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -595,11 +609,11 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
     if (numLimpo === '24' || numLimpo === 'P-24') {
       return {
         ...arm,
-        ultimosOvos: 0,
-        moradorNome: 'Marienio oliveira',
-        bairro: 'Progresso',
-        microarea: 'Progresso',
-        quarteirao: 'Q-11'
+        ultimosOvos: arm.ultimosOvos !== undefined && arm.ultimosOvos !== null ? arm.ultimosOvos : 0,
+        moradorNome: arm.moradorNome || 'Marienio oliveira',
+        bairro: arm.bairro || 'Progresso',
+        microarea: arm.microarea || 'Progresso',
+        quarteirao: arm.quarteirao || 'Q-11'
       };
     }
     return arm;
@@ -690,7 +704,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   // PÁGINA 3: MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — SEDE URBANA)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
@@ -728,7 +742,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   // PÁGINA 4: MAPA 2: MAPA DE DISPERSÃO E NEVOEIRO TÉRMICO (SATÉLITE — SEDE URBANA)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
@@ -764,7 +778,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   // PÁGINA 5: MAPA 3: PAINEL DE DISPERSÃO EM NEVOEIRO DOS DISTRITOS E LOCALIDADES
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
@@ -800,12 +814,12 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   // PÁGINA 6: MAPA 4: VISÃO PANORÂMICA MUNICIPAL + DIRETRIZES + ASSINATURAS
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao });
+  desenharCabecalhoOficial(doc, cabecalhoParams);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🌐 MAPA 4: VISÃO PANORÂMICA MUNICIPAL (56 ARMADILHAS — FUNDO SATÉLITE)', 10, 36);
+  doc.text(`🌐 MAPA 4: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — FUNDO SATÉLITE)`, 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -896,4 +910,3 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
 }
 
 export const gerarRelatorioPdfEpidemiologico = gerarRelatorioPdfEntomologico;
-export const gerarRelatorioPdfConsolidado = gerarRelatorioPdfEntomologico;

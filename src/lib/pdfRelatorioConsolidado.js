@@ -202,13 +202,12 @@ export async function gerarRelatorioPdfConsolidado(armadilhas = [], opcoes = {})
     const palh = String(copia.palheta || '');
 
     if (num === 24 || palh.toUpperCase() === 'P-24' || palh.toUpperCase() === 'P24') {
-      copia.ultimosOvos = 0;
-      copia.status = 'analisada';
+      copia.ultimosOvos = copia.ultimosOvos !== undefined && copia.ultimosOvos !== null ? copia.ultimosOvos : 0;
       copia.moradorNome = copia.moradorNome || 'Marienio oliveira';
       copia.rua = copia.rua || 'Rua José Cassane';
-      copia.bairro = 'Progresso';
-      copia.microarea = 'Microárea 11';
-      copia.quarteirao = 'Q-11';
+      copia.bairro = copia.bairro || 'Progresso';
+      copia.microarea = copia.microarea || 'Microárea 11';
+      copia.quarteirao = copia.quarteirao || 'Q-11';
     }
     return copia;
   });
