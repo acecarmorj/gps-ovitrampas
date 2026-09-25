@@ -1,0 +1,112 @@
+=== AUDITORIA GERAL DE DADOS LANÇADOS NO SISTEMA OVITRAMPAS ===
+Data da Auditoria: 25/09/2026 16:35:59
+Total de Armadilhas Cadastradas no Banco D1: 56
+Total de Leituras Registradas no Banco D1: 56
+----------------------------------------------------------------------
+RESUMO EPIDEMIOLÓGICO DAS LEITURAS LANÇADAS:
+  • Leituras Realizadas: 56
+  • Armadilhas Positivas: 32 (57.1% - IPO)
+  • Armadilhas Negativas (Zero ovos): 24 (42.9%)
+  • Total de Ovos Contados: 1017
+  • Densidade Média por Armadilha Positiva (IDO): 31.8 ovos/armadilha
+----------------------------------------------------------------------
+ARM   | PALHETA  | OVOS   | STATUS     | DATA/HORA LEITURA    | MORADOR / LOCALIDADE           | BAIRRO            
+---------------------------------------------------------------------------------------------------------
+P-01  | 01A      | 0      | ZERO       | 25/09 12:14          | Maria de F├ítima               | Jardim Centen├írio
+P-02  | 02A      | 0      | ZERO       | 25/09 12:17          | Gl├│ria                        | Jardim Centen├írio
+P-03  | 03A      | 5      | POSITIVA   | 25/09 12:23          | Sany Soares                    | Jardim Centen├írio
+P-04  | 04A      | 16     | POSITIVA   | 25/09 12:29          | PA                             | Jardim Centen├írio
+P-05  | 05A      | 6      | POSITIVA   | 25/09 12:34          | Manoel Ezidio                  | Jardim Centen├írio
+P-06  | 06A      | 0      | ZERO       | 25/09 12:37          | Cleyde                         | Centro            
+P-07  | 07A      | 10     | POSITIVA   | 25/09 12:41          | Lidiane                        | Boa Ideia         
+P-08  | 08A      | 64     | POSITIVA   | 25/09 12:57          | ESF Botafogo                   | Boa Ideia         
+P-09  | 09A      | 15     | POSITIVA   | 25/09 13:03          | Marli                          | Centro            
+P-10  | 10A      | 41     | POSITIVA   | 25/09 13:05          | Clea Suely                     | Centro            
+P-11  | 11A      | 24     | POSITIVA   | 25/09 13:34          | Asilo S├úo Vicente             | Centro            
+P-12  | 12A      | 64     | POSITIVA   | 25/09 13:41          | Jos├® Carlos enfermeiro        | Centro            
+P-13  | 13A      | 48     | POSITIVA   | 25/09 13:47          | Lucia Gl├│ria                  | Caixa d'├ügua     
+P-14  | 14A      | 0      | ZERO       | 25/09 13:51          | Chico Cesario                  | Boa Ideia         
+P-15  | 15A      | 78     | POSITIVA   | 25/09 13:55          | Maria das Dores Meneguiti      | Boa Ideia         
+P-16  | 16A      | 0      | ZERO       | 25/09 13:57          | Selma Ara├║jo                  | Caixa d'├ügua     
+P-17  | 17A      | 0      | ZERO       | 25/09 14:01          | Gilmar Lutero                  | Boa Ideia         
+P-18  | 18A      | 0      | ZERO       | 25/09 14:07          | Cirillo                        | Progresso         
+P-19  | 19A      | 0      | ZERO       | 25/09 14:09          | Clube                          | Progresso         
+P-20  | 20A      | 0      | ZERO       | 25/09 14:11          | Roseli Ribeiro                 | Progresso         
+P-21  | 21A      | 100    | POSITIVA   | 25/09 14:18          | Paula Miranda                  | Progresso         
+P-22  | 22A      | 0      | ZERO       | 25/09 14:19          | F├ítima regina                 | Caixa d'├ügua     
+P-23  | 23A      | 147    | POSITIVA   | 25/09 12:09          | Pousada Valle do sol           | Progresso         
+P-24  | 24A      | 0      | ZERO       | 25/09 14:21          | Marienio oliveira              | Progresso         
+P-25  | 25A      | 0      | ZERO       | 25/09 14:24          | Edson Levindo                  | Progresso         
+P-26  | 26A      | 5      | POSITIVA   | 25/09 16:26          | Maxwell Neves                  | Morro do Estado   
+P-27  | 27A      | 0      | ZERO       | 25/09 16:27          | Pretinho                       | Caixa d'├ügua     
+P-28  | 28A      | 86     | POSITIVA   | 25/09 16:34          | Vicente                        | Morro do Estado   
+P-29  | 29A      | 0      | ZERO       | 25/09 16:34          | ESF Val para├¡so               | Val Para├¡so      
+P-30  | 30A      | 21     | POSITIVA   | 25/09 16:36          | Janine                         | Morro do Estado   
+P-31  | 31A      | 51     | POSITIVA   | 25/09 16:38          | Rosimeri                       | Val Para├¡so      
+P-32  | 32A      | 0      | ZERO       | 25/09 16:38          | Regina Azevedo                 | Val Para├¡so      
+P-33  | 33A      | 22     | POSITIVA   | 25/09 16:40          | Fernando Sassa                 | Val Para├¡so      
+P-34  | 34A      | 0      | ZERO       | 25/09 16:42          | Delvania                       | Morro do Estado   
+P-35  | 35A      | 4      | POSITIVA   | 25/09 14:04          | Almir Lemgruber                | Caixa d'├ügua     
+P-36  | 36A      | 53     | POSITIVA   | 25/09 16:47          | Silvana de Oliveira            | Influ├¬ncia       
+P-37  | 37A      | 2      | POSITIVA   | 25/09 16:48          | Aline Reiff                    | Influ├¬ncia       
+P-38  | 38A      | 25     | POSITIVA   | 25/09 16:49          | Independente                   | Influ├¬ncia       
+P-39  | 39A      | 0      | ZERO       | 25/09 16:50          | Jorge Alfredo de Onofre        | Ilha dos Pombos   
+P-40  | 40A      | 20     | POSITIVA   | 25/09 16:51          | Meira L├║cia Ferreira Pinhei   | Ilha dos Pombos   
+P-41  | 41A      | 40     | POSITIVA   | 25/09 16:53          | Dayse Regina Lopes             | Ilha dos Pombos   
+P-42  | 42A      | 0      | ZERO       | 25/09 16:53          | Maria das Gra├ºas Corr├¬a Cu   | Porto Velho do Cun
+P-43  | 43A      | 0      | ZERO       | 25/09 16:55          | Carmem Cunha                   | Porto Velho do Cun
+P-44  | 44A      | 2      | POSITIVA   | 25/09 16:56          | ESF Porto Velho                | Porto Velho do Cun
+P-45  | 45A      | 35     | POSITIVA   | 25/09 16:58          | Lindomar Noronha               | Porto Velho do Cun
+P-46  | 46A      | 0      | ZERO       | 25/09 17:00          | Ol├¡via                        | Porto Velho do Cun
+P-47  | 47A      | 0      | ZERO       | 25/09 17:01          | Joselia Correa de Carvalho     | C├│rrego da Prata 
+P-48  | 48A      | 7      | POSITIVA   | 25/09 17:02          | ESF C├│rrego da Prata          | C├│rrego da Prata 
+P-49  | PL-49    | 2      | POSITIVA   | 25/09 17:03          | Rosilene Souza Ferreira        | C├│rrego da Prata 
+P-50  | 50A      | 0      | ZERO       | 25/09 17:04          | Franciane Miguel               | Influ├¬ncia       
+P-51  | 51A      | 3      | POSITIVA   | 25/09 17:06          | L├®o Jorge                     | Influ├¬ncia       
+P-52  | 52A      | 0      | ZERO       | 25/09 17:06          | ESF influ├¬ncia                | Influ├¬ncia       
+P-53  | 53A      | 0      | ZERO       | 25/09 17:07          | Col├®gio Ligth                 | Ilha dos Pombos   
+P-54  | 54A      | 13     | POSITIVA   | 25/09 17:08          | Sebasti├úo ferreira            | Barra de S├úo Fran
+P-55  | 55A      | 5      | POSITIVA   | 25/09 17:12          | Solange                        | Barra de S├úo Fran
+P-56  | 56A      | 3      | POSITIVA   | 25/09 17:12          | Escola da Barra                | Barra de S├úo Fran
+---------------------------------------------------------------------------------------------------------
+
+ARMADILHAS CADASTRADAS QUE AINDA NÃO POSSUEM LEITURA (0):
+
+
+RANKING DAS MAIORES CONTAGENS (HOTSPOTS):
+  1. Armadilha P-23 (Palheta 23A): 147 ovos — Pousada Valle do sol (Rua Manoel Jos├® de Moraes, Progresso)
+  2. Armadilha P-21 (Palheta 21A): 100 ovos — Paula Miranda (Rua Silvio Geraldo Fran├ºa, Progresso)
+  3. Armadilha P-28 (Palheta 28A): 86 ovos — Vicente (Rua Adalberto Pires da Silva, Morro do Estado)
+  4. Armadilha P-15 (Palheta 15A): 78 ovos — Maria das Dores Meneguiti (Rua M├írio Gomes, Boa Ideia)
+  5. Armadilha P-12 (Palheta 12A): 64 ovos — Jos├® Carlos enfermeiro (Ladeira Jo├úo Alfredo, Centro)
+  6. Armadilha P-08 (Palheta 08A): 64 ovos — ESF Botafogo (Rua Nossa Senhora do Carmo, Boa Ideia)
+  7. Armadilha P-36 (Palheta 36A): 53 ovos — Silvana de Oliveira (Estrada Alem Para├¡ba Carmo, Influ├¬ncia)
+  8. Armadilha P-31 (Palheta 31A): 51 ovos — Rosimeri (Rua Roberto Sim├Áes de Araujo, Val Para├¡so)
+  9. Armadilha P-13 (Palheta 13A): 48 ovos — Lucia Gl├│ria (Rua Jos├® Marciano de Carvalho, Caixa d'├ügua)
+  10. Armadilha P-10 (Palheta 10A): 41 ovos — Clea Suely (Rua Oscar de Souza Curty, Centro)
+  11. Armadilha P-41 (Palheta 41A): 40 ovos — Dayse Regina Lopes (Rua I, Ilha dos Pombos)
+  12. Armadilha P-45 (Palheta 45A): 35 ovos — Lindomar Noronha (Rua Major Fajardo, Porto Velho do Cunha)
+  13. Armadilha P-38 (Palheta 38A): 25 ovos — Independente (Rodovia do A├ºo, Influ├¬ncia)
+  14. Armadilha P-11 (Palheta 11A): 24 ovos — Asilo S├úo Vicente (Rua Jos├® Pinto Pinheiro, Centro)
+  15. Armadilha P-33 (Palheta 33A): 22 ovos — Fernando Sassa (Rua Joaquim Sim├Áes de Araujo, Val Para├¡so)
+  16. Armadilha P-30 (Palheta 30A): 21 ovos — Janine (Avenida Edgar Gismonti, Morro do Estado)
+  17. Armadilha P-40 (Palheta 40A): 20 ovos — Meira L├║cia Ferreira Pinheiro (Rua D, Ilha dos Pombos)
+  18. Armadilha P-04 (Palheta 04A): 16 ovos — PA (Rua Alceu Mattos, Jardim Centen├írio)
+  19. Armadilha P-09 (Palheta 09A): 15 ovos — Marli (Rua Jos├® Murad Ferreira, Centro)
+  20. Armadilha P-54 (Palheta 54A): 13 ovos — Sebasti├úo ferreira (Rua Elisa Lemos Curty, Barra de S├úo Francisco)
+  21. Armadilha P-07 (Palheta 07A): 10 ovos — Lidiane (Rua Jair Nunes Macuco, Boa Ideia)
+  22. Armadilha P-48 (Palheta 48A): 7 ovos — ESF C├│rrego da Prata (Rua Jos├® Rodrigues da Silva, C├│rrego da Prata)
+  23. Armadilha P-05 (Palheta 05A): 6 ovos — Manoel Ezidio (Rua Ernesto Wermelinger, Jardim Centen├írio)
+  24. Armadilha P-55 (Palheta 55A): 5 ovos — Solange (Rua Elisa Lemos Curty, Barra de S├úo Francisco)
+  25. Armadilha P-26 (Palheta 26A): 5 ovos — Maxwell Neves (Rua Adalberto Pires da Silva, Morro do Estado)
+  26. Armadilha P-03 (Palheta 03A): 5 ovos — Sany Soares (Rua Carolina Fran├ºa, Jardim Centen├írio)
+  27. Armadilha P-35 (Palheta 35A): 4 ovos — Almir Lemgruber (Rua Sen Dantas, Caixa d'├ügua)
+  28. Armadilha P-56 (Palheta 56A): 3 ovos — Escola da Barra (Rua Elisa Lemos Curty, Barra de S├úo Francisco)
+  29. Armadilha P-51 (Palheta 51A): 3 ovos — L├®o Jorge (Rua Maria da Silva Margaret, Influ├¬ncia)
+  30. Armadilha P-49 (Palheta PL-49): 2 ovos — Rosilene Souza Ferreira (Rua Alfredo Ferreira, C├│rrego da Prata)
+  31. Armadilha P-44 (Palheta 44A): 2 ovos — ESF Porto Velho (Rua Ant├┤nio Fernandes Soares, Porto Velho do Cunha)
+  32. Armadilha P-37 (Palheta 37A): 2 ovos — Aline Reiff (Rua Maria da Silva Margaret, Influ├¬ncia)
+
+AUDITORIA DE INTEGRIDADE:
+  [OK] Todas as leituras na tabela 'readings' batem 100% com os campos 'ultimos_ovos' e 'status' da tabela 'traps'.
+  [OK] Sem duplicatas de leituras para uma mesma armadilha.

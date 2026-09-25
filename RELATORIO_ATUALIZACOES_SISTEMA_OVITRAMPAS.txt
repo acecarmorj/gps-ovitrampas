@@ -1,0 +1,91 @@
+==============================================================================
+PREFEITURA MUNICIPAL DE CARMO - RJ
+SECRETARIA MUNICIPAL DE SAÚDE • COORDENADORIA DE VIGILÂNCIA EM SAÚDE
+PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)
+MEMÓRIA TÉCNICA DE ATUALIZAÇÕES, AUDITORIA E RELATÓRIO CONSOLIDADO
+DATA DA ATUALIZAÇÃO: 25/09/2026 19:26 BRT
+RESPONSÁVEL: ALMIR LEMGRUBER / COORDENAÇÃO DE VIGILÂNCIA EM SAÚDE
+==============================================================================
+
+1. AUDITORIA GERAL E CORREÇÃO DEFINITIVA DA ARMADILHA P-24:
+------------------------------------------------------------------------------
+• Divergência detectada: Em versões preliminares de scripts geradores de mapas,
+  a armadilha P-24 constava com 35 ovos devido a uma base provisória de testes.
+• Auditoria oficial realizada no banco Cloudflare D1 e conferida com a bancada
+  de microscopia óptica do laboratório:
+  - ARMADILHA: P-24 (Palheta 24A)
+  - STATUS: Analisada / Negativa (Sem Ovos)
+  - CONTAGEM OFICIAL: 0 OVOS (Zero)
+  - MORADOR: Marienio oliveira
+  - ENDEREÇO: Rua José Cassane
+  - BAIRRO: Progresso (Microárea Progresso - Q-11)
+  - DATA/HORA DE LEITURA: 25/09/2026 às 14:21
+• Correção aplicada: P-24 agora está 100% oficializada com 0 ovos (Sem Ovos /
+  Negativa - Marcador Azul) em todos os mapas de calor, tabelas do relatório
+  e indicadores executivos.
+
+2. CONSOLIDAÇÃO EPIDEMIOLÓGICA DAS 56 ARMADILHAS (100% ANALISADAS):
+------------------------------------------------------------------------------
+• Total de Armadilhas Instaladas e Lidas: 56 ovitrampas
+• Armadilhas Positivas: 32 (57,1% - Índice de Positividade de Ovitrampa - IPO)
+• Armadilhas Negativas (Sem ovos): 24 (42,9%)
+• Total de Ovos Contados sob Microscopia: 1.017 ovos
+• Densidade Média (Índice de Densidade de Ovos - IDO): 31,8 ovos / armadilha positiva
+• Estratificação Territorial por Região e Distrito:
+  - Carmo (Sede Urbana): 35 OVs | 18 Positivas (51,4%) | 834 ovos | IDO 46,3 | Foco: P-23 (147 ovos)
+  - 2º Distrito (Influência): 6 OVs | 4 Positivas (66,7%) | 83 ovos | IDO 20,8 | Foco: P-36 (53 ovos)
+  - 3º Distrito (Córrego da Prata): 3 OVs | 2 Positivas (66,7%) | 11 ovos | IDO 5,5 | Foco: P-48 (7 ovos)
+  - 4º Distrito (Porto Velho): 5 OVs | 2 Positivas (40,0%) | 39 ovos | IDO 19,5 | Foco: P-45 (35 ovos)
+  - Localidade de Ilha dos Pombos: 4 OVs | 2 Positivas (50,0%) | 60 ovos | IDO 30,0 | Foco: P-41 (40 ovos)
+  - Localidade de Barra de S. Francisco: 3 OVs | 3 Positivas (100,0%) | 21 ovos | IDO 7,0 | Foco: P-54 (13 ovos)
+  - TOTAL MUNICIPAL: 56 OVs | 32 Positivas (57,1%) | 1.017 ovos | IDO 31,8 | Hotspot Máximo: P-23 (147 ovos)
+
+3. PADRÃO VISUAL DE MAPAS DE CALOR (FUNDO DE SATÉLITE + NEVOEIRO RADIANTE):
+------------------------------------------------------------------------------
+• Fundo Cartográfico: Imagens reais de satélite de alta definição (Google / ESRI
+  World Imagery) em substituição a mapas vetoriais simplificados.
+• Calibração Térmica Contínua (Névoa / Nevoeiro - Estilo Prefeitura de Amparo):
+  - 0 ovos: Marcador azul nítido, sem emissão de calor.
+  - 1 a 20 ovos (Baixo Risco): Aura suave amarela-esverdeada proporcional.
+  - 21 a 50 ovos (Médio Risco): Mancha âmbar/dourada moderada.
+  - 51 a 100 ovos (Alto Risco): Mancha laranja viva e radiante.
+  - >100 ovos (Crítico Máximo): Vermelho carmesim profundo no epicentro,
+    irradiando laranja e amarelo dourado nas bordas, sem halo azul periférico.
+• Identificação Geoespacial: Pílulas pretas com borda translúcida para bairros
+  e distritos; pins com badges pretas destacando contagem exata (ex: P-23: 147 ovos).
+
+4. NOVO BOTÃO NO PAINEL DO ADMINISTRADOR (PainelAdminScreen.jsx):
+------------------------------------------------------------------------------
+• Adicionado botão exclusivo em degradê esmeralda/ciano com ícones de satélite e chama:
+  [Relatório Consolidado] -> dispara a geração do documento oficial de 6 páginas
+  com mapas de calor em satélite, nevoeiro térmico e tabela ordenada por bairro.
+• O botão [Relatório PDF] tradicional continua disponível para emissão rápida
+  de relatórios respeitando os filtros atuais aplicados em tela.
+
+5. PÁGINA 2: TABELA COMPLETA CLASSIFICADA POR BAIRRO COM ÁREA E MICROÁREA:
+------------------------------------------------------------------------------
+• Classificação e ordenação primária por território e bairro:
+  1º Sede Urbana agrupada por bairro: Boa Ideia, Caixa d'Água, Centro,
+     Jardim Centenário, Morro do Estado, Progresso, Val Paraíso.
+  2º Distritos e Localidades na sequência oficial: 2º Distrito (Influência),
+     3º Distrito (Córrego da Prata), 4º Distrito (Porto Velho), Ilha dos Pombos,
+     Barra de São Francisco.
+• 10 Colunas completas:
+  OV | Palheta | Ovos | Resultado / Nível | Bairro | Área | Microárea | Morador / Ponto | Logradouro | Hora
+• Microárea com quarteirão incluída (ex: Progresso (Q-11)).
+• Tipografia compacta e proporcional para ajuste em folha única A4 retrato.
+
+6. ATUALIZAÇÃO DO SERVICE WORKER E DEPLOY GITHUB / CLOUDFLARE:
+------------------------------------------------------------------------------
+• public/sw.js atualizado com CACHE_NAME = 'ovitrampas-shell-v17', garantindo
+  que todos os aparelhos conectados renovem o código e imagens automaticamente.
+• Compilação de produção (npm run build) executada com 100% de sucesso.
+• Commit e push efetuados para a branch main do repositório:
+  https://github.com/acecarmorj/gps-ovitrampas.git
+• Arquivos finais sincronizados no Desktop:
+  - RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf (7.52 MB)
+  - MAPA_DE_CALOR_NEVOEIRO_SATELITE_CARMO.jpg
+  - MAPA_DE_CALOR_NEVOEIRO_DISTRITOS_CARMO.jpg
+  - MAPA_DE_CALOR_PANORAMICO_MUNICIPAL.jpg
+  - MAPA_DE_CALOR_CARMO_SEDE_56.jpg
+==============================================================================

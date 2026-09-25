@@ -1487,3 +1487,75 @@ Per Almir's explicit instructions and visual reference (Prefeitura de Amparo):
      * MAPA_DE_CALOR_CARMO_5_NIVEIS_CORRIGIDO.jpg
      * MAPA_DE_CALOR_NEVOEIRO_SATELITE_CARMO.jpg
 ==============================================================================
+
+==============================================================================
+SECTION 90 - [GEMINI] AUDITORIA DAS 56 ARMADILHAS, CORREÇÃO P-24, MAPAS DE SATÉLITE EM NEVOEIRO E NOVO BOTÃO CONSOLIDADO
+DATE: 2026-09-25 19:26 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Atendendo às solicitações e orientações detalhadas do Almir Lemgruber:
+
+1. AUDITORIA COMPLETA E CORREÇÃO DEFINITIVA DA ARMADILHA P-24:
+   - Identificada e eliminada divergência em que versões preliminares de scripts
+     utilizavam array mock com 35 ovos para a P-24.
+   - Auditoria cruzada com o banco D1 e laudo laboratorial confirmou:
+     P-24 tem oficialmente 0 OVOS (Sem Ovos / Negativa - Azul), morador
+     Marienio oliveira, Rua José Cassane, Progresso (Q-11).
+   - Dados consolidados e corrigidos em 100% dos mapas, tabelas e KPIs.
+   - Consolidação oficial das 56 armadilhas (100% analisadas sob microscopia):
+     * Total de armadilhas: 56
+     * Armadilhas positivas: 32 (57,1% - IPO Geral)
+     * Armadilhas negativas: 24 (42,9%)
+     * Total de ovos contados: 1.017 ovos
+     * Densidade média (IDO): 31,8 ovos / armadilha positiva
+     * Focos críticos (>100 ovos): P-23 (147 ovos) e P-21 (100 ovos), ambos no Progresso.
+
+2. PADRÃO VISUAL OFICIAL: FUNDO DE SATÉLITE REAL + NEVOEIRO TÉRMICO RADIANTE:
+   - Todo e qualquer mapa de calor no sistema e relatórios PDF passa a ter
+     obrigatoriamente fotografia real de satélite (foto do Google / ESRI World Imagery).
+   - Eliminados mapas vetoriais bege e halos azuis nas bordas de focos críticos.
+   - Degradê térmico contínuo estritamente calibrado pela quantidade de ovos:
+     * 0 ovos: Azul nítido sem calor (P-24 é azul).
+     * 1 a 20 ovos (Baixo): Aura suave amarela-esverdeada proporcional.
+     * 21 a 50 ovos (Médio): Mancha âmbar/dourada moderada.
+     * 51 a 100 ovos (Alto): Mancha laranja viva e radiante.
+     * > 100 ovos (Crítico): Vermelho carmesim profundo no epicentro,
+       irradiando laranja e dourado nas bordas até o desvanecimento suave.
+   - Pílulas pretas de alto contraste para nomes de bairros e sedes distritais
+     e pins com badges da contagem microscópica exata (P-XX: Y ovos ou P-XX: 0).
+
+3. NOVO BOTÃO NO PAINEL DO ADMINISTRADOR (PainelAdminScreen.jsx):
+   - Adicionado botão exclusivo em degradê esmeralda/ciano com ícones de satélite e chama:
+     [Relatório Consolidado] -> gera diretamente o documento oficial executivo
+     de 6 páginas com todos os mapas em satélite e registro ordenado por bairro.
+   - Mantido o botão [Relatório PDF] tradicional ao lado para relatórios rápidos
+     baseados nos filtros de tela (texto/status), além do botão [Excel].
+
+4. PÁGINA 2: TABELA COMPLETA CLASSIFICADA POR BAIRRO COM ÁREA E MICROÁREA:
+   - Ordenação primária territorial: Sede Urbana agrupada por bairros (Boa Ideia,
+     Caixa d'Água, Centro, Jardim Centenário, Morro do Estado, Progresso, Val Paraíso),
+     seguida pelos distritos na ordem oficial (2º Distrito - Influência, 3º Distrito -
+     Córrego da Prata, 4º Distrito - Porto Velho, Ilha dos Pombos, Barra de São Francisco).
+   - 10 Colunas completas (190mm de largura útil):
+     OV | Palheta | Ovos | Resultado / Nível Oficial | Bairro | Área | Microárea | Morador / Ponto | Logradouro | Hora
+   - Microárea com quarteirão exibida claramente (ex: Progresso (Q-11)).
+   - Tipografia compacta (5.5pt, padding 0.9) garantindo acomodação perfeita de
+     todas as 56 ovitrampas em folha única A4 retrato.
+
+5. ATUALIZAÇÃO DO SERVICE WORKER (public/sw.js):
+   - Cache elevado de ovitrampas-shell-v16 para ovitrampas-shell-v17 para forçar
+     os navegadores dos agentes e do administrador a renovarem o bundle imediatamente.
+
+6. BUILD, DEPLOY E SINCRONIZAÇÃO NO DESKTOP:
+   - npm run build executado com sucesso (zero erros).
+   - Commit e push efetuados na branch main do repositório oficial no GitHub.
+   - Documento executivo PDF gerado e sincronizado no Desktop do Almir:
+     * C:\Users\Almir LK\Desktop\RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf (7.52 MB)
+     * F:\Desktop\RELATORIO_EPIDEMIOLOGICO_MAPA_CALOR_CARMO.pdf (7.52 MB)
+   - Imagens de alta resolução atualizadas:
+     * MAPA_DE_CALOR_NEVOEIRO_SATELITE_CARMO.jpg (Sede Nevoeiro)
+     * MAPA_DE_CALOR_NEVOEIRO_DISTRITOS_CARMO.jpg (Painel 5 Distritos Satélite)
+     * MAPA_DE_CALOR_PANORAMICO_MUNICIPAL.jpg (Panorâmico 56 Armadilhas)
+     * MAPA_DE_CALOR_CARMO_SEDE_56.jpg (5 Níveis com Raio 175m)
+==============================================================================
