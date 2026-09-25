@@ -166,6 +166,30 @@ async function upsertReading(reading, env) {
       reading.laudoAuditoria ? JSON.stringify(reading.laudoAuditoria) : null
     )
     .run();
+
+  // Garante que a tabela 'traps' mantenha consistencia imediata com a leitura registrada
+  try {
+    await env.DB.prepare(
+      `UPDATE traps SET
+         status = 'analisada',
+         ultimos_ovos = ?,
+         ultima_palheta = COALESCE(?, palheta),
+         ultima_leitura_em = ?,
+         atualizada_em = datetime('now'),
+         synced_at = datetime('now')
+       WHERE id = ? OR numero = ?`
+    )
+      .bind(
+        Number(reading.ovos ?? 0),
+        reading.numeroPalheta ?? null,
+        reading.lidaEm ?? agoraIso(),
+        reading.armadilhaId ?? '',
+        String(reading.numeroArmadilha)
+      )
+      .run();
+  } catch (err) {
+    console.warn('[worker] Falha ao atualizar traps a partir de leitura:', err);
+  }
 }
 
 async function handleSync(request, env) {
