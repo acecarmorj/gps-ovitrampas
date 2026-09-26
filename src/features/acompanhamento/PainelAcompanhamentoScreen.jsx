@@ -102,6 +102,7 @@ export function PainelAcompanhamentoScreen({
     }
     return false;
   };
+  const foiTrocadaHoje = foiAtendidaHoje;
 
   const totalArmadilhas = armadilhas.length;
   const totalTrocadasHoje = armadilhas.filter(foiAtendidaHoje).length;
@@ -402,6 +403,7 @@ export function PainelAcompanhamentoScreen({
           >
             <option value="todas">Todas</option>
             <option value="instalada">Sem Leitura</option>
+            <option value="recolhida">Recolhidas</option>
             <option value="analisada">Lidas</option>
           </select>
         </div>
