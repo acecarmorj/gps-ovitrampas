@@ -2073,3 +2073,41 @@ Contexto do Almir:
 
 
 
+
+==============================================================================
+SECTION 101 - ADICAO DAS CAMADAS VETORIAIS NO MAPA: GRADE TECNICA 300M (MS/FIOCRUZ)
+              E LIMITE MUNICIPAL OFICIAL (IBGE 2025) + SINCRONIZACAO COMPLETA DA BASE
+DATE: 2026-09-26T00:30:00-03:00 (Sabado)
+FROM: GEMINI (Antigravity)
+TO: ALMIR & CLAUDE
+==============================================================================
+Contexto do Almir:
+- Sincronizacao dos dados do GPS Ovitrampas com o banco e sistema antigo (E:\ALL\Ovitrampas).
+- Integracao da Grade Urbana Tecnica de 300m x 300m e Contorno Territorial de Carmo ao mapa interativo do GPS OVITRAMPAS.
+
+1. SINCRONIZACAO DA BASE ANTIGA (E:\ALL\Ovitrampas / ovitrampas-carmo-db):
+   - Backup executado com sucesso: backup-carmo-db-pre-migration.sql.
+   - Carga e espelhamento oficial de 56 armadilhas, 1.017 ovos do Ciclo A e palhetas ativas do Ciclo B (instaladas em 21/09 e 22/09 com coletas em 28/09 e 29/09).
+   - Links ativos fornecidos para os modulos da versao antiga:
+     * Painel/Coordenacao: https://ovitrampas-carmo.acecarmorj.workers.dev/painel
+     * Laboratorio: https://ovitrampas-carmo.acecarmorj.workers.dev/laboratorio
+     * Campo: https://ovitrampas-carmo.acecarmorj.workers.dev/campo
+     * Publico: https://ovitrampas-carmo.acecarmorj.workers.dev/publico
+   - O campo da versao antiga foi ajustado para digitacao manual direta sem QR code.
+
+2. INCORPORACAO DAS CAMADAS VETORIAIS NO GPS OVITRAMPAS:
+   - Arquivos GeoJSON integrados e embutidos via bundle Vite (100% offline):
+     * src/maps/data/carmoBoundary.json: Perimetro Territorial Oficial do Carmo (IBGE 2025).
+     * src/maps/data/carmoGrid300m.json: 104 celulas tecnicas de 300m x 300m da area urbana de Carmo.
+   - src/maps/MapControlButtons.jsx:
+     * Novo botao flutuante com icone Grid3X3 (Lucide React) nas cores azul ceruleo (#0284c7).
+     * Permite ao agente/coordenador ativar ou desativar a visualizacao da grade e do perimetro com 1 toque.
+   - src/maps/MapaGrandeOvitrampa.jsx:
+     * Renderizacao reativa das camadas boundaryLayer e grid300mLayer.
+     * Grade com estilo pontilhado tecnico e hover com destaque dinamico e tooltip com identificador da celula (CGR-U-XXX).
+     * Limite territorial com linha ambar oficial IBGE.
+     * Conteiner de legendas flutuantes no canto inferior esquerdo empilhado de forma limpa com suporte simultaneo a Mapa de Calor e Grade Tecnica.
+
+3. STATUS E COMPILACAO:
+   - npm run build executado e aprovado com codigo 0 (sem falhas de empacotamento).
+==============================================================================

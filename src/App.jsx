@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppPath } from './lib/routing';
 import { Header } from './components/Header';
 import { GuiaScreen } from './features/menu/GuiaScreen';
