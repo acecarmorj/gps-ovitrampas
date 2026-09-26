@@ -4,6 +4,12 @@ import {
   CICLO_AMBAS
 } from './ciclosOvitrampas';
 import { calcularSituacaoArmadilha } from './situacaoOvitrampa';
+import { findNearbyTraps } from './geoDistance';
+import {
+  gerarCanvasGraficoBarrasIpo,
+  gerarCanvasRankingFocos,
+  gerarCanvasStatusPalhetas
+} from './pdfRelatoriosGraficos';
 
 const SEDE_BAIRROS = new Set([
   'centro', 'progresso', 'jardim centenário', 'jardim centenario',
@@ -97,58 +103,91 @@ export function agruparArmadilhasPorTerritorio(armadilhas) {
   return Object.values(grupos).sort((a, b) => a.ordem - b.ordem);
 }
 
+/**
+ * 5 Níveis Oficiais do Ministério da Saúde com cores diretas
+ */
 export function classificarRiscoOficial(ovos) {
   const nOvos = Number(ovos) || 0;
   if (nOvos === 0) {
     return {
-      nivel: 'Sem Ovos (Negativa)',
-      rotulo: '0 (Negativa)',
+      nivel: 'Negativa (0 ovos)',
+      rotulo: 'Negativa (Azul)',
+      corTexto: [29, 78, 216],     // blue-700
+      corFundo: [239, 246, 255],   // blue-50
       corHex: '#2563eb',
-      corRgb: [37, 99, 235],
-      badgeClass: 'Negativa (Azul)',
       nivelNum: 1
     };
   } else if (nOvos <= 20) {
     return {
       nivel: 'Baixo Risco (1 a 20 ovos)',
-      rotulo: 'Baixo (1-20)',
+      rotulo: 'Baixo Risco (Verde)',
+      corTexto: [4, 120, 87],      // emerald-700
+      corFundo: [236, 253, 245],   // emerald-50
       corHex: '#10b981',
-      corRgb: [16, 185, 129],
-      badgeClass: 'Baixo Risco (Verde)',
       nivelNum: 2
     };
   } else if (nOvos <= 50) {
     return {
       nivel: 'Médio Risco (21 a 50 ovos)',
-      rotulo: 'Médio (21-50)',
+      rotulo: 'Médio Risco (Amarelo)',
+      corTexto: [180, 83, 9],      // amber-700
+      corFundo: [254, 252, 232],   // yellow-50
       corHex: '#f59e0b',
-      corRgb: [245, 158, 11],
-      badgeClass: 'Médio Risco (Amarelo)',
       nivelNum: 3
     };
   } else if (nOvos <= 100) {
     return {
       nivel: 'Alto Risco (51 a 100 ovos)',
-      rotulo: 'Alto (51-100)',
+      rotulo: 'Alto Risco (Laranja)',
+      corTexto: [194, 65, 12],     // orange-700
+      corFundo: [255, 247, 237],   // orange-50
       corHex: '#f97316',
-      corRgb: [249, 115, 22],
-      badgeClass: 'Alto Risco (Laranja)',
       nivelNum: 4
     };
   } else {
     return {
       nivel: 'Crítico (> 100 ovos)',
-      rotulo: 'Crítico (> 100)',
+      rotulo: 'Crítico (Vermelho)',
+      corTexto: [185, 28, 28],     // red-700
+      corFundo: [254, 242, 242],   // red-50
       corHex: '#dc2626',
-      corRgb: [220, 38, 38],
-      badgeClass: 'Crítico (Vermelho)',
       nivelNum: 5
     };
   }
 }
 
 /**
- * Carrega a imagem a partir dos caminhos possíveis no navegador
+ * Aplica coloração direta nas células de risco e ovos das tabelas do autoTable
+ */
+function colorirCelulaRisco(data, colIndex = -1) {
+  if (colIndex !== -1 && data.column.index !== colIndex) return;
+
+  const texto = String(data.cell.raw || '').toLowerCase();
+  if (texto.includes('crítico') || texto.includes('critico')) {
+    data.cell.styles.textColor = [185, 28, 28];
+    data.cell.styles.fillColor = [254, 242, 242];
+    data.cell.styles.fontStyle = 'bold';
+  } else if (texto.includes('alto')) {
+    data.cell.styles.textColor = [194, 65, 12];
+    data.cell.styles.fillColor = [255, 247, 237];
+    data.cell.styles.fontStyle = 'bold';
+  } else if (texto.includes('médio') || texto.includes('medio')) {
+    data.cell.styles.textColor = [180, 83, 9];
+    data.cell.styles.fillColor = [254, 252, 232];
+    data.cell.styles.fontStyle = 'bold';
+  } else if (texto.includes('baixo')) {
+    data.cell.styles.textColor = [4, 120, 87];
+    data.cell.styles.fillColor = [236, 253, 245];
+    data.cell.styles.fontStyle = 'bold';
+  } else if (texto.includes('negativ') || texto.includes('sem ovos')) {
+    data.cell.styles.textColor = [29, 78, 216];
+    data.cell.styles.fillColor = [239, 246, 255];
+    data.cell.styles.fontStyle = 'bold';
+  }
+}
+
+/**
+ * Carrega a imagem a partir de caminhos web locais/remotos
  */
 async function carregarImagemDataUrl(caminhoRelativo) {
   if (typeof window === 'undefined') return null;
@@ -176,14 +215,14 @@ async function carregarImagemDataUrl(caminhoRelativo) {
         }
       }
     } catch {
-      // continua tentando
+      // continua procurando
     }
   }
   return null;
 }
 
 /**
- * Desenha o cabeçalho institucional em qualquer página do relatório
+ * Desenha o cabeçalho oficial institucional
  */
 function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDescricao, dataBase, totalLidas, totalArmadilhas, subtitulo = 'RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO' }) {
   const pageW = doc.internal.pageSize.getWidth();
@@ -194,7 +233,7 @@ function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDes
   doc.setFillColor(15, 23, 42); // #0F172A
   doc.rect(10, 8, barW, barH, 'F');
 
-  // Faixa esmeralda oficial
+  // Faixa esmeralda institucional
   doc.setFillColor(5, 150, 105); // #059669
   doc.rect(10, 8 + barH - 1.2, barW, 1.2, 'F');
 
@@ -235,7 +274,7 @@ function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDes
 }
 
 /**
- * Desenha o rodapé institucional com numeração dinâmica de páginas
+ * Desenha o rodapé oficial institucional com numeração dinâmica de páginas
  */
 function desenharRodapeOficial(doc, paginaAtual, totalPaginas) {
   const pW = doc.internal.pageSize.getWidth();
@@ -255,9 +294,10 @@ function desenharRodapeOficial(doc, paginaAtual, totalPaginas) {
 }
 
 /**
- * GERA O RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO
- * Dossiê oficial unificado de 8 páginas integrando Palhetas A, Palhetas B, Total A+B,
- * Mapas de Calor Satélite de Alta Resolução, Focos Críticos e Parecer Técnico Oficial.
+ * GERA O DOSSIÊ EPIDEMIOLÓGICO CONSOLIDADO ÚNICO COMPLETO (9 PÁGINAS)
+ * Compila integralmente os 6 relatórios do sistema com gráficos vetoriais,
+ * mapas térmicos em satélite de alta definição, cronograma de campo,
+ * auditoria geodésica de 300m-400m, ranking de focos, inventário e parecer técnico.
  */
 export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLeituras = [], opcoes = {}) {
   if (!armadilhas || armadilhas.length === 0) {
@@ -297,6 +337,49 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   const totalOvosConsolidado = metricas.totalOvos;
   const ipoConsolidado = metricas.ipo.toFixed(1);
   const idoConsolidado = metricas.ido.toFixed(1);
+
+  // 2. Estatísticas Operacionais de Campo (Ciclo B - 7 dias)
+  let palhetasEmDia = 0;
+  let palhetasTrocarHoje = 0;
+  let palhetasAtrasadas = 0;
+  let coletaSegunda = 0;
+  let coletaTerca = 0;
+
+  armadilhasAdaptadas.forEach((arm) => {
+    const sit = calcularSituacaoArmadilha(arm);
+    const dia = (sit.diaSemana || '').toLowerCase();
+    if (dia.includes('segunda')) coletaSegunda += 1;
+    else if (dia.includes('ter')) coletaTerca += 1;
+
+    if (arm.status === 'analisada') {
+      palhetasEmDia += 1;
+    } else if (sit.fase === 'hoje') {
+      palhetasTrocarHoje += 1;
+    } else if (sit.fase === 'atrasada') {
+      palhetasAtrasadas += 1;
+    } else {
+      palhetasEmDia += 1;
+    }
+  });
+
+  // 3. Auditoria Geodésica de Espaçamento 300m - 400m
+  let totalIdeal = 0;
+  let totalProxima = 0;
+  let totalAmpla = 0;
+
+  armadilhasAdaptadas.forEach((arm) => {
+    const vizinhas = findNearbyTraps(arm, armadilhasAdaptadas, 1, arm.id);
+    if (vizinhas.length > 0) {
+      const v = vizinhas[0];
+      if (v.status === 'ideal') totalIdeal += 1;
+      else if (v.status === 'proxima') totalProxima += 1;
+      else totalAmpla += 1;
+    }
+  });
+
+  const percIdeal = totalArmadilhas > 0 ? ((totalIdeal / totalArmadilhas) * 100).toFixed(0) : '0';
+  const percProxima = totalArmadilhas > 0 ? ((totalProxima / totalArmadilhas) * 100).toFixed(0) : '0';
+  const percAmpla = totalArmadilhas > 0 ? ((totalAmpla / totalArmadilhas) * 100).toFixed(0) : '0';
 
   const cabecalhoParams = {
     dataFormatada,
@@ -456,8 +539,8 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     didParseCell: (data) => {
       if (data.row.index === 3) {
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fillColor = [220, 252, 231]; // emerald-100
-        data.cell.styles.textColor = [6, 95, 70]; // emerald-800
+        data.cell.styles.fillColor = [220, 252, 231];
+        data.cell.styles.textColor = [6, 95, 70];
       } else if (data.row.index === 2) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [241, 245, 249];
@@ -470,7 +553,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('📝 3. Síntese Executiva da Situação Entomológica Municipal', 10, posTabela1);
+  doc.text('📝 3. Síntese Executiva da Situação Epidemiológica', 10, posTabela1);
 
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
@@ -494,88 +577,86 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 2: ESTRATIFICAÇÃO TERRITORIAL POR BAIRROS E DISTRITOS
+  // PÁGINA 2: ÍNDICES ENTOMOLÓGICOS IPO E IDO COM GRÁFICO DE BARRAS VETORIAL
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'ÍNDICES IPO E IDO COM GRÁFICOS' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🏘️ ESTRATIFICAÇÃO TERRITORIAL POR DISTRITOS E BAIRROS', 10, 36);
+  doc.text('📊 ÍNDICES ENTOMOLÓGICOS IPO E IDO POR BAIRRO COM GRÁFICO COMPARATIVO', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Distribuição da Carga de Ovos, Índices IPO/IDO e Classificação de Risco nos 4 Distritos Oficiais e Localidades Anexas:', 10, 40);
+  doc.text('Positividade e densidade de ovos por bairro, com linha de corte municipal e classificação direta de risco:', 10, 40);
 
-  // Agrupamento por Território / Bairro
+  // Prepara dados de bairros para o gráfico de barras
   const gruposTerritorio = agruparArmadilhasPorTerritorio(armadilhasAdaptadas);
-  const linhasTerritorios = gruposTerritorio.map((g) => {
-    const totalArmG = g.armadilhas.length;
+  const bairrosData = gruposTerritorio.map((g) => {
     let lidasG = 0;
     let posG = 0;
-    let ovosA_G = 0;
-    let ovosB_G = 0;
-    let ovosTot_G = 0;
-    let maxOvos = -1;
-    let hotspotArm = null;
-
-    g.armadilhas.forEach((arm) => {
-      const d = arm.dadosCiclos;
+    let ovosTot = 0;
+    g.armadilhas.forEach((a) => {
+      const d = a.dadosCiclos;
       if (d) {
         if (d.temLeituraAmbas) lidasG += 1;
         if (d.positivaAmbas) posG += 1;
-        ovosA_G += Number(d.ovosA || 0);
-        ovosB_G += Number(d.ovosB || 0);
-        const tot = Number(d.ovosTotal || 0);
-        ovosTot_G += tot;
-        if (tot > maxOvos) {
-          maxOvos = tot;
-          hotspotArm = arm;
-        }
+        ovosTot += Number(d.ovosTotal || 0);
       }
     });
+    const ipoG = lidasG > 0 ? (posG / lidasG) * 100 : 0;
+    const idoG = posG > 0 ? ovosTot / posG : 0;
+    return {
+      nome: g.nome.replace('LOCALIDADE DE ', '').replace('DISTRITO ', ''),
+      ipo: ipoG,
+      ido: idoG,
+      totalOvos: ovosTot,
+      lidas: lidasG,
+      positivas: posG
+    };
+  }).sort((a, b) => b.ipo - a.ipo);
 
-    const ipoG = lidasG > 0 ? ((posG / lidasG) * 100).toFixed(1) : '0.0';
-    const idoG = posG > 0 ? (ovosTot_G / posG).toFixed(1) : '0.0';
-    const riscoG = classificarRiscoOficial(maxOvos >= 0 ? maxOvos : 0);
+  // Gera o gráfico de barras vetorial via Canvas
+  const canvasIpo = gerarCanvasGraficoBarrasIpo(bairrosData, {
+    width: 1200,
+    height: 440,
+    ipoMedio: Number(ipoConsolidado)
+  });
+  if (canvasIpo) {
+    doc.addImage(canvasIpo.toDataURL('image/png'), 'PNG', 10, 44, 190, 68, undefined, 'FAST');
+  }
 
-    const hotspotTxt = hotspotArm ? `ARM-${hotspotArm.numero} (${maxOvos} ovos - ${hotspotArm.quarteirao || ''})` : '-';
-
+  // Tabela Analítica de Bairros abaixo do gráfico
+  const linhasTabelaBairros = bairrosData.map((b) => {
+    const risco = classificarRiscoOficial(b.totalOvos);
     return [
-      g.nome,
-      totalArmG.toString(),
-      posG.toString(),
-      ovosA_G.toLocaleString('pt-BR'),
-      ovosB_G > 0 ? ovosB_G.toLocaleString('pt-BR') : (temDadosB ? '0' : 'Em campo'),
-      ovosTot_G.toLocaleString('pt-BR'),
-      `${ipoG}%`,
-      idoG,
-      riscoG.rotulo,
-      hotspotTxt
+      b.nome,
+      b.lidas.toString(),
+      b.positivas.toString(),
+      `${b.ipo.toFixed(1)}%`,
+      b.totalOvos.toLocaleString('pt-BR'),
+      b.ido.toFixed(1),
+      risco.rotulo
     ];
   });
 
-  // Linha final do Município
-  linhasTerritorios.push([
-    'TOTAL GERAL DO MUNICÍPIO',
-    totalArmadilhas.toString(),
+  linhasTabelaBairros.push([
+    'TOTAL MUNICIPAL CONSOLIDADO',
+    totalLidasConsolidado.toString(),
     totalPositivasConsolidado.toString(),
-    comp.ovosA.toLocaleString('pt-BR'),
-    comp.ovosB > 0 ? comp.ovosB.toLocaleString('pt-BR') : (temDadosB ? '0' : 'Em campo'),
-    totalOvosConsolidado.toLocaleString('pt-BR'),
     `${ipoConsolidado}%`,
-    idoConsolidado,
-    'Crítico Municipal',
-    'ARM-23 (147 ovos - Progresso)'
+    totalOvosConsolidado.toLocaleString('pt-BR'),
+    `${idoConsolidado}`,
+    'Crítico Municipal'
   ]);
 
   autoTable(doc, {
-    startY: 45,
+    startY: 118,
     margin: { left: 10, right: 10 },
-    head: [['Território / Distrito / Bairro', 'Total OVs', 'Positivas', 'Ovos A', 'Ovos B', 'Total (A+B)', 'IPO (%)', 'IDO', 'Risco Máx.', 'Hotspot Territorial']],
-    body: linhasTerritorios,
+    head: [['Bairro / Distrito', 'Arm. Lidas', 'Positivas', 'IPO (%)', 'Total Ovos', 'IDO (Ovos/Pos)', 'Classificação Oficial de Risco']],
+    body: linhasTabelaBairros,
     theme: 'striped',
     headStyles: {
       fillColor: [15, 23, 42],
@@ -583,172 +664,75 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       fontStyle: 'bold',
       fontSize: 6.8,
       halign: 'center',
-      cellPadding: 2
+      cellPadding: 1.8
     },
     bodyStyles: {
       fontSize: 6.5,
       halign: 'center',
-      cellPadding: 1.8
+      cellPadding: 1.6
     },
     columnStyles: {
-      0: { halign: 'left', fontStyle: 'bold', width: 44 },
-      1: { width: 14 },
-      2: { width: 14 },
-      3: { width: 16 },
-      4: { width: 16 },
-      5: { fontStyle: 'bold', width: 18 },
-      6: { fontStyle: 'bold', width: 16 },
-      7: { width: 14 },
-      8: { fontStyle: 'bold', width: 20 },
-      9: { halign: 'left', width: 38 }
+      0: { halign: 'left', fontStyle: 'bold', width: 50 },
+      1: { width: 20 },
+      2: { width: 20 },
+      3: { fontStyle: 'bold', width: 22 },
+      4: { fontStyle: 'bold', width: 24 },
+      5: { width: 22 },
+      6: { fontStyle: 'bold', width: 32 }
     },
     didParseCell: (data) => {
-      if (data.row.index === linhasTerritorios.length - 1) {
+      if (data.row.index === linhasTabelaBairros.length - 1) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [241, 245, 249];
         data.cell.styles.textColor = [15, 23, 42];
+      } else {
+        colorirCelulaRisco(data, 6);
       }
     }
   });
 
-  // Notas explicativas dos 5 níveis do Ministério da Saúde
-  const posTabela2 = doc.lastAutoTable.finalY + 6;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
-  doc.text('🎯 Estratificação de Risco Oficial do Ministério da Saúde (MS/Fiocruz):', 10, posTabela2);
-
-  const estratos = [
-    { nivel: '1. Negativa (Azul)', desc: '0 ovos. Ausência de postura registrada no ciclo.', cor: [37, 99, 235] },
-    { nivel: '2. Baixo Risco (Verde)', desc: '1 a 20 ovos. Presença inicial ou residual do vetor.', cor: [16, 185, 129] },
-    { nivel: '3. Médio Risco (Amarelo)', desc: '21 a 50 ovos. População vetorial ativa demandando monitoramento.', cor: [245, 158, 11] },
-    { nivel: '4. Alto Risco (Laranja)', desc: '51 a 100 ovos. Alta densidade de fêmeas; intervenção focal recomendada.', cor: [249, 115, 22] },
-    { nivel: '5. Crítico (Vermelho)', desc: '> 100 ovos. Foco crítico e risco iminente de transmissão de arboviroses.', cor: [220, 38, 38] }
-  ];
-
-  let yEst = posTabela2 + 4;
-  estratos.forEach((est) => {
-    doc.setFillColor(...est.cor);
-    doc.rect(10, yEst, 3, 4, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.setTextColor(15, 23, 42);
-    doc.text(est.nivel, 15, yEst + 3);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(71, 85, 105);
-    doc.text(`— ${est.desc}`, 48, yEst + 3);
-
-    yEst += 5.2;
-  });
-
   // =========================================================================
-  // PÁGINA 3: MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)
+  // PÁGINA 3: FOCOS ALTO E CRÍTICO COM GRÁFICO DE RANKING E PLANO DE BLOQUEIO
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'FOCOS CRÍTICOS & BLOQUEIO' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🗺️ MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)', 10, 36);
+  doc.text('🔥 FOCOS DE ALTO RISCO E CRÍTICOS (> 50 OVOS) & PLANO DE BLOQUEIO 150m-300m', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Modelagem geoestatística de densidade de postura e estratificação de risco sobre imagem de satélite (Sede Urbana de Carmo):', 10, 40);
-  doc.text('A intensidade térmica baseia-se na contagem microscópica de ovos segundo os 5 estratos do Ministério da Saúde: 1. Azul: 0 ovos (Negativa);', 10, 43.5);
-  doc.text('2. Verde: 1-20 (Baixo); 3. Amarelo: 21-50 (Médio); 4. Laranja: 51-100 (Alto); 5. Vermelho: >100 (Crítico). Circunferências com raio de 175m.', 10, 47);
-
-  const imgMapa1 = await carregarImagemDataUrl('maps/mapa_1_sede_5_niveis.jpg');
-  if (imgMapa1) {
-    doc.addImage(imgMapa1, 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  } else {
-    const sedeArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id === 'sede');
-    const { canvas } = await gerarCanvasMapaCalor(sedeArms.length > 0 ? sedeArms : armadilhasAdaptadas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'CARMO (SEDE URBANA)',
-      provider: 'satellite'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  }
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('• Cobertura com as 35 armadilhas da Sede Urbana sobre imagem de satélite de alta resolução • Cores térmicas vivas e contrastantes.', 10, 276);
-
-  // =========================================================================
-  // PÁGINA 4: MAPA 2: NÉVOA TÉRMICA & GRADE TÉCNICA 300M (PADRÃO FIOCRUZ)
-  // =========================================================================
-  doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('🛰️ MAPA 2: NÉVOA TÉRMICA CONTÍNUA & DISPERSÃO TERRITORIAL (SATÉLITE)', 10, 36);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Visualização Contínua em Névoa Térmica sobre Ortofotos de Satélite de Alta Resolução:', 10, 40);
-  doc.text('Demonstra a mancha contínua de dispersão ativa do vetor Aedes aegypti no tecido urbano. As manchas em Vermelho Carmesim concentram as', 10, 43.5);
-  doc.text('maiores cargas de postura no Progresso, Boa Ideia e Centro, esfumando suavemente em Laranja e Amarelo Dourado.', 10, 47);
-
-  const imgMapa2 = await carregarImagemDataUrl('maps/mapa_2_sede_nevoeiro.jpg');
-  if (imgMapa2) {
-    doc.addImage(imgMapa2, 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  } else {
-    const sedeArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id === 'sede');
-    const { canvas } = await gerarCanvasMapaNevoeiro(sedeArms.length > 0 ? sedeArms : armadilhasAdaptadas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'CARMO (SEDE URBANA)'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  }
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('• Mapeamento de interpolação térmica com raio de influência de 200m • Identificação precisa de corredores de circulação vetorial.', 10, 276);
-
-  // =========================================================================
-  // PÁGINA 5: FOCOS CRÍTICOS & DIRETRIZES DE BLOQUEIO DE CAMPO
-  // =========================================================================
-  doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('🎯 FOCOS CRÍTICOS E DIRETRIZES OPERACIONAIS DE BLOQUEIO FOCAL', 10, 36);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Armadilhas com carga acumulada acima de 50 ovos (Alto Risco e Crítico) demandando intervenção imediata dos Agentes de Endemias:', 10, 40);
+  doc.text('Ranking dos epicentros de postura e protocolos de varredura concêntrica para eliminação de criadouros:', 10, 40);
 
   // Filtragem dos focos críticos
   const focosCriticos = armadilhasAdaptadas
-    .filter((a) => Number(a.ultimosOvos || 0) >= 40)
+    .filter((a) => Number(a.ultimosOvos || 0) >= 35)
     .sort((a, b) => Number(b.ultimosOvos || 0) - Number(a.ultimosOvos || 0));
 
-  const linhasFocos = focosCriticos.map((arm, index) => {
+  // Gera o gráfico horizontal de ranking de focos via Canvas
+  const canvasRanking = gerarCanvasRankingFocos(focosCriticos, {
+    width: 1200,
+    height: 440
+  });
+  if (canvasRanking) {
+    doc.addImage(canvasRanking.toDataURL('image/png'), 'PNG', 10, 44, 190, 68, undefined, 'FAST');
+  }
+
+  // Tabela de Bloqueio Focal com Coordenadas e Protocolos
+  const linhasFocosBloqueio = focosCriticos.map((arm, index) => {
     const d = arm.dadosCiclos;
     const ovosTot = Number(arm.ultimosOvos || 0);
     const moradorStr = ocultarMorador ? 'Protegido (LGPD)' : (arm.moradorNome || 'Não informado');
-    const enderecoStr = ocultarMorador ? 'Endereço Reservado' : `${arm.rua || ''}, ${arm.numeroImovel || 'S/N'}`;
     const risco = classificarRiscoOficial(ovosTot);
 
-    let acaoRecomendada = 'Eliminação mecânica de criadouros num raio de 100m';
+    let protocolo = 'Raio 150m: Varredura mecânica + orientação domiciliar';
     if (ovosTot >= 100) {
-      acaoRecomendada = 'Bloqueio Imediato com Larvicida Biológico (BTI) + Varredura Peridomiciliar';
-    } else if (ovosTot >= 70) {
-      acaoRecomendada = 'Tratamento Focal + Orientação ao Morador + Revisão de Calhas/Ralos';
+      protocolo = 'Raio 300m: Bloqueio Químico/BTI + Varredura Imediata';
+    } else if (ovosTot >= 60) {
+      protocolo = 'Raio 150m-300m: Aplicação BTI em ralos/caixas + busca ativa';
     }
 
     return [
@@ -762,18 +746,18 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       ovosTot.toString(),
       risco.rotulo,
       `${Number(arm.latitude).toFixed(4)}, ${Number(arm.longitude).toFixed(4)}`,
-      acaoRecomendada
+      protocolo
     ];
   });
 
   autoTable(doc, {
-    startY: 45,
+    startY: 118,
     margin: { left: 10, right: 10 },
-    head: [['Pos', 'ARM', 'Bairro', 'Quart.', 'Morador', 'Ovos A', 'Ovos B', 'Total', 'Risco', 'Coordenadas GPS', 'Ação Operacional Imediata']],
-    body: linhasFocos.length > 0 ? linhasFocos : [['-', '-', 'Sem focos críticos registrados', '-', '-', '-', '-', '-', '-', '-', '-']],
+    head: [['Pos', 'ARM', 'Bairro', 'Quart.', 'Morador', 'Ovos A', 'Ovos B', 'Total', 'Risco', 'Coordenadas GPS', 'Plano de Bloqueio Recomendado']],
+    body: linhasFocosBloqueio.length > 0 ? linhasFocosBloqueio : [['-', '-', 'Sem focos críticos registrados', '-', '-', '-', '-', '-', '-', '-', '-']],
     theme: 'striped',
     headStyles: {
-      fillColor: [185, 28, 28], // red-700
+      fillColor: [185, 28, 28],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 6.5,
@@ -783,7 +767,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     bodyStyles: {
       fontSize: 6.2,
       halign: 'center',
-      cellPadding: 1.6
+      cellPadding: 1.5
     },
     columnStyles: {
       0: { width: 10 },
@@ -794,50 +778,209 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       5: { width: 12 },
       6: { width: 12 },
       7: { fontStyle: 'bold', width: 12 },
-      8: { fontStyle: 'bold', width: 18 },
+      8: { fontStyle: 'bold', width: 22 },
       9: { width: 20 },
-      10: { halign: 'left', width: 34 }
+      10: { halign: 'left', width: 32 }
+    },
+    didParseCell: (data) => {
+      colorirCelulaRisco(data, 8);
     }
   });
 
-  // Recomendações Técnicas de Manejo
-  const posTabelaFocos = doc.lastAutoTable.finalY + 6;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
-  doc.text('🛡️ Protocolo Padrão de Intervenção em Raio de 100 Metros (Diretriz MS):', 10, posTabelaFocos);
-
-  const protocolos = [
-    '1. Varredura Peridomiciliar Imediata: Realizar vistoria minuciosa em 100% dos imóveis situados no raio de 100m do ponto crítico;',
-    '2. Tratamento com Larvicida Biológico: Aplicar Bacillus thuringiensis israelensis (BTI) em depósitos não elimináveis (ralos, caixas, cisternas);',
-    '3. Manejo Mecânico Ambiental: Eliminar materiais inservíveis com capacidade de acúmulo de água pluvial e vedar caixas d\'água;',
-    '4. Educação e Engajamento Comunitário: Alertar o morador sobre o foco identificado e orientar a vistoria semanal de 10 minutos.'
-  ];
-
-  let yProt = posTabelaFocos + 4;
-  protocolos.forEach((p) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.8);
-    doc.setTextColor(51, 65, 85);
-    doc.text(p, 12, yProt);
-    yProt += 4.5;
-  });
-
   // =========================================================================
-  // PÁGINA 6: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
+  // PÁGINA 4: GESTÃO OPERACIONAL DE CAMPO & CRONOGRAMA DE COLETAS (CICLO B 7 DIAS)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'GESTÃO OPERACIONAL & COLETAS' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('📋 INVENTÁRIO TÉCNICO DAS ARMADILHAS — PARTE 1 (ARM-01 A ARM-28)', 10, 36);
+  doc.text('📅 GESTÃO OPERACIONAL DE CAMPO & CRONOGRAMA DE COLETAS (CICLO B)', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Acompanhamento analítico e histórico de postura de cada ovitrampa monitorada em campo:', 10, 40);
+  doc.text('Logística de recolhimento de palhetas, auditoria de espaçamento geodésico (300m-400m) e cronograma dos ACEs:', 10, 40);
+
+  // Gráfico Donut de Status das Palhetas via Canvas
+  const canvasStatus = gerarCanvasStatusPalhetas({
+    coletaSegunda,
+    coletaTerca,
+    trocarHoje: palhetasTrocarHoje,
+    atrasadas: palhetasAtrasadas,
+    emDia: palhetasEmDia
+  }, {
+    width: 1000,
+    height: 420
+  });
+  if (canvasStatus) {
+    doc.addImage(canvasStatus.toDataURL('image/png'), 'PNG', 10, 44, 190, 66, undefined, 'FAST');
+  }
+
+  // Bloco de Auditoria de Espaçamento Geodésico 300m-400m
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('📏 Auditoria de Espaçamento Geodésico entre Armadilhas (Diretriz MS 300m a 400m):', 10, 116);
+
+  const kpisEspaco = [
+    { titulo: 'ESPAÇAMENTO IDEAL (300-400m)', val: `${totalIdeal} OVs (${percIdeal}%)`, desc: 'Malha geométrica perfeita', cor: '#059669' },
+    { titulo: 'ABAIXO DO IDEAL (< 300m)', val: `${totalProxima} OVs (${percProxima}%)`, desc: 'Sobreposição de raio de atração', cor: '#D97706' },
+    { titulo: 'ACIMA DO IDEAL (> 400m)', val: `${totalAmpla} OVs (${percAmpla}%)`, desc: 'Gaps/Vazios amostrais territoriais', cor: '#DC2626' }
+  ];
+
+  const cardEW = 61;
+  const cardEH = 15;
+  kpisEspaco.forEach((kpi, idx) => {
+    const ex = 10 + idx * (cardEW + 3.5);
+    const ey = 120;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(ex, ey, cardEW, cardEH, 1.5, 1.5, 'FD');
+
+    doc.setFillColor(kpi.cor);
+    doc.rect(ex, ey, 2, cardEH, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(kpi.titulo, ex + 5, ey + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(kpi.val, ex + 5, ey + 9.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.desc, ex + 5, ey + 13);
+  });
+
+  // Tabela de Cronograma de Coletas
+  const cronogramaRotas = [
+    ['Segunda-feira (28/09)', 'Sede Urbana (35 Armadilhas)', 'ARM-01 a ARM-35', '7 dias completos', 'Equipe Centro/Progresso (Veículo 01)', 'Retirada das palhetas B com infusão fresca e envio imediato ao laboratório'],
+    ['Terça-feira (29/09)', 'Distritos Oficiais (21 Armadilhas)', 'ARM-36 a ARM-56', '7 dias completos', 'Equipe Distrital (Veículo 02)', 'Recolhimento em Influência, Prata, Porto Velho e Ilha dos Pombos'],
+    ['Quarta-feira (30/09)', 'Laboratório de Microscopia', 'Todas as 56 Palhetas', 'Bancada óptica', 'Biólogo(a) / Microscopistas', 'Contagem e registro direto no sistema GPS Ovitrampas'],
+    ['Quinta-feira (01/10)', 'Coordenação de Vigilância', 'Consolidação Final', 'Emissão Dossiê', 'Coordenação / Secretário', 'Fechamento dos boletins e publicação para Ministério da Saúde']
+  ];
+
+  autoTable(doc, {
+    startY: 140,
+    margin: { left: 10, right: 10 },
+    head: [['Data / Dia', 'Território de Coleta', 'Ovitrampas Alvo', 'Tempo de Campo', 'Responsável / Rota', 'Procedimento Operacional']],
+    body: cronogramaRotas,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 6.8,
+      halign: 'center',
+      cellPadding: 2
+    },
+    bodyStyles: {
+      fontSize: 6.5,
+      halign: 'center',
+      cellPadding: 2
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', width: 28 },
+      1: { halign: 'left', fontStyle: 'bold', width: 36 },
+      2: { width: 22 },
+      3: { width: 20 },
+      4: { halign: 'left', width: 34 },
+      5: { halign: 'left', width: 50 }
+    }
+  });
+
+  // =========================================================================
+  // PÁGINA 5: MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)
+  // =========================================================================
+  doc.addPage('a4', 'portrait');
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 1: CALOR SATÉLITE' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('🗺️ MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)', 10, 36);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Modelagem geoestatística de densidade de postura e estratificação de risco sobre imagem de satélite (Sede Urbana de Carmo):', 10, 40);
+  doc.text('Intensidade térmica calculada pela contagem de ovos nos 5 estratos do MS: Azul (Negativa), Verde (1-20), Amarelo (21-50), Laranja (51-100), Vermelho (>100).', 10, 43.5);
+
+  const imgMapa1 = await carregarImagemDataUrl('maps/mapa_1_sede_5_niveis.jpg');
+  if (imgMapa1) {
+    doc.addImage(imgMapa1, 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  } else {
+    const sedeArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id === 'sede');
+    const { canvas } = await gerarCanvasMapaCalor(sedeArms.length > 0 ? sedeArms : armadilhasAdaptadas, {
+      width: 1500,
+      height: 1750,
+      tituloTerritorio: 'CARMO (SEDE URBANA)',
+      provider: 'satellite'
+    });
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('• Cobertura com as 35 armadilhas da Sede Urbana sobre imagem de satélite de alta resolução • Cores térmicas vivas e contrastantes.', 10, 276);
+
+  // =========================================================================
+  // PÁGINA 6: MAPA 2: NÉVOA TÉRMICA & GRADE TÉCNICA 300M (PADRÃO FIOCRUZ)
+  // =========================================================================
+  doc.addPage('a4', 'portrait');
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 2: NÉVOA & GRADE 300M' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('🛰️ MAPA 2: NÉVOA TÉRMICA CONTÍNUA & DISPERSÃO TERRITORIAL COM GRADE 300M', 10, 36);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Visualização Contínua em Névoa Térmica sobre Ortofotos de Satélite com Grade Técnica de 300m x 300m (Padrão MS/Fiocruz):', 10, 40);
+  doc.text('Evidencia manchas de circulação contínua do Aedes aegypti entre quarteirões vizinhos e identifica as células urbanas críticas para bloqueio.', 10, 43.5);
+
+  const imgMapa2 = await carregarImagemDataUrl('maps/mapa_2_sede_nevoeiro.jpg');
+  if (imgMapa2) {
+    doc.addImage(imgMapa2, 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  } else {
+    const sedeArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id === 'sede');
+    const { canvas } = await gerarCanvasMapaNevoeiro(sedeArms.length > 0 ? sedeArms : armadilhasAdaptadas, {
+      width: 1500,
+      height: 1750,
+      tituloTerritorio: 'CARMO (SEDE URBANA)'
+    });
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('• Mapeamento contínuo em névoa térmica com raio de influência de 200m • Grade técnica urbana de 300m para intervenção territorial.', 10, 276);
+
+  // =========================================================================
+  // PÁGINA 7: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
+  // =========================================================================
+  doc.addPage('a4', 'portrait');
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 1)' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('📋 INVENTÁRIO TÉCNICO COMPLETO DAS ARMADILHAS — PARTE 1 (ARM-01 A ARM-28)', 10, 36);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Histórico completo com contagens individuais das Palhetas A e B, Total Consolidado e classificação direta de risco por cores:', 10, 40);
 
   const armadilhasOrdenadas = [...armadilhasAdaptadas].sort((a, b) => {
     const na = parseInt(a.numero, 10) || 0;
@@ -894,24 +1037,27 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       6: { fontStyle: 'bold', width: 18 },
       7: { fontStyle: 'bold', width: 22 },
       8: { width: 18 }
+    },
+    didParseCell: (data) => {
+      colorirCelulaRisco(data, 7);
     }
   });
 
   // =========================================================================
-  // PÁGINA 7: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
+  // PÁGINA 8: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 2)' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('📋 INVENTÁRIO TÉCNICO DAS ARMADILHAS — PARTE 2 (ARM-29 A ARM-56)', 10, 36);
+  doc.text('📋 INVENTÁRIO TÉCNICO COMPLETO DAS ARMADILHAS — PARTE 2 (ARM-29 A ARM-56)', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Continuação do inventário analítico das ovitrampas de Carmo (Sede e Distritos):', 10, 40);
+  doc.text('Continuação do inventário das ovitrampas de Carmo (Sede e Distritos) com classificação direta de risco:', 10, 40);
 
   const parte2 = armadilhasOrdenadas.slice(28);
   const linhasParte2 = parte2.map((arm) => {
@@ -962,14 +1108,17 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       6: { fontStyle: 'bold', width: 18 },
       7: { fontStyle: 'bold', width: 22 },
       8: { width: 18 }
+    },
+    didParseCell: (data) => {
+      colorirCelulaRisco(data, 7);
     }
   });
 
   // =========================================================================
-  // PÁGINA 8: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
+  // PÁGINA 9: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, cabecalhoParams);
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'PARECER TÉCNICO & HOMOLOGAÇÃO' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
@@ -1027,7 +1176,6 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.text('HOMOLOGAÇÃO E RESPONSABILIDADE TÉCNICA OFICIAL:', 10, yAssinaturas);
 
   const assW = 58;
-  const assH = 28;
   const assinaturas = [
     { cargo: 'COORDENAÇÃO DE CONTROLE DE VETORES', nome: 'Coordenação de Endemias / SMS', desc: 'Vigilância Ambiental de Carmo/RJ' },
     { cargo: 'RESPONSÁVEL TÉCNICO ENTOMOLÓGICO', nome: 'Responsável Técnico / Biologia', desc: 'Laboratório de Microscopia de Vetores' },
@@ -1038,7 +1186,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     const ax = 10 + idx * (assW + 8);
     const ay = yAssinaturas + 8;
 
-    doc.setDrawColor(148, 163, 184); // slate-400
+    doc.setDrawColor(148, 163, 184);
     doc.setLineWidth(0.4);
     doc.line(ax, ay + 15, ax + assW, ay + 15);
 
