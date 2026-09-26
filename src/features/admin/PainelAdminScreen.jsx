@@ -752,8 +752,17 @@ export function PainelAdminScreen({
                           <td className="py-3 px-3 font-extrabold text-slate-900">
                             {arm.moradorNome || <span className="text-slate-400 italic">Não informado</span>}
                           </td>
-                          <td className="py-3 px-3 font-bold text-blue-700">
-                            {arm.palheta || 'P-01'}
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col items-start gap-0.5">
+                              <span className="font-black text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px]">
+                                {arm.palheta || `P-${arm.numero}`}
+                              </span>
+                              {arm.ultimaPalheta && arm.ultimaPalheta !== (arm.palheta || `P-${arm.numero}`) && (
+                                <span className="text-[9px] text-slate-400 font-bold">
+                                  Ant: {arm.ultimaPalheta}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-3">
                             <p className="font-bold text-slate-900 leading-tight">{arm.rua}</p>
@@ -856,8 +865,11 @@ export function PainelAdminScreen({
               </div>
 
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">Palheta:</span>
-                <span className="font-extrabold text-blue-700">{armadilhaSelecionada.palheta || 'P-01'}</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 block">Palheta em Campo:</span>
+                <span className="font-extrabold text-blue-700 text-sm">{armadilhaSelecionada.palheta || `P-${armadilhaSelecionada.numero}`}</span>
+                {armadilhaSelecionada.ultimaPalheta && armadilhaSelecionada.ultimaPalheta !== (armadilhaSelecionada.palheta || `P-${armadilhaSelecionada.numero}`) && (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Última coletada: <strong className="text-slate-700">{armadilhaSelecionada.ultimaPalheta}</strong></span>
+                )}
               </div>
 
               <div className="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 col-span-2">
