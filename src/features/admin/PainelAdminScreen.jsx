@@ -522,16 +522,16 @@ export function PainelAdminScreen({
               <span className="hidden sm:inline">Excel</span>
             </button>
 
-            {/* BOTÃO MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (8 PÁGS • A+B+MAPAS) */}
+            {/* BOTÃO MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (11 PÁGS • A+B+4 MAPAS) */}
             <button
               type="button"
               onClick={handleGerarRelatorioConsolidadoUnico}
               className="bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 hover:from-amber-400 hover:to-emerald-500 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 border border-amber-300/50 cursor-pointer"
-              title="Dossiê Oficial Completo (8 Páginas): Palhetas A, B e Total Acumulado, Mapas de Calor em Imagem de Satélite, Grade 300m, Focos Críticos e Parecer Técnico Oficial com Assinaturas"
+              title="Dossiê Oficial Completo (11 Páginas): Palhetas A, B e Total Acumulado, Gráficos Vetoriais, Todos os 4 Mapas de Satélite (Sede, Distritos e Panorâmica Municipal), Focos Críticos e Parecer Técnico Oficial com Assinaturas"
             >
               <Award className="w-4 h-4 text-amber-200" />
               <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse hidden sm:inline" />
-              <span>Dossiê Consolidado (8 Págs)</span>
+              <span>Dossiê Consolidado (11 Págs)</span>
             </button>
 
             {/* BOTÃO RELATÓRIO ENTOMOLÓGICO OFICIAL (FOTOS DE SATÉLITE + NEVOEIRO) */}

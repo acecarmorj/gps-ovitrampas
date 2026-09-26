@@ -967,7 +967,77 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.text('• Mapeamento contínuo em névoa térmica com raio de influência de 200m • Grade técnica urbana de 300m para intervenção territorial.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 7: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
+  // PÁGINA 7: MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES
+  // =========================================================================
+  doc.addPage('a4', 'portrait');
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 3: DISTRITOS' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('🏞️ MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES', 10, 36);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Monitoramento Geoespacial Contínuo nas Zonas Rurais e Distritais do Município de Carmo/RJ:', 10, 40);
+  doc.text('Painel individualizado para o 2º Distrito (Influência), 3º Distrito (Córrego da Prata), 4º Distrito (Porto Velho do Cunha), Ilha dos Pombos e Barra.', 10, 43.5);
+  doc.text('Escala calibrada proporcionalmente ao município: identifica focos distritais e subsidia as rotas de campo de terça-feira.', 10, 47);
+
+  const imgMapa3 = await carregarImagemDataUrl('maps/mapa_3_distritos_nevoeiro.jpg');
+  if (imgMapa3) {
+    doc.addImage(imgMapa3, 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  } else {
+    const distritosArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id !== 'sede');
+    const { canvas } = await gerarCanvasMapaNevoeiro(distritosArms.length > 0 ? distritosArms : armadilhasAdaptadas, {
+      width: 1500,
+      height: 1750,
+      tituloTerritorio: 'DISTRITOS E LOCALIDADES DE CARMO'
+    });
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('• Cobertura com as 21 armadilhas distritais sobre ortofoto de satélite • Proporcionalidade térmica calibrada com a sede.', 10, 276);
+
+  // =========================================================================
+  // PÁGINA 8: MAPA 4: VISÃO PANORÂMICA MUNICIPAL (SEDE E TODOS OS DISTRITOS JUNTOS)
+  // =========================================================================
+  doc.addPage('a4', 'portrait');
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 4: VISÃO MUNICIPAL GERAL' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`🌐 MAPA 4: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — SEDE E DISTRITOS)`, 10, 36);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Integração macroterritorial conectando a sede urbana aos 4 distritos e localidades sobre ortofoto de satélite de alta resolução:', 10, 40);
+  doc.text('Evidencia a malha completa de vigilância entomológica e a conectividade viária entre todos os 56 pontos de monitoramento de Carmo.', 10, 43.5);
+
+  const imgMapa4 = await carregarImagemDataUrl('maps/mapa_4_municipal_panoramico.jpg');
+  if (imgMapa4) {
+    doc.addImage(imgMapa4, 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  } else {
+    const { canvas } = await gerarCanvasMapaNevoeiro(armadilhasAdaptadas, {
+      width: 1600,
+      height: 1250,
+      tituloTerritorio: 'MUNICÍPIO DE CARMO - RJ'
+    });
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
+  }
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('• Cobertura macroterritorial das 56 armadilhas municipais • Conexão integrada Sede-Distritos sobre relevo e malha viária.', 10, 276);
+
+  // =========================================================================
+  // PÁGINA 9: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 1)' });
@@ -1044,7 +1114,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 8: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
+  // PÁGINA 10: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 2)' });
@@ -1115,7 +1185,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 9: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
+  // PÁGINA 11: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'PARECER TÉCNICO & HOMOLOGAÇÃO' });
