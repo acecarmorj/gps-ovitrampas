@@ -7,6 +7,7 @@ import { calcularSituacaoArmadilha } from './situacaoOvitrampa';
 import { findNearbyTraps } from './geoDistance';
 import {
   gerarCanvasGraficoBarrasIpo,
+  gerarCanvasBarrasLateraisRiscoBairros,
   gerarCanvasRankingFocos,
   gerarCanvasStatusPalhetas
 } from './pdfRelatoriosGraficos';
@@ -101,6 +102,86 @@ export function agruparArmadilhasPorTerritorio(armadilhas) {
   });
 
   return Object.values(grupos).sort((a, b) => a.ordem - b.ordem);
+}
+
+/**
+ * Extrai todos os 12 bairros e distritos de Carmo individualizados com contagem
+ * exata das armadilhas nos 5 estratos oficiais de risco (do Azul ao Vermelho).
+ */
+export function extrairDadosBairrosConsolidado(armadilhasAdaptadas) {
+  const mapaBairros = {};
+
+  armadilhasAdaptadas.forEach((arm) => {
+    const rawBairro = (arm.bairro || arm.microarea || 'Carmo').trim();
+    let nomeNormalizado = rawBairro;
+    const bLower = rawBairro.toLowerCase();
+
+    if (bLower.includes('progresso')) nomeNormalizado = 'Progresso';
+    else if (bLower.includes('boa ideia')) nomeNormalizado = 'Boa Ideia';
+    else if (bLower.includes('centro')) nomeNormalizado = 'Centro';
+    else if (bLower.includes('morro do estado')) nomeNormalizado = 'Morro do Estado';
+    else if (bLower.includes('val paraíso') || bLower.includes('val paraiso')) nomeNormalizado = 'Val Paraíso';
+    else if (bLower.includes('caixa')) nomeNormalizado = "Caixa d'Água";
+    else if (bLower.includes('jardim')) nomeNormalizado = 'Jardim Centenário';
+    else if (bLower.includes('influência') || bLower.includes('influencia')) nomeNormalizado = 'Influência (2º Distrito)';
+    else if (bLower.includes('prata')) nomeNormalizado = 'Córrego da Prata (3º Distrito)';
+    else if (bLower.includes('porto velho')) nomeNormalizado = 'Porto Velho do Cunha (4º Distrito)';
+    else if (bLower.includes('pombo')) nomeNormalizado = 'Ilha dos Pombos (Localidade)';
+    else if (bLower.includes('barra')) nomeNormalizado = 'Barra de São Francisco (Localidade)';
+
+    if (!mapaBairros[nomeNormalizado]) {
+      mapaBairros[nomeNormalizado] = {
+        nome: nomeNormalizado,
+        armadilhas: [],
+        lidas: 0,
+        positivas: 0,
+        totalOvos: 0,
+        cAzul: 0,
+        cVerde: 0,
+        cAmarelo: 0,
+        cLaranja: 0,
+        cVermelho: 0
+      };
+    }
+
+    const reg = mapaBairros[nomeNormalizado];
+    reg.armadilhas.push(arm);
+
+    const d = arm.dadosCiclos;
+    const ovos = d ? Number(d.ovosTotal || 0) : Number(arm.ultimosOvos || 0);
+    const temLeitura = d ? d.temLeituraAmbas : (arm.ultimosOvos != null);
+
+    if (temLeitura) {
+      reg.lidas += 1;
+      reg.totalOvos += ovos;
+      if (ovos > 0) reg.positivas += 1;
+
+      if (ovos === 0) reg.cAzul += 1;
+      else if (ovos <= 20) reg.cVerde += 1;
+      else if (ovos <= 50) reg.cAmarelo += 1;
+      else if (ovos <= 100) reg.cLaranja += 1;
+      else reg.cVermelho += 1;
+    }
+  });
+
+  const lista = Object.values(mapaBairros).map((b) => {
+    const ipo = b.lidas > 0 ? (b.positivas / b.lidas) * 100 : 0;
+    const ido = b.positivas > 0 ? b.totalOvos / b.positivas : 0;
+    return {
+      ...b,
+      ipo,
+      ido,
+      totalArmadilhas: b.armadilhas.length
+    };
+  });
+
+  // Ordenação do menor risco (Azul/Verde) ao maior risco (Vermelho)
+  // 'do azul, verde ao vermelho'
+  return lista.sort((a, b) => {
+    const scoreA = a.cVermelho * 1000 + a.cLaranja * 100 + a.cAmarelo * 20 + a.cVerde * 5 + a.totalOvos;
+    const scoreB = b.cVermelho * 1000 + b.cLaranja * 100 + b.cAmarelo * 20 + b.cVerde * 5 + b.totalOvos;
+    return scoreA - scoreB;
+  });
 }
 
 /**
@@ -577,55 +658,31 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 2: ÍNDICES ENTOMOLÓGICOS IPO E IDO COM GRÁFICO DE BARRAS VETORIAL
+  // PÁGINA 2: CLASSIFICAÇÃO DE RISCO POR BAIRRO (GRÁFICO DE BARRAS LATERAIS DO AZUL AO VERMELHO)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'ÍNDICES IPO E IDO COM GRÁFICOS' });
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'CLASSIFICAÇÃO DE RISCO POR BAIRRO' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('📊 ÍNDICES ENTOMOLÓGICOS IPO E IDO POR BAIRRO COM GRÁFICO COMPARATIVO', 10, 36);
+  doc.text('📊 CLASSIFICAÇÃO ENTOMOLÓGICA POR BAIRRO E DISTRITO (5 NÍVEIS MS)', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Positividade e densidade de ovos por bairro, com linha de corte municipal e classificação direta de risco:', 10, 40);
+  doc.text('Distribuição dos estratos de risco nas armadilhas por bairro e distrito (do Azul, Verde ao Vermelho) e indicadores analíticos:', 10, 40);
 
-  // Prepara dados de bairros para o gráfico de barras
-  const gruposTerritorio = agruparArmadilhasPorTerritorio(armadilhasAdaptadas);
-  const bairrosData = gruposTerritorio.map((g) => {
-    let lidasG = 0;
-    let posG = 0;
-    let ovosTot = 0;
-    g.armadilhas.forEach((a) => {
-      const d = a.dadosCiclos;
-      if (d) {
-        if (d.temLeituraAmbas) lidasG += 1;
-        if (d.positivaAmbas) posG += 1;
-        ovosTot += Number(d.ovosTotal || 0);
-      }
-    });
-    const ipoG = lidasG > 0 ? (posG / lidasG) * 100 : 0;
-    const idoG = posG > 0 ? ovosTot / posG : 0;
-    return {
-      nome: g.nome.replace('LOCALIDADE DE ', '').replace('DISTRITO ', ''),
-      ipo: ipoG,
-      ido: idoG,
-      totalOvos: ovosTot,
-      lidas: lidasG,
-      positivas: posG
-    };
-  }).sort((a, b) => b.ipo - a.ipo);
+  // Extrai todos os 12 bairros e distritos ordenados do menor ao maior risco ('do azul ao vermelho')
+  const bairrosData = extrairDadosBairrosConsolidado(armadilhasAdaptadas);
 
-  // Gera o gráfico de barras vetorial via Canvas
-  const canvasIpo = gerarCanvasGraficoBarrasIpo(bairrosData, {
-    width: 1200,
-    height: 440,
-    ipoMedio: Number(ipoConsolidado)
+  // Gera o gráfico de barras laterais das 5 cores de risco via Canvas
+  const canvasRisco = gerarCanvasBarrasLateraisRiscoBairros(bairrosData, {
+    width: 1400,
+    height: 680
   });
-  if (canvasIpo) {
-    doc.addImage(canvasIpo.toDataURL('image/png'), 'PNG', 10, 44, 190, 68, undefined, 'FAST');
+  if (canvasRisco) {
+    doc.addImage(canvasRisco.toDataURL('image/png'), 'PNG', 10, 44, 190, 84, undefined, 'FAST');
   }
 
   // Tabela Analítica de Bairros abaixo do gráfico
@@ -649,11 +706,11 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     `${ipoConsolidado}%`,
     totalOvosConsolidado.toLocaleString('pt-BR'),
     `${idoConsolidado}`,
-    'Crítico Municipal'
+    classificarRiscoOficial(totalOvosConsolidado).rotulo
   ]);
 
   autoTable(doc, {
-    startY: 118,
+    startY: 131,
     margin: { left: 10, right: 10 },
     head: [['Bairro / Distrito', 'Arm. Lidas', 'Positivas', 'IPO (%)', 'Total Ovos', 'IDO (Ovos/Pos)', 'Classificação Oficial de Risco']],
     body: linhasTabelaBairros,
@@ -662,22 +719,22 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
       fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 6.8,
-      halign: 'center',
-      cellPadding: 1.8
-    },
-    bodyStyles: {
       fontSize: 6.5,
       halign: 'center',
-      cellPadding: 1.6
+      cellPadding: 1.5
+    },
+    bodyStyles: {
+      fontSize: 6.2,
+      halign: 'center',
+      cellPadding: 1.3
     },
     columnStyles: {
-      0: { halign: 'left', fontStyle: 'bold', width: 50 },
+      0: { halign: 'left', fontStyle: 'bold', width: 52 },
       1: { width: 20 },
       2: { width: 20 },
       3: { fontStyle: 'bold', width: 22 },
       4: { fontStyle: 'bold', width: 24 },
-      5: { width: 22 },
+      5: { width: 20 },
       6: { fontStyle: 'bold', width: 32 }
     },
     didParseCell: (data) => {

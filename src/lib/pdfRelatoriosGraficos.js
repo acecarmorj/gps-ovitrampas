@@ -138,6 +138,184 @@ export function gerarCanvasGraficoBarrasIpo(bairrosData, { width = 1200, height 
 }
 
 /**
+ * Desenha gráfico de barras laterais (horizontal) por Bairro e Distrito,
+ * exibindo os 5 estratos oficiais de classificação de risco (do Azul ao Vermelho):
+ * 🔵 Negativa (0) | 🟢 Baixo (1-20) | 🟡 Médio (21-50) | 🟠 Alto (51-100) | 🔴 Crítico (>100)
+ */
+export function gerarCanvasBarrasLateraisRiscoBairros(bairrosData, { width = 1400, height = 680 } = {}) {
+  const { canvas, ctx } = criarCanvas(width, height);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+
+  const marginTop = 68;
+  const marginBottom = 40;
+  const marginLeft = 280;
+  const marginRight = 240;
+
+  const chartW = width - marginLeft - marginRight;
+  const chartH = height - marginTop - marginBottom;
+
+  // Título do Gráfico
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText('Classificação Entomológica por Bairro e Distrito (5 Níveis de Risco MS)', 35, 30);
+
+  // Legenda Horizontal dos 5 Níveis Oficiais no Topo (do Azul ao Vermelho)
+  const legendas = [
+    { label: 'Negativa (0 ovos)', cor: '#2563eb' },
+    { label: 'Baixo Risco (1 a 20)', cor: '#10b981' },
+    { label: 'Médio Risco (21 a 50)', cor: '#f59e0b' },
+    { label: 'Alto Risco (51 a 100)', cor: '#ea580c' },
+    { label: 'Crítico (> 100 ovos)', cor: '#dc2626' }
+  ];
+
+  let legX = 35;
+  const legY = 42;
+  legendas.forEach((leg) => {
+    ctx.fillStyle = leg.cor;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(legX, legY, 13, 13, 3);
+    else ctx.rect(legX, legY, 13, 13);
+    ctx.fill();
+
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 11.5px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(leg.label, legX + 17, legY + 10.5);
+
+    legX += ctx.measureText(leg.label).width + 32;
+  });
+
+  const dados = [...bairrosData];
+  const n = dados.length;
+  if (n === 0) return canvas;
+
+  const slotH = chartH / n;
+  const barH = Math.min(slotH * 0.62, 24);
+
+  const maxArm = Math.max(8, Math.max(...dados.map((d) => d.totalArmadilhas || d.lidas || 0)));
+  const unitW = chartW / maxArm;
+
+  // Grade de fundo sutil
+  ctx.strokeStyle = '#f1f5f9';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i <= maxArm; i++) {
+    const x = marginLeft + i * unitW;
+    ctx.beginPath();
+    ctx.moveTo(x, marginTop - 4);
+    ctx.lineTo(x, marginTop + chartH);
+    ctx.stroke();
+
+    ctx.fillText(`${i}`, x, marginTop + chartH + 16);
+  }
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Nº de Armadilhas (Ovitrampas)', marginLeft, marginTop + chartH + 32);
+
+  // Desenho das barras por bairro
+  dados.forEach((d, idx) => {
+    const y = marginTop + idx * slotH + (slotH - barH) / 2;
+
+    // Rótulo do Bairro (Eixo Y à esquerda)
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'right';
+    const nomeExibicao = d.nome || 'Bairro';
+    ctx.fillText(nomeExibicao, marginLeft - 14, y + barH / 2 + 4.5);
+
+    // Segmentos das 5 Cores Oficiais (do Azul ao Vermelho)
+    const estratos = [
+      { chave: 'cAzul', count: d.cAzul || 0, cor: '#2563eb' },
+      { chave: 'cVerde', count: d.cVerde || 0, cor: '#10b981' },
+      { chave: 'cAmarelo', count: d.cAmarelo || 0, cor: '#f59e0b' },
+      { chave: 'cLaranja', count: d.cLaranja || 0, cor: '#ea580c' },
+      { chave: 'cVermelho', count: d.cVermelho || 0, cor: '#dc2626' }
+    ];
+
+    let currentX = marginLeft;
+
+    estratos.forEach((estrato) => {
+      if (estrato.count > 0) {
+        const segW = estrato.count * unitW;
+
+        ctx.fillStyle = estrato.cor;
+        ctx.beginPath();
+        ctx.rect(currentX, y, segW, barH);
+        ctx.fill();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(currentX, y, segW, barH);
+
+        if (segW >= 18) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11.5px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${estrato.count}`, currentX + segW / 2, y + barH / 2 + 4);
+        }
+
+        currentX += segW;
+      }
+    });
+
+    // Informações à direita da barra
+    const totalOvos = d.totalOvos || 0;
+    const ido = d.ido != null ? d.ido.toFixed(1) : '-';
+    const totalArm = d.totalArmadilhas || d.lidas || 0;
+
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${totalOvos} ovos • IDO ${ido}`, currentX + 12, y + barH / 2 + 4);
+
+    // Tag / Badge com Cor Oficial
+    let tag = 'BAIXO';
+    let corTag = '#059669';
+    let bgTag = '#ecfdf5';
+    if (d.cVermelho > 0 || totalOvos > 200) {
+      tag = 'CRÍTICO';
+      corTag = '#dc2626';
+      bgTag = '#fef2f2';
+    } else if (d.cLaranja > 0 || totalOvos > 50) {
+      tag = 'ALTO';
+      corTag = '#ea580c';
+      bgTag = '#fff7ed';
+    } else if (d.cAmarelo > 0 || totalOvos > 20) {
+      tag = 'MÉDIO';
+      corTag = '#d97706';
+      bgTag = '#fffbeb';
+    } else if (totalOvos === 0) {
+      tag = 'NEGATIVA';
+      corTag = '#2563eb';
+      bgTag = '#eff6ff';
+    }
+
+    const badgeX = currentX + 145;
+    if (badgeX + 60 < width) {
+      ctx.fillStyle = bgTag;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(badgeX, y + 2, 60, barH - 4, 3);
+      else ctx.rect(badgeX, y + 2, 60, barH - 4);
+      ctx.fill();
+
+      ctx.fillStyle = corTag;
+      ctx.font = 'bold 9.5px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tag, badgeX + 30, y + barH / 2 + 3.5);
+    }
+  });
+
+  return canvas;
+}
+
+/**
  * Desenha gráfico horizontal de ranking de focos (>50 ovos)
  */
 export function gerarCanvasRankingFocos(focos, { width = 1200, height = 520 } = {}) {
