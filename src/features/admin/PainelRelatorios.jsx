@@ -3,8 +3,9 @@ import {
   FileText, Satellite, Download, ClipboardList,
   Flame, BarChart3, Users, EyeOff, Eye, Search,
   Calendar, CheckCircle2, AlertTriangle, Clock, Layers,
-  Compass
+  Compass, Sparkles, Award
 } from 'lucide-react';
+import { gerarRelatorioPdfConsolidadoUnico } from '../../lib/pdfRelatorioConsolidadoUnico';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
 import { gerarRelatorioPdfOperacional } from '../../lib/pdfRelatorioConsolidado';
 import {
@@ -56,6 +57,7 @@ const fmt = (n, casas = 1) => (n == null ? '-' : n.toFixed(casas).replace('.', '
 
 export function PainelRelatorios({
   armadilhas = [],
+  todasLeituras = [],
   cicloAtivo = 'ambas',
   onMudarCiclo,
   onAbrirPainelCompleto
@@ -314,6 +316,12 @@ export function PainelRelatorios({
       'Inventário Completo de Palhetas'
     );
 
+  const gerarPdfConsolidadoUnicoOficial = () =>
+    executarGeracaoPdf(
+      () => gerarRelatorioPdfConsolidadoUnico(filtradas, todasLeituras, { filtroDescricao: filtroTexto, ocultarMorador }),
+      'Relatório Epidemiológico Consolidado Único (8 Páginas)'
+    );
+
   const gerarPdfEntomologicoOficial = () =>
     executarGeracaoPdf(
       () => gerarRelatorioPdfEntomologico(filtradas, { filtroDescricao: filtroTexto }),
@@ -456,7 +464,46 @@ export function PainelRelatorios({
           </button>
         </section>
 
-        {/* CARDS DE DOWNLOAD (PDF COM GRÁFICOS & PLANILHAS EXCEL) */}
+        {/* CARD EM DESTAQUE MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO */}
+        <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 border-2 border-emerald-500/40 text-white rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute -right-8 -top-8 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Dossiê Oficial Unificado • 8 Páginas A4</span>
+                </span>
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Palhetas A + B + Consolidado
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>Relatório Epidemiológico Consolidado Único</span>
+                <Sparkles className="w-5 h-5 text-amber-400 animate-pulse hidden sm:inline" />
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Documento executivo e técnico definitivo para a Secretaria de Saúde: reúne os Big Numbers, quadro comparativo da 1ª e 2ª semanas (Palhetas A vs B), estratificação territorial (Sede e Distritos), <b>mapas de calor em imagem de satélite de alta definição</b>, grade técnica de 300m, tabela dos focos críticos, inventário das 56 armadilhas e parecer técnico com assinaturas oficiais.
+              </p>
+            </div>
+
+            <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-2">
+              <button
+                type="button"
+                onClick={gerarPdfConsolidadoUnicoOficial}
+                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm py-3 px-5 rounded-2xl shadow-lg shadow-emerald-900/40 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-300/40"
+              >
+                <Download className="w-4 h-4 text-slate-950" />
+                <span>BAIXAR RELATÓRIO CONSOLIDADO (PDF)</span>
+              </button>
+              <span className="text-[10px] text-slate-400 text-center font-medium">
+                Padrão Oficial Ministério da Saúde / Fiocruz
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* CARDS DE DOWNLOAD SECUNDÁRIOS / ESPECÍFICOS */}
         <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           
           {/* 1. RELATÓRIO ENTOMOLÓGICO */}

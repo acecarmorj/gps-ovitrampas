@@ -13,9 +13,10 @@ import { playNewRequestSound } from '../../lib/soundAlert';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
+import { gerarRelatorioPdfConsolidadoUnico } from '../../lib/pdfRelatorioConsolidadoUnico';
 import { PainelInteligenciaIA } from './PainelInteligenciaIA';
 import { PainelResumoGpsCampo } from './PainelResumoGpsCampo';
-import { Satellite } from 'lucide-react';
+import { Satellite, Award } from 'lucide-react';
 import { Sparkles, Tag, EyeOff } from 'lucide-react';
 import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
 import { calcularMetricasCiclo } from '../../lib/ciclosOvitrampas';
@@ -280,6 +281,23 @@ export function PainelAdminScreen({
     document.body.removeChild(link);
   };
 
+  // Geração do Dossiê Epidemiológico Consolidado Único (8 Páginas • Palhetas A, B e Total)
+  const handleGerarRelatorioConsolidadoUnico = async () => {
+    try {
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Epidemiológico Consolidado Único (8 Páginas)...' });
+      const filtroDescricao = 'Vigilância Entomológica de Carmo/RJ • Palhetas A, B e Consolidado • 56 Ovitrampas';
+      await gerarRelatorioPdfConsolidadoUnico(
+        armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas,
+        todasLeituras,
+        { filtroDescricao }
+      );
+      setToastMensagem({ tipo: 'sucesso', texto: 'Dossiê Consolidado Único baixado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório consolidado único:', err);
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório unificado. Tente novamente.' });
+    }
+  };
+
   // Geração do Relatório Entomológico Oficial (Fotos de Satélite Google + Nevoeiro Radiante)
   const handleGerarRelatorioEntomologico = async () => {
     try {
@@ -502,6 +520,18 @@ export function PainelAdminScreen({
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            {/* BOTÃO MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (8 PÁGS • A+B+MAPAS) */}
+            <button
+              type="button"
+              onClick={handleGerarRelatorioConsolidadoUnico}
+              className="bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 hover:from-amber-400 hover:to-emerald-500 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 border border-amber-300/50 cursor-pointer"
+              title="Dossiê Oficial Completo (8 Páginas): Palhetas A, B e Total Acumulado, Mapas de Calor em Imagem de Satélite, Grade 300m, Focos Críticos e Parecer Técnico Oficial com Assinaturas"
+            >
+              <Award className="w-4 h-4 text-amber-200" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse hidden sm:inline" />
+              <span>Dossiê Consolidado (8 Págs)</span>
             </button>
 
             {/* BOTÃO RELATÓRIO ENTOMOLÓGICO OFICIAL (FOTOS DE SATÉLITE + NEVOEIRO) */}
