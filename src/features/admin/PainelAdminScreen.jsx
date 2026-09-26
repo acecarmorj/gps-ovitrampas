@@ -281,10 +281,10 @@ export function PainelAdminScreen({
     document.body.removeChild(link);
   };
 
-  // Geração do Dossiê Epidemiológico Consolidado Único (8 Páginas • Palhetas A, B e Total)
+  // Geração do Dossiê Epidemiológico Consolidado Único (10 Páginas • Palhetas A, B e Total)
   const handleGerarRelatorioConsolidadoUnico = async () => {
     try {
-      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Epidemiológico Consolidado Único (8 Páginas)...' });
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Epidemiológico Consolidado Único (10 Páginas)...' });
       const filtroDescricao = 'Vigilância Entomológica de Carmo/RJ • Palhetas A, B e Consolidado • 56 Ovitrampas';
       await gerarRelatorioPdfConsolidadoUnico(
         armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas,
@@ -522,16 +522,16 @@ export function PainelAdminScreen({
               <span className="hidden sm:inline">Excel</span>
             </button>
 
-            {/* BOTÃO MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (11 PÁGS • A+B+4 MAPAS) */}
+            {/* BOTÃO MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (10 PÁGS • A+B+3 MAPAS) */}
             <button
               type="button"
               onClick={handleGerarRelatorioConsolidadoUnico}
               className="bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-700 hover:from-amber-400 hover:to-emerald-500 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 border border-amber-300/50 cursor-pointer"
-              title="Dossiê Oficial Completo (11 Páginas): Palhetas A, B e Total Acumulado, Gráficos Vetoriais, Todos os 4 Mapas de Satélite (Sede, Distritos e Panorâmica Municipal), Focos Críticos e Parecer Técnico Oficial com Assinaturas"
+              title="Dossiê Oficial Completo (10 Páginas): Palhetas A, B e Total Acumulado, Gráficos Vetoriais, Todos os 3 Mapas de Satélite (Sede, Distritos e Panorâmica Municipal), Focos Críticos e Parecer Técnico Oficial com Assinaturas"
             >
               <Award className="w-4 h-4 text-amber-200" />
               <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse hidden sm:inline" />
-              <span>Dossiê Consolidado (11 Págs)</span>
+              <span>Dossiê Consolidado (10 Págs)</span>
             </button>
 
             {/* BOTÃO RELATÓRIO ENTOMOLÓGICO OFICIAL (FOTOS DE SATÉLITE + NEVOEIRO) */}

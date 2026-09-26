@@ -932,50 +932,15 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.text('• Cobertura com as 35 armadilhas da Sede Urbana sobre imagem de satélite de alta resolução • Cores térmicas vivas e contrastantes.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 6: MAPA 2: NÉVOA TÉRMICA & GRADE TÉCNICA 300M (PADRÃO FIOCRUZ)
+  // PÁGINA 6: MAPA 2: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 2: NÉVOA & GRADE 300M' });
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 2: DISTRITOS' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🛰️ MAPA 2: NÉVOA TÉRMICA CONTÍNUA & DISPERSÃO TERRITORIAL COM GRADE 300M', 10, 36);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Visualização Contínua em Névoa Térmica sobre Ortofotos de Satélite com Grade Técnica de 300m x 300m (Padrão MS/Fiocruz):', 10, 40);
-  doc.text('Evidencia manchas de circulação contínua do Aedes aegypti entre quarteirões vizinhos e identifica as células urbanas críticas para bloqueio.', 10, 43.5);
-
-  const imgMapa2 = await carregarImagemDataUrl('maps/mapa_2_sede_nevoeiro.jpg');
-  if (imgMapa2) {
-    doc.addImage(imgMapa2, 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
-  } else {
-    const sedeArms = armadilhasAdaptadas.filter((a) => classificarTerritorio(a).id === 'sede');
-    const { canvas } = await gerarCanvasMapaNevoeiro(sedeArms.length > 0 ? sedeArms : armadilhasAdaptadas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'CARMO (SEDE URBANA)'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 48, 190, 222, undefined, 'FAST');
-  }
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('• Mapeamento contínuo em névoa térmica com raio de influência de 200m • Grade técnica urbana de 300m para intervenção territorial.', 10, 276);
-
-  // =========================================================================
-  // PÁGINA 7: MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES
-  // =========================================================================
-  doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 3: DISTRITOS' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('🏞️ MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES', 10, 36);
+  doc.text('🏞️ MAPA 2: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -1003,15 +968,15 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.text('• Cobertura com as 21 armadilhas distritais sobre ortofoto de satélite • Proporcionalidade térmica calibrada com a sede.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 8: MAPA 4: VISÃO PANORÂMICA MUNICIPAL (SEDE E TODOS OS DISTRITOS JUNTOS)
+  // PÁGINA 7: MAPA 3: VISÃO PANORÂMICA MUNICIPAL (SEDE E TODOS OS DISTRITOS JUNTOS)
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 4: VISÃO MUNICIPAL GERAL' });
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'MAPA 3: VISÃO MUNICIPAL GERAL' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(`🌐 MAPA 4: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — SEDE E DISTRITOS)`, 10, 36);
+  doc.text(`🌐 MAPA 3: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — SEDE E DISTRITOS)`, 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -1037,7 +1002,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.text('• Cobertura macroterritorial das 56 armadilhas municipais • Conexão integrada Sede-Distritos sobre relevo e malha viária.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 9: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
+  // PÁGINA 8: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 1: ARM-01 A ARM-28)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 1)' });
@@ -1114,7 +1079,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 10: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
+  // PÁGINA 9: INVENTÁRIO TÉCNICO DAS 56 ARMADILHAS (PARTE 2: ARM-29 A ARM-56)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'INVENTÁRIO GERAL (PARTE 2)' });
@@ -1185,7 +1150,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 11: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
+  // PÁGINA 10: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'PARECER TÉCNICO & HOMOLOGAÇÃO' });
