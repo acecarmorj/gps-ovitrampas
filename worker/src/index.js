@@ -171,15 +171,19 @@ async function upsertReading(reading, env) {
   try {
     await env.DB.prepare(
       `UPDATE traps SET
-         status = 'analisada',
+         status = CASE 
+           WHEN palheta = ? OR palheta IS NULL THEN 'analisada'
+           ELSE status
+         END,
          ultimos_ovos = ?,
-         ultima_palheta = COALESCE(?, palheta),
+         ultima_palheta = COALESCE(?, ultima_palheta, palheta),
          ultima_leitura_em = ?,
          atualizada_em = datetime('now'),
          synced_at = datetime('now')
        WHERE id = ? OR numero = ?`
     )
       .bind(
+        reading.numeroPalheta ?? null,
         Number(reading.ovos ?? 0),
         reading.numeroPalheta ?? null,
         reading.lidaEm ?? agoraIso(),

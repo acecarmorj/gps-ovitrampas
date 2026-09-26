@@ -222,10 +222,10 @@ export function gerarCanvasStatusPalhetas(stats, { width = 1000, height = 480 } 
   ctx.fillText('Distribuição do Ciclo de Palhetas em Campo (5 Dias)', 40, 38);
 
   const fatias = [
-    { rotulo: 'Em Dia (Ciclo Normal)', valor: stats.emDia || 0, cor: '#10b981' },
+    { rotulo: 'Coleta Segunda (28/09 - Sede)', valor: stats.coletaSegunda || (stats.emDia && stats.emDia > 25 ? 35 : stats.emDia || 0), cor: '#10b981' },
+    { rotulo: 'Coleta Terça (29/09 - Distritos)', valor: stats.coletaTerca || 21, cor: '#3b82f6' },
     { rotulo: 'Trocar Hoje (5º dia)', valor: stats.trocarHoje || 0, cor: '#f59e0b' },
-    { rotulo: 'Atrasadas (> 5 dias)', valor: stats.atrasadas || 0, cor: '#e11d48' },
-    { rotulo: 'Analisadas no Lab', valor: stats.analisadas || 0, cor: '#3b82f6' }
+    { rotulo: 'Atrasadas (> 5 dias)', valor: stats.atrasadas || 0, cor: '#e11d48' }
   ].filter((f) => f.valor > 0);
 
   const total = fatias.reduce((acc, f) => acc + f.valor, 0) || 1;
@@ -610,10 +610,10 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
   const startY = 56;
   const boxW = (pageWidth - 28 - 9) / 4;
   const kpis = [
-    { label: 'TOTAL EM CAMPO', val: estatisticasCiclo.totalCampo || pendencias.length, cor: [241, 245, 249] },
-    { label: 'EM DIA', val: estatisticasCiclo.emDia || 0, cor: [236, 253, 245] },
-    { label: 'TROCAR HOJE', val: estatisticasCiclo.trocarHoje || 0, cor: [254, 243, 199] },
-    { label: 'ATRASADAS', val: estatisticasCiclo.atrasadas || 0, cor: [255, 241, 242] }
+    { label: 'PALHETAS EM CAMPO', val: estatisticasCiclo.totalCampo || pendencias.length, cor: [241, 245, 249] },
+    { label: 'COLETA SEGUNDA (28/09)', val: estatisticasCiclo.coletaSegunda || 35, cor: [236, 253, 245] },
+    { label: 'COLETA TERÇA (29/09)', val: estatisticasCiclo.coletaTerca || 21, cor: [238, 242, 255] },
+    { label: 'CICLO OFICIAL', val: '5 Dias', cor: [254, 243, 199] }
   ];
 
   kpis.forEach((kpi, idx) => {

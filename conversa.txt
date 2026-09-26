@@ -1890,4 +1890,59 @@ Atendendo à demanda do Almir:
    - Testado e validado via curl (HTTP 200 e cache shell v19 ativo).
 ==============================================================================
 
+==============================================================================
+SECTION 98 - [GEMINI] CICLO B EM CAMPO (01B..56B) & CRONOGRAMA DE COLETAS (SEGUNDA E TERÇA)
+DATE: 2026-09-25 21:37 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Almir alertou: "foram feitas as trocas das palhetas, existem palhetas em campo
+que serão colhidas na segunda e terça feira, as palhetas em campo são as 02B ex."
+
+1. DIAGNÓSTICO DO PROBLEMA:
+   - No laboratório, a contagem oficial das 56 palhetas do Ciclo A (01A..56A)
+     foi concluída com 1.017 ovos, 32 positivas (IPO 57,1%, IDO 31,8).
+   - Porém, no banco D1, o registro das armadilhas continuava com status 'analisada'
+     e palheta '01A', não refletindo a troca física realizada pelos agentes em campo
+     para o Ciclo B (01B..56B), que estão em plena exposição de 5 dias.
+   - Além disso, o worker sobrescrevia status 'analisada' incondicionalmente ao salvar
+     leituras, o que zerava o contador de armadilhas ativas em campo no painel.
+
+2. AÇÕES REALIZADAS E ATUALIZAÇÃO DO BANCO D1 (56 ARMADILHAS):
+   - Executada migração atômica no banco Cloudflare D1 (`ovitrampas-gps-db`):
+     * ARM-01 a ARM-35 (Sede Urbana de Carmo):
+       - Palheta ativa em campo: `01B` a `35B` (ex: `02B`, `23B`, `24B`...).
+       - Data de instalação: `23/09/2026` (Quarta-feira).
+       - Ciclo padrão: 5 dias.
+       - Previsão oficial de coleta: SEGUNDA-FEIRA (28/09/2026) - Faltam 3 dias!
+     * ARM-36 a ARM-56 (Distritos e Localidades):
+       - Palheta ativa em campo: `36B` a `56B` (ex: `36B`, `41B`, `56B`...).
+       - Data de instalação: `24/09/2026` (Quinta-feira).
+       - Ciclo padrão: 5 dias.
+       - Previsão oficial de coleta: TERÇA-FEIRA (29/09/2026) - Faltam 4 dias!
+     * Histórico de palhetas atualizado para todas as 56 armadilhas com o registro
+       completo da troca (PL-XX -> XXA -> XXB) e os ovos do Ciclo A preservados.
+
+3. BLINDAGEM DO WORKER API (`worker/src/index.js`):
+   - `upsertReading`: atualizado para preservar o `status = 'instalada'` da armadilha
+     quando a leitura recebida for de uma palheta anterior (ex: Ciclo A), não
+     desativando o ciclo em andamento.
+   - Worker publicado com sucesso na Cloudflare (`Current Version ID: 1aedb8a8-0faf-405b-af9a-ca4186c55ae1`).
+
+4. AJUSTE NOS RELATÓRIOS E PAINEL ADMINISTRATIVO:
+   - Indicadores no topo do Painel de Relatórios:
+     * Total de Ovitrampas: 56
+     * Palhetas em Campo (Ciclo B): 56 (Ativas)
+     * Coletas Agendadas na Segunda (28/09): 35 (Sede)
+     * Coletas Agendadas na Terça (29/09): 21 (Distritos)
+     * Ovos Lidos (Ciclo A): 1.017 ovos
+   - Filtros rápidos por: "📅 Coleta na Segunda (28/09)" e "📅 Coleta na Terça (29/09)".
+   - Gráficos em PDF atualizados para refletir o cronograma de 5 dias e status do Ciclo B.
+
+5. DEPLOY E SERVICE WORKER:
+   - Service Worker elevado para `ovitrampas-shell-v20` (`public/sw.js`).
+   - Build 100% verificado e publicado no Cloudflare Pages: https://gps-ovitrampas.pages.dev.
+==============================================================================
+
+
 

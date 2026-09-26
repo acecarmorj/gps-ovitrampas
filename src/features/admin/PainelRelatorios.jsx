@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import {
   FileText, Satellite, Download, ClipboardList,
   Flame, BarChart3, Users, EyeOff, Eye, Search,
-  Calendar, CheckCircle2, AlertTriangle, Clock, Layers
+  Calendar, CheckCircle2, AlertTriangle, Clock, Layers,
+  Compass
 } from 'lucide-react';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
 import { gerarRelatorioPdfOperacional } from '../../lib/pdfRelatorioConsolidado';
@@ -14,14 +15,16 @@ import {
 } from '../../lib/pdfRelatoriosGraficos';
 import { calcularSituacaoArmadilha, classificarRiscoOvos } from '../../lib/situacaoOvitrampa';
 
-const lida = (a) => a.status === 'analisada' && a.ultimosOvos != null;
+// Uma armadilha possui leitura válida se tem contagem registrada do Ciclo A
+const temLeitura = (a) => a.ultimosOvos != null && a.ultimosOvos !== undefined;
 const ovosDe = (a) => Number(a.ultimosOvos) || 0;
 const bairroDe = (a) => (a.bairro || a.microarea || 'Sem bairro').trim();
+const estaEmCampo = (a) => a.status === 'instalada' || !a.status;
 
 // IPO = % de ovitrampas lidas que tem ovos. IDO = média de ovos por
 // ovitrampa positiva. Regra oficial de vigilância entomológica.
 function indicesDe(lista) {
-  const lidas = lista.filter(lida);
+  const lidas = lista.filter(temLeitura);
   const positivas = lidas.filter((a) => ovosDe(a) > 0);
   const totalOvos = lidas.reduce((soma, a) => soma + ovosDe(a), 0);
   return {
@@ -74,10 +77,14 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
         if (bairro !== 'todos' && bairroDe(a) !== bairro) return false;
 
         const sit = calcularSituacaoArmadilha(a);
-        if (situacao === 'lidas' && !lida(a)) return false;
-        if (situacao === 'positivas' && !(lida(a) && ovosDe(a) > 0)) return false;
-        if (situacao === 'campo' && lida(a)) return false;
-        if (situacao === 'urgentes' && sit.fase !== 'hoje' && sit.fase !== 'atrasada') return false;
+        const diaSemanaStr = (sit.diaSemana || '').toLowerCase();
+
+        if (situacao === 'segunda' && !diaSemanaStr.includes('segunda')) return false;
+        if (situacao === 'terca' && !diaSemanaStr.includes('ter')) return false;
+        if (situacao === 'campo' && !estaEmCampo(a)) return false;
+        if (situacao === 'positivas' && !(temLeitura(a) && ovosDe(a) > 0)) return false;
+        if (situacao === 'focos' && !(temLeitura(a) && ovosDe(a) > 50)) return false;
+        if (situacao === 'negativas' && !(temLeitura(a) && ovosDe(a) === 0)) return false;
 
         if (busca.trim()) {
           const termo = busca.toLowerCase().trim();
@@ -98,6 +105,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
     [armadilhas, bairro, situacao, busca]
   );
 
+  // Consolidação Epidemiológica do Ciclo Concluído (Ciclo A)
   const geral = useMemo(() => indicesDe(filtradas), [filtradas]);
 
   const porBairro = useMemo(() => {
@@ -112,18 +120,25 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
       .sort((a, b) => b.totalOvos - a.totalOvos);
   }, [filtradas]);
 
-  // Estatísticas de Ciclo de Campo (5 Dias)
+  // Estatísticas de Gestão Operacional das Palhetas em Campo (Ciclo B - 5 Dias)
   const estatisticasCiclo = useMemo(() => {
     let emDia = 0;
     let trocarHoje = 0;
     let atrasadas = 0;
-    let analisadas = 0;
+    let totalCampo = 0;
+    let coletaSegunda = 0;
+    let coletaTerca = 0;
 
     filtradas.forEach((a) => {
-      if (lida(a)) {
-        analisadas += 1;
-      } else {
+      if (estaEmCampo(a)) {
+        totalCampo += 1;
         const s = calcularSituacaoArmadilha(a);
+        const diaSemana = (s.diaSemana || '').toLowerCase();
+        if (diaSemana.includes('segunda')) {
+          coletaSegunda += 1;
+        } else if (diaSemana.includes('ter')) {
+          coletaTerca += 1;
+        }
         if (s.fase === 'hoje') trocarHoje += 1;
         else if (s.fase === 'atrasada') atrasadas += 1;
         else emDia += 1;
@@ -131,11 +146,12 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
     });
 
     return {
-      totalCampo: filtradas.length - analisadas,
+      totalCampo,
       emDia,
       trocarHoje,
       atrasadas,
-      analisadas
+      coletaSegunda,
+      coletaTerca
     };
   }, [filtradas]);
 
@@ -143,10 +159,12 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
     bairro !== 'todos' ? bairro : 'Todos os bairros',
     {
       todas: 'Todas as armadilhas',
+      segunda: 'Coleta Segunda-feira (28/09)',
+      terca: 'Coleta Terça-feira (29/09)',
       campo: 'Palhetas em campo',
-      urgentes: 'Trocas urgentes (Hoje/Atrasadas)',
-      lidas: 'Somente lidas',
-      positivas: 'Somente positivas'
+      positivas: 'Positivas no Ciclo A (>0)',
+      focos: 'Focos críticos (>50 ovos)',
+      negativas: 'Negativas no Ciclo A (0 ovos)'
     }[situacao],
     busca ? `Busca: "${busca}"` : null
   ]
@@ -164,27 +182,31 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
   const planilhaGeral = () =>
     baixarCsv(
       'ovitrampas_palhetas_inventario',
-      ['Nº', 'Palheta em Campo', 'Última Palheta Analisada', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Situação', 'Ovos', 'Risco', 'Instalada em', 'Última leitura'],
-      filtradas.map((a) => [
-        a.numero,
-        a.palheta || `P-${a.numero}`,
-        a.ultimaPalheta || (lida(a) ? a.palheta : '-'),
-        bairroDe(a),
-        a.quarteirao,
-        morador(a),
-        endereco(a),
-        lida(a) ? (ovosDe(a) > 0 ? 'Positiva' : 'Negativa') : 'Em campo',
-        lida(a) ? ovosDe(a) : '',
-        lida(a) ? classificarRiscoOvos(ovosDe(a)).nivel : '',
-        a.instaladaEm ? new Date(a.instaladaEm).toLocaleDateString('pt-BR') : '',
-        a.ultimaLeituraEm ? new Date(a.ultimaLeituraEm).toLocaleDateString('pt-BR') : ''
-      ])
+      ['Nº', 'Palheta em Campo', 'Previsão de Coleta', 'Última Palheta Analisada (Ciclo A)', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Situação', 'Ovos Ciclo A', 'Risco', 'Instalada em', 'Última leitura'],
+      filtradas.map((a) => {
+        const sit = calcularSituacaoArmadilha(a);
+        return [
+          a.numero,
+          a.palheta || `P-${a.numero}B`,
+          sit.dataPrevistaFormatada ? `${sit.dataPrevistaFormatada} (${sit.diaSemana})` : 'Segunda/Terça',
+          a.ultimaPalheta || `P-${a.numero}A`,
+          bairroDe(a),
+          a.quarteirao,
+          morador(a),
+          endereco(a),
+          estaEmCampo(a) ? `Em campo (Coleta ${sit.diaSemana || 'prevista'})` : 'Concluída',
+          temLeitura(a) ? ovosDe(a) : '',
+          temLeitura(a) ? classificarRiscoOvos(ovosDe(a)).nivel : '',
+          a.instaladaEm ? new Date(a.instaladaEm).toLocaleDateString('pt-BR') : '',
+          a.ultimaLeituraEm ? new Date(a.ultimaLeituraEm).toLocaleDateString('pt-BR') : ''
+        ];
+      })
     );
 
   const planilhaIndices = () =>
     baixarCsv(
       'indices_ipo_ido',
-      ['Bairro', 'Armadilhas', 'Lidas', 'Positivas', 'Total de ovos', 'IPO (%)', 'IDO (ovos/positiva)'],
+      ['Bairro', 'Armadilhas', 'Lidas (Ciclo A)', 'Positivas', 'Total de ovos', 'IPO (%)', 'IDO (ovos/positiva)'],
       [...porBairro, { nome: 'TOTAL MUNICIPAL', ...geral }].map((b) => [
         b.nome,
         b.armadilhas,
@@ -197,14 +219,15 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
     );
 
   const planilhaFocos = () => {
-    const focos = filtradas.filter((a) => lida(a) && ovosDe(a) > 50).sort((a, b) => ovosDe(b) - ovosDe(a));
+    const focos = filtradas.filter((a) => temLeitura(a) && ovosDe(a) > 50).sort((a, b) => ovosDe(b) - ovosDe(a));
     if (!focos.length) return avisar('Nenhuma armadilha com mais de 50 ovos neste filtro.');
     baixarCsv(
       'focos_alto_e_critico',
-      ['Nº', 'Palheta em Campo', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Ovos', 'Risco', 'Latitude', 'Longitude'],
+      ['Nº', 'Palheta em Campo', 'Última Analisada', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Ovos Ciclo A', 'Risco', 'Latitude', 'Longitude'],
       focos.map((a) => [
         a.numero,
-        a.palheta || `P-${a.numero}`,
+        a.palheta || `P-${a.numero}B`,
+        a.ultimaPalheta || `P-${a.numero}A`,
         bairroDe(a),
         a.quarteirao,
         morador(a),
@@ -219,23 +242,22 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
 
   const planilhaPendencias = () => {
     const pendentes = filtradas
-      .filter((a) => !lida(a))
-      .map((a) => ({ a, s: calcularSituacaoArmadilha(a) }))
-      .filter(({ s }) => s.fase === 'atrasada' || s.fase === 'hoje' || s.fase === 'vespera');
-    if (!pendentes.length) return avisar('Nenhuma pendência neste filtro.');
+      .filter(estaEmCampo)
+      .map((a) => ({ a, s: calcularSituacaoArmadilha(a) }));
+    if (!pendentes.length) return avisar('Nenhuma palheta em campo neste filtro.');
     baixarCsv(
-      'pendencias_troca_palhetas',
-      ['Nº', 'Palheta em Campo', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Situação', 'Dias em Campo', 'Data Prevista'],
+      'palhetas_em_campo_coletas',
+      ['Nº', 'Palheta em Campo', 'Dia da Coleta', 'Previsão Exata', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Dias em Campo'],
       pendentes.map(({ a, s }) => [
         a.numero,
-        a.palheta || `P-${a.numero}`,
+        a.palheta || `P-${a.numero}B`,
+        s.diaSemana || 'Segunda/Terça',
+        s.dataPrevistaFormatada || '-',
         bairroDe(a),
         a.quarteirao,
         morador(a),
         endereco(a),
-        s.titulo,
-        s.diasCorridos != null ? `${s.diasCorridos} dias` : '-',
-        s.dataPrevistaFormatada || '-'
+        s.diasCorridos != null ? `${s.diasCorridos} dias` : '-'
       ])
     );
   };
@@ -262,7 +284,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
     );
 
   const gerarPdfFocos = () => {
-    const focos = filtradas.filter((a) => lida(a) && ovosDe(a) > 50);
+    const focos = filtradas.filter((a) => temLeitura(a) && ovosDe(a) > 50);
     if (!focos.length) return avisar('Nenhum foco com mais de 50 ovos encontrado no filtro atual.');
     return executarGeracaoPdf(
       () => gerarPdfFocosCriticosComGraficos(focos, { filtroDescricao: filtroTexto, ocultarMorador }),
@@ -272,11 +294,11 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
 
   const gerarPdfPendencias = () => {
     const pendentes = filtradas
-      .filter((a) => !lida(a))
+      .filter(estaEmCampo)
       .map((a) => ({ a, s: calcularSituacaoArmadilha(a) }));
     return executarGeracaoPdf(
       () => gerarPdfPendenciasCampoComGraficos(pendentes, estatisticasCiclo, { filtroDescricao: filtroTexto, ocultarMorador }),
-      'Relatório de Palhetas e Pendências'
+      'Relatório de Palhetas e Cronograma de Coletas'
     );
   };
 
@@ -306,13 +328,13 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
         <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-slate-900">Central de Relatórios & Palhetas</h1>
+              <h1 className="text-xl font-black text-slate-900">Monitoramento Territorial & Palhetas</h1>
               <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300">
                 CARMO/RJ
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Baixe relatórios executivos em <b>PDF com gráficos</b> ou planilhas Excel/CSV. Monitore palhetas ativas em campo (ex: P-02B).
+              Ciclo B em campo: <b>Coletas agendadas para Segunda (28/09) e Terça-feira (29/09)</b>. Resultados analíticos do Ciclo A disponíveis para emissão em PDF com gráficos.
             </p>
           </div>
           <button
@@ -324,41 +346,39 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
           </button>
         </header>
 
-        {/* CARDS DE INDICADORES (CLEAN & EPIDEMIOLÓGICO) */}
+        {/* CARDS DE INDICADORES (CLEAN, EPIDEMIOLÓGICO & OPERACIONAL) */}
         <section className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
           <div className="bg-white border border-slate-200 rounded-2xl py-3 px-2 shadow-2xs">
             <div className="text-2xl font-black text-slate-900">{geral.armadilhas}</div>
-            <div className="text-[11px] font-bold text-slate-500">Total Armadilhas</div>
+            <div className="text-[11px] font-bold text-slate-500">Total de Ovitrampas</div>
           </div>
-          <div className="bg-white border border-blue-200 bg-blue-50/30 rounded-2xl py-3 px-2 shadow-2xs">
+          <div className="bg-white border border-blue-200 bg-blue-50/40 rounded-2xl py-3 px-2 shadow-2xs">
             <div className="text-2xl font-black text-blue-700">{estatisticasCiclo.totalCampo}</div>
-            <div className="text-[11px] font-bold text-blue-800">Palhetas em Campo</div>
+            <div className="text-[11px] font-bold text-blue-800">Palhetas em Campo (B)</div>
           </div>
-          <div className="bg-white border border-emerald-200 bg-emerald-50/30 rounded-2xl py-3 px-2 shadow-2xs">
-            <div className="text-2xl font-black text-emerald-700">{geral.lidas}</div>
-            <div className="text-[11px] font-bold text-emerald-800">Lidas no Lab</div>
+          <div className="bg-white border border-emerald-200 bg-emerald-50/40 rounded-2xl py-3 px-2 shadow-2xs">
+            <div className="text-2xl font-black text-emerald-700">{estatisticasCiclo.coletaSegunda}</div>
+            <div className="text-[11px] font-bold text-emerald-800">Coleta Segunda (28/09)</div>
           </div>
-          <div className="bg-white border border-amber-200 bg-amber-50/30 rounded-2xl py-3 px-2 shadow-2xs">
-            <div className="text-2xl font-black text-amber-600">
-              {estatisticasCiclo.trocarHoje + estatisticasCiclo.atrasadas}
-            </div>
-            <div className="text-[11px] font-bold text-amber-800">Trocas Urgentes</div>
+          <div className="bg-white border border-amber-200 bg-amber-50/40 rounded-2xl py-3 px-2 shadow-2xs">
+            <div className="text-2xl font-black text-amber-700">{estatisticasCiclo.coletaTerca}</div>
+            <div className="text-[11px] font-bold text-amber-800">Coleta Terça (29/09)</div>
           </div>
-          <div className="bg-white border border-rose-200 bg-rose-50/30 rounded-2xl py-3 px-2 shadow-2xs col-span-2 sm:col-span-1">
+          <div className="bg-white border border-rose-200 bg-rose-50/40 rounded-2xl py-3 px-2 shadow-2xs col-span-2 sm:col-span-1">
             <div className="text-2xl font-black text-rose-600">{geral.totalOvos}</div>
-            <div className="text-[11px] font-bold text-rose-800">Total de Ovos</div>
+            <div className="text-[11px] font-bold text-rose-800">Ovos Lidos (Ciclo A)</div>
           </div>
         </section>
 
-        {/* FILTROS E BUSCA */}
+        {/* FILTROS E BUSCA INTELIGENTE */}
         <section className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-wrap items-center gap-2.5 shadow-2xs">
-          <div className="relative flex-1 min-w-[180px]">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar Nº, Palheta (ex: P-02B), Bairro, Morador..."
+              placeholder="Buscar Nº, Palheta (ex: 02B, 24B), Bairro, Morador..."
               className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-emerald-500 font-medium"
             />
           </div>
@@ -380,17 +400,19 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
           </label>
 
           <label className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-            Filtro:
+            Filtrar:
             <select
               value={situacao}
               onChange={(e) => setSituacao(e.target.value)}
               className="border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-medium bg-white"
             >
-              <option value="todas">Todas as armadilhas</option>
-              <option value="campo">Palhetas em campo</option>
-              <option value="urgentes">Urgentes (Hoje / Atrasadas)</option>
-              <option value="lidas">Lidas no laboratório</option>
-              <option value="positivas">Somente com ovos (&gt;0)</option>
+              <option value="todas">Todas as 56 armadilhas</option>
+              <option value="segunda">📅 Coleta na Segunda (28/09 - Sede)</option>
+              <option value="terca">📅 Coleta na Terça (29/09 - Distritos)</option>
+              <option value="campo">Palhetas em campo (Ciclo B)</option>
+              <option value="positivas">Positivas no Ciclo A (&gt;0 ovos)</option>
+              <option value="focos">Focos críticos no Ciclo A (&gt;50 ovos)</option>
+              <option value="negativas">Sem ovos no Ciclo A (0 ovos)</option>
             </select>
           </label>
 
@@ -454,7 +476,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                   </span>
                 </div>
                 <div className="text-xs text-slate-300 mt-0.5">
-                  Coordenação de campo: status de palhetas, raio 300m-400m e planejamento para os ACEs.
+                  Coordenação de campo: cronograma de recolhimento, raio 300m-400m e orientações aos ACEs.
                 </div>
               </div>
             </div>
@@ -536,16 +558,16 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
             </div>
           </div>
 
-          {/* 5. PENDÊNCIAS DE CAMPO */}
+          {/* 5. GESTÃO DE PALHETAS E CRONOGRAMA */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-2xs">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-sm font-black text-slate-900">Pendências de Campo</div>
+                <div className="text-sm font-black text-slate-900">Cronograma de Coletas</div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  Cronograma de 5 dias. Gráfico donut de distribuição, trocas de hoje e atrasadas.
+                  Ciclo B (5 dias). Coletas de Segunda (28/09) e Terça (29/09), gráfico de status e rotas.
                 </div>
               </div>
             </div>
@@ -579,7 +601,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
               <div>
                 <div className="text-sm font-black text-slate-900">Inventário de Palhetas</div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  Dados completos: armadilha, palheta em campo, ciclo anterior, datas e coordenadas.
+                  Relação completa: palheta em campo (Ciclo B), leitura anterior (Ciclo A), datas e locais.
                 </div>
               </div>
             </div>
@@ -650,11 +672,11 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                   <tr className="text-left text-slate-500 border-b border-slate-200 text-[11px]">
                     <th className="py-2 pr-3">Armadilha</th>
                     <th className="pr-3">Palheta em Campo</th>
-                    <th className="pr-3">Status do Ciclo</th>
-                    <th className="pr-3">Última Leitura / Lab</th>
+                    <th className="pr-3">Cronograma de Coleta</th>
+                    <th className="pr-3">Leitura Ciclo Anterior (A)</th>
                     <th className="pr-3">Bairro / Quarteirão</th>
                     <th className="pr-3">Morador</th>
-                    <th>Instalação</th>
+                    <th>Instalação B</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -667,9 +689,10 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                   ) : (
                     filtradas.map((a) => {
                       const sit = calcularSituacaoArmadilha(a);
-                      const isLida = lida(a);
-                      const palhetaEmCampo = a.palheta || `P-${a.numero}`;
-                      const ultimaPalheta = a.ultimaPalheta;
+                      const palhetaEmCampo = a.palheta || `P-${a.numero}B`;
+                      const ultimaPalheta = a.ultimaPalheta || `P-${a.numero}A`;
+                      const diaSemana = sit.diaSemana || (Number(a.numero) <= 35 ? 'Segunda-feira' : 'Terça-feira');
+                      const isSegunda = diaSemana.toLowerCase().includes('segunda');
 
                       return (
                         <tr key={a.id || a.numero} className="hover:bg-slate-50/80 transition-colors">
@@ -679,53 +702,55 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                             ARM-{a.numero}
                           </td>
 
-                          {/* Palheta Atual em Campo */}
+                          {/* Palheta Atual em Campo (Ciclo B) */}
                           <td className="pr-3 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-blue-50 text-blue-800 border border-blue-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-black bg-blue-100 text-blue-900 border border-blue-300 shadow-2xs">
                               {palhetaEmCampo}
                             </span>
                           </td>
 
-                          {/* Status do Ciclo de 5 dias */}
+                          {/* Status / Cronograma do Ciclo de 5 dias */}
                           <td className="pr-3 whitespace-nowrap">
-                            {isLida ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                Analisada
-                              </span>
-                            ) : sit.fase === 'hoje' ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full animate-pulse">
-                                <Clock className="w-3 h-3 text-amber-700" />
-                                Trocar Hoje!
-                              </span>
-                            ) : sit.fase === 'atrasada' ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-full">
-                                <AlertTriangle className="w-3 h-3 text-rose-700" />
-                                Atrasada ({sit.diasRestantes ? Math.abs(sit.diasRestantes) : '1+'} d)
+                            {isSegunda ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                                <Calendar className="w-3 h-3 text-emerald-600" />
+                                Coleta Segunda (28/09) • Faltam 3d
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                                Em campo ({sit.diasCorridos || 0}d)
+                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-0.5 rounded-full">
+                                <Calendar className="w-3 h-3 text-blue-600" />
+                                Coleta Terça (29/09) • Faltam 4d
                               </span>
                             )}
                           </td>
 
-                          {/* Última Leitura de Laboratório */}
+                          {/* Leitura Laboratorial do Ciclo Anterior (Ciclo A) */}
                           <td className="pr-3 whitespace-nowrap">
-                            {isLida ? (
+                            {temLeitura(a) ? (
                               <div className="flex items-center gap-1.5">
-                                <span className="font-extrabold text-slate-800">
-                                  {a.ultimosOvos} ovos
+                                <span className={`font-black text-xs ${
+                                  ovosDe(a) > 100
+                                    ? 'text-rose-600'
+                                    : ovosDe(a) > 50
+                                    ? 'text-orange-600'
+                                    : ovosDe(a) > 0
+                                    ? 'text-emerald-700'
+                                    : 'text-slate-600'
+                                }`}>
+                                  {ovosDe(a)} {ovosDe(a) === 1 ? 'ovo' : 'ovos'}
                                 </span>
-                                {ultimaPalheta && ultimaPalheta !== palhetaEmCampo && (
-                                  <span className="text-[10px] text-slate-400">
-                                    ({ultimaPalheta})
+                                <span className="text-[10px] text-slate-400 font-bold">
+                                  ({ultimaPalheta})
+                                </span>
+                                {ovosDe(a) > 100 && (
+                                  <span className="text-[9px] bg-rose-100 text-rose-800 font-black px-1 rounded">
+                                    CRÍTICO
                                   </span>
                                 )}
                               </div>
                             ) : (
                               <span className="text-slate-400 italic text-[11px]">
-                                {ultimaPalheta ? `Ant: ${ultimaPalheta}` : 'Aguardando coleta'}
+                                Aguardando lab
                               </span>
                             )}
                           </td>
@@ -748,7 +773,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                             </span>
                           </td>
 
-                          {/* Data de Instalação */}
+                          {/* Data de Instalação Ciclo B */}
                           <td className="whitespace-nowrap text-slate-500 text-[11px]">
                             {a.instaladaEm ? new Date(a.instaladaEm).toLocaleDateString('pt-BR') : '-'}
                           </td>
@@ -769,7 +794,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                   <tr className="text-left text-slate-500 border-b border-slate-200 text-[11px]">
                     <th className="py-2 pr-2">Bairro</th>
                     <th className="pr-2">Armadilhas</th>
-                    <th className="pr-2">Lidas</th>
+                    <th className="pr-2">Lidas (Ciclo A)</th>
                     <th className="pr-2">Positivas</th>
                     <th className="pr-2">Total de Ovos</th>
                     <th className="pr-2">IPO (%)</th>
@@ -800,7 +825,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                 </tbody>
               </table>
               <p className="text-[11px] text-slate-400 mt-2 px-1">
-                IPO = % de armadilhas lidas com ovos. IDO = média de ovos por armadilha positiva.
+                IPO = % de armadilhas positivas com ovos. IDO = média de ovos por armadilha positiva.
               </p>
             </div>
           )}
