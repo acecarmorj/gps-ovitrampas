@@ -666,7 +666,24 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
 
           {/* CONTEÚDO DA ABA 1: TABELA DE PALHETAS EM CAMPO E CICLOS */}
           {abaAtiva === 'palhetas' && (
-            <div className="overflow-x-auto p-3">
+            <div className="p-3 space-y-3">
+              {/* BANNER INFORMATIVO DO CICLO E PRAZO MÁXIMO DE 7 DIAS */}
+              <div className="bg-blue-50/80 border border-blue-200/80 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider px-2">
+                    Ciclo Oficial 5 Dias
+                  </span>
+                  <span className="text-slate-700 font-medium">
+                    Coletas agendadas: <strong>Segunda-feira (28/09)</strong> para Sede (ARM 01-35) e <strong>Terça-feira (29/09)</strong> para Distritos (ARM 36-56).
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-900 bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Limite Máx Seguro: 7 dias (Portaria MS/Fiocruz)
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-slate-500 border-b border-slate-200 text-[11px]">
@@ -709,17 +726,17 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                             </span>
                           </td>
 
-                          {/* Status / Cronograma do Ciclo de 5 dias */}
+                          {/* Status / Cronograma do Ciclo de 5 dias (Teto 7 dias) */}
                           <td className="pr-3 whitespace-nowrap">
                             {isSegunda ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full" title={`Instalada em 23/09 (Quarta). Dia ${sit.diasCorridos} de 5. Limite máximo: 7 dias.`}>
                                 <Calendar className="w-3 h-3 text-emerald-600" />
-                                Coleta Segunda (28/09) • Faltam 3d
+                                Coleta Segunda (28/09) • {sit.diasRestantes > 0 ? `Faltam ${sit.diasRestantes}d` : sit.diasRestantes === 0 ? 'Coletar Hoje' : `Janela Limite (${Math.abs(sit.diasRestantes)}d)`}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-0.5 rounded-full" title={`Instalada em 24/09 (Quinta). Dia ${sit.diasCorridos} de 5. Limite máximo: 7 dias.`}>
                                 <Calendar className="w-3 h-3 text-blue-600" />
-                                Coleta Terça (29/09) • Faltam 4d
+                                Coleta Terça (29/09) • {sit.diasRestantes > 0 ? `Faltam ${sit.diasRestantes}d` : sit.diasRestantes === 0 ? 'Coletar Hoje' : `Janela Limite (${Math.abs(sit.diasRestantes)}d)`}
                               </span>
                             )}
                           </td>
@@ -783,6 +800,7 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 

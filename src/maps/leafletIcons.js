@@ -99,16 +99,19 @@ export function ovitrampaIcon(armadilha, semRotulo = false) {
     infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#0f172a;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">${armadilha.ultimosOvos} ovos</span>`;
   } else if (situacao.fase === 'atrasada') {
     emoji = '⚠️';
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#991b1b;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Atrasada ${Math.abs(situacao.diasRestantes)}d</span>`;
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#991b1b;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Atraso >7d</span>`;
+  } else if (situacao.fase === 'tolerancia') {
+    emoji = '⏰';
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Janela Limite (${situacao.diasCorridos}d)</span>`;
   } else if (situacao.fase === 'hoje') {
     emoji = '⏳';
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Trocar Hoje</span>`;
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#047857;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Coletar Hoje</span>`;
   } else if (situacao.fase === 'vespera') {
     emoji = '⏳';
     infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#b45309;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Falta 1d</span>`;
   } else {
-    // Em campo normal (dias 0 a 4 restantes)
-    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#047857;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Faltam ${situacao.diasRestantes}d</span>`;
+    // Em campo normal (dias 0 a 3 restantes)
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#0369a1;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Faltam ${situacao.diasRestantes}d</span>`;
   }
 
   return L.divIcon({

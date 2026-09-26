@@ -6,6 +6,7 @@
  */
 
 export const DIAS_CICLO_PADRAO = 5;
+export const DIAS_CICLO_MAXIMO = 7;
 
 export function parseData(dataStr) {
   if (!dataStr) return new Date();
@@ -136,13 +137,13 @@ export function calcularSituacaoArmadilha(armadilha) {
   const diaSemanaRaw = dataPrevista.toLocaleDateString('pt-BR', { weekday: 'long' });
   const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
-  // Atrasada (mais de DIAS_CICLO_PADRAO dias sem recolher)
-  if (diasRestantes < 0) {
-    const diasAtraso = Math.abs(diasRestantes);
+  // Atraso Crítico (> 7 dias sem recolher - risco iminente de eclosão de larvas)
+  if (diasCorridos > DIAS_CICLO_MAXIMO) {
+    const diasExcesso = diasCorridos - DIAS_CICLO_MAXIMO;
     return {
       fase: 'atrasada',
-      titulo: `Atrasada (${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso)`,
-      descricao: `Prazo de ${DIAS_CICLO_PADRAO} dias venceu em ${dataPrevistaFormatada} (${diaSemana}). Trocar palheta com urgência para evitar eclosão!`,
+      titulo: `Atraso Crítico (${diasCorridos}d em campo)`,
+      descricao: `Ultrapassou o limite máximo de ${DIAS_CICLO_MAXIMO} dias em ${diasExcesso} ${diasExcesso === 1 ? 'dia' : 'dias'}. Risco iminente de eclosão de larvas no vaso! Recolher imediatamente.`,
       diasCorridos,
       diasRestantes,
       dataPrevistaFormatada,
@@ -154,14 +155,14 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Hoje (exatamente DIAS_CICLO_PADRAO dias)
-  if (diasRestantes === 0) {
+  // Janela Limite / Tolerância (dias 6 e 7 - passou do 5º dia, mas está dentro do teto seguro de 7 dias)
+  if (diasCorridos > DIAS_CICLO_PADRAO) {
     return {
-      fase: 'hoje',
-      titulo: `Trocar Palheta Hoje! (${DIAS_CICLO_PADRAO} Dias de Campo)`,
-      descricao: `A armadilha completou ${DIAS_CICLO_PADRAO} dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Pronta para troca da palheta.`,
+      fase: 'tolerancia',
+      titulo: `Janela Limite (Dia ${diasCorridos} de ${DIAS_CICLO_MAXIMO})`,
+      descricao: `Superou o ciclo padrão de ${DIAS_CICLO_PADRAO} dias (previsto p/ ${diaSemana}), mas está dentro da janela máxima de segurança de ${DIAS_CICLO_MAXIMO} dias. Coletar com prioridade.`,
       diasCorridos,
-      diasRestantes: 0,
+      diasRestantes,
       dataPrevistaFormatada,
       diaSemana,
       corTexto: 'text-amber-400',
@@ -171,12 +172,29 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Véspera (penúltimo dia, falta 1 dia)
+  // Hoje (exatamente 5 dias - Segunda ou Terça de coleta)
+  if (diasRestantes === 0) {
+    return {
+      fase: 'hoje',
+      titulo: `Trocar Palheta Hoje! (Dia 5 - ${diaSemana})`,
+      descricao: `A armadilha completou 5 dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Período ideal de coleta (margem de 2 dias até o limite de 7 dias).`,
+      diasCorridos,
+      diasRestantes: 0,
+      dataPrevistaFormatada,
+      diaSemana,
+      corTexto: 'text-emerald-400',
+      corBg: 'bg-emerald-500/20',
+      corBorda: 'border-emerald-500/40',
+      pinCor: '#10b981'
+    };
+  }
+
+  // Véspera (4 dias em campo, falta 1 dia)
   if (diasRestantes === 1) {
     return {
       fase: 'vespera',
-      titulo: `Trocar Palheta Amanhã (Dia ${DIAS_CICLO_PADRAO - 1} de ${DIAS_CICLO_PADRAO})`,
-      descricao: `Armadilha em campo há ${DIAS_CICLO_PADRAO - 1} dias. Troca da palheta prevista para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
+      titulo: `Coleta Amanhã (${diaSemana})`,
+      descricao: `Armadilha em campo há 4 dias. Coleta agendada para amanhã, ${diaSemana} (${dataPrevistaFormatada}). Totalmente dentro do prazo máximo de 7 dias.`,
       diasCorridos,
       diasRestantes: 1,
       dataPrevistaFormatada,
@@ -188,18 +206,18 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Em campo normal (dias 0 a 4)
+  // Em campo normal (dias 0 a 3)
   return {
     fase: 'em_campo',
     titulo: `Em Campo: Faltam ${diasRestantes} dias`,
-    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Troca prevista para ${diaSemana}, ${dataPrevistaFormatada}.`,
+    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Coleta agendada para ${diaSemana}, ${dataPrevistaFormatada} • Limite máx: ${DIAS_CICLO_MAXIMO} dias.`,
     diasCorridos,
     diasRestantes,
     dataPrevistaFormatada,
     diaSemana,
-    corTexto: 'text-emerald-400',
-    corBg: 'bg-emerald-500/20',
-    corBorda: 'border-emerald-500/40',
-    pinCor: '#10b981'
+    corTexto: 'text-blue-400',
+    corBg: 'bg-blue-500/20',
+    corBorda: 'border-blue-500/40',
+    pinCor: '#3b82f6'
   };
 }

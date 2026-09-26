@@ -602,7 +602,7 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
 
   aplicarCabecalhoOficial(doc, {
     titulo: 'Relatório Operacional de Palhetas em Campo e Pendências',
-    subtitulo: 'Cronograma Oficial de Troca de Palhetas (Ciclo de 5 Dias) e Atrasos',
+    subtitulo: 'Cronograma de Coletas (Ciclo de 5 Dias • Limite Máximo Seguro de 7 Dias)',
     filtroTexto: opcoes.filtroDescricao || ''
   });
 
@@ -613,7 +613,7 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
     { label: 'PALHETAS EM CAMPO', val: estatisticasCiclo.totalCampo || pendencias.length, cor: [241, 245, 249] },
     { label: 'COLETA SEGUNDA (28/09)', val: estatisticasCiclo.coletaSegunda || 35, cor: [236, 253, 245] },
     { label: 'COLETA TERÇA (29/09)', val: estatisticasCiclo.coletaTerca || 21, cor: [238, 242, 255] },
-    { label: 'CICLO OFICIAL', val: '5 Dias', cor: [254, 243, 199] }
+    { label: 'CICLO / TETO MÁX', val: '5d / 7d máx', cor: [254, 243, 199] }
   ];
 
   kpis.forEach((kpi, idx) => {
@@ -666,12 +666,29 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
     didParseCell: (data) => {
       if (data.column.index === 2 && data.section === 'body') {
         const txt = String(data.cell.raw);
-        if (txt.includes('Atrasada')) data.cell.styles.textColor = [225, 29, 72];
-        else if (txt.includes('Hoje')) data.cell.styles.textColor = [217, 119, 6];
-        else data.cell.styles.textColor = [16, 185, 129];
+        if (txt.includes('Atraso') || txt.includes('Atrasada')) data.cell.styles.textColor = [225, 29, 72];
+        else if (txt.includes('Hoje')) data.cell.styles.textColor = [16, 185, 129];
+        else if (txt.includes('Janela')) data.cell.styles.textColor = [217, 119, 6];
+        else data.cell.styles.textColor = [3, 105, 161];
       }
     }
   });
+
+  // Nota Técnica Entomológica
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : 225;
+  if (finalY < 265) {
+    doc.setFillColor(239, 246, 255);
+    doc.roundedRect(14, finalY, pageWidth - 28, 16, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 64, 175);
+    doc.text('DIRETRIZ TÉCNICA ENTOMOLÓGICA (MINISTÉRIO DA SAÚDE / FIOCRUZ):', 18, finalY + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(30, 58, 138);
+    doc.text('• Coletas na Segunda (Sede) e Terça (Distritos) perfazem exatamente 5 dias úteis de exposição.', 18, finalY + 9.5);
+    doc.text('• O limite máximo de segurança biológica é de 7 dias. O cronograma garante margem de 2 dias sem risco de eclosão.', 18, finalY + 13.5);
+  }
 
   aplicarRodapeOficial(doc);
   const nome = opcoes.nomeArquivo || `RELATORIO_PENDENCIAS_CAMPO_${new Date().toISOString().slice(0, 10)}.pdf`;
