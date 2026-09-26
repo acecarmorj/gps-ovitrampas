@@ -94,7 +94,10 @@ export function ovitrampaIcon(armadilha, semRotulo = false) {
   let emoji = '🪤';
   let infoBadge = '';
 
-  if (situacao.fase === 'lida') {
+  if (situacao.fase === 'recolhida') {
+    emoji = '📦';
+    infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#4338ca;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">Recolhida</span>`;
+  } else if (situacao.fase === 'lida') {
     emoji = armadilha.ultimosOvos > 0 ? '🔴' : '⚪';
     infoBadge = `<span style="margin-left:4px;background:#ffffff;color:#0f172a;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:900;">${armadilha.ultimosOvos} ovos</span>`;
   } else if (situacao.fase === 'atrasada') {

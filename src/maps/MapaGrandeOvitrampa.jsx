@@ -7,6 +7,8 @@ import { makeAutoFit } from './mapFit';
 import { MapControlButtons } from './MapControlButtons';
 import { buildTrapDistanceNetwork, findNearbyTraps } from '../lib/geoDistance';
 import { ensureLeafletHeat } from '../lib/leafletHeatHelper';
+import carmoBoundaryData from './data/carmoBoundary.json';
+import carmoGrid300mData from './data/carmoGrid300m.json';
 
 export function MapaGrandeOvitrampa({
   userPos,
@@ -28,6 +30,8 @@ export function MapaGrandeOvitrampa({
   onToggleDistances: propOnToggleDistances,
   showHeatmap: propShowHeatmap,
   onToggleHeatmap: propOnToggleHeatmap,
+  showGrid300m: propShowGrid300m,
+  onToggleGrid300m: propOnToggleGrid300m,
   showAgentGuideLine = true
 }) {
   const [internalShowLabels, setInternalShowLabels] = useState(true);
@@ -42,6 +46,10 @@ export function MapaGrandeOvitrampa({
   const effectiveShowHeatmap = propShowHeatmap !== undefined ? propShowHeatmap : internalShowHeatmap;
   const handleToggleHeatmap = propOnToggleHeatmap || (() => setInternalShowHeatmap((prev) => !prev));
 
+  const [internalShowGrid300m, setInternalShowGrid300m] = useState(false);
+  const effectiveShowGrid300m = propShowGrid300m !== undefined ? propShowGrid300m : internalShowGrid300m;
+  const handleToggleGrid300m = propOnToggleGrid300m || (() => setInternalShowGrid300m((prev) => !prev));
+
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
@@ -54,7 +62,9 @@ export function MapaGrandeOvitrampa({
     circlesLayer: null,
     trapsLayer: null,
     otherAgentsLayer: null,
-    heatLayer: null
+    heatLayer: null,
+    boundaryLayer: null,
+    grid300mLayer: null
   });
 
   const [satellite, setSatellite] = useState(false);
@@ -83,6 +93,8 @@ export function MapaGrandeOvitrampa({
     }).addTo(map);
 
     layersRef.current.polygons = L.layerGroup().addTo(map);
+    layersRef.current.boundaryLayer = L.layerGroup().addTo(map);
+    layersRef.current.grid300mLayer = L.layerGroup().addTo(map);
     layersRef.current.distanceLinesLayer = L.layerGroup().addTo(map);
     layersRef.current.circlesLayer = L.layerGroup().addTo(map);
     layersRef.current.trapsLayer = L.layerGroup().addTo(map);
@@ -122,6 +134,12 @@ export function MapaGrandeOvitrampa({
         }
         if (layersRef.current.otherAgentsLayer) {
           map.removeLayer(layersRef.current.otherAgentsLayer);
+        }
+        if (layersRef.current.boundaryLayer) {
+          map.removeLayer(layersRef.current.boundaryLayer);
+        }
+        if (layersRef.current.grid300mLayer) {
+          map.removeLayer(layersRef.current.grid300mLayer);
         }
         if (layersRef.current.heatLayer) {
           map.removeLayer(layersRef.current.heatLayer);
@@ -605,6 +623,88 @@ export function MapaGrandeOvitrampa({
     };
   }, [armadilhas, effectiveShowHeatmap]);
 
+  // 6.7. Renderização da Grade Técnica de 300m (MS/Fiocruz) e Limite Municipal de Carmo (IBGE)
+  useEffect(() => {
+    const boundaryLayer = layersRef.current.boundaryLayer;
+    const gridLayer = layersRef.current.grid300mLayer;
+    if (!boundaryLayer || !gridLayer) return;
+
+    boundaryLayer.clearLayers();
+    gridLayer.clearLayers();
+
+    if (!effectiveShowGrid300m) return;
+
+    // 1. Limite Territorial Oficial IBGE (Carmo)
+    if (carmoBoundaryData && carmoBoundaryData.features) {
+      L.geoJSON(carmoBoundaryData, {
+        style: {
+          color: '#d97706',
+          weight: 2.5,
+          dashArray: '6, 6',
+          fillColor: '#f59e0b',
+          fillOpacity: 0.03,
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature, layer) => {
+          layer.bindTooltip(
+            `<b>Município de Carmo (RJ)</b><br/><span style="font-size: 10px; color: #64748b;">Perímetro Territorial IBGE 2025</span>`,
+            {
+              direction: 'center',
+              sticky: true,
+              opacity: 0.95
+            }
+          );
+        }
+      }).addTo(boundaryLayer);
+    }
+
+    // 2. Grade Urbana Técnica 300m x 300m (104 células urbanas)
+    if (carmoGrid300mData && carmoGrid300mData.features) {
+      L.geoJSON(carmoGrid300mData, {
+        style: {
+          color: '#0284c7',
+          weight: 1.5,
+          dashArray: '3, 4',
+          fillColor: '#38bdf8',
+          fillOpacity: 0.08,
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature, layer) => {
+          const props = feature.properties || {};
+          const cellCode = props.urban_code || props.code || 'CGR-300m';
+
+          layer.bindTooltip(
+            `<b>Célula ${cellCode}</b><br/><span style="font-size: 10px; color: #0369a1;">Grade Técnica 300m × 300m (MS/Fiocruz)</span>`,
+            {
+              sticky: true,
+              opacity: 0.95
+            }
+          );
+
+          layer.on('mouseover', function () {
+            this.setStyle({
+              weight: 2.5,
+              color: '#0369a1',
+              fillColor: '#0284c7',
+              fillOpacity: 0.22
+            });
+          });
+
+          layer.on('mouseout', function () {
+            this.setStyle({
+              weight: 1.5,
+              color: '#0284c7',
+              fillColor: '#38bdf8',
+              fillOpacity: 0.08
+            });
+          });
+        }
+      }).addTo(gridLayer);
+    }
+  }, [effectiveShowGrid300m]);
+
   // Centraliza suavemente na armadilha quando for selecionada
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -637,6 +737,8 @@ export function MapaGrandeOvitrampa({
         onToggleCircles={() => setShowCircles(!showCircles)}
         showHeatmap={effectiveShowHeatmap}
         onToggleHeatmap={handleToggleHeatmap}
+        showGrid300m={effectiveShowGrid300m}
+        onToggleGrid300m={handleToggleGrid300m}
         showLabels={effectiveShowLabels}
         onToggleLabels={handleToggleLabels}
         showPanel={showPanel}
@@ -645,28 +747,56 @@ export function MapaGrandeOvitrampa({
         right={12}
       />
 
-      {/* Legenda Flutuante do Mapa de Calor */}
-      {effectiveShowHeatmap && (
-        <div className="absolute bottom-4 left-4 z-[900] bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 shadow-xl max-w-[290px] pointer-events-auto">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
-            <span className="text-xs font-black text-slate-900 leading-tight">
-              🔥 Mapa de Calor Epidemiológico
-            </span>
+      {/* Contêiner de Legendas Flutuantes Inferiores */}
+      <div className="absolute bottom-4 left-4 z-[900] flex flex-col gap-2.5 max-w-[300px] pointer-events-none">
+        {/* Legenda Flutuante da Grade Técnica 300m */}
+        {effectiveShowGrid300m && (
+          <div className="bg-white/95 backdrop-blur-md border border-sky-200/90 rounded-2xl p-3 shadow-xl pointer-events-auto transition-all">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse shrink-0" />
+              <span className="text-xs font-black text-slate-900 leading-tight">
+                📐 Grade Técnica 300m & Perímetro
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-600 mb-2 font-medium leading-relaxed">
+              104 células técnicas (300m × 300m) em conformidade com o manual de armadilhas do Ministério da Saúde / Fiocruz + limite municipal oficial do IBGE.
+            </div>
+            <div className="flex flex-col gap-1 text-[10px] font-bold">
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded border border-dashed border-sky-600 bg-sky-100/60 inline-block shrink-0" />
+                <span className="text-sky-800">Célula Técnica 300m × 300m</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-0.5 border-b-2 border-dashed border-amber-600 inline-block shrink-0" />
+                <span className="text-amber-800">Limite Territorial Carmo (IBGE)</span>
+              </div>
+            </div>
           </div>
-          <div className="text-[10px] text-slate-600 mb-2 font-medium leading-relaxed">
-            Calculado <b>apenas com as 26 armadilhas lidas</b>. Foco crítico: Progresso (P-23: 147 ovos, P-21: 100 ovos).
+        )}
+
+        {/* Legenda Flutuante do Mapa de Calor */}
+        {effectiveShowHeatmap && (
+          <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 shadow-xl pointer-events-auto transition-all">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <span className="text-xs font-black text-slate-900 leading-tight">
+                🔥 Mapa de Calor Epidemiológico
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-600 mb-2 font-medium leading-relaxed">
+              Calculado <b>apenas com as 26 armadilhas lidas</b>. Foco crítico: Progresso (P-23: 147 ovos, P-21: 100 ovos).
+            </div>
+            <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#2563eb] via-[#16a34a] via-[#eab308] via-[#ea580c] to-[#dc2626] shadow-inner mb-1.5" />
+            <div className="flex justify-between text-[9px] font-black text-slate-500">
+              <span className="text-blue-600 font-extrabold">0 (Azul)</span>
+              <span className="text-emerald-700">1-20</span>
+              <span className="text-amber-600">21-50</span>
+              <span className="text-orange-600">51-99</span>
+              <span className="text-rose-600 font-extrabold">&gt;100 (Vermelho)</span>
+            </div>
           </div>
-          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#2563eb] via-[#16a34a] via-[#eab308] via-[#ea580c] to-[#dc2626] shadow-inner mb-1.5" />
-          <div className="flex justify-between text-[9px] font-black text-slate-500">
-            <span className="text-blue-600 font-extrabold">0 (Azul)</span>
-            <span className="text-emerald-700">1-20</span>
-            <span className="text-amber-600">21-50</span>
-            <span className="text-orange-600">51-99</span>
-            <span className="text-rose-600 font-extrabold">&gt;100 (Vermelho)</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

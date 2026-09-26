@@ -1,5 +1,5 @@
 import React from 'react';
-import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff, Radio, Flame } from 'lucide-react';
+import { LocateFixed, Satellite, Ruler, Tag, Eye, EyeOff, Radio, Flame, Grid3X3 } from 'lucide-react';
 
 /**
  * Botões flutuantes para controle de mapa adaptados do MOTOJAGEMINI.
@@ -14,6 +14,8 @@ export function MapControlButtons({
   onToggleCircles,
   showHeatmap = false,
   onToggleHeatmap,
+  showGrid300m = false,
+  onToggleGrid300m,
   showLabels = true,
   onToggleLabels,
   showPanel = true,
@@ -102,6 +104,20 @@ export function MapControlButtons({
           title={showHeatmap ? "Desativar Mapa de Calor" : "Exibir Mapa de Calor de Ovos (Apenas Armadilhas Verificadas)"}
         >
           <Flame size={19} color={showHeatmap ? "#ffffff" : "#ea580c"} />
+        </button>
+      )}
+
+      {/* 2.3. Grade Técnica 300m e Limite Municipal */}
+      {onToggleGrid300m && (
+        <button
+          type="button"
+          onClick={onToggleGrid300m}
+          aria-label={showGrid300m ? "Ocultar Grade 300m e Limite Municipal" : "Exibir Grade Técnica 300m e Limite Municipal"}
+          style={btnStyle(showGrid300m, '#0284c7', '#ffffff')}
+          className="active:scale-90"
+          title={showGrid300m ? "Ocultar Grade 300m e Limite Municipal" : "Exibir Grade Técnica 300m (MS/Fiocruz) e Limite Municipal (IBGE)"}
+        >
+          <Grid3X3 size={19} color={showGrid300m ? "#ffffff" : "#0284c7"} />
         </button>
       )}
 

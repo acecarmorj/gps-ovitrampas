@@ -18,6 +18,7 @@ export function InstalarArmadilhaScreen({
   armadilhas = [],
   onArmadilhaCadastrada,
   onVerMapaGeral,
+  onSelecionarArmadilha,
   onPosicaoAtualizada
 }) {
   // Campos ultra simplificados:
@@ -372,6 +373,10 @@ export function InstalarArmadilhaScreen({
           microarea={localizacao.microarea}
           quarteirao={localizacao.quarteirao}
           armadilhas={armadilhas}
+          onSelectArmadilha={(arm) => {
+            if (onSelecionarArmadilha) onSelecionarArmadilha(arm);
+            else if (onVerMapaGeral) onVerMapaGeral();
+          }}
           controlTop={56}
           showLabels={mostrarRotulos}
           onToggleLabels={() => setMostrarRotulos(!mostrarRotulos)}

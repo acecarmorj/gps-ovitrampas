@@ -3,12 +3,13 @@ import {
   MapPin, Navigation, Calendar, CheckCircle2,
   AlertTriangle, X, Search, Filter, Trash2,
   ExternalLink, Layers, Eye, FlaskConical, Clock, RotateCw,
-  Zap, ChevronUp, ChevronDown, Compass, Users, User, Radio, Tag, EyeOff
+  Zap, ChevronUp, ChevronDown, Compass, Users, User, Radio, Tag, EyeOff,
+  PackageCheck, Package
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
-import { excluirArmadilha, trocarPalhetaArmadilha } from '../../lib/storage';
+import { excluirArmadilha, trocarPalhetaArmadilha, recolherArmadilhaEPalheta } from '../../lib/storage';
 import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps, calcDistanceMeters } from '../../lib/geoDistance';
 import { playSuccessSound } from '../../lib/soundAlert';
@@ -48,7 +49,8 @@ export function PainelAcompanhamentoScreen({
   userPos,
   outrosAgentes = [],
   onExcluirArmadilha,
-  onIrParaLaboratorio
+  onIrParaLaboratorio,
+  armadilhaInicial = null
 }) {
   // Modo Campo (Troca Rápida por Proximidade GPS)
   // Em telas de celular (< 768px), inicia ativo por padrão para que o agente tenha a tela limpa e rápida
@@ -56,14 +58,14 @@ export function PainelAcompanhamentoScreen({
     return typeof window !== 'undefined' ? window.innerWidth < 768 : true;
   });
   const [painelProximidadeAberto, setPainelProximidadeAberto] = useState(true);
-  const [armadilhaFocadaId, setArmadilhaFocadaId] = useState(null);
+  const [armadilhaFocadaId, setArmadilhaFocadaId] = useState(() => armadilhaInicial?.id || null);
   const [apenasPendentes, setApenasPendentes] = useState(false);
   const [sucessoTrocaMsg, setSucessoTrocaMsg] = useState(null);
 
-  const [selecionada, setSelecionada] = useState(null);
+  const [selecionada, setSelecionada] = useState(() => armadilhaInicial || null);
   const [agenteSelecionado, setAgenteSelecionado] = useState(null);
   const [filtroTexto, setFiltroTexto] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('todas'); // 'todas' | 'instalada' | 'analisada'
+  const [filtroStatus, setFiltroStatus] = useState('todas'); // 'todas' | 'instalada' | 'recolhida' | 'analisada'
   const [mostrarLista, setMostrarLista] = useState(false);
   const [mostrarColegas, setMostrarColegas] = useState(false);
   const [mostrarRotulos, setMostrarRotulos] = useState(true);
@@ -71,6 +73,7 @@ export function PainelAcompanhamentoScreen({
   const [modalSeletorAberto, setModalSeletorAberto] = useState(false);
   const [modalTrocaPalhetaAberto, setModalTrocaPalhetaAberto] = useState(false);
   const [armadilhaParaTroca, setArmadilhaParaTroca] = useState(null);
+  const [tipoAcaoModal, setTipoAcaoModal] = useState('recolher'); // 'recolher' | 'trocar'
   const [meuAgente, setMeuAgenteState] = useState(getMeuAgente);
 
   useEffect(() => {
@@ -81,26 +84,36 @@ export function PainelAcompanhamentoScreen({
     return () => window.removeEventListener('ovitrampas_agente_alterado', handleAgenteAlterado);
   }, []);
 
+  useEffect(() => {
+    if (armadilhaInicial) {
+      setSelecionada(armadilhaInicial);
+      setArmadilhaFocadaId(armadilhaInicial.id);
+    }
+  }, [armadilhaInicial]);
+
   const hoje = new Date().toISOString().slice(0, 10);
-  const foiTrocadaHoje = (arm) => {
+  const foiAtendidaHoje = (arm) => {
     if (!arm) return false;
+    if (arm.status === 'recolhida' && arm.recolhidaEm && arm.recolhidaEm.slice(0, 10) === hoje) return true;
     if (arm.historicoPalhetas && arm.historicoPalhetas.length > 0) {
       const u = arm.historicoPalhetas[0];
       if (u?.trocadaEm && u.trocadaEm.slice(0, 10) === hoje) return true;
+      if (u?.recolhidaEm && u.recolhidaEm.slice(0, 10) === hoje) return true;
     }
     return false;
   };
 
   const totalArmadilhas = armadilhas.length;
-  const totalTrocadasHoje = armadilhas.filter(foiTrocadaHoje).length;
+  const totalTrocadasHoje = armadilhas.filter(foiAtendidaHoje).length;
   const totalPendentesTroca = totalArmadilhas - totalTrocadasHoje;
+  const totalRecolhidas = armadilhas.filter((a) => a.status === 'recolhida').length;
   const totalAnalisadas = armadilhas.filter((a) => a.status === 'analisada').length;
   const totalPositivas = armadilhas.filter((a) => a.ultimosOvos && a.ultimosOvos > 0).length;
 
   // Armadilhas consideradas para detecção de proximidade
   const armadilhasParaProximidade = useMemo(() => {
     if (apenasPendentes) {
-      const pendentes = armadilhas.filter((a) => !foiTrocadaHoje(a));
+      const pendentes = armadilhas.filter((a) => !foiAtendidaHoje(a));
       return pendentes.length > 0 ? pendentes : armadilhas;
     }
     return armadilhas;
@@ -146,7 +159,8 @@ export function PainelAcompanhamentoScreen({
     const matchStatus =
       filtroStatus === 'todas' ||
       (filtroStatus === 'analisada' && arm.status === 'analisada') ||
-      (filtroStatus === 'instalada' && arm.status !== 'analisada');
+      (filtroStatus === 'recolhida' && arm.status === 'recolhida') ||
+      (filtroStatus === 'instalada' && arm.status !== 'analisada' && arm.status !== 'recolhida');
 
     return matchTexto && matchStatus;
   });
@@ -174,23 +188,20 @@ export function PainelAcompanhamentoScreen({
         <MapaGrandeOvitrampa
           userPos={userPos}
           armadilhas={armadilhasFiltradas}
-          armadilhaSelecionada={modoTrocaRapida ? armadilhaAlvoProximidade : selecionada}
+          armadilhaSelecionada={modoTrocaRapida ? (armadilhaAlvoProximidade || selecionada) : selecionada}
           onSelectArmadilha={(arm) => {
-            if (modoTrocaRapida) {
-              setArmadilhaFocadaId(arm.id);
-              setPainelProximidadeAberto(true);
-            } else {
-              setSelecionada(arm);
-              setAgenteSelecionado(null);
-            }
+            setSelecionada(arm);
+            setArmadilhaFocadaId(arm.id);
+            setPainelProximidadeAberto(true);
+            setAgenteSelecionado(null);
           }}
-          mostrarTodosPontos={!modoTrocaRapida}
+          mostrarTodosPontos={true}
           controlTop={modoTrocaRapida ? 76 : (mostrarPainelFlutuante ? 108 : 16)}
-          showLabels={modoTrocaRapida ? false : mostrarRotulos}
-          onToggleLabels={modoTrocaRapida ? undefined : () => setMostrarRotulos((prev) => !prev)}
+          showLabels={mostrarRotulos}
+          onToggleLabels={() => setMostrarRotulos((prev) => !prev)}
           showPanel={modoTrocaRapida ? false : mostrarPainelFlutuante}
-          onTogglePanel={modoTrocaRapida ? undefined : () => setMostrarPainelFlutuante((prev) => !prev)}
-          showDistances={!modoTrocaRapida}
+          onTogglePanel={() => setMostrarPainelFlutuante((prev) => !prev)}
+          showDistances={true}
           showAgentGuideLine={true}
           outrosAgentes={outrosAgentes}
           agenteSelecionado={agenteSelecionado}
@@ -212,8 +223,8 @@ export function PainelAcompanhamentoScreen({
                 className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2.5 py-1.5 rounded-xl shadow-xs active:scale-95 transition-all text-xs"
                 title="Toque para alternar para o modo completo com mapa de vizinhas e estatísticas"
               >
-                <Zap className="w-3.5 h-3.5 fill-white text-white" />
-                <span>Troca Rápida</span>
+                <PackageCheck className="w-3.5 h-3.5 text-white" />
+                <span>Modo Coleta</span>
               </button>
 
               {userPos?.accuracy !== null && userPos?.accuracy !== undefined && (
@@ -511,10 +522,10 @@ export function PainelAcompanhamentoScreen({
             <button
               type="button"
               onClick={() => setPainelProximidadeAberto(true)}
-              className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
+              className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                <RotateCw className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-md">
+                <PackageCheck className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-black text-slate-900 leading-tight flex items-center gap-1.5">
@@ -528,14 +539,19 @@ export function PainelAcompanhamentoScreen({
                       {distanciaAlvoMetros}m
                     </span>
                   )}
+                  {armadilhaAlvoProximidade.status === 'recolhida' && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-300">
+                      ✓ Já Recolhida
+                    </span>
+                  )}
                 </p>
                 <p className="text-[11px] text-slate-600 truncate leading-tight mt-0.5">
                   {armadilhaAlvoProximidade.moradorNome ? `${armadilhaAlvoProximidade.moradorNome} • ` : ''}
                   {armadilhaAlvoProximidade.rua}
                 </p>
               </div>
-              <span className="text-xs font-black text-blue-600 shrink-0 flex items-center gap-1">
-                <span>Trocar</span>
+              <span className="text-xs font-black text-emerald-700 shrink-0 flex items-center gap-1">
+                <span>Ação</span>
                 <ChevronUp className="w-4 h-4" />
               </span>
             </button>
@@ -551,7 +567,7 @@ export function PainelAcompanhamentoScreen({
             <button
               type="button"
               onClick={() => setPainelProximidadeAberto(false)}
-              className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 active:scale-95 transition-all"
+              className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 active:scale-95 transition-all cursor-pointer"
             >
               <ChevronDown className="w-4 h-4" />
               <span>Ocultar e ver o mapa limpo</span>
@@ -578,9 +594,14 @@ export function PainelAcompanhamentoScreen({
                   <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2 py-0.5 rounded-md">
                     {armadilhaAlvoProximidade.quarteirao || 'Q-01'}
                   </span>
-                  {foiTrocadaHoje(armadilhaAlvoProximidade) && (
+                  {foiAtendidaHoje(armadilhaAlvoProximidade) && (
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 font-black px-2 py-0.5 rounded-md">
-                      ✓ Trocada hoje
+                      ✓ Atendida hoje
+                    </span>
+                  )}
+                  {armadilhaAlvoProximidade.status === 'recolhida' && (
+                    <span className="text-[10px] bg-indigo-100 text-indigo-800 border border-indigo-300 font-black px-2 py-0.5 rounded-md">
+                      📦 Recolhida
                     </span>
                   )}
                 </div>
@@ -627,39 +648,55 @@ export function PainelAcompanhamentoScreen({
               </div>
             </div>
 
-            {/* IDENTIFICAÇÃO DA PALHETA ATUAL E PRÓXIMA SUGERIDA */}
+            {/* IDENTIFICAÇÃO DA PALHETA ATUAL E STATUS */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">
-                  Palheta Recolhida
+                  Palheta a Recolher
                 </span>
                 <span className="font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-block">
                   {armadilhaAlvoProximidade.palheta || 'PL-01'}
                 </span>
               </div>
 
-              <div className="bg-blue-50/80 p-2.5 rounded-xl border border-blue-200">
-                <span className="text-[10px] uppercase font-bold text-blue-600 block mb-0.5">
-                  Nova Palheta Sugerida
+              <div className="bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200">
+                <span className="text-[10px] uppercase font-bold text-emerald-700 block mb-0.5">
+                  Situação
                 </span>
-                <span className="font-black text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-300 inline-block">
-                  {sugerirProximaPalheta(armadilhaAlvoProximidade)}
+                <span className="font-black text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300 inline-block">
+                  {armadilhaAlvoProximidade.status === 'recolhida' ? '✓ Já Recolhida' : 'Pronta p/ Coleta'}
                 </span>
               </div>
             </div>
 
-            {/* BOTÃO PRINCIPAL GIGANTE: TROCAR PALHETA AGORA */}
-            <button
-              type="button"
-              onClick={() => {
-                setArmadilhaParaTroca(armadilhaAlvoProximidade);
-                setModalTrocaPalhetaAberto(true);
-              }}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-blue-700/25 flex items-center justify-center gap-2 transition-all"
-            >
-              <RotateCw className="w-5 h-5" />
-              <span>TROCAR PALHETA AGORA ({sugerirProximaPalheta(armadilhaAlvoProximidade)})</span>
-            </button>
+            {/* BOTÕES DE AÇÃO: 1. RECOLHER ARMADILHA & PALHETA (DESTAQUE) / 2. TROCAR PALHETA */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setArmadilhaParaTroca(armadilhaAlvoProximidade);
+                  setTipoAcaoModal('recolher');
+                  setModalTrocaPalhetaAberto(true);
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <PackageCheck className="w-5 h-5" />
+                <span>RECOLHER ARMADILHA & PALHETA (RETIRADA)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setArmadilhaParaTroca(armadilhaAlvoProximidade);
+                  setTipoAcaoModal('trocar');
+                  setModalTrocaPalhetaAberto(true);
+                }}
+                className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 active:scale-[0.98] py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5 text-blue-600" />
+                <span>Trocar apenas Palheta (Novo Ciclo 7 dias)</span>
+              </button>
+            </div>
 
             {/* ATALHOS RÁPIDOS DE NAVEGAÇÃO, BUSCA MANUAL E LABORATÓRIO */}
             <div className="grid grid-cols-4 gap-1.5 text-xs">
@@ -911,17 +948,32 @@ export function PainelAcompanhamentoScreen({
                 <span>Waze</span>
               </button>
 
-              {/* BOTÃO PRINCIPAL: TROCA DE PALHETA (NOVO CICLO DIAS_CICLO_PADRAO DIAS) */}
+              {/* BOTÃO PRINCIPAL 1: RECOLHER PALHETA E ARMADILHA (RETIRADA DE CAMPO) */}
               <button
                 type="button"
                 onClick={() => {
                   setArmadilhaParaTroca(selecionada);
+                  setTipoAcaoModal('recolher');
                   setModalTrocaPalhetaAberto(true);
                 }}
-                className="col-span-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-700/20 active:scale-[0.98]"
+                className="col-span-2 bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-700/20 active:scale-[0.98] cursor-pointer"
               >
-                <RotateCw className="w-4 h-4" />
-                <span>TROCAR PALHETA (NOVO CICLO {DIAS_CICLO_PADRAO} DIAS)</span>
+                <PackageCheck className="w-4 h-4" />
+                <span>RECOLHER ARMADILHA & PALHETA (RETIRADA)</span>
+              </button>
+
+              {/* BOTÃO 2: TROCAR PALHETA (NOVO CICLO 7 DIAS) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setArmadilhaParaTroca(selecionada);
+                  setTipoAcaoModal('trocar');
+                  setModalTrocaPalhetaAberto(true);
+                }}
+                className="col-span-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 py-2 px-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5 text-blue-600" />
+                <span>Substituir apenas Palheta (Novo Ciclo)</span>
               </button>
 
               <button
@@ -1026,18 +1078,25 @@ export function PainelAcompanhamentoScreen({
         </div>
       )}
 
-      {/* 7. MODAL DE TROCA DE PALHETA (MANTÉM O MESMO NÚMERO DE ARMADILHA) */}
+      {/* 7. MODAL DE AÇÃO EM CAMPO: RECOLHER ARMADILHA & PALHETA OU TROCA */}
       {modalTrocaPalhetaAberto && armadilhaParaTroca && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 text-slate-800 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl p-5 max-w-md w-full shadow-2xl border border-slate-200 space-y-3.5 text-slate-800 animate-in zoom-in-95 duration-200">
+            {/* Topo do Modal */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                  <RotateCw className="w-5 h-5" />
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold ${
+                  tipoAcaoModal === 'recolher' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {tipoAcaoModal === 'recolher' ? <PackageCheck className="w-5 h-5" /> : <RotateCw className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Trocar Palheta — ARM-{armadilhaParaTroca.numero}</h3>
-                  <p className="text-[11px] text-slate-500">Mantém ponto GPS, imóvel e morador cadastrados</p>
+                  <h3 className="text-sm font-black text-slate-900">
+                    {tipoAcaoModal === 'recolher' ? 'Recolher Armadilha & Palheta' : 'Trocar Palheta'} — ARM-{armadilhaParaTroca.numero}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {tipoAcaoModal === 'recolher' ? 'Retirada de campo para envio ao Laboratório' : 'Substituição de palheta para novo ciclo'}
+                  </p>
                 </div>
               </div>
               <button
@@ -1046,13 +1105,42 @@ export function PainelAcompanhamentoScreen({
                   setModalTrocaPalhetaAberto(false);
                   setArmadilhaParaTroca(null);
                 }}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-blue-50/80 rounded-2xl p-3 border border-blue-200/80 space-y-1.5 text-xs">
+            {/* Seletor de Tipo de Ação: Recolher vs Trocar */}
+            <div className="flex p-1 bg-slate-100 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setTipoAcaoModal('recolher')}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  tipoAcaoModal === 'recolher'
+                    ? 'bg-white text-emerald-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <PackageCheck className="w-3.5 h-3.5" />
+                <span>Recolher Armadilha</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoAcaoModal('trocar')}
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  tipoAcaoModal === 'trocar'
+                    ? 'bg-white text-blue-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Trocar só Palheta</span>
+              </button>
+            </div>
+
+            {/* Detalhes da Armadilha */}
+            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-500 font-bold">Imóvel:</span>
                 <span className="font-bold text-slate-800 text-right">{armadilhaParaTroca.rua || 'S/N'}{armadilhaParaTroca.numeroImovel ? ', Nº ' + armadilhaParaTroca.numeroImovel : ''}</span>
@@ -1061,99 +1149,187 @@ export function PainelAcompanhamentoScreen({
                 <span className="text-slate-500 font-bold">Morador(a):</span>
                 <span className="font-bold text-slate-800">{armadilhaParaTroca.moradorNome || 'Não informado'}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-blue-200/60">
-                <span className="text-slate-500 font-bold">Palheta Atual (recolhida):</span>
+              <div className="flex justify-between pt-1 border-t border-slate-200">
+                <span className="text-slate-500 font-bold">Palheta Atual:</span>
                 <span className="font-black text-rose-700 bg-white px-2 py-0.5 rounded border border-rose-200">{armadilhaParaTroca.palheta || 'P-01'}</span>
               </div>
             </div>
 
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const form = e.target;
-              const novaPalheta = form.novaPalheta.value.trim();
-              const dataTroca = form.dataTroca.value;
-              const observacao = form.observacao.value.trim();
+            {/* FORMULÁRIO 1: RECOLHIMENTO DA ARMADILHA & PALHETA */}
+            {tipoAcaoModal === 'recolher' ? (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const dataRecolhimento = form.dataRecolhimento.value;
+                const condicoes = form.condicoes.value;
+                const observacao = form.observacao.value.trim();
 
-              if (!novaPalheta) {
-                alert('Informe o código da nova palheta instalada!');
-                return;
-              }
+                const atualizada = await recolherArmadilhaEPalheta(armadilhaParaTroca.id, {
+                  dataRecolhimento: dataRecolhimento ? new Date(dataRecolhimento).toISOString() : new Date().toISOString(),
+                  condicoes,
+                  observacao
+                });
 
-              const atualizada = await trocarPalhetaArmadilha(armadilhaParaTroca.id, {
-                novaPalheta,
-                dataTroca: dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString(),
-                observacao
-              });
+                if (atualizada) {
+                  setSelecionada(atualizada);
+                  playSuccessSound();
+                  setSucessoTrocaMsg(`Armadilha ARM-${armadilhaParaTroca.numero} e Palheta ${armadilhaParaTroca.palheta || 'B'} recolhidas com sucesso!`);
+                  setTimeout(() => setSucessoTrocaMsg(null), 5000);
+                }
+                setModalTrocaPalhetaAberto(false);
+                setArmadilhaParaTroca(null);
+                setArmadilhaFocadaId(null);
+              }} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Data e Hora do Recolhimento *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="dataRecolhimento"
+                    required
+                    defaultValue={new Date().toISOString().slice(0, 16)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
 
-              if (atualizada) {
-                setSelecionada(atualizada);
-                playSuccessSound();
-                setSucessoTrocaMsg(`Palheta ARM-${armadilhaParaTroca.numero} trocada com sucesso para ${novaPalheta}!`);
-                setTimeout(() => setSucessoTrocaMsg(null), 5000);
-              }
-              setModalTrocaPalhetaAberto(false);
-              setArmadilhaParaTroca(null);
-              // Limpa foco manual para que o assistente GPS aponte automaticamente para a próxima mais próxima pendente!
-              setArmadilhaFocadaId(null);
-            }} className="space-y-3">
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
-                  Código da Nova Palheta Instalada *
-                </label>
-                <input
-                  type="text"
-                  name="novaPalheta"
-                  required
-                  defaultValue={sugerirProximaPalheta(armadilhaParaTroca)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: P-02, PL-02"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Condições no Recolhimento *
+                  </label>
+                  <select
+                    name="condicoes"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Armadilha e palheta recolhidas intactas">Normal (Armadilha e palheta íntegras)</option>
+                    <option value="Presença de larvas visíveis no vaso">⚠️ Presença de larvas visíveis no vaso</option>
+                    <option value="Armadilha tombada ou sem água">Armadilha tombada ou sem água</option>
+                    <option value="Palheta ressecada / solta">Palheta ressecada ou descolada</option>
+                    <option value="Armadilha danificada / avaria física">Armadilha danificada / avaria física</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
-                  Data e Hora da Troca (Início do Novo Ciclo de {DIAS_CICLO_PADRAO} dias)
-                </label>
-                <input
-                  type="datetime-local"
-                  name="dataTroca"
-                  defaultValue={new Date().toISOString().slice(0, 16)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Observações de Campo (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    name="observacao"
+                    placeholder="Ex: Recolhida sem incidentes, enviada p/ laboratório"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1">
-                  Observações da Troca (Opcional)
-                </label>
-                <input
-                  type="text"
-                  name="observacao"
-                  placeholder="Ex: Palheta recolhida úmida, infusão renovada"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalTrocaPalhetaAberto(false);
+                      setArmadilhaParaTroca(null);
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <PackageCheck className="w-4 h-4" />
+                    <span>Confirmar Retirada</span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* FORMULÁRIO 2: TROCA DE PALHETA (NOVO CICLO) */
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const novaPalheta = form.novaPalheta.value.trim();
+                const dataTroca = form.dataTroca.value;
+                const observacao = form.observacao.value.trim();
 
-              <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalTrocaPalhetaAberto(false);
-                    setArmadilhaParaTroca(null);
-                  }}
-                  className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-blue-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                  <span>Confirmar Troca</span>
-                </button>
-              </div>
-            </form>
+                if (!novaPalheta) {
+                  alert('Informe o código da nova palheta instalada!');
+                  return;
+                }
+
+                const atualizada = await trocarPalhetaArmadilha(armadilhaParaTroca.id, {
+                  novaPalheta,
+                  dataTroca: dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString(),
+                  observacao
+                });
+
+                if (atualizada) {
+                  setSelecionada(atualizada);
+                  playSuccessSound();
+                  setSucessoTrocaMsg(`Palheta ARM-${armadilhaParaTroca.numero} trocada com sucesso para ${novaPalheta}!`);
+                  setTimeout(() => setSucessoTrocaMsg(null), 5000);
+                }
+                setModalTrocaPalhetaAberto(false);
+                setArmadilhaParaTroca(null);
+                setArmadilhaFocadaId(null);
+              }} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Código da Nova Palheta Instalada *
+                  </label>
+                  <input
+                    type="text"
+                    name="novaPalheta"
+                    required
+                    defaultValue={sugerirProximaPalheta(armadilhaParaTroca)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ex: P-02, PL-02, 35C"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Data e Hora da Troca (Início do Novo Ciclo de {DIAS_CICLO_PADRAO} dias)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="dataTroca"
+                    defaultValue={new Date().toISOString().slice(0, 16)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1">
+                    Observações da Troca (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    name="observacao"
+                    placeholder="Ex: Palheta recolhida úmida, infusão renovada"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalTrocaPalhetaAberto(false);
+                      setArmadilhaParaTroca(null);
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-blue-700/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    <span>Confirmar Troca</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

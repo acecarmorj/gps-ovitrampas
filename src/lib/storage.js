@@ -414,6 +414,8 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
     observacoes: dadosAtualizados.observacoes !== undefined ? String(dadosAtualizados.observacoes).trim() : (anterior.observacoes || ''),
     status: dadosAtualizados.status !== undefined ? dadosAtualizados.status : anterior.status,
     instaladaEm: dadosAtualizados.instaladaEm !== undefined ? dadosAtualizados.instaladaEm : anterior.instaladaEm,
+    recolhidaEm: dadosAtualizados.recolhidaEm !== undefined ? dadosAtualizados.recolhidaEm : anterior.recolhidaEm,
+    palhetaRecolhida: dadosAtualizados.palhetaRecolhida !== undefined ? dadosAtualizados.palhetaRecolhida : anterior.palhetaRecolhida,
     historicoPalhetas: dadosAtualizados.historicoPalhetas !== undefined ? dadosAtualizados.historicoPalhetas : (anterior.historicoPalhetas || []),
     ultimosOvos: dadosAtualizados.ultimosOvos !== undefined
       ? (dadosAtualizados.ultimosOvos === '' || dadosAtualizados.ultimosOvos === null ? null : Math.max(0, parseInt(dadosAtualizados.ultimosOvos, 10) || 0))
@@ -432,9 +434,45 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
 }
 
 /**
+ * Realiza o recolhimento/retirada da armadilha e palheta no campo,
+ * preparando o material recolhido para contagem no laboratório.
+ */
+export async function recolherArmadilhaEPalheta(id, { dataRecolhimento, condicoes, observacao } = {}) {
+  if (!id) return null;
+  const todas = getArmadilhas();
+  const arm = todas.find((a) => a.id === id);
+  if (!arm) return null;
+
+  const dataRecolhimentoIso = dataRecolhimento ? new Date(dataRecolhimento).toISOString() : new Date().toISOString();
+  const palhetaRecolhida = arm.palheta || 'P-01';
+
+  const itemHistorico = {
+    tipo: 'recolhimento',
+    palhetaRecolhida,
+    recolhidaEm: dataRecolhimentoIso,
+    condicoes: condicoes || 'Armadilha e palheta recolhidas intactas',
+    observacao: observacao || ''
+  };
+
+  const historicoAtualizado = [itemHistorico, ...(arm.historicoPalhetas || [])];
+
+  const infoRecolhimento = `Recolhida em ${new Date(dataRecolhimentoIso).toLocaleDateString('pt-BR')}${condicoes ? ' (' + condicoes + ')' : ''}${observacao ? ': ' + observacao : ''}`;
+  const obsCompleta = arm.observacoes ? `${arm.observacoes} | ${infoRecolhimento}` : infoRecolhimento;
+
+  return atualizarArmadilha(id, {
+    status: 'recolhida',
+    recolhidaEm: dataRecolhimentoIso,
+    palhetaRecolhida,
+    ultimaPalheta: palhetaRecolhida,
+    historicoPalhetas: historicoAtualizado,
+    observacoes: obsCompleta
+  });
+}
+
+/**
  * Realiza a troca de palheta mantendo integralmente a identidade da armadilha
  * (mesmo número, mesmo morador, mesmo endereço, mesmas coordenadas GPS).
- * Inicia um novo ciclo de campo oficial (DIAS_CICLO_PADRAO, hoje 5 dias -
+ * Inicia um novo ciclo de campo oficial (DIAS_CICLO_PADRAO, hoje 7 dias -
  * ver src/lib/situacaoOvitrampa.js).
  */
 export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao } = {}) {

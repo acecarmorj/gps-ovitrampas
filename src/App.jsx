@@ -31,6 +31,7 @@ export function App() {
     return () => window.removeEventListener('ovitrampas_quota_exceeded', handleQuota);
   }, []);
   const [armadilhaParaLab, setArmadilhaParaLab] = useState(null);
+  const [armadilhaSelecionadaMapa, setArmadilhaSelecionadaMapa] = useState(null);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('ovitrampa_muted') === 'true');
   const [syncInfo, setSyncInfo] = useState(getStatusSincronizacao);
   const [outrosAgentes, setOutrosAgentes] = useState([]);
@@ -189,6 +190,10 @@ export function App() {
             onArmadilhaCadastrada={() => recarregarArmadilhas()}
             onVerMapaGeral={() => navigate('/mapa')}
             onPosicaoAtualizada={(pos) => setUserPos(pos)}
+            onSelecionarArmadilha={(arm) => {
+              setArmadilhaSelecionadaMapa(arm);
+              navigate('/mapa');
+            }}
           />
         )}
 
@@ -199,6 +204,7 @@ export function App() {
             outrosAgentes={outrosAgentes}
             onExcluirArmadilha={() => recarregarArmadilhas()}
             onIrParaLaboratorio={handleIrParaLaboratorio}
+            armadilhaInicial={armadilhaSelecionadaMapa}
           />
         )}
 

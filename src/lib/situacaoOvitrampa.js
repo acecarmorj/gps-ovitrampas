@@ -112,7 +112,25 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 1. Se já passou pelo laboratório e foi lida no ciclo atual
+  // 1. Se já foi recolhida do campo (aguardando leitura no laboratório)
+  if (armadilha.status === 'recolhida') {
+    const dataRecolhida = armadilha.recolhidaEm ? new Date(armadilha.recolhidaEm) : new Date();
+    const dataFmt = dataRecolhida.toLocaleDateString('pt-BR');
+    const palhetaRec = armadilha.palhetaRecolhida || armadilha.ultimaPalheta || armadilha.palheta || 'P-01';
+    return {
+      fase: 'recolhida',
+      titulo: 'Armadilha e Palheta Recolhidas',
+      descricao: `Palheta ${palhetaRec} e armadilha recolhidas em ${dataFmt}. Aguardando contagem de ovos no laboratório.`,
+      diasCorridos: diasDesde(armadilha.instaladaEm),
+      diasRestantes: 0,
+      corTexto: 'text-indigo-400',
+      corBg: 'bg-indigo-500/20',
+      corBorda: 'border-indigo-500/40',
+      pinCor: '#6366f1'
+    };
+  }
+
+  // 2. Se já passou pelo laboratório e foi lida no ciclo atual
   if (armadilha.status === 'analisada' && armadilha.ultimosOvos != null) {
     const risco = classificarRiscoOvos(armadilha.ultimosOvos);
     return {
@@ -129,7 +147,7 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 2. Está em campo aguardando término dos DIAS_CICLO_PADRAO dias de exposição (7 dias)
+  // 3. Está em campo aguardando término dos DIAS_CICLO_PADRAO dias de exposição (7 dias)
   const diasCorridos = diasDesde(armadilha.instaladaEm);
   const diasRestantes = DIAS_CICLO_PADRAO - diasCorridos;
   const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_PADRAO);
