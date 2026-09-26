@@ -319,7 +319,7 @@ export function PainelRelatorios({
   const gerarPdfConsolidadoUnicoOficial = () =>
     executarGeracaoPdf(
       () => gerarRelatorioPdfConsolidadoUnico(filtradas, todasLeituras, { filtroDescricao: filtroTexto, ocultarMorador }),
-      'Relatório Epidemiológico Consolidado Único (10 Páginas)'
+      'Relatório Consolidado de Resultados (10 Páginas)'
     );
 
   const gerarPdfEntomologicoOficial = () =>
@@ -472,18 +472,18 @@ export function PainelRelatorios({
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Dossiê Oficial Unificado • 10 Páginas A4</span>
+                  <span>Relatório de Resultados • 10 Páginas A4</span>
                 </span>
                 <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Palhetas A + B + 3 Mapas Satélite
                 </span>
               </div>
               <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                <span>Relatório Epidemiológico Consolidado Único</span>
+                <span>Relatório Consolidado de Resultados</span>
                 <Sparkles className="w-5 h-5 text-amber-400 animate-pulse hidden sm:inline" />
               </h2>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Documento executivo e técnico definitivo: compila integralmente os dados em um único dossiê de 10 páginas com gráficos vetoriais (barras, ranking e donut), cronograma operacional (28 e 29/09), auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas com cores diretas nas células e parecer técnico com assinaturas oficiais.
+                Documento executivo e técnico definitivo: compila integralmente os resultados do monitoramento entomológico em um único relatório de 10 páginas com gráficos vetoriais (barras, ranking e donut), cronograma operacional (28 e 29/09), auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas com cores diretas nas células e diretrizes operacionais baseadas nos resultados com assinaturas oficiais.
               </p>
             </div>
 
@@ -494,7 +494,7 @@ export function PainelRelatorios({
                 className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm py-3 px-5 rounded-2xl shadow-lg shadow-emerald-900/40 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-300/40"
               >
                 <Download className="w-4 h-4 text-slate-950" />
-                <span>BAIXAR RELATÓRIO CONSOLIDADO (PDF)</span>
+                <span>BAIXAR RELATÓRIO DE RESULTADOS (PDF)</span>
               </button>
               <span className="text-[10px] text-slate-400 text-center font-medium">
                 Padrão Oficial Ministério da Saúde / Fiocruz

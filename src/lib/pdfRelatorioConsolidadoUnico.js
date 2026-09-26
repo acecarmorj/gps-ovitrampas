@@ -294,10 +294,10 @@ function desenharRodapeOficial(doc, paginaAtual, totalPaginas) {
 }
 
 /**
- * GERA O DOSSIÊ EPIDEMIOLÓGICO CONSOLIDADO ÚNICO COMPLETO (9 PÁGINAS)
- * Compila integralmente os 6 relatórios do sistema com gráficos vetoriais,
- * mapas térmicos em satélite de alta definição, cronograma de campo,
- * auditoria geodésica de 300m-400m, ranking de focos, inventário e parecer técnico.
+ * GERA O RELATÓRIO DE RESULTADOS DO MONITORAMENTO ENTOMOLÓGICO CONSOLIDADO (10 PÁGINAS)
+ * Apresenta os resultados completos dos ciclos de monitoramento por ovitrampas (Palhetas A e B),
+ * gráficos vetoriais analíticos, 3 mapas de satélite de alta definição, cronograma operacional de campo,
+ * auditoria geodésica de 300m-400m, ranking de focos, inventário e conclusões/diretrizes baseadas nos resultados.
  */
 export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLeituras = [], opcoes = {}) {
   if (!armadilhas || armadilhas.length === 0) {
@@ -388,7 +388,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     dataBase: opcoes.dataBase || 'Setembro / 2026',
     totalLidas: totalLidasConsolidado,
     totalArmadilhas,
-    subtitulo: 'DOSSIÊ EPIDEMIOLÓGICO CONSOLIDADO'
+    subtitulo: 'RELATÓRIO CONSOLIDADO DE RESULTADOS'
   };
 
   // =========================================================================
@@ -399,12 +399,12 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
-  doc.text('DOSSIÊ EPIDEMIOLÓGICO CONSOLIDADO DE VIGILÂNCIA ENTOMOLÓGICA', 10, 36);
+  doc.text('RELATÓRIO DE RESULTADOS DO MONITORAMENTO ENTOMOLÓGICO', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105);
-  doc.text(`Análise Bi-Semanal Integrada das ${totalArmadilhas} Ovitrampas • Palheta A (1ª Semana) vs Palheta B (2ª Semana) vs Consolidado A+B`, 10, 40);
+  doc.text(`Resultados Bi-Semanais Integrados das ${totalArmadilhas} Ovitrampas • Palheta A (1ª Semana) vs Palheta B (2ª Semana) vs Consolidado A+B`, 10, 40);
 
   // 1.1 Bloco dos 4 Grandes KPIs Executivos
   doc.setFont('helvetica', 'bold');
@@ -863,7 +863,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
     ['Segunda-feira (28/09)', 'Sede Urbana (35 Armadilhas)', 'ARM-01 a ARM-35', '7 dias completos', 'Equipe Centro/Progresso (Veículo 01)', 'Retirada das palhetas B com infusão fresca e envio imediato ao laboratório'],
     ['Terça-feira (29/09)', 'Distritos Oficiais (21 Armadilhas)', 'ARM-36 a ARM-56', '7 dias completos', 'Equipe Distrital (Veículo 02)', 'Recolhimento em Influência, Prata, Porto Velho e Ilha dos Pombos'],
     ['Quarta-feira (30/09)', 'Laboratório de Microscopia', 'Todas as 56 Palhetas', 'Bancada óptica', 'Biólogo(a) / Microscopistas', 'Contagem e registro direto no sistema GPS Ovitrampas'],
-    ['Quinta-feira (01/10)', 'Coordenação de Vigilância', 'Consolidação Final', 'Emissão Dossiê', 'Coordenação / Secretário', 'Fechamento dos boletins e publicação para Ministério da Saúde']
+    ['Quinta-feira (01/10)', 'Coordenação de Vigilância', 'Consolidação Final', 'Emissão do Relatório', 'Coordenação / Secretário', 'Fechamento dos boletins e publicação para Ministério da Saúde']
   ];
 
   autoTable(doc, {
@@ -1150,45 +1150,45 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 10: PARECER TÉCNICO EPIDEMIOLÓGICO, RECOMENDAÇÕES E ASSINATURAS
+  // PÁGINA 10: RESULTADOS DO MONITORAMENTO, CONCLUSÕES E DIRETRIZES OPERACIONAIS
   // =========================================================================
   doc.addPage('a4', 'portrait');
-  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'PARECER TÉCNICO & HOMOLOGAÇÃO' });
+  desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'RESULTADOS & RECOMENDAÇÕES' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('✍️ PARECER TÉCNICO EPIDEMIOLÓGICO E DIRETRIZES DE VIGILÂNCIA', 10, 36);
+  doc.text('📊 RESULTADOS DO MONITORAMENTO, CONCLUSÕES E DIRETRIZES OPERACIONAIS', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Avaliação entomológica fundamentada nas normas técnicas do Ministério da Saúde e Fiocruz:', 10, 40);
+  doc.text('Consolidação dos resultados analíticos e recomendações técnicas para as ações de vigilância e controle vetorial:', 10, 40);
 
-  // Bloco de Parecer Técnico
+  // Bloco de Resultados e Conclusões
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.roundedRect(10, 44, 190, 140, 2, 2, 'FD');
 
-  const pareceres = [
+  const secoesResultados = [
     {
-      titulo: '1. DIAGNÓSTICO ENTOMOLÓGICO CONSOLIDADO',
+      titulo: '1. SÍNTESE DOS RESULTADOS ENTOMOLÓGICOS DO CICLO',
       texto: `Os resultados do monitoramento bi-semanal por ovitrampas em Carmo/RJ evidenciam uma infestação com IPO de ${ipoConsolidado}% e IDO de ${idoConsolidado} ovos por armadilha positiva. A presença vetorial está dispersa por toda a malha urbana da Sede e nos distritos, com maior adensamento de postura concentrado nos bairros Progresso, Centro, Boa Ideia e no distrito de Influência. A contagem microscópica acumulada de ${totalOvosConsolidado.toLocaleString('pt-BR')} ovos atesta uma população fértil ativa e receptividade ambiental favorável ao Aedes aegypti.`
     },
     {
-      titulo: '2. AVALIAÇÃO DA DINÂMICA TEMPORAL (PALHETA A vs PALHETA B)',
+      titulo: '2. ANÁLISE COMPARATIVA DOS RESULTADOS (PALHETA A vs PALHETA B)',
       texto: temDadosB
         ? `A análise comparativa entre os ciclos demonstrou uma variação de ${variacaoOvosStr} na quantidade absoluta de ovos e uma oscilação de ${variacaoIpoStr} no IPO. Essa oscilação reflete a resposta inicial das medidas de manejo ambiental e bloqueio mecânico executadas pelas equipes de campo nos quarteirões priorizados.`
         : `O ciclo da Palheta A estabeleceu a linha de base epidemiológica municipal com 1.017 ovos. A Palheta B encontra-se em fase final de campo com coletas programadas para 28 e 29 de setembro, cujos resultados serão computados diretamente para encerramento do balanço bi-semanal consolidado.`
     },
     {
-      titulo: '3. RECOMENDAÇÕES TÉCNICAS PARA A GESTÃO MUNICIPAL',
+      titulo: '3. DIRETRIZES E RECOMENDAÇÕES OPERACIONAIS BASEADAS NOS RESULTADOS',
       texto: `a) Manter o cronograma quinzenal contínuo de monitoramento por ovitrampas para acompanhar as oscilações de densidade vetorial;\nb) Direcionar os Agentes de Combate às Endemias (ACE) prioritariamente para os quarteirões com armadilhas classificadas em Alto Risco e Crítico (> 50 ovos);\nc) Fortalecer a articulação intersetorial com a Secretaria de Obras e Serviços Públicos para eliminação de depósitos inservíveis em terrenos baldios e calhas públicas;\nd) Intensificar a comunicação com a população através de campanhas de mobilização social ("10 Minutos Contra o Aedes").`
     }
   ];
 
   let yPar = 50;
-  pareceres.forEach((par) => {
+  secoesResultados.forEach((par) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
@@ -1208,7 +1208,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text('HOMOLOGAÇÃO E RESPONSABILIDADE TÉCNICA OFICIAL:', 10, yAssinaturas);
+  doc.text('VALIDAÇÃO DOS RESULTADOS E RESPONSABILIDADE TÉCNICA:', 10, yAssinaturas);
 
   const assW = 58;
   const assinaturas = [
@@ -1247,7 +1247,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   }
 
   // Baixa o arquivo PDF
-  const nomeArquivo = opcoes.nomeArquivo || `RELATORIO_EPIDEMIOLOGICO_CONSOLIDADO_CARMO_${dataFormatada.replace(/\//g, '-')}.pdf`;
+  const nomeArquivo = opcoes.nomeArquivo || `RELATORIO_RESULTADOS_MONITORAMENTO_CARMO_${dataFormatada.replace(/\//g, '-')}.pdf`;
   doc.save(nomeArquivo);
   return doc;
 }
