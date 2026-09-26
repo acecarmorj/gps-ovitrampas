@@ -2013,5 +2013,63 @@ Contexto do Almir:
      https://gps-ovitrampas.pages.dev
 ==============================================================================
 
+==============================================================================
+SECTION 100 - ATUALIZAÇÃO OFICIAL DAS DATAS DO CICLO B NO BANCO D1 (21/09 E 22/09)
+              E REGULAÇÃO DO CICLO COMPLETO DE 7 DIAS COM COLETAS EM 28/09 E 29/09
+DATE: 2026-09-25T22:10:00-03:00 (Sexta-feira)
+FROM: GEMINI (Antigravity)
+TO: ALMIR & CLAUDE
+==============================================================================
+Contexto do Almir:
+"as pahetas b foram instaladas dia 21 e 22 seguda e terça hj e sexta vao ser retiradas 28 e 29"
+
+1. DEMONSTRAÇÃO EXATA DO CICLO DE 7 DIAS (SEMANAL COMPLETO):
+   - Almir informou as datas reais de instalação e de recolhimento em campo:
+     * Sede Urbana (ARM-01 a ARM-35, palhetas 01B a 35B):
+       - Instaladas: Segunda-feira, 21/09/2026
+       - Hoje (Sexta-feira 25/09): 4 dias em campo
+       - Coleta agendada: Segunda-feira, 28/09/2026
+       - Duração de exposição: 21/09 a 28/09 = EXATAMENTE 7 DIAS (168 horas)!
+     * Distritos e Localidades (ARM-36 a ARM-56, palhetas 36B a 56B):
+       - Instaladas: Terça-feira, 22/09/2026
+       - Hoje (Sexta-feira 25/09): 3 dias em campo
+       - Coleta agendada: Terça-feira, 29/09/2026
+       - Duração de exposição: 22/09 a 29/09 = EXATAMENTE 7 DIAS (168 horas)!
+
+2. ANÁLISE DE CONFORMIDADE ENTOMOLÓGICA (MINISTÉRIO DA SAÚDE / FIOCRUZ):
+   - Fica dentro do prazo máximo de 7 dias da ovitrampa?
+     SIM! Fica rigorosamente no limite exato de 7 dias (ciclo semanal completo).
+   - ALERTA CRÍTICO DE CAMPO:
+     Como o ciclo já completa 7 dias na Segunda (Sede) e na Terça (Distritos),
+     a coleta NÃO PODE ser adiada para quarta ou quinta-feira, pois atingiria
+     o 8º dia, entrando em atraso crítico com risco biológico de eclosão larval!
+
+3. ATUALIZAÇÃO NO BANCO DE DADOS CLOUDFLARE D1 (`ovitrampas-gps-db`):
+   - Executado SQL direto em produção atualizando as 56 armadilhas:
+     * ARM-01 a ARM-35: `instalada_em = '2026-09-21T14:00:00.000Z'`
+     * ARM-36 a ARM-56: `instalada_em = '2026-09-22T14:00:00.000Z'`
+     * `historico_palhetas` atualizado com as datas reais de troca para a palheta B.
+   - 56 linhas atualizadas com sucesso no banco remoto.
+
+4. AJUSTES NO CÓDIGO DO SISTEMA:
+   - `src/lib/situacaoOvitrampa.js`:
+     * `DIAS_CICLO_PADRAO = 7` e `DIAS_CICLO_MAXIMO = 7`.
+     * Previsões de coleta calculadas automaticamente para 28/09 (Seg) e 29/09 (Ter).
+     * Dias restantes calculados com precisão a partir de hoje (Sexta 25/09):
+       - Sede: Dia 4 de 7 (Faltam 3 dias p/ 2ª feira).
+       - Distritos: Dia 3 de 7 (Faltam 4 dias p/ 3ª feira).
+   - `src/features/admin/PainelRelatorios.jsx`:
+     * Banner informativo atualizado: "Ciclo Semanal 7 Dias • Instalação: Segunda (21/09) e Terça (22/09) • Coletas: Segunda (28/09) e Terça (29/09) • Prazo Máximo de 7 dias".
+     * Tooltips das armadilhas atualizados com as datas 21/09 e 22/09.
+   - `src/lib/pdfRelatoriosGraficos.js`:
+     * Subtítulo e KPI atualizados para "Ciclo Semanal de 7 Dias".
+     * Nota técnica com a diretriz de recolhimento pontual sem adiamento.
+
+5. BUILD E DEPLOY:
+   - Build de produção verificado com sucesso (`npm run build`).
+   - Service Worker elevado para `ovitrampas-shell-v22` (`public/sw.js`).
+   - Deploy ativo no Cloudflare Pages: https://gps-ovitrampas.pages.dev
+==============================================================================
+
 
 
