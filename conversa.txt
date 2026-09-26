@@ -1852,3 +1852,42 @@ incorporada com 100% de sucesso na branch `main`:
    - `npm run build` executado com 100% de sucesso (1889 módulos em 6.45s).
 ==============================================================================
 
+==============================================================================
+SECTION 97 - [GEMINI] ATUALIZAÇÃO CONCLUÍDA: PALHETAS ATIVAS EM CAMPO (EX: P-02B) E RELATÓRIOS EM PDF COM GRÁFICOS
+DATE: 2026-09-25 21:20 BRT
+FROM: Gemini (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Atendendo à demanda do Almir:
+"no painel tem que estar os dados das palhetas que estão em campo p2b ex,
+ e as coisas que baixa em excel tem que baixar em pdf com gráficos"
+
+1. EXIBIÇÃO DE PALHETAS ATIVAS EM CAMPO (EX: P-02B, P-24B):
+   - Criada aba e tabela interativa dedicada em `PainelRelatorios.jsx`:
+     * Exibe o identificador visual da Palheta em Campo (badge azul: `P-02B`, `P-24B`, etc.).
+     * Mostra o Status do Ciclo de 5 dias: "Em Campo (X dias)", "Trocar Hoje!", "Atrasada" ou "Analisada".
+     * Exibe a última palheta analisada em laboratório e contagem de ovos (ex: `P-02A (35 ovos)`).
+     * Bairro, Quarteirão, Morador e Endereço (com suporte ao toggle de privacidade).
+     * Barra de busca rápida por número da armadilha, código da palheta (ex: "P-02B"), bairro ou morador.
+   - Atualizado `PainelAdminScreen.jsx`:
+     * Na tabela principal, a coluna "Palheta" agora destaca visualmente a palheta em campo (`arm.palheta`) e a palheta anterior (`arm.ultimaPalheta`).
+     * No modal de detalhes, informa claramente "Palheta em Campo" e "Última coletada".
+
+2. GERADOR DE RELATÓRIOS EM PDF COM GRÁFICOS (`src/lib/pdfRelatoriosGraficos.js`):
+   - Implementado gerador de gráficos vetoriais de alta definição utilizando Canvas HTML5 offscreen:
+     * Gráfico de Barras do IPO (%) por Bairro com cores de risco e linha da média municipal.
+     * Gráfico de Barras do IDO (densidade de ovos por positiva).
+     * Gráfico Horizontal de Ranking de Focos Críticos (> 50 ovos) com destaque de epicentros.
+     * Gráfico Donut de Distribuição do Status de Palhetas em Campo (Em dia vs Trocar hoje vs Atrasadas).
+   - Na `PainelRelatorios.jsx`, cada um dos 4 cartões de exportação agora possui:
+     * Botão Primário: **"Baixar PDF com Gráficos"** (emite PDF diagramado com cabeçalho oficial de Carmo, KPIs, gráficos e tabela AutoTable estilizada).
+     * Botão Secundário: **"Excel"** (preserva o download em CSV/Excel para quem deseja manipular dados brutos).
+
+3. SERVICE WORKER E DEPLOY EM PRODUÇÃO:
+   - Service Worker elevado para `ovitrampas-shell-v19` (`public/sw.js`).
+   - Build de produção verificado com 0 erros (`npm run build`).
+   - Deploy realizado com sucesso no Cloudflare Pages: `https://gps-ovitrampas.pages.dev`.
+   - Testado e validado via curl (HTTP 200 e cache shell v19 ativo).
+==============================================================================
+
+
