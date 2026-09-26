@@ -26,5 +26,5 @@ export function PainelAdminSimples(props) {
     );
   }
 
-  return <PainelRelatorios armadilhas={props.armadilhas} onAbrirPainelCompleto={() => setCompleto(true)} />;
+  return <PainelRelatorios {...props} onAbrirPainelCompleto={() => setCompleto(true)} />;
 }

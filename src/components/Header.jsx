@@ -3,6 +3,7 @@ import {
   ChevronLeft, Volume2, VolumeX,
   Cloud, CloudOff, RefreshCw, Check, AlertTriangle
 } from 'lucide-react';
+import { SeletorCicloPalheta } from './SeletorCicloPalheta';
 
 const INFO_MODULOS = {
   campo: {
@@ -38,7 +39,9 @@ export function Header({
   isMuted,
   onToggleMute,
   syncInfo = { isOnline: true, syncInProgress: false, totalPendentes: 0 },
-  onForcarSync
+  onForcarSync,
+  cicloAtivo,
+  onMudarCiclo
 }) {
   const modulo = INFO_MODULOS[abaAtual] || { titulo: 'GPS Ovitrampas', subtitulo: 'Carmo - RJ' };
 
@@ -102,6 +105,17 @@ export function Header({
           </div>
         </div>
       </div>
+
+      {/* SELETOR CENTRAL DE CICLOS (PALHETA A, PALHETA B, AMBAS) */}
+      {cicloAtivo && onMudarCiclo && abaAtual !== 'campo' && (
+        <div className="hidden md:flex items-center">
+          <SeletorCicloPalheta
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={onMudarCiclo}
+            tamanho="compacto"
+          />
+        </div>
+      )}
 
       {/* LADO DIREITO: TOTAL DE ARMADILHAS E CONTROLE DE SOM */}
       <div className="flex items-center gap-2">

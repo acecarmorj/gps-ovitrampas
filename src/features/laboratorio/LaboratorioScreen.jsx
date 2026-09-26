@@ -49,16 +49,16 @@ export function LaboratorioScreen({
     if (armadilhaPreSelecionada) {
       setNumeroArmadilha(armadilhaPreSelecionada.numero);
       setArmadilhaId(armadilhaPreSelecionada.id);
-      // Se a palheta foi trocada em campo, a palheta recolhida para análise laboratorial é a ultimaPalheta
-      setNumeroPalheta(armadilhaPreSelecionada.ultimaPalheta || armadilhaPreSelecionada.palheta || 'P-01');
+      // Se a palheta foi recolhida em campo, ela tem precedência para contagem no laboratório
+      setNumeroPalheta(armadilhaPreSelecionada.palhetaRecolhida || armadilhaPreSelecionada.ultimaPalheta || armadilhaPreSelecionada.palheta || 'P-01');
     }
   }, [armadilhaPreSelecionada]);
 
   const handleSelecionarArmadilhaExistente = (arm) => {
     setNumeroArmadilha(arm.numero);
     setArmadilhaId(arm.id);
-    // Se a palheta foi trocada em campo, a palheta recolhida para análise laboratorial é a ultimaPalheta
-    setNumeroPalheta(arm.ultimaPalheta || arm.palheta || 'P-01');
+    // Se a palheta foi recolhida em campo, ela tem precedência para contagem no laboratório
+    setNumeroPalheta(arm.palhetaRecolhida || arm.ultimaPalheta || arm.palheta || 'P-01');
   };
 
   const ajustarOvos = (delta) => {

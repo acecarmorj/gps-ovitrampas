@@ -9,6 +9,7 @@ import { PainelAdminSimples as PainelAdminScreen } from './features/admin/Painel
 import { CenarioIdealScreen } from './features/planejamento/CenarioIdealScreen';
 import {
   getArmadilhas,
+  getLeituras,
   onStorageUpdate,
   iniciarMonitoramentoConectividade,
   onSyncStatusChange,
@@ -16,6 +17,7 @@ import {
   tentarSincronizarEmSegundoPlano,
   sincronizarDadosDoServidor
 } from './lib/storage';
+import { CICLO_AMBAS, adaptarArmadilhasParaCiclo } from './lib/ciclosOvitrampas';
 import { setMuted } from './lib/soundAlert';
 import { iniciarMonitoramentoOutrosAgentes } from './lib/agentLiveTracking';
 import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
@@ -23,6 +25,21 @@ import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
 export function App() {
   const { path, navigate } = useAppPath();
   const [armadilhas, setArmadilhas] = useState([]);
+  const [leituras, setLeituras] = useState(() => getLeituras());
+  const [cicloAtivo, setCicloAtivo] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ovitrampa_ciclo_ativo') || CICLO_AMBAS;
+    }
+    return CICLO_AMBAS;
+  });
+
+  const handleMudarCiclo = (novoCiclo) => {
+    setCicloAtivo(novoCiclo);
+    try {
+      localStorage.setItem('ovitrampa_ciclo_ativo', novoCiclo);
+    } catch (_) {}
+  };
+
   const [quotaAviso, setQuotaAviso] = useState(false);
 
   useEffect(() => {
@@ -51,18 +68,24 @@ export function App() {
     return () => unsubscribeSync();
   }, []);
 
-  // Carrega armadilhas e escuta atualizações locais
-  const recarregarArmadilhas = () => {
+  // Carrega armadilhas e leituras, e escuta atualizações locais
+  const recarregarDados = () => {
     setArmadilhas(getArmadilhas());
+    setLeituras(getLeituras());
   };
 
   useEffect(() => {
-    recarregarArmadilhas();
+    recarregarDados();
     const unsubscribe = onStorageUpdate(() => {
-      recarregarArmadilhas();
+      recarregarDados();
     });
     return () => unsubscribe();
   }, []);
+
+  // Armadilhas adaptadas conforme o ciclo selecionado (Palheta A, Palheta B, ou Ambas A + B)
+  const armadilhasAdaptadas = useMemo(() => {
+    return adaptarArmadilhasParaCiclo(armadilhas, leituras, cicloAtivo);
+  }, [armadilhas, leituras, cicloAtivo]);
 
   // Monitoramento em tempo real de múltiplos agentes em campo (Carmo-RJ).
   // userPos muda de objeto a cada tick de GPS (varias vezes por segundo); se o
@@ -115,7 +138,7 @@ export function App() {
   const handleForcarSync = async () => {
     await tentarSincronizarEmSegundoPlano();
     await sincronizarDadosDoServidor();
-    recarregarArmadilhas();
+    recarregarDados();
   };
 
   const handleIrParaLaboratorio = (armadilha) => {
@@ -162,6 +185,8 @@ export function App() {
           onToggleMute={handleToggleMute}
           syncInfo={syncInfo}
           onForcarSync={handleForcarSync}
+          cicloAtivo={cicloAtivo}
+          onMudarCiclo={handleMudarCiclo}
         />
       )}
 
@@ -187,7 +212,7 @@ export function App() {
         {chaveModulo === 'campo' && (
           <InstalarArmadilhaScreen
             armadilhas={armadilhas}
-            onArmadilhaCadastrada={() => recarregarArmadilhas()}
+            onArmadilhaCadastrada={() => recarregarDados()}
             onVerMapaGeral={() => navigate('/mapa')}
             onPosicaoAtualizada={(pos) => setUserPos(pos)}
             onSelecionarArmadilha={(arm) => {
@@ -199,10 +224,14 @@ export function App() {
 
         {chaveModulo === 'mapa' && (
           <PainelAcompanhamentoScreen
-            armadilhas={armadilhas}
+            armadilhas={armadilhasAdaptadas}
+            armadilhasBrutas={armadilhas}
+            todasLeituras={leituras}
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={handleMudarCiclo}
             userPos={userPos}
             outrosAgentes={outrosAgentes}
-            onExcluirArmadilha={() => recarregarArmadilhas()}
+            onExcluirArmadilha={() => recarregarDados()}
             onIrParaLaboratorio={handleIrParaLaboratorio}
             armadilhaInicial={armadilhaSelecionadaMapa}
           />
@@ -212,22 +241,29 @@ export function App() {
           <LaboratorioScreen
             armadilhas={armadilhas}
             armadilhaPreSelecionada={armadilhaParaLab}
-            onLeituraConcluida={() => recarregarArmadilhas()}
+            onLeituraConcluida={() => recarregarDados()}
           />
         )}
 
         {chaveModulo === 'admin' && (
           <PainelAdminScreen
-            armadilhas={armadilhas}
+            armadilhas={armadilhasAdaptadas}
+            armadilhasBrutas={armadilhas}
+            todasLeituras={leituras}
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={handleMudarCiclo}
             userPos={userPos}
             outrosAgentes={outrosAgentes}
-            onAtualizarArmadilhas={() => recarregarArmadilhas()}
+            onAtualizarArmadilhas={() => recarregarDados()}
           />
         )}
 
         {(chaveModulo === 'planejamento' || chaveModulo === 'cenario-ideal') && (
           <CenarioIdealScreen
-            armadilhas={armadilhas}
+            armadilhas={armadilhasAdaptadas}
+            armadilhasBrutas={armadilhas}
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={handleMudarCiclo}
             onVoltar={() => navigate('/guia')}
           />
         )}

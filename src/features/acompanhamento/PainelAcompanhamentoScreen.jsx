@@ -13,6 +13,7 @@ import { excluirArmadilha, trocarPalhetaArmadilha, recolherArmadilhaEPalheta } f
 import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps, calcDistanceMeters } from '../../lib/geoDistance';
 import { playSuccessSound } from '../../lib/soundAlert';
+import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
 
 // Sugere o codigo da proxima palheta como numero-da-armadilha + letra do
 // ciclo (ex: armadilha 35 -> 35A no 1o ciclo, 35B no 2o...). Sem barra "/"
@@ -46,6 +47,10 @@ function sugerirProximaPalheta(armadilha) {
 
 export function PainelAcompanhamentoScreen({
   armadilhas = [],
+  armadilhasBrutas = [],
+  todasLeituras = [],
+  cicloAtivo = 'ambas',
+  onMudarCiclo,
   userPos,
   outrosAgentes = [],
   onExcluirArmadilha,
@@ -253,7 +258,7 @@ export function PainelAcompanhamentoScreen({
                 }`}
                 title="Filtrar apenas armadilhas com troca de palheta pendente"
               >
-                {apenasPendentes ? `Pendentes (${totalPendentesTroca})` : `${totalTrocadasHoje}/${totalArmadilhas} trocadas`}
+                {apenasPendentes ? `Pendentes (${totalPendentesTroca})` : `${totalTrocadasHoje}/${totalArmadilhas} atendidas`}
               </button>
 
               <button
@@ -267,6 +272,17 @@ export function PainelAcompanhamentoScreen({
               </button>
             </div>
           </div>
+
+          {/* SELETOR DE CICLOS DE PALHETAS (PALHETA A, PALHETA B, AMBAS) */}
+          {onMudarCiclo && (
+            <div className="flex justify-center pointer-events-auto">
+              <SeletorCicloPalheta
+                cicloAtivo={cicloAtivo}
+                onMudarCiclo={onMudarCiclo}
+                tamanho="compacto"
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -379,8 +395,8 @@ export function PainelAcompanhamentoScreen({
         </div>
 
         {/* Barra de Busca e Filtro de Status */}
-        <div className="bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center gap-2 pointer-events-auto">
-          <div className="flex-1 flex items-center gap-2 bg-slate-50/90 px-3 py-2 rounded-xl border border-slate-200">
+        <div className="bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/10 flex items-center gap-2 pointer-events-auto flex-wrap">
+          <div className="flex-1 flex items-center gap-2 bg-slate-50/90 px-3 py-2 rounded-xl border border-slate-200 min-w-[180px]">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
@@ -395,6 +411,14 @@ export function PainelAcompanhamentoScreen({
               </button>
             )}
           </div>
+
+          {onMudarCiclo && (
+            <SeletorCicloPalheta
+              cicloAtivo={cicloAtivo}
+              onMudarCiclo={onMudarCiclo}
+              tamanho="compacto"
+            />
+          )}
 
           <select
             value={filtroStatus}
@@ -650,24 +674,31 @@ export function PainelAcompanhamentoScreen({
               </div>
             </div>
 
-            {/* IDENTIFICAÇÃO DA PALHETA ATUAL E STATUS */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">
-                  Palheta a Recolher
-                </span>
-                <span className="font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-block">
-                  {armadilhaAlvoProximidade.palheta || 'PL-01'}
-                </span>
+            {/* QUADRO COMPARATIVO DAS 2 SEMANAS / PALHETAS (A, B E TOTAL) */}
+            <div className="bg-slate-50/90 rounded-2xl p-2.5 border border-slate-200 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500 pb-1 border-b border-slate-200/70">
+                <span>Contagem de Ovos por Palheta</span>
+                <span className="text-emerald-700 font-bold">ARM-{armadilhaAlvoProximidade.numero}</span>
               </div>
-
-              <div className="bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200">
-                <span className="text-[10px] uppercase font-bold text-emerald-700 block mb-0.5">
-                  Situação
-                </span>
-                <span className="font-black text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-300 inline-block">
-                  {armadilhaAlvoProximidade.status === 'recolhida' ? '✓ Já Recolhida' : 'Pronta p/ Coleta'}
-                </span>
+              <div className="grid grid-cols-3 gap-1.5 text-center">
+                <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'A' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-400' : 'bg-white border-slate-200'}`}>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Palheta A (1ª Sem)</span>
+                  <span className={`text-xs font-black block mt-0.5 ${armadilhaAlvoProximidade.dadosCiclos?.ovosA > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                    {armadilhaAlvoProximidade.dadosCiclos?.temLeituraA ? `${armadilhaAlvoProximidade.dadosCiclos.ovosA} ovos` : 'Sem leitura'}
+                  </span>
+                </div>
+                <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'B' ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-400' : 'bg-white border-slate-200'}`}>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Palheta B (2ª Sem)</span>
+                  <span className={`text-xs font-black block mt-0.5 ${armadilhaAlvoProximidade.dadosCiclos?.ovosB > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                    {armadilhaAlvoProximidade.dadosCiclos?.temLeituraB ? `${armadilhaAlvoProximidade.dadosCiclos.ovosB} ovos` : (armadilhaAlvoProximidade.status === 'recolhida' ? '📦 Recolhida' : '🌱 Em campo')}
+                  </span>
+                </div>
+                <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'ambas' ? 'bg-emerald-50 border-emerald-300 ring-1 ring-emerald-400' : 'bg-white border-slate-200'}`}>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Total (A + B)</span>
+                  <span className="text-xs font-black text-emerald-800 block mt-0.5">
+                    {armadilhaAlvoProximidade.dadosCiclos?.ovosTotal != null ? `${armadilhaAlvoProximidade.dadosCiclos.ovosTotal} ovos` : '-'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -832,15 +863,32 @@ export function PainelAcompanhamentoScreen({
                   </div>
                 </div>
 
-                {/* IDENTIFICAÇÃO DA PALHETA ATUAL */}
-                <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-blue-600" />
-                    <span className="text-[10px] uppercase font-bold text-slate-500">Palheta em Campo:</span>
+                {/* QUADRO COMPARATIVO DAS 2 SEMANAS / PALHETAS (A, B E TOTAL) */}
+                <div className="bg-slate-50/90 rounded-2xl p-2.5 border border-slate-200 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500 pb-1 border-b border-slate-200/70">
+                    <span>Contagem de Ovos por Palheta</span>
+                    <span className="text-emerald-700 font-bold">ARM-{selecionada.numero}</span>
                   </div>
-                  <span className="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
-                    {selecionada.palheta || 'P-01'}
-                  </span>
+                  <div className="grid grid-cols-3 gap-1.5 text-center">
+                    <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'A' ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-400' : 'bg-white border-slate-200'}`}>
+                      <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Palheta A (1ª Sem)</span>
+                      <span className={`text-xs font-black block mt-0.5 ${selecionada.dadosCiclos?.ovosA > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                        {selecionada.dadosCiclos?.temLeituraA ? `${selecionada.dadosCiclos.ovosA} ovos` : 'Sem leitura'}
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'B' ? 'bg-indigo-50 border-indigo-300 ring-1 ring-indigo-400' : 'bg-white border-slate-200'}`}>
+                      <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Palheta B (2ª Sem)</span>
+                      <span className={`text-xs font-black block mt-0.5 ${selecionada.dadosCiclos?.ovosB > 0 ? 'text-rose-600' : 'text-slate-700'}`}>
+                        {selecionada.dadosCiclos?.temLeituraB ? `${selecionada.dadosCiclos.ovosB} ovos` : (selecionada.status === 'recolhida' ? '📦 Recolhida' : '🌱 Em campo')}
+                      </span>
+                    </div>
+                    <div className={`p-1.5 rounded-xl border ${cicloAtivo === 'ambas' ? 'bg-emerald-50 border-emerald-300 ring-1 ring-emerald-400' : 'bg-white border-slate-200'}`}>
+                      <span className="text-[9px] uppercase font-bold text-slate-500 block truncate">Total (A + B)</span>
+                      <span className="text-xs font-black text-emerald-800 block mt-0.5">
+                        {selecionada.dadosCiclos?.ovosTotal != null ? `${selecionada.dadosCiclos.ovosTotal} ovos` : '-'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* CICLO OFICIAL DE DIAS_CICLO_PADRAO DIAS */}

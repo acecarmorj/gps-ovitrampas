@@ -17,6 +17,8 @@ import { PainelInteligenciaIA } from './PainelInteligenciaIA';
 import { PainelResumoGpsCampo } from './PainelResumoGpsCampo';
 import { Satellite } from 'lucide-react';
 import { Sparkles, Tag, EyeOff } from 'lucide-react';
+import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
+import { calcularMetricasCiclo } from '../../lib/ciclosOvitrampas';
 
 // Bairros e microáreas oficiais de Carmo - RJ
 const MICROAREAS_CARMO_OFICIAIS = [
@@ -33,6 +35,10 @@ const MICROAREAS_CARMO_OFICIAIS = [
 
 export function PainelAdminScreen({
   armadilhas = [],
+  armadilhasBrutas = [],
+  todasLeituras = [],
+  cicloAtivo = 'ambas',
+  onMudarCiclo,
   userPos,
   outrosAgentes = [],
   onAtualizarArmadilhas
@@ -116,6 +122,10 @@ export function PainelAdminScreen({
   }, [armadilhas]);
 
   // Cálculos epidemiológicos oficiais
+  const metricasCiclo = useMemo(() => {
+    return calcularMetricasCiclo(armadilhas);
+  }, [armadilhas]);
+
   const totalArmadilhas = armadilhas.length;
   const armadilhasLidas = armadilhas.filter((a) => a.status === 'analisada');
   const totalLidas = armadilhasLidas.length;
@@ -529,6 +539,85 @@ export function PainelAdminScreen({
             </button>
           </div>
         </div>
+
+        {/* SELETOR DE CICLOS DE PALHETAS (A, B, AMBAS) E BANNER COMPARATIVO */}
+        {mostrarPainelAdmin && (
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-700">Filtrar por Ciclo / Palheta:</span>
+                {cicloAtivo === 'A' && (
+                  <span className="text-[10px] bg-blue-100 text-blue-800 font-extrabold px-2 py-0.5 rounded-full border border-blue-200">
+                    1ª Semana (Palhetas A)
+                  </span>
+                )}
+                {cicloAtivo === 'B' && (
+                  <span className="text-[10px] bg-indigo-100 text-indigo-800 font-extrabold px-2 py-0.5 rounded-full border border-indigo-200">
+                    2ª Semana (Palhetas B)
+                  </span>
+                )}
+                {cicloAtivo === 'ambas' && (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">
+                    Consolidado Geral (Palheta A + B)
+                  </span>
+                )}
+              </div>
+
+              {onMudarCiclo && (
+                <SeletorCicloPalheta
+                  cicloAtivo={cicloAtivo}
+                  onMudarCiclo={onMudarCiclo}
+                  tamanho="compacto"
+                />
+              )}
+            </div>
+
+            {/* BANNER COMPARATIVO ENTRE SEMANA 1 (PALHETA A) E SEMANA 2 (PALHETA B) */}
+            {cicloAtivo === 'ambas' && metricasCiclo.comparativo.lidasA > 0 && (
+              <div className="bg-gradient-to-r from-blue-900/90 via-slate-900/95 to-indigo-900/90 text-white rounded-2xl p-3 border border-slate-700 shadow-md">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider pb-1.5 border-b border-slate-700/60 mb-2">
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <Activity className="w-3.5 h-3.5" />
+                    Comparativo Oficial: 1ª Semana (Palheta A) vs 2ª Semana (Palheta B)
+                  </span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    Consolidado Municipal
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+                    <span className="text-[10px] text-slate-400 block font-bold">Ovos Palheta A (Sem. 1)</span>
+                    <span className="text-base font-black text-blue-400">{metricasCiclo.comparativo.ovosA} ovos</span>
+                    <span className="text-[9px] text-slate-400 block">IPO: {metricasCiclo.comparativo.ipoA.toFixed(1)}%</span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+                    <span className="text-[10px] text-slate-400 block font-bold">Ovos Palheta B (Sem. 2)</span>
+                    <span className="text-base font-black text-indigo-400">{metricasCiclo.comparativo.ovosB} ovos</span>
+                    <span className="text-[9px] text-slate-400 block">
+                      {metricasCiclo.comparativo.lidasB > 0 ? `IPO: ${metricasCiclo.comparativo.ipoB.toFixed(1)}%` : 'Coleta em andamento'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+                    <span className="text-[10px] text-slate-400 block font-bold">Total Acumulado (A + B)</span>
+                    <span className="text-base font-black text-emerald-400">{totalOvos} ovos</span>
+                    <span className="text-[9px] text-slate-400 block">Média: {(totalOvos / (totalPositivas || 1)).toFixed(1)} ovos/pos</span>
+                  </div>
+                  <div className="bg-slate-800/60 p-2 rounded-xl border border-slate-700/50">
+                    <span className="text-[10px] text-slate-400 block font-bold">Variação de Infestação</span>
+                    {metricasCiclo.comparativo.lidasB > 0 ? (
+                      <span className={`text-base font-black ${metricasCiclo.comparativo.diferencaOvos <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {metricasCiclo.comparativo.diferencaOvos > 0 ? '+' : ''}{metricasCiclo.comparativo.diferencaOvos} ovos ({metricasCiclo.comparativo.variacaoOvosPct.toFixed(1)}%)
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-300">Aguardando contagem Sem. 2</span>
+                    )}
+                    <span className="text-[9px] text-slate-400 block">Tendência Epidemiológica</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* CARDS DE INDICADORES: GRADE 5 COLUNAS EM TABLET E DESKTOP */}
         {mostrarPainelAdmin && (

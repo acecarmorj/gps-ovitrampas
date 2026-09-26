@@ -14,6 +14,7 @@ import {
   gerarPdfInventarioCompleto
 } from '../../lib/pdfRelatoriosGraficos';
 import { calcularSituacaoArmadilha, classificarRiscoOvos } from '../../lib/situacaoOvitrampa';
+import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
 
 // Uma armadilha possui leitura válida se tem contagem registrada do Ciclo A
 const temLeitura = (a) => a.ultimosOvos != null && a.ultimosOvos !== undefined;
@@ -53,7 +54,12 @@ function baixarCsv(nome, colunas, linhas) {
 
 const fmt = (n, casas = 1) => (n == null ? '-' : n.toFixed(casas).replace('.', ','));
 
-export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
+export function PainelRelatorios({
+  armadilhas = [],
+  cicloAtivo = 'ambas',
+  onMudarCiclo,
+  onAbrirPainelCompleto
+}) {
   const [bairro, setBairro] = useState('todos');
   const [situacao, setSituacao] = useState('todas');
   const [busca, setBusca] = useState('');
@@ -345,6 +351,25 @@ export function PainelRelatorios({ armadilhas = [], onAbrirPainelCompleto }) {
             Ir para Painel com Mapa e Edição →
           </button>
         </header>
+
+        {/* SELETOR DE CICLOS DE PALHETAS (PALHETA A, PALHETA B, AMBAS) */}
+        {onMudarCiclo && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-800">Filtrar Ciclo Entomológico:</span>
+              <span className="text-[11px] font-bold text-slate-500">
+                {cicloAtivo === 'A' && 'Exibindo dados da 1ª Semana (Palheta A)'}
+                {cicloAtivo === 'B' && 'Exibindo dados da 2ª Semana (Palheta B)'}
+                {cicloAtivo === 'ambas' && 'Exibindo consolidação das duas semanas (A + B)'}
+              </span>
+            </div>
+            <SeletorCicloPalheta
+              cicloAtivo={cicloAtivo}
+              onMudarCiclo={onMudarCiclo}
+              tamanho="compacto"
+            />
+          </div>
+        )}
 
         {/* CARDS DE INDICADORES (CLEAN, EPIDEMIOLÓGICO & OPERACIONAL) */}
         <section className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
