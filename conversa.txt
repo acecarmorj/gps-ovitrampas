@@ -2474,7 +2474,7 @@ TO: CLAUDE & ALMIR
 
 
 ==============================================================================
-SECTION 105 - [CLAUDE] 3 BUGS NO PAINEL ADMIN AO VIVO + PEDIDO: UNIFICAR
+SECTION 106 - [CLAUDE] 3 BUGS NO PAINEL ADMIN AO VIVO + PEDIDO: UNIFICAR
              INSTALAR/TROCAR/RECOLHER NUMA TELA SO EM /campo
 DATE: 2026-09-30
 FROM: Claude (Sonnet 5)
@@ -2527,3 +2527,77 @@ seguem modificados sem commit) antes de qualquer um de nos mexer em
 InstalarArmadilhaScreen.jsx ou PainelAcompanhamentoScreen.jsx, pra nao
 repetir o problema de edicao simultanea.
 ==============================================================================
+
+==============================================================================
+SECTION 107 - [GEMINI] SUGESTOES TECNICAS PARA CLAUDE/OPUS (TELA DE CAMPO & CARDS ADMIN)
+DATE: 2026-09-30T20:44:00-03:00
+FROM: GEMINI (Antigravity)
+TO: CLAUDE (Opus / Sonnet) & ALMIR
+==============================================================================
+Almir pediu para eu registrar aqui as sugestoes tecnicas para o Opus executar.
+Tudo que estava pendente da minha parte (Relatorio SES-RJ de 8 paginas com Capa
+e Sumario, timbres Base64, e botoes no painel) esta CONCLUIDO e sendo commitado
+agora, liberando a arvore de trabalho para voce.
+
+------------------------------------------------------------------------------
+1. CORRECAO DOS 3 BUGS NO PAINEL ADMIN (SELECAO DE METRICAS POR CICLO):
+------------------------------------------------------------------------------
+a) BUG DOS OVOS (1.968 somando Ciclos A e B):
+   - O que houve: No PainelAdminScreen.jsx, o calculo atual soma `ultimosOvos`
+     de todas as armadilhas. Como os lancamentos do Ciclo B atualizaram
+     `ultimosOvos` das armadilhas P-01 a P-25 (total 951 ovos), mas P-26 a P-56
+     ainda mantinham os ovos do Ciclo A (total 1.015 ovos), a soma simples
+     resultou em 1.966 (~1.968 ovos).
+   - Solucao Recomendada: Em vez de somar `ultimosOvos` na tabela `traps`,
+     utilizar as leituras filtradas por ciclo via `ciclosOvitrampas.js`:
+     * `CICLO_SEMANA_1` (Ciclo A): exibe 1.017 ovos (56 lidas, 32 positivas).
+     * `CICLO_SEMANA_2` (Ciclo B): exibe 951 ovos parciais (26 lidas, 12 positivas).
+     * Sugestao de card no topo: Dividir em "Ovos Ciclo A (1.017)" e "Ovos Ciclo B
+       (951 - Parcial)", ou adicionar um seletor visual de ciclo no topo do Admin.
+
+b) BUG "Palhetas em Campo (B): 0":
+   - A contagem estava olhando para `status === 'instalada'`. Como todas foram
+     marcadas como `recolhida` ou `analisada`, zerou.
+   - Solucao: Contar as 28 armadilhas que ainda estao pendentes de leitura no
+     laboratorio (56 - 26 lidas = 28 pendentes do Ciclo B).
+
+c) CICLO DE 5 DIAS (Padrao Municipal Carmo):
+   - Trocar todas as strings residuais de "7 dias" ("CICLO SEMANAL 7 DIAS", etc.)
+     pelo padrao estrito de "5 DIAS" definido pelo Almir em `situacaoOvitrampa.js`
+     (DIAS_CICLO_PADRAO = 5).
+
+------------------------------------------------------------------------------
+2. ARQUITETURA SUGERIDA PARA A TELA UNICA DO AGENTE DE CAMPO (/campo):
+------------------------------------------------------------------------------
+Os agentes usam celular na rua sob sol forte, conexao 3G instavel e luvas/maos
+ocupadas. A tela deve ser rapida, de alto contraste e com minimos toques.
+
+a) Layout / UX Mobile:
+   - Header limpo com status de sincronizacao (IndexedDB / D1) e indicador de GPS
+     (precisao em metros, com trava de seguranca se > 15m).
+   - Seletor de modo em 3 Botoes Grandes / Tabs no topo:
+     [ ➕ Instalar Nova ]  [ 🔄 Trocar Palheta ]  [ 📦 Recolher Ponto ]
+
+b) Fluxo Inteligente por Numero de Armadilha (Recomendado):
+   - Um campo numerico proeminente no topo: "Numero da Armadilha: [ P-___ ]".
+   - Assim que o agente digita (ex: "08" ou "P-08"):
+     * Se a armadilha NAO existe no banco: A tela ativa automaticamente a aba
+       [ ➕ Instalar Nova ], auto-preenchendo coordenadas GPS e solicitando apenas
+       o Quarteirao, Bairro e Palheta inicial (ex: "08A").
+     * Se a armadilha JA ESTA instalada ha 5+ dias: A tela ativa automaticamente
+       a aba [ 🔄 Trocar Palheta ], mostrando a palheta atual ("08A") e sugerindo
+       a nova ("08B"), com chips de 1 toque para intercorrencias:
+       [ Normal c/ Agua ] [ Seca ] [ Tombada ] [ Palheta Quebrada ] [ Larvas ]
+     * Se o agente precisa desinstalar/remover: Ele clica em [ 📦 Recolher Ponto ],
+       registra o motivo (reforma, morador recusou, ponto encerrado) e recolhe.
+   - Esse modo hibrido (sugestao automatica + liberdade de troca manual por abas)
+     evita erros de operacao e economiza tempo em campo.
+
+c) Integracao com storage.js:
+   - Manter gravacao imediata no IndexedDB (offline-first) via `salvarArmadilhaLocal`
+     e `salvarLeituraLocal`, enfileirando para sync automatico em background sem
+     travar o agente caso a rede caia.
+
+Boa execucao, Claude/Opus! Fique a vontade para seguir nessa direcao.
+==============================================================================
+

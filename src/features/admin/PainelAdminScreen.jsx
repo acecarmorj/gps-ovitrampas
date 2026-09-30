@@ -14,6 +14,7 @@ import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
 import { gerarRelatorioPdfConsolidadoUnico } from '../../lib/pdfRelatorioConsolidadoUnico';
+import { gerarRelatorioFinalSesRj } from '../../lib/pdfRelatorioFinalSesRJ';
 import { PainelInteligenciaIA } from './PainelInteligenciaIA';
 import { PainelResumoGpsCampo } from './PainelResumoGpsCampo';
 import { Satellite, Award } from 'lucide-react';
@@ -298,6 +299,22 @@ export function PainelAdminScreen({
     }
   };
 
+  // Geração do Relatório Oficial SES-RJ (Ciclo A x B • 6 Páginas • 100% Anonimizado por Território)
+  const handleGerarRelatorioSesRj = async () => {
+    try {
+      setToastMensagem({ tipo: 'info', texto: 'Gerando Relatório Oficial SES-RJ (Ciclo A x B)...' });
+      await gerarRelatorioFinalSesRj(
+        armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas,
+        todasLeituras,
+        { filtroDescricao: 'Documento Técnico Oficial SES-RJ • Comparativo Ciclos A x B • 56 Ovitrampas' }
+      );
+      setToastMensagem({ tipo: 'sucesso', texto: 'Relatório Oficial SES-RJ baixado com sucesso!' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório SES-RJ:', err);
+      setToastMensagem({ tipo: 'erro', texto: 'Erro ao gerar relatório SES-RJ. Tente novamente.' });
+    }
+  };
+
   // Geração do Relatório Entomológico Oficial (Fotos de Satélite Google + Nevoeiro Radiante)
   const handleGerarRelatorioEntomologico = async () => {
     try {
@@ -520,6 +537,17 @@ export function PainelAdminScreen({
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            {/* BOTÃO ESTADUAL: RELATÓRIO OFICIAL SES-RJ (8 PÁGS • CAPA COM TIMBRES, SUMÁRIO & CICLO A x B) */}
+            <button
+              type="button"
+              onClick={handleGerarRelatorioSesRj}
+              className="bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 hover:from-blue-600 hover:to-indigo-600 active:scale-95 text-white px-3.5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-blue-900/30 border border-blue-400/50 cursor-pointer"
+              title="Relatório Técnico Oficial SES-RJ (8 Páginas): Capa Institucional com Timbres Oficiais, Sumário Executivo, Comparativo Ciclo A x B, 100% Anonimizado por Território (sem moradores/endereços), Agregação Bairro > Microárea > Quarteirão, Mapas Térmicos e Chancela Técnica"
+            >
+              <ShieldCheck className="w-4 h-4 text-blue-300" />
+              <span>Relatório SES-RJ (8 Págs)</span>
             </button>
 
             {/* BOTÃO MASTER: RELATÓRIO DE RESULTADOS CONSOLIDADO (10 PÁGS • A+B+3 MAPAS) */}
