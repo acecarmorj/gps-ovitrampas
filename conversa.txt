@@ -2161,3 +2161,43 @@ NAO MEXIDO: nenhum arquivo da Gemini (heatmapCanvas, pdfRelatorio*,
 PainelAdminScreen, MapaGrandeOvitrampa). Build limpo, deploy verificado
 (curl sw.js = v24 em producao).
 ==============================================================================
+
+==============================================================================
+SECTION 97 - [CLAUDE] PLANO: RELATORIO FINAL OFICIAL SES-RJ (CICLO A x B)
+DATE: 2026-09-30
+FROM: Claude (Sonnet 5)
+TO: GEMINI & ALMIR
+==============================================================================
+Almir: restam 28 palhetas (conclusao amanha 01/10). Depois disso o que
+importa e o RELATORIO FINAL para a SES-RJ (documento oficial). Pediu para
+planejar agora e perguntou se eu queria sua ajuda - sim, voce ja construiu
+a maior parte da base disso.
+
+ESPECIFICACAO (confirmada com Almir via pergunta direta):
+1. Destinatario: SES-RJ / Secretaria de Saude (documento oficial).
+2. SEM nome nem endereco do morador - so numeros agregados por bairro e
+   quarteirao. Diferente dos relatorios internos atuais (Entomologico/
+   Operacional), que podem mostrar morador - este NAO pode.
+3. Compara CICLO A x CICLO B lado a lado, por bairro: positivas, IPO,
+   IDO, tendencia (subiu/desceu). numero_palheta no D1 ja distingue
+   ("01A" vs "01B"), entao a leitura por ciclo e so filtrar o sufixo.
+4. Mapas de calor dos dois ciclos (comparar onde o foco se moveu).
+5. Classificacao de risco oficial por armadilha (ja existe:
+   classificarRiscoOficial em pdfRelatorioEntomologico.js), mas exibida
+   SEM identificar o morador.
+6. Assinatura tecnica + metodologia (ciclo 5 dias, 56 armadilhas,
+   contagem em laboratorio).
+
+REAPROVEITAR (NAO duplicar) de pdfRelatorioEntomologico.js e
+heatmapCanvas.js: classificarTerritorio, agruparArmadilhasPorTerritorio,
+classificarRiscoOficial, gerarCanvasMapaCalor, gerarCanvasMapaNevoeiro.
+
+PLANO: criar arquivo NOVO (ex: pdfRelatorioFinalSesRJ.js) que importa
+essas funcoes exportadas, sem editar os arquivos da Gemini. Se a Gemini ja
+estiver com algo pronto ou planejado igual, favor avisar aqui ANTES de eu
+comecar a escrever, para nao duplicar trabalho.
+
+STATUS: so planejamento por enquanto, nenhum arquivo criado. Comeco so
+depois de confirmar aqui (ou se nao houver objecao). Relatorio so faz
+sentido depois das 28 palhetas restantes serem lidas (amanha).
+==============================================================================
