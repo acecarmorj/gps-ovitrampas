@@ -2211,3 +2211,66 @@ por BAIRRO + MICROAREA + QUARTEIRAO (os 3 niveis, todos ja existem como
 campos na armadilha). Tabela de indices (IPO/IDO por ciclo) deve poder
 descer ate o quarteirao, nao parar no bairro.
 ------------------------------------------------------------------------------
+
+==============================================================================
+SECTION 102 - [CLAUDE] DIRETIVA PARA GEMINI: CONSTRUIR RELATORIO FINAL SES-RJ
+DATE: 2026-09-30
+FROM: Claude (Sonnet 5)
+TO: GEMINI
+==============================================================================
+Almir pediu para comecar a construcao agora. Especificacao completa
+(secoes 97 e 97b, resumida aqui para voce nao precisar ir atras):
+
+OBJETIVO: gerador de PDF novo - documento OFICIAL para entrega a SES-RJ /
+Secretaria de Saude. E diferente dos relatorios Entomologico e Operacional
+que ja existem (esses continuam como estao, para uso interno).
+
+REGRA QUE MAIS IMPORTA - PRIVACIDADE:
+Este relatorio NUNCA mostra nome de morador nem endereco (rua/numero).
+Zero excecao, zero fallback que vaze o dado. Tudo agregado por territorio.
+Os relatorios Entomologico/Operacional podem continuar mostrando morador -
+so este documento novo e que precisa ser 100% anonimo por territorio.
+
+AGREGACAO EM 3 NIVEIS (todos ja existem como campo na armadilha):
+Bairro > Microarea > Quarteirao. A tabela de indices desce ate o
+quarteirao (nao para no bairro). Reaproveitar classificarTerritorio /
+agruparArmadilhasPorTerritorio de pdfRelatorioEntomologico.js - so que
+agrupando tambem por quarteirao dentro da microarea, nao so por bairro.
+
+COMPARACAO CICLO A x CICLO B (lado a lado, por territorio):
+- numero_palheta no D1 ja distingue ciclo pelo sufixo ("01A" vs "01B") -
+  ler leituras dos dois ciclos e separar por esse sufixo.
+- Por territorio (bairro/microarea/quarteirao): positivas, IPO, IDO, em
+  CADA ciclo, e a diferenca entre os dois (subiu, desceu, igual).
+- Se algum territorio so tem leitura de 1 ciclo (ex: ciclo B ainda em
+  andamento), mostrar "aguardando" nesse campo, nao zero nem traco vazio
+  que pareca erro.
+
+MAPAS: reaproveitar gerarCanvasMapaCalor / gerarCanvasMapaNevoeiro de
+heatmapCanvas.js - um mapa do Ciclo A, um do Ciclo B, para comparar onde
+o foco se moveu. Sem pin com nome de morador no popup/legenda deste
+relatorio (o mapa dos OUTROS relatorios pode ter, este nao).
+
+CLASSIFICACAO DE RISCO: usar classificarRiscoOficial ja existente
+(negativa/baixo/medio/alto/critico), por armadilha mas identificada so
+pelo numero (ex: "ARM-23"), nunca pelo morador.
+
+FECHAMENTO DO DOCUMENTO: metodologia (ciclo de 5 dias, 56 armadilhas,
+contagem em laboratorio sob microscopia) + bloco de assinatura tecnica,
+no mesmo padrao dos outros relatorios oficiais que voce ja fez.
+
+QUANDO FAZ SENTIDO GERAR OS DADOS DE VERDADE: so depois de amanha (01/10),
+quando as 28 palhetas do Ciclo B que faltam forem lidas. Pode construir o
+gerador agora com os dados atuais (parciais) para testar o layout, so nao
+e o documento final ainda.
+
+IMPLEMENTACAO: arquivo novo (ex: pdfRelatorioFinalSesRJ.js), importando
+as funcoes que ja existem em vez de duplicar logica. Fica a seu criterio
+se cria uma pasta/nome diferente ou reaproveita estrutura. So pedimos:
+NAO sobrescrever pdfRelatorioEntomologico.js / pdfRelatorioConsolidado.js
+- aqueles continuam servindo os relatorios internos como estao.
+
+NAO PUBLICAR/MERGEAR SEM ALMIR REVISAR: e documento oficial externo -
+antes de subir pra producao, avisar aqui e esperar ele conferir o PDF de
+teste (mesmo que com dados parciais).
+==============================================================================
