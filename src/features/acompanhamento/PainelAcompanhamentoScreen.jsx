@@ -10,40 +10,10 @@ import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
 import { excluirArmadilha, trocarPalhetaArmadilha, recolherArmadilhaEPalheta } from '../../lib/storage';
-import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
+import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO, sugerirProximaPalheta } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps, calcDistanceMeters } from '../../lib/geoDistance';
 import { playSuccessSound } from '../../lib/soundAlert';
 import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
-
-// Sugere o codigo da proxima palheta como numero-da-armadilha + letra do
-// ciclo (ex: armadilha 35 -> 35A no 1o ciclo, 35B no 2o...). Sem barra "/"
-// de proposito: em papel a lapis sob sol, "/" borra e vira 1 ou 7. A letra
-// nao se confunde com os digitos do numero, e o numero da armadilha vai
-// junto na palheta - essencial pra rastrear ela solta na bancada.
-function sugerirProximaPalheta(armadilha) {
-  const numero = armadilha?.numero || '';
-  const numInt = parseInt(numero, 10);
-  const atual = String(armadilha?.palheta || '').trim().toUpperCase();
-  const regex = Number.isNaN(numInt)
-    ? new RegExp(`^${numero}([A-Z]+)$`)
-    : new RegExp(`^(?:${numero}|0*${numInt})([A-Z]+)$`);
-  const match = atual.match(regex);
-  if (match) {
-    const letras = match[1].split('');
-    let i = letras.length - 1;
-    while (i >= 0) {
-      if (letras[i] !== 'Z') {
-        letras[i] = String.fromCharCode(letras[i].charCodeAt(0) + 1);
-        break;
-      }
-      letras[i] = 'A';
-      i -= 1;
-    }
-    if (i < 0) letras.unshift('A');
-    return `${numero}${letras.join('')}`;
-  }
-  return `${numero}A`;
-}
 
 export function PainelAcompanhamentoScreen({
   armadilhas = [],

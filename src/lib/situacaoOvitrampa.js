@@ -221,3 +221,61 @@ export function calcularSituacaoArmadilha(armadilha) {
     pinCor: '#3b82f6'
   };
 }
+
+/**
+ * Proxima palheta no esquema {numero}{letra}: 35A -> 35B -> ... -> 35Z -> 35AA.
+ * Sem palheta nesse formato, comeca em {numero}A. Sem barra "/" de
+ * proposito: em papel a lapis sob sol, "/" borra e vira 1 ou 7. O numero da
+ * armadilha vai junto na palheta - essencial pra rastrear ela solta na
+ * bancada do laboratorio.
+ */
+export function sugerirProximaPalheta(armadilha) {
+  const numero = armadilha?.numero || '';
+  const numInt = parseInt(numero, 10);
+  const atual = String(armadilha?.palheta || '').trim().toUpperCase();
+  const regex = Number.isNaN(numInt)
+    ? new RegExp(`^${numero}([A-Z]+)$`)
+    : new RegExp(`^(?:${numero}|0*${numInt})([A-Z]+)$`);
+  const match = atual.match(regex);
+  if (match) {
+    const letras = match[1].split('');
+    let i = letras.length - 1;
+    while (i >= 0) {
+      if (letras[i] !== 'Z') {
+        letras[i] = String.fromCharCode(letras[i].charCodeAt(0) + 1);
+        break;
+      }
+      letras[i] = 'A';
+      i -= 1;
+    }
+    if (i < 0) letras.unshift('A');
+    return `${numero}${letras.join('')}`;
+  }
+  return `${numero}A`;
+}
+
+/**
+ * O que o agente de campo tem que fazer nesta armadilha agora.
+ * - sem registro: instalar
+ * - recolhida ou ja lida no laboratorio: esta sem palheta ativa, colocar nova
+ * - em campo com o ciclo vencido (hoje ou atrasada): trocar a palheta
+ * - em campo dentro do ciclo: nada a fazer ainda
+ * Recolher de vez (encerrar o ponto) nunca e sugerido sozinho: e decisao do
+ * agente, pela escolha manual.
+ */
+export function decidirAcaoCampo(armadilha) {
+  if (!armadilha) {
+    return { acao: 'instalar', motivo: 'Número sem cadastro: instalar armadilha nova neste ponto.' };
+  }
+  if (armadilha.status === 'recolhida') {
+    return { acao: 'trocar', rotulo: 'reinstalar', motivo: 'Armadilha recolhida: reinstalar com palheta nova.' };
+  }
+  if (armadilha.status === 'analisada') {
+    return { acao: 'trocar', rotulo: 'nova', motivo: 'Palheta já lida no laboratório: colocar palheta nova.' };
+  }
+  const sit = calcularSituacaoArmadilha(armadilha);
+  if (sit.fase === 'hoje' || sit.fase === 'atrasada') {
+    return { acao: 'trocar', rotulo: 'trocar', motivo: sit.titulo, situacao: sit };
+  }
+  return { acao: 'nenhuma', motivo: sit.titulo, situacao: sit };
+}

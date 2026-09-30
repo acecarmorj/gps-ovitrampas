@@ -48,8 +48,8 @@ export function GuiaScreen({
       tagCor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       icone: PlusCircle,
       iconeBg: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      titulo: 'Instalar Ovitrampa',
-      descricao: 'Cadastro em 5 segundos no celular: GPS automático, número da OV e palheta. Sem burocracia e 100% offline.',
+      titulo: 'Agente de Campo',
+      descricao: 'Instalar, trocar palheta e recolher numa tela só. O GPS reconhece a armadilha e o app mostra o que fazer. Funciona sem internet.',
       destaque: true,
       temWhatsApp: true
     },

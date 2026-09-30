@@ -7,7 +7,7 @@ import { SeletorCicloPalheta } from './SeletorCicloPalheta';
 
 const INFO_MODULOS = {
   campo: {
-    titulo: 'Instalar Ovitrampa',
+    titulo: 'Agente de Campo',
     subtitulo: 'Campo • Agente de Endemias'
   },
   mapa: {

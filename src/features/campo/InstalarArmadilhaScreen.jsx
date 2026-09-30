@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin, CheckCircle2, RefreshCw,
-  X, Check, User, AlertCircle,
-  ChevronDown, ChevronUp, Ruler, Tag
+  X, AlertCircle,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { resolveAddressFromGps } from '../../lib/geoDetection';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
-import { playSuccessSound } from '../../lib/soundAlert';
-import { cadastrarArmadilha } from '../../lib/storage';
-import { calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { BussolaOrientacao } from '../../maps/BussolaOrientacao';
-import { calculateNavigationGuidance } from '../../lib/geoBearing';
+import { PainelAcaoCampo } from './PainelAcaoCampo';
 import { Compass } from 'lucide-react';
 
 export function InstalarArmadilhaScreen({
@@ -21,55 +18,14 @@ export function InstalarArmadilhaScreen({
   onSelecionarArmadilha,
   onPosicaoAtualizada
 }) {
-  // Campos ultra simplificados:
-  // 1. Nome do Morador
-  // 2. Número da OV
-  // 3. Número da Palheta
-  // Endereço, Microárea e Quarteirão são 100% automáticos pelo GPS!
-  const [nomeMorador, setNomeMorador] = useState('');
-  const [numeroArmadilha, setNumeroArmadilha] = useState('');
-  const [numeroPalheta, setNumeroPalheta] = useState('');
-  const [salvando, setSalvando] = useState(false);
+  // Tela unica do agente de campo: instalar, trocar palheta e recolher.
+  // A decisao de qual acao mostrar fica em PainelAcaoCampo.
   const [sucessoMsg, setSucessoMsg] = useState(null);
   // No celular o painel cobre quase todo o mapa; recolher deixa o agente ver
   // as armadilhas e as linhas de distância antes de escolher o ponto.
   const [painelAberto, setPainelAberto] = useState(true);
   const [mostrarBussolaFlutuante, setMostrarBussolaFlutuante] = useState(false);
   const [mostrarRotulos, setMostrarRotulos] = useState(true);
-
-  // Sincronização automática entre Ovitrampa e Palheta (Ex: 01 -> OV-01 e PL-01)
-  const handleNumeroArmadilhaChange = (e) => {
-    const val = e.target.value;
-    if (!val) {
-      setNumeroArmadilha('');
-      setNumeroPalheta('');
-      return;
-    }
-
-    // Extrai o núcleo digitado removendo prefixo OV- se houver
-    const core = val.replace(/^OV[-_ ]*/i, '').trim();
-    if (!core) {
-      setNumeroArmadilha(val);
-      setNumeroPalheta('');
-      return;
-    }
-
-    const ov = `OV-${core}`;
-    const pl = `PL-${core}`;
-    setNumeroArmadilha(ov);
-    setNumeroPalheta(pl);
-  };
-
-  const handleNumeroArmadilhaBlur = () => {
-    if (!numeroArmadilha) return;
-    const core = numeroArmadilha.replace(/^OV[-_ ]*/i, '').trim();
-    // Se digitou apenas 1 dígito (ex: 1 até 9), formata para dois dígitos (ex: 01 até 09)
-    if (/^\d$/.test(core)) {
-      const pad = core.padStart(2, '0');
-      setNumeroArmadilha(`OV-${pad}`);
-      setNumeroPalheta(`PL-${pad}`);
-    }
-  };
 
   // Localização e endereço capturados automaticamente pelo GPS de Carmo
   const [localizacao, setLocalizacao] = useState({
@@ -256,116 +212,14 @@ export function InstalarArmadilhaScreen({
     iniciarMonitoramentoGps();
   };
 
-  // Salvar registro (100% offline em IndexedDB + LocalStorage)
-  const handleRegistrar = async (e) => {
-    e.preventDefault();
-
-    if (!nomeMorador.trim()) {
-      alert('Informe o nome do morador.');
-      return;
-    }
-
-    // Valida o NUCLEO do numero (sem o prefixo OV-), nao o texto cru: digitar
-    // so um espaco produz "OV- ", que passa no .trim() mas normaliza pra
-    // string vazia - a armadilha era gravada sem numero e ficava invisivel
-    // pro laboratorio.
-    const numeroNucleo = numeroArmadilha.replace(/^OV[-_ ]*/i, '').trim();
-    if (!numeroNucleo) {
-      alert('Digite o número da OV.');
-      return;
-    }
-
-    // Nunca deixa salvar com a posicao padrao (centro fixo de Carmo) que o
-    // componente usa antes do primeiro fix de GPS - sem isso, GPS negado ou
-    // sem sinal grava a armadilha no lugar errado, sem nenhum aviso, e o erro
-    // so aparece dias depois olhando o mapa.
-    if (localizacao.accuracy == null) {
-      alert(
-        gpsErrorMsg
-          ? `Não é possível salvar sem a localização real do GPS.\n\n${gpsErrorMsg}\n\nAtive a permissão de localização e tente novamente.`
-          : 'Aguardando o primeiro sinal de GPS. Espere a barra parar de "Buscando Satélites..." antes de salvar, para não gravar uma posição errada.'
-      );
-      return;
-    }
-
-    // Numero duplicado: dois agentes (ou o mesmo, duas vezes) podem cadastrar
-    // a mesma OV em locais diferentes sem nenhum aviso hoje - a leitura de
-    // laboratorio depois vai pra armadilha errada (a primeira da lista).
-    const numeroJaExiste = armadilhas.some(
-      (a) => a.numero && a.numero.toLowerCase() === numeroNucleo.toLowerCase()
-    );
-    if (numeroJaExiste) {
-      const prosseguirDuplicado = window.confirm(
-        `⚠️ JÁ EXISTE UMA OV-${numeroNucleo} CADASTRADA.\n\nSalvar mesmo assim vai deixar dois registros com o mesmo número, e a leitura do laboratório pode ir pra armadilha errada.\n\nConfirme se não é engano antes de continuar. Deseja salvar assim mesmo?`
-      );
-      if (!prosseguirDuplicado) {
-        return;
-      }
-    }
-
-    // Validação entomológica de espaçamento de 300m entre armadilhas
-    const guiaNavegacao = calculateNavigationGuidance(localizacao, armadilhas);
-    if (guiaNavegacao.status === 'afastar') {
-      const prosseguirEspacamento = window.confirm(
-        `⚠️ ATENÇÃO - ESPAÇAMENTO INFERIOR A 300M:\n\n${guiaNavegacao.orientacao}\n${guiaNavegacao.acao}\n\nA norma do Ministério da Saúde preconiza espaçamento de 300m a 400m.\nDeseja instalar neste ponto mesmo assim?`
-      );
-      if (!prosseguirEspacamento) {
-        return;
-      }
-    }
-
-    // Se a precisão do GPS estiver muito fraca (> 35 metros), avisa o agente
-    if (localizacao.accuracy && localizacao.accuracy > 35) {
-      const prosseguir = window.confirm(
-        `Atenção: O GPS ainda está buscando satélites (precisão atual: ±${localizacao.accuracy}m).\n\nPara garantir a localização e quarteirão exatos, recomendamos aguardar alguns segundos sob céu aberto até atingir menos de 15m.\n\nDeseja salvar com a precisão atual mesmo assim?`
-      );
-      if (!prosseguir) {
-        return;
-      }
-    }
-
-    setSalvando(true);
-    try {
-      const nova = await cadastrarArmadilha({
-        moradorNome: nomeMorador.trim(),
-        numero: numeroArmadilha.trim(),
-        palheta: numeroPalheta.trim() || 'PL-01',
-        rua: localizacao.rua,
-        numeroImovel: localizacao.numero,
-        bairro: localizacao.bairro,
-        microarea: localizacao.microarea,
-        quarteirao: localizacao.quarteirao,
-        latitude: localizacao.latitude,
-        longitude: localizacao.longitude,
-        precisaoGps: localizacao.accuracy,
-        fotoDataUrl: null
-      });
-
-      playSuccessSound();
-      const situacao = calcularSituacaoArmadilha(nova);
-      setSucessoMsg(`${nova.numero} (${nova.palheta}) de ${nova.moradorNome} registrada com sucesso!`);
-
-      // Limpar campos para o próximo registro
-      setNomeMorador('');
-      setNumeroArmadilha('');
-      setNumeroPalheta('');
-
-      if (onArmadilhaCadastrada) {
-        onArmadilhaCadastrada(nova);
-      }
-
-      setTimeout(() => {
-        setSucessoMsg(null);
-      }, 4500);
-    } catch (err) {
-      alert('Erro ao gravar os dados.');
-    } finally {
-      setSalvando(false);
-    }
+  const handleConcluido = (mensagem) => {
+    setSucessoMsg(mensagem);
+    onArmadilhaCadastrada?.();
+    setTimeout(() => setSucessoMsg(null), 6000);
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden font-sans select-none">
+    <div className="relative w-full h-full flex flex-col overflow-clip font-sans select-none">
       {/* 1. MAPA GRANDE EM TELA CHEIA */}
       <div className="absolute inset-0 z-0">
         <MapaGrandeOvitrampa
@@ -385,7 +239,7 @@ export function InstalarArmadilhaScreen({
 
       {/* 2. BARRA SUPERIOR DE ALTA PRECISÃO GPS */}
       <header className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between pointer-events-none gap-2">
-        <div className="bg-white/92 backdrop-blur-md text-slate-900 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-md flex items-center gap-1.5 text-xs font-black pointer-events-auto shrink-0">
+        <div className="hidden sm:flex bg-white/92 backdrop-blur-md text-slate-900 px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-md items-center gap-1.5 text-xs font-black pointer-events-auto shrink-0">
           <span>🪤 GPS Ovitrampa Carmo</span>
         </div>
 
@@ -497,7 +351,7 @@ export function InstalarArmadilhaScreen({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-black text-slate-900 leading-tight">
-                Instalar Ovitrampa aqui
+                Ações de campo
               </p>
               <p className="text-[11px] text-slate-600 truncate leading-tight mt-0.5">
                 {localizacao.rua} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span>
@@ -588,153 +442,13 @@ export function InstalarArmadilhaScreen({
           )}
 
 
-          {/* ASSISTENTE DE GEORREFERENCIAMENTO: DISTÂNCIA DAS OVs MAIS PRÓXIMAS (REGRA 300M - 400M) */}
-          {vizinhasProximas && vizinhasProximas.length > 0 ? (
-            <div className="bg-white/95 rounded-2xl border border-slate-200/90 p-3 shadow-xs space-y-2">
-              <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
-                <span className="font-black text-slate-800 flex items-center gap-1.5 text-[11px]">
-                  <span>📏</span>
-                  <span>Distância das OVs Mais Próximas</span>
-                </span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                  Meta: 300m a 400m
-                </span>
-              </div>
-
-              {/* Lista das até 3 OVs vizinhas mais próximas */}
-              <div className="space-y-1.5">
-                {vizinhasProximas.map((viz, idx) => (
-                  <div
-                    key={viz.armadilha.id || idx}
-                    className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl border text-xs transition-colors ${
-                      viz.status === 'ideal'
-                        ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-900'
-                        : viz.status === 'proxima'
-                        ? 'bg-amber-50/70 border-amber-200/80 text-amber-900'
-                        : 'bg-rose-50/70 border-rose-200/80 text-rose-900'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs shrink-0">
-                        {viz.status === 'ideal' ? '🟢' : viz.status === 'proxima' ? '🟡' : '🔴'}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="font-extrabold text-[11px] truncate leading-tight">
-                          OV-{viz.armadilha.numero} <span className="font-normal text-[10px] text-slate-600">({viz.armadilha.moradorNome || 'Morador'})</span>
-                        </p>
-                        <p className="text-[9px] opacity-80 leading-none mt-0.5">
-                          {viz.status === 'ideal'
-                            ? 'Espaçamento ideal'
-                            : viz.status === 'proxima'
-                            ? 'Abaixo de 300m (muito próxima)'
-                            : 'Acima de 400m (ampla)'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`text-[10px] font-black px-2 py-0.5 rounded-lg shrink-0 border ${
-                        viz.status === 'ideal'
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                          : viz.status === 'proxima'
-                          ? 'bg-amber-100 text-amber-800 border-amber-300'
-                          : 'bg-rose-100 text-rose-800 border-rose-300'
-                      }`}
-                    >
-                      {viz.distancia} m
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Status do Ponto de Instalação */}
-              {vizinhasProximas[0] && (
-                <div className="pt-1 text-[10px] font-bold text-center">
-                  {vizinhasProximas[0].status === 'ideal' ? (
-                    <span className="text-emerald-700">✅ Ponto excelente! Atende à regra de 300m a 400m da vizinha mais próxima.</span>
-                  ) : vizinhasProximas[0].status === 'proxima' ? (
-                    <span className="text-amber-700">⚠️ Atenção: Apenas {vizinhasProximas[0].distancia}m da OV-{vizinhasProximas[0].armadilha.numero}. Se possível, afaste-se um pouco para cobrir 300m+.</span>
-                  ) : (
-                    <span className="text-rose-700">⚠️ Espaçamento amplo: {vizinhasProximas[0].distancia}m da vizinha mais próxima.</span>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : armadilhas.length > 0 ? (
-            <div className="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 text-[11px] flex items-center gap-2">
-              <span>📍</span>
-              <span>Calculando distância para as armadilhas cadastradas...</span>
-            </div>
-          ) : null}
-
-          {/* FORMULÁRIO RÁPIDO DO AGENTE: MORADOR + Nº DA OV + PALHETA */}
-          <form onSubmit={handleRegistrar} className="space-y-2.5">
-            
-            {/* 1. NOME DO MORADOR */}
-            <div>
-              <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Nome do Morador *</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Dona Maria / Seu José"
-                value={nomeMorador}
-                onChange={(e) => setNomeMorador(e.target.value)}
-                className="w-full bg-white/95 border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3.5 py-2.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
-                autoFocus
-              />
-            </div>
-
-            {/* 2. NÚMERO DA OV + NÚMERO DA PALHETA (SINCRONIZADOS AUTOMATICAMENTE) */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
-                  Nº da OV *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: 01"
-                  value={numeroArmadilha}
-                  onChange={handleNumeroArmadilhaChange}
-                  onBlur={handleNumeroArmadilhaBlur}
-                  className="w-full bg-emerald-50/70 border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-emerald-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
-                  Palheta *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: PL-01"
-                  value={numeroPalheta}
-                  onChange={(e) => setNumeroPalheta(e.target.value)}
-                  className="w-full bg-white/95 border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-3 py-2.5 text-sm font-black text-slate-800 text-center placeholder:text-slate-400 shadow-xs focus:outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            {/* BOTÃO SALVAR (1 TOQUE) */}
-            <button
-              type="submit"
-              disabled={salvando}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-50 text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all mt-1"
-            >
-              {salvando ? (
-                <span>Salvando...</span>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>SALVAR OVITRAMPA</span>
-                </>
-              )}
-            </button>
-          </form>
+          <PainelAcaoCampo
+            armadilhas={armadilhas}
+            localizacao={localizacao}
+            vizinhasProximas={vizinhasProximas}
+            gpsErrorMsg={gpsErrorMsg}
+            onConcluido={handleConcluido}
+          />
 
         </div>
       </div>
