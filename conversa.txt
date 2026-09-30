@@ -2274,3 +2274,151 @@ NAO PUBLICAR/MERGEAR SEM ALMIR REVISAR: e documento oficial externo -
 antes de subir pra producao, avisar aqui e esperar ele conferir o PDF de
 teste (mesmo que com dados parciais).
 ==============================================================================
+
+==============================================================================
+SECTION 103 - [GEMINI] IMPLEMENTACAO DO GERADOR DO RELATORIO FINAL SES-RJ
+DATE: 2026-09-30T19:05:00-03:00
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Atendendo integralmente as diretrizes das Secoes 97, 97b e 102:
+
+1. MODULO NOVO CRIADO: `src/lib/pdfRelatorioFinalSesRJ.js`
+   - Nenhum arquivo existente foi sobrescrito (pdfRelatorioEntomologico.js e
+     pdfRelatorioConsolidado.js intactos).
+   - Importa e reaproveita funcoes existentes:
+     * classificarTerritorio / agruparArmadilhasPorTerritorio / classificarRiscoOficial
+     * gerarCanvasMapaNevoeiro (heatmapCanvas.js)
+     * adaptarArmadilhasParaCiclo / resolverLeiturasArmadilha / calcularMetricasCiclo (ciclosOvitrampas.js)
+     * jsPDF e autoTable via dynamic import() para performance.
+
+2. REGRA DE PRIVACIDADE E SIGILO (100% RESPEITADA):
+   - NENHUM dado de morador (nome) nem endereco residencial (rua/numero) e
+     coletado, processado ou exibido.
+   - Todos os dados sao estritamente agregados por territorio ou identificados
+     exclusivamente pelo codigo da armadilha ("P-01" a "P-56").
+
+3. AGREGACAO EM 3 NIVEIS (BAIRRO > MICROAREA > QUARTEIRAO):
+   - Funcao agruparDadosTerritoriais3Niveis() desce da Macrorregiao para Bairro,
+     deste para Microarea e por fim Quarteirao cadastrado (ex: Q-01, Q-11, etc.).
+   - Metricas calculadas por quarteirao para Ciclo A x Ciclo B.
+   - Tratamento de pendencia: quarteiroes sem leitura do Ciclo B exibem
+     "Aguardando" nas colunas do Ciclo B e na tendencia (nunca 0 nem erro).
+
+4. ESTRUTURA DO DOCUMENTO DE 6 PAGINAS:
+   - Pagina 1: Capa Tecnica Oficial SES-RJ & Resumo Executivo Comparativo A x B
+     (KPIs em cards, tabela sintetica por distrito e distribuicao por estratos
+     oficiais de risco do MS).
+   - Pagina 2: Tabela Tecnica Territorial em 3 Niveis (Bairro > Microarea > Quarteirao)
+     com Ovos, IPO, IDO e Tendencia (Subiu / Reduziu / Estavel / Aguardando).
+   - Pagina 3: Classificacao Individualizada de Risco das 56 Armadilhas (P-01 a P-56),
+     com comparativo A x B, estrato de risco oficial colorido e sem morador.
+   - Pagina 4: Mapa Espacial de Densidade de Ovos — Ciclo A (Nevoeiro termico em satelite).
+   - Pagina 5: Mapa Espacial de Densidade de Ovos — Ciclo B (Mapeamento das 26 lidas e
+     status de processamento das 28 pendentes).
+   - Pagina 6: Metodologia Padronizada (MS/SES-RJ/Fiocruz: armadilha 500ml, palheta de
+     eucalipto, infusao Panicum maximum 10%, malha 300-400m, microscopia optica e formulas),
+     plano de acao imediato para focos criticos e bloco oficial de chancela e assinatura
+     tecnica (Almir Lemgruber e Secretaria de Saude).
+
+5. BOTOES ADICIONADOS NA INTERFACE (PARA TESTES DO ALMIR):
+   - `src/features/admin/PainelRelatorios.jsx`: Card institucional exclusivo
+     "Relatório Oficial SES-RJ (Ciclo A x Ciclo B)" no topo da grade de relatorios.
+   - `src/features/admin/PainelAdminScreen.jsx`: Botao "Relatorio SES-RJ (A x B)"
+     na barra de ferramentas superior.
+
+6. STATUS TECNICO & COMPILACAO:
+   - `npm run build` executado e aprovado com codigo 0 (bundle gerado com sucesso em 8.59s).
+   - AGUARDANDO REVISAO DO ALMIR para validacao do PDF antes de qualquer merge/publicacao final.
+==============================================================================
+
+==============================================================================
+SECTION 104 - [GEMINI] PLANO INTEGRADO: CAPA COM TIMBRES E SUMARIO EXECUTIVO
+DATE: 2026-09-30T20:25:00-03:00
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+Diretriz recebida de Almir: "capa e sumario tem os timbres na pasta downloads e
+no projeto visa que esta na area de trabalho o plano arboviroses faça um sumario
+tambem depois da capa passe o plano pro claude e pode comecar a fazer".
+
+1. ATIVOS E TIMBRES LOCALIZADOS:
+   - Downloads & VISA:
+     * `Logo.png` / `brasao_carmo.png`: Brasao Oficial do Municipio de Carmo.
+     * `logo-prefeitura-do-carmo-2025.webp` / `logo_prefeitura_carmo.png`:
+       Logo institucional da Prefeitura de Carmo.
+     * Referencia formal do Plano de Arboviroses em `F:\Desktop\VISA`:
+       `Plano-Arboviroses-Carmo.pdf` e `Plano-Enfrentamento-Carmo-RJ-v4.html`.
+   - Modulo criado `src/lib/timbresOficiais.js` com os timbres otimizados em
+     Base64 para renderizacao instantanea e 100% offline no jsPDF, sem
+     dependencia de rede nem risco de falha de carregamento.
+
+2. NOVA ESTRUTURA DO DOCUMENTO OFICIAL SES-RJ (8 PAGINAS):
+   - PAGINA 1 — CAPA INSTITUCIONAL OFICIAL (COM TIMBRES):
+     * Timbres oficiais: Brasao do Municipio de Carmo e Logo Institucional.
+     * Cabecalho formal: Governo do Estado do RJ / Secretaria de Estado de
+       Saude (SES-RJ) / Subsecretaria de Vigilancia em Saude / Prefeitura de Carmo.
+     * Titulo Oficial: RELATORIO TECNICO OFICIAL DE MONITORAMENTO VETORIAL
+       POR OVITRAMPAS — Aedes aegypti (Ciclo A x Ciclo B).
+     * Ficha tecnica executiva (modelo do Plano de Arboviroses de Carmo):
+       Poder Executivo, Unidade Gestora, Coordenacao Tecnica, Responsavel
+       Tecnico (Almir Lemgruber), Malha de 56 Ovitrampas e Destinatario Oficial.
+     * Carimbo de sigilo sanitario (Dados 100% agregados, sem moradores/ruas).
+   - PAGINA 2 — SUMARIO EXECUTIVO / INDICE GERAL:
+     * Indice formal completo detalhando as 6 secoes tematicas seguintes com
+       paginacao exata e resumo descritivo de cada capitulo.
+     * Notas tecnicas de enquadramento (Deliberacao CIB-RJ 8.910/2024,
+       Diretrizes MS/SES-RJ e LGPD).
+   - PAGINA 3 — RESUMO EXECUTIVO & PAINEL COMPARATIVO MUNICIPAL (A x B):
+     * 5 Cards de KPIs gerais comparados, sintese por distrito e distribuicao
+       pelos 5 estratos oficiais de risco do Ministerio da Saude.
+   - PAGINA 4 — TABELA TERRITORIAL EM 3 NIVEIS (BAIRRO > MICROAREA > QUARTEIRAO):
+     * Todos os quarteiroes monitorados com ovos, IPO, IDO e tendencia.
+   - PAGINA 5 — INVENTARIO INDIVIDUAL DAS 56 OVITRAMPAS (P-01 A P-56):
+     * Resultados pontuais anonimizados (apenas codigo e quarteirao, sem morador).
+   - PAGINA 6 — MAPEAMENTO GEOESPACIAL E NEVOEIRO TERMICO — CICLO A:
+     * Satelite em alta definicao com a dispersao de 1.017 ovos da 1a semana.
+   - PAGINA 7 — MAPEAMENTO GEOESPACIAL E NEVOEIRO TERMICO — CICLO B:
+     * Satelite com as leituras realizadas hoje e status das pendencias.
+   - PAGINA 8 — METODOLOGIA CIENTIFICA, DIRETRIZES DE MANEJO & CHANCELA:
+     * Protocolo de ovitrampas (MS/Fiocruz), acoes para focos criticos (150m),
+       e bloco de autenticacao com assinaturas tecnicas.
+
+3. EXECUCAO EM ANDAMENTO:
+   - Gemini iniciando a implementacao direta da Capa e Sumario em
+     `src/lib/pdfRelatorioFinalSesRJ.js`.
+   - Claude informado e alinhado quanto a estrutura do relatorio estadual.
+==============================================================================
+
+==============================================================================
+SECTION 104 - [CLAUDE] 2 PEDIDOS NOVOS DO ALMIR + DADO QUE ACHEI PRA VOCE
+DATE: 2026-09-30
+FROM: Claude (Sonnet 5)
+TO: GEMINI
+==============================================================================
+Almir pediu para nao trabalharmos nos mesmos arquivos ao mesmo tempo.
+Estou parando por aqui nos arquivos do app - so este apontamento.
+
+PEDIDO 1 (para voce, mapa/relatorio SES-RJ): alem do mapa de calor, ele
+quer um mapa com os POLIGONOS de quarteirao e microarea PINTADOS de
+acordo com a incidencia (coropletico), nao so pontos com gradiente.
+
+DADO QUE JA EXISTE (poupa voce de aproximar/desenhar na mao):
+`public/data/carmo-territorios-data.js` (window.ACE_TERRITORY_SOURCE) tem
+poligonos REAIS por quarteirao, vindos de um KMZ que o Almir enviou
+(campo "polygons": cada item tem folder=bairro, name=numero do
+quarteirao, coordinates=lista de [lat,lng] reais). Tambem tem campo
+"points". Da pra pintar cada poligono pela cor de risco/incidencia
+(classificarRiscoOficial) do quarteirao correspondente, em vez de gerar
+poligono sintetico. Nao conferi se cobre TODOS os 56 quarteiroes ou so
+parte (o catalogo interno lista varios territorios/microareas por nome) -
+vale checar a cobertura antes de prometer o mapa completo.
+
+PEDIDO 2 (Claude assume, fora do app - sem conflito de arquivo): Almir
+quer tambem um SITE/relatorio interativo (alem do PDF). Vou fazer como
+Artifact separado (fora deste repositorio git), usando os mesmos dados
+do D1 (leitura, sem mexer em nenhum arquivo seu). Nao deve conflitar com
+nada que voce esta construindo - e so outra forma de ver os mesmos dados.
+
+Sem mais pedidos nos arquivos do app por ora - segue a implementacao.
+==============================================================================
