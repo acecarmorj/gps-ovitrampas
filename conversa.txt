@@ -2111,3 +2111,53 @@ Contexto do Almir:
 3. STATUS E COMPILACAO:
    - npm run build executado e aprovado com codigo 0 (sem falhas de empacotamento).
 ==============================================================================
+
+==============================================================================
+SECTION 96 - [CLAUDE] DETECTOR: OVO GRANDE/DEITADO, MODO APAGAR, FOTOS SALVAS
+DATE: 2026-09-30
+FROM: Claude (Sonnet 5)
+TO: GEMINI & ALMIR
+==============================================================================
+Almir: amanha (01/10) conta as 28 palhetas restantes. Reportou 3 problemas
+reais no app enquanto usava: ovo grande/deitado sumindo, clique perto de
+um ovo marcado apagando ele em vez de marcar um novo ao lado (ovos
+embolados), e nao ter como tirar as fotos do celular (so ficam no
+IndexedDB daquele aparelho, nunca vao pro servidor - nenhuma IA alcanca).
+
+FIXES (deployed, sw v24, commit a14ec46):
+1. eggCounter.js dividirAglomerados(): mancha que reprova como ovo
+   isolado (formato/orientacao) mas passa no filtro de aglomerado (bem
+   escura, contraste ok) so era mantida se "partes>=2" pelo comprimento;
+   se desse partes=1 era DESCARTADA. Isso jogava fora ovo grande ou
+   deitado sozinho. Agora partes=1 vira 1 ovo (aglomerado:false), em vez
+   de descartar. Medido em foto real marcada (2.jpeg, 103 marcacoes):
+   recall 72% -> 83%, 16/19 novas deteccoes caem em cima de marca real,
+   palhetas limpas (p1/p8) continuam 0 falso positivo.
+2. AssistenteContadorOvos.jsx: toque tinha raio de 16px de tela pra
+   "apagar o mais proximo" - em ovos colados isso apagava o vizinho ao
+   tentar marcar um novo perto. Separado em 2 modos com botao proprio:
+   Adicionar (padrao) sempre marca, mesmo em cima de outro ovo; Apagar so
+   remove, nunca marca. Sem ambiguidade.
+3. FotosSalvasScreen.jsx (novo) + storage.listarFotosDeLeituras(): tela
+   acessivel pelo botao "Fotos" no cabecalho do Laboratorio, lista as
+   fotos de palheta salvas NESTE aparelho (cruzando leituras x IndexedDB
+   trap_photos) e baixa cada uma (ou todas) como arquivo .jpg de verdade,
+   para o tecnico poder enviar por fora (WhatsApp/e-mail) quando precisar
+   delas noutro lugar. Nao muda onde as fotos ficam guardadas (continua
+   so no aparelho), so da um jeito de tira-las de la.
+
+TAMBEM: DIAS_CICLO_PADRAO em situacaoOvitrampa.js volta a 5 (estava 7).
+Comentario no topo do proprio arquivo ja dizia 5 dias; DIAS_CICLO_MAXIMO
+continua 7 como teto de tolerancia. Datas reais de instalacao/coleta ja
+gravadas no D1 (21/09, 22/09, etc.) nao foram mexidas.
+
+PENDING (reportado por Almir, ainda sem foto pra diagnosticar): pontinhos
+pequenos (7-11px) sendo contados como ovo em meio a ruido/fibra. Testei
+na foto antiga (2.jpeg) e existem candidatos nesse tamanho fora das
+marcas, mas nao da pra saber se sao erro ou ovo pequeno real sem a foto
+de hoje. Esperando Almir mandar foto de uma palheta com esse problema.
+
+NAO MEXIDO: nenhum arquivo da Gemini (heatmapCanvas, pdfRelatorio*,
+PainelAdminScreen, MapaGrandeOvitrampa). Build limpo, deploy verificado
+(curl sw.js = v24 em producao).
+==============================================================================
