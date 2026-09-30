@@ -419,7 +419,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   const ipoConsolidado = metricas.ipo.toFixed(1);
   const idoConsolidado = metricas.ido.toFixed(1);
 
-  // 2. Estatísticas Operacionais de Campo (Ciclo B - 7 dias)
+  // 2. Estatísticas Operacionais de Campo (Ciclo B)
   let palhetasEmDia = 0;
   let palhetasTrocarHoje = 0;
   let palhetasAtrasadas = 0;
@@ -845,7 +845,7 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
   });
 
   // =========================================================================
-  // PÁGINA 4: GESTÃO OPERACIONAL DE CAMPO & CRONOGRAMA DE COLETAS (CICLO B 7 DIAS)
+  // PÁGINA 4: GESTÃO OPERACIONAL DE CAMPO & CRONOGRAMA DE COLETAS (CICLO B)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, { ...cabecalhoParams, subtitulo: 'GESTÃO OPERACIONAL & COLETAS' });
@@ -917,8 +917,8 @@ export async function gerarRelatorioPdfConsolidadoUnico(armadilhas = [], todasLe
 
   // Tabela de Cronograma de Coletas
   const cronogramaRotas = [
-    ['Segunda-feira (28/09)', 'Sede Urbana (35 Armadilhas)', 'ARM-01 a ARM-35', '7 dias completos', 'Equipe Centro/Progresso (Veículo 01)', 'Retirada das palhetas B com infusão fresca e envio imediato ao laboratório'],
-    ['Terça-feira (29/09)', 'Distritos Oficiais (21 Armadilhas)', 'ARM-36 a ARM-56', '7 dias completos', 'Equipe Distrital (Veículo 02)', 'Recolhimento em Influência, Prata, Porto Velho e Ilha dos Pombos'],
+    ['Segunda-feira (28/09)', 'Sede Urbana (35 Armadilhas)', 'ARM-01 a ARM-35', 'Ciclo concluído', 'Equipe Centro/Progresso (Veículo 01)', 'Retirada das palhetas B com infusão fresca e envio imediato ao laboratório'],
+    ['Terça-feira (29/09)', 'Distritos Oficiais (21 Armadilhas)', 'ARM-36 a ARM-56', 'Ciclo concluído', 'Equipe Distrital (Veículo 02)', 'Recolhimento em Influência, Prata, Porto Velho e Ilha dos Pombos'],
     ['Quarta-feira (30/09)', 'Laboratório de Microscopia', 'Todas as 56 Palhetas', 'Bancada óptica', 'Biólogo(a) / Microscopistas', 'Contagem e registro direto no sistema GPS Ovitrampas'],
     ['Quinta-feira (01/10)', 'Coordenação de Vigilância', 'Consolidação Final', 'Emissão do Relatório', 'Coordenação / Secretário', 'Fechamento dos boletins e publicação para Ministério da Saúde']
   ];

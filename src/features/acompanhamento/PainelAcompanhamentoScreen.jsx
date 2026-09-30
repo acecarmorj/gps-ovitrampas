@@ -727,7 +727,7 @@ export function PainelAcompanhamentoScreen({
                 className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 active:scale-[0.98] py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
                 <RotateCw className="w-3.5 h-3.5 text-blue-600" />
-                <span>Trocar apenas Palheta (Novo Ciclo 7 dias)</span>
+                <span>Trocar apenas Palheta (Novo Ciclo {DIAS_CICLO_PADRAO} dias)</span>
               </button>
             </div>
 
@@ -1012,7 +1012,7 @@ export function PainelAcompanhamentoScreen({
                 <span>RECOLHER ARMADILHA & PALHETA (RETIRADA)</span>
               </button>
 
-              {/* BOTÃO 2: TROCAR PALHETA (NOVO CICLO 7 DIAS) */}
+              {/* BOTÃO 2: TROCAR PALHETA (NOVO CICLO) */}
               <button
                 type="button"
                 onClick={() => {

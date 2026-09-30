@@ -3,7 +3,7 @@ import {
   FileText, Satellite, Download, ClipboardList,
   Flame, BarChart3, Users, EyeOff, Eye, Search,
   Calendar, CheckCircle2, AlertTriangle, Clock, Layers,
-  Compass, Sparkles, Award
+  Compass, Sparkles, Award, ShieldCheck
 } from 'lucide-react';
 import { gerarRelatorioPdfConsolidadoUnico } from '../../lib/pdfRelatorioConsolidadoUnico';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
@@ -14,7 +14,8 @@ import {
   gerarPdfPendenciasCampoComGraficos,
   gerarPdfInventarioCompleto
 } from '../../lib/pdfRelatoriosGraficos';
-import { calcularSituacaoArmadilha, classificarRiscoOvos } from '../../lib/situacaoOvitrampa';
+import { calcularSituacaoArmadilha, classificarRiscoOvos, DIAS_CICLO_PADRAO } from '../../lib/situacaoOvitrampa';
+import { calcularMetricasCiclo } from '../../lib/ciclosOvitrampas';
 import { SeletorCicloPalheta } from '../../components/SeletorCicloPalheta';
 import { gerarRelatorioFinalSesRj } from '../../lib/pdfRelatorioFinalSesRJ';
 
@@ -22,7 +23,6 @@ import { gerarRelatorioFinalSesRj } from '../../lib/pdfRelatorioFinalSesRJ';
 const temLeitura = (a) => a.ultimosOvos != null && a.ultimosOvos !== undefined;
 const ovosDe = (a) => Number(a.ultimosOvos) || 0;
 const bairroDe = (a) => (a.bairro || a.microarea || 'Sem bairro').trim();
-const estaEmCampo = (a) => a.status === 'instalada' || !a.status;
 
 // IPO = % de ovitrampas lidas que tem ovos. IDO = média de ovos por
 // ovitrampa positiva. Regra oficial de vigilância entomológica.
@@ -58,6 +58,7 @@ const fmt = (n, casas = 1) => (n == null ? '-' : n.toFixed(casas).replace('.', '
 
 export function PainelRelatorios({
   armadilhas = [],
+  armadilhasBrutas = [],
   todasLeituras = [],
   cicloAtivo = 'ambas',
   onMudarCiclo,
@@ -80,17 +81,29 @@ export function PainelRelatorios({
     [armadilhas]
   );
 
+  const brutaPorId = useMemo(
+    () => new Map(armadilhasBrutas.map((a) => [a.id, a])),
+    [armadilhasBrutas]
+  );
+  // Status e prazo sempre pela armadilha real (ver brutaPorId acima).
+  const brutaDe = (a) => brutaPorId.get(a.id) || a;
+  const estaEmCampo = (a) => {
+    const b = brutaDe(a);
+    return b.status === 'instalada' || !b.status;
+  };
+  const situacaoDe = (a) => calcularSituacaoArmadilha(brutaDe(a));
+
   const filtradas = useMemo(
     () =>
       armadilhas.filter((a) => {
         if (bairro !== 'todos' && bairroDe(a) !== bairro) return false;
 
-        const sit = calcularSituacaoArmadilha(a);
-        const diaSemanaStr = (sit.diaSemana || '').toLowerCase();
+        const bruta = brutaPorId.get(a.id) || a;
+        const emCampoReal = bruta.status === 'instalada' || !bruta.status;
 
-        if (situacao === 'segunda' && !diaSemanaStr.includes('segunda')) return false;
-        if (situacao === 'terca' && !diaSemanaStr.includes('ter')) return false;
-        if (situacao === 'campo' && !estaEmCampo(a)) return false;
+        if (situacao === 'atrasadas' && !(emCampoReal && calcularSituacaoArmadilha(bruta).fase === 'atrasada')) return false;
+        if (situacao === 'recolhidas' && bruta.status !== 'recolhida') return false;
+        if (situacao === 'campo' && !emCampoReal) return false;
         if (situacao === 'positivas' && !(temLeitura(a) && ovosDe(a) > 0)) return false;
         if (situacao === 'focos' && !(temLeitura(a) && ovosDe(a) > 50)) return false;
         if (situacao === 'negativas' && !(temLeitura(a) && ovosDe(a) === 0)) return false;
@@ -111,7 +124,7 @@ export function PainelRelatorios({
 
         return true;
       }),
-    [armadilhas, bairro, situacao, busca]
+    [armadilhas, bairro, situacao, busca, brutaPorId]
   );
 
   // Consolidação Epidemiológica do Ciclo Concluído (Ciclo A)
@@ -141,7 +154,7 @@ export function PainelRelatorios({
     filtradas.forEach((a) => {
       if (estaEmCampo(a)) {
         totalCampo += 1;
-        const s = calcularSituacaoArmadilha(a);
+        const s = situacaoDe(a);
         const diaSemana = (s.diaSemana || '').toLowerCase();
         if (diaSemana.includes('segunda')) {
           coletaSegunda += 1;
@@ -162,14 +175,38 @@ export function PainelRelatorios({
       coletaSegunda,
       coletaTerca
     };
-  }, [filtradas]);
+  }, [filtradas, brutaPorId]);
+
+  // Cards do topo. Em "Ambas", ultimosOvos da armadilha adaptada e a soma
+  // A+B - o card "Ovos Lidos (Ciclo A)" mostrava 1968 (1017 do A + 951 do
+  // B). Aqui cada ciclo vem separado de dadosCiclos, em qualquer seletor.
+  // O status tambem vem da armadilha bruta: a adaptada vira 'analisada'
+  // assim que existe qualquer leitura, e o card de campo zerava.
+  const cardsCiclo = useMemo(() => {
+    const cmp = calcularMetricasCiclo(filtradas).comparativo;
+    let pendentesB = 0;
+    let emCampo = 0;
+    let recolhidas = 0;
+    let atrasadas = 0;
+    filtradas.forEach((a) => {
+      const bruta = brutaPorId.get(a.id);
+      if (bruta && (bruta.status === 'instalada' || !bruta.status)) {
+        if (calcularSituacaoArmadilha(bruta).fase === 'atrasada') atrasadas += 1;
+      }
+      if (a.dadosCiclos?.temLeituraB) return;
+      pendentesB += 1;
+      if (bruta?.status === 'recolhida') recolhidas += 1;
+      else emCampo += 1;
+    });
+    return { ...cmp, pendentesB, emCampo, recolhidas, atrasadas };
+  }, [filtradas, brutaPorId]);
 
   const filtroTexto = [
     bairro !== 'todos' ? bairro : 'Todos os bairros',
     {
       todas: 'Todas as armadilhas',
-      segunda: 'Coleta Segunda-feira (28/09)',
-      terca: 'Coleta Terça-feira (29/09)',
+      atrasadas: 'Recolhimento atrasado',
+      recolhidas: 'Recolhidas aguardando laboratório',
       campo: 'Palhetas em campo',
       positivas: 'Positivas no Ciclo A (>0)',
       focos: 'Focos críticos (>50 ovos)',
@@ -193,7 +230,7 @@ export function PainelRelatorios({
       'ovitrampas_palhetas_inventario',
       ['Nº', 'Palheta em Campo', 'Previsão de Coleta', 'Última Palheta Analisada (Ciclo A)', 'Bairro', 'Quarteirão', 'Morador', 'Endereço', 'Situação', 'Ovos Ciclo A', 'Risco', 'Instalada em', 'Última leitura'],
       filtradas.map((a) => {
-        const sit = calcularSituacaoArmadilha(a);
+        const sit = situacaoDe(a);
         return [
           a.numero,
           a.palheta || `P-${a.numero}B`,
@@ -252,7 +289,7 @@ export function PainelRelatorios({
   const planilhaPendencias = () => {
     const pendentes = filtradas
       .filter(estaEmCampo)
-      .map((a) => ({ a, s: calcularSituacaoArmadilha(a) }));
+      .map((a) => ({ a, s: situacaoDe(a) }));
     if (!pendentes.length) return avisar('Nenhuma palheta em campo neste filtro.');
     baixarCsv(
       'palhetas_em_campo_coletas',
@@ -304,7 +341,7 @@ export function PainelRelatorios({
   const gerarPdfPendencias = () => {
     const pendentes = filtradas
       .filter(estaEmCampo)
-      .map((a) => ({ a, s: calcularSituacaoArmadilha(a) }));
+      .map((a) => ({ a, s: situacaoDe(a) }));
     return executarGeracaoPdf(
       () => gerarPdfPendenciasCampoComGraficos(pendentes, estatisticasCiclo, { filtroDescricao: filtroTexto, ocultarMorador }),
       'Relatório de Palhetas e Cronograma de Coletas'
@@ -355,7 +392,7 @@ export function PainelRelatorios({
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Ciclo B em campo: <b>Coletas agendadas para Segunda (28/09) e Terça-feira (29/09)</b>. Resultados analíticos do Ciclo A disponíveis para emissão em PDF com gráficos.
+              Ciclo de <b>{DIAS_CICLO_PADRAO} dias</b> em campo. <b>{cardsCiclo.pendentesB}</b> palhetas do Ciclo B aguardando leitura. Resultados dos ciclos disponíveis para emissão em PDF com gráficos.
             </p>
           </div>
           <button
@@ -393,20 +430,32 @@ export function PainelRelatorios({
             <div className="text-[11px] font-bold text-slate-500">Total de Ovitrampas</div>
           </div>
           <div className="bg-white border border-blue-200 bg-blue-50/40 rounded-2xl py-3 px-2 shadow-2xs">
-            <div className="text-2xl font-black text-blue-700">{estatisticasCiclo.totalCampo}</div>
-            <div className="text-[11px] font-bold text-blue-800">Palhetas em Campo (B)</div>
+            <div className="text-2xl font-black text-blue-700">{cardsCiclo.pendentesB}</div>
+            <div className="text-[11px] font-bold text-blue-800">Palhetas B sem leitura</div>
+            <div className="text-[10px] font-semibold text-blue-700/80 mt-0.5">
+              {cardsCiclo.emCampo} em campo · {cardsCiclo.recolhidas} recolhidas
+            </div>
           </div>
           <div className="bg-white border border-emerald-200 bg-emerald-50/40 rounded-2xl py-3 px-2 shadow-2xs">
-            <div className="text-2xl font-black text-emerald-700">{estatisticasCiclo.coletaSegunda}</div>
-            <div className="text-[11px] font-bold text-emerald-800">Coleta Segunda (28/09)</div>
+            <div className="text-2xl font-black text-emerald-700">{cardsCiclo.ovosA.toLocaleString('pt-BR')}</div>
+            <div className="text-[11px] font-bold text-emerald-800">Ovos Ciclo A</div>
+            <div className="text-[10px] font-semibold text-emerald-700/80 mt-0.5">
+              {cardsCiclo.lidasA} lidas · IPO {fmt(cardsCiclo.ipoA)}%
+            </div>
           </div>
           <div className="bg-white border border-amber-200 bg-amber-50/40 rounded-2xl py-3 px-2 shadow-2xs">
-            <div className="text-2xl font-black text-amber-700">{estatisticasCiclo.coletaTerca}</div>
-            <div className="text-[11px] font-bold text-amber-800">Coleta Terça (29/09)</div>
+            <div className="text-2xl font-black text-amber-700">{cardsCiclo.ovosB.toLocaleString('pt-BR')}</div>
+            <div className="text-[11px] font-bold text-amber-800">
+              Ovos Ciclo B{cardsCiclo.pendentesB > 0 ? ' (parcial)' : ''}
+            </div>
+            <div className="text-[10px] font-semibold text-amber-700/80 mt-0.5">
+              {cardsCiclo.lidasB} lidas · IPO {cardsCiclo.lidasB ? `${fmt(cardsCiclo.ipoB)}%` : '-'}
+            </div>
           </div>
           <div className="bg-white border border-rose-200 bg-rose-50/40 rounded-2xl py-3 px-2 shadow-2xs col-span-2 sm:col-span-1">
-            <div className="text-2xl font-black text-rose-600">{geral.totalOvos}</div>
-            <div className="text-[11px] font-bold text-rose-800">Ovos Lidos (Ciclo A)</div>
+            <div className="text-2xl font-black text-rose-600">{cardsCiclo.atrasadas}</div>
+            <div className="text-[11px] font-bold text-rose-800">Recolhimento atrasado</div>
+            <div className="text-[10px] font-semibold text-rose-700/80 mt-0.5">ciclo de {DIAS_CICLO_PADRAO} dias vencido</div>
           </div>
         </section>
 
@@ -447,8 +496,8 @@ export function PainelRelatorios({
               className="border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-medium bg-white"
             >
               <option value="todas">Todas as 56 armadilhas</option>
-              <option value="segunda">📅 Coleta na Segunda (28/09 - Sede)</option>
-              <option value="terca">📅 Coleta na Terça (29/09 - Distritos)</option>
+              <option value="atrasadas">Recolhimento atrasado</option>
+              <option value="recolhidas">Recolhidas aguardando laboratório</option>
               <option value="campo">Palhetas em campo (Ciclo B)</option>
               <option value="positivas">Positivas no Ciclo A (&gt;0 ovos)</option>
               <option value="focos">Focos críticos no Ciclo A (&gt;50 ovos)</option>
@@ -490,7 +539,7 @@ export function PainelRelatorios({
                 <Sparkles className="w-5 h-5 text-amber-400 animate-pulse hidden sm:inline" />
               </h2>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Documento executivo e técnico definitivo: compila integralmente os resultados do monitoramento entomológico em um único relatório de 10 páginas com gráficos vetoriais (barras, ranking e donut), cronograma operacional (28 e 29/09), auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas com cores diretas nas células e diretrizes operacionais baseadas nos resultados com assinaturas oficiais.
+                Documento executivo e técnico definitivo: compila integralmente os resultados do monitoramento entomológico em um único relatório de 10 páginas com gráficos vetoriais (barras, ranking e donut), cronograma operacional, auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas com cores diretas nas células e diretrizes operacionais baseadas nos resultados com assinaturas oficiais.
               </p>
             </div>
 
@@ -676,7 +725,7 @@ export function PainelRelatorios({
               <div>
                 <div className="text-sm font-black text-slate-900">Cronograma de Coletas</div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  Ciclo B (7 dias). Coletas de Segunda (28/09) e Terça (29/09), limite máximo e rotas.
+                  Ciclo de {DIAS_CICLO_PADRAO} dias. Situação de recolhimento de cada palheta, atrasos e rotas.
                 </div>
               </div>
             </div>
@@ -776,19 +825,19 @@ export function PainelRelatorios({
           {/* CONTEÚDO DA ABA 1: TABELA DE PALHETAS EM CAMPO E CICLOS */}
           {abaAtiva === 'palhetas' && (
             <div className="p-3 space-y-3">
-              {/* BANNER INFORMATIVO DO CICLO E PRAZO MÁXIMO DE 7 DIAS */}
+              {/* BANNER DO CICLO */}
               <div className="bg-blue-50/80 border border-blue-200/80 rounded-xl p-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="p-1 rounded-lg bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider px-2">
-                    Ciclo Semanal 7 Dias
+                    Ciclo de {DIAS_CICLO_PADRAO} dias
                   </span>
                   <span className="text-slate-700 font-medium">
-                    Instalação: <strong>Segunda (21/09)</strong> e <strong>Terça (22/09)</strong> • Coletas agendadas: <strong>Segunda-feira (28/09)</strong> e <strong>Terça-feira (29/09)</strong>.
+                    Palheta fica {DIAS_CICLO_PADRAO} dias em campo entre a instalação e o recolhimento.
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-900 bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Prazo Máximo de 7 dias (Portaria MS/Fiocruz)
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  {cardsCiclo.pendentesB} palhetas B aguardando leitura
                 </div>
               </div>
 
@@ -814,11 +863,19 @@ export function PainelRelatorios({
                     </tr>
                   ) : (
                     filtradas.map((a) => {
-                      const sit = calcularSituacaoArmadilha(a);
+                      // Situacao pela armadilha REAL: a adaptada vira 'analisada' com
+                      // qualquer leitura e a coluna mostrava "Coletar Hoje" em todas.
+                      const sit = calcularSituacaoArmadilha(brutaPorId.get(a.id) || a);
                       const palhetaEmCampo = a.palheta || `P-${a.numero}B`;
                       const ultimaPalheta = a.ultimaPalheta || `P-${a.numero}A`;
-                      const diaSemana = sit.diaSemana || (Number(a.numero) <= 35 ? 'Segunda-feira' : 'Terça-feira');
-                      const isSegunda = diaSemana.toLowerCase().includes('segunda');
+                      const corSit = {
+                        atrasada: 'text-rose-800 bg-rose-50 border-rose-300',
+                        hoje: 'text-amber-800 bg-amber-50 border-amber-300',
+                        vespera: 'text-amber-800 bg-amber-50 border-amber-300',
+                        em_campo: 'text-blue-800 bg-blue-50 border-blue-300',
+                        recolhida: 'text-indigo-800 bg-indigo-50 border-indigo-300',
+                        lida: 'text-emerald-800 bg-emerald-50 border-emerald-300'
+                      }[sit.fase] || 'text-slate-700 bg-slate-50 border-slate-300';
 
                       return (
                         <tr key={a.id || a.numero} className="hover:bg-slate-50/80 transition-colors">
@@ -835,19 +892,15 @@ export function PainelRelatorios({
                             </span>
                           </td>
 
-                          {/* Status / Cronograma do Ciclo de 7 dias */}
+                          {/* Status / Cronograma do ciclo */}
                           <td className="pr-3 whitespace-nowrap">
-                            {isSegunda ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2.5 py-0.5 rounded-full" title={`Instalada em 21/09 (Segunda). Dia ${sit.diasCorridos} de 7. Coleta na Segunda (28/09).`}>
-                                <Calendar className="w-3 h-3 text-emerald-600" />
-                                Coleta Segunda (28/09) • {sit.diasRestantes > 0 ? `Faltam ${sit.diasRestantes}d` : sit.diasRestantes === 0 ? 'Coletar Hoje' : `Atrasada (${Math.abs(sit.diasRestantes)}d)`}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-0.5 rounded-full" title={`Instalada em 22/09 (Terça). Dia ${sit.diasCorridos} de 7. Coleta na Terça (29/09).`}>
-                                <Calendar className="w-3 h-3 text-blue-600" />
-                                Coleta Terça (29/09) • {sit.diasRestantes > 0 ? `Faltam ${sit.diasRestantes}d` : sit.diasRestantes === 0 ? 'Coletar Hoje' : `Atrasada (${Math.abs(sit.diasRestantes)}d)`}
-                              </span>
-                            )}
+                            <span
+                              className={`inline-flex items-center gap-1 text-[11px] font-black border px-2.5 py-0.5 rounded-full ${corSit}`}
+                              title={sit.descricao}
+                            >
+                              <Calendar className="w-3 h-3" />
+                              {sit.titulo}
+                            </span>
                           </td>
 
                           {/* Leitura Laboratorial do Ciclo Anterior (Ciclo A) */}

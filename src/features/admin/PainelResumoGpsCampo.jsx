@@ -105,7 +105,7 @@ export function PainelResumoGpsCampo({ armadilhas = [] }) {
 
     txt += `📊 *1. RESUMO GERAL DO CAMPO:*\n`;
     txt += `• *Total de Armadilhas Instaladas e Sincronizadas:* ${total} armadilhas\n`;
-    txt += `• *Status de Todas:* 100% instalada (Aguardando 5 a 7 dias de postura para coleta de palhetas)\n`;
+    txt += `• *Status de Todas:* 100% instalada (Aguardando 5 dias de postura para coleta de palhetas)\n`;
     txt += `• *Leituras de Laboratório:* 0 (Fase inicial de instalação)\n`;
     txt += `• *Integridade dos Dados:* 100% (Sincronizado via Cloudflare D1 em tempo real)\n\n`;
 
@@ -228,7 +228,7 @@ export function PainelResumoGpsCampo({ armadilhas = [] }) {
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-sm sm:text-base font-black text-amber-700">Instalação</span>
           </div>
-          <span className="text-[10px] text-amber-800 font-bold mt-1 block">Coleta em 5 a 7 dias</span>
+          <span className="text-[10px] text-amber-800 font-bold mt-1 block">Coleta em 5 dias</span>
         </div>
       </div>
 

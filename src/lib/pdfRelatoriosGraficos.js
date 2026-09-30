@@ -7,6 +7,8 @@
  * incorporados em documentos PDF oficiais via jsPDF e jsPDF-AutoTable.
  */
 
+import { DIAS_CICLO_PADRAO } from './situacaoOvitrampa';
+
 // ---------------------------------------------------------------------------
 // UTILITÁRIOS GRÁFICOS (CANVAS OFF-SCREEN)
 // ---------------------------------------------------------------------------
@@ -780,7 +782,7 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
 
   aplicarCabecalhoOficial(doc, {
     titulo: 'Relatório Operacional de Palhetas em Campo e Pendências',
-    subtitulo: 'Cronograma de Coletas (Ciclo Semanal de 7 Dias • Limite Máximo da Ovitrampa)',
+    subtitulo: `Cronograma de Coletas (Ciclo de ${DIAS_CICLO_PADRAO} Dias)`,
     filtroTexto: opcoes.filtroDescricao || ''
   });
 
@@ -791,7 +793,7 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
     { label: 'PALHETAS EM CAMPO', val: estatisticasCiclo.totalCampo || pendencias.length, cor: [241, 245, 249] },
     { label: 'COLETA SEGUNDA (28/09)', val: estatisticasCiclo.coletaSegunda || 35, cor: [236, 253, 245] },
     { label: 'COLETA TERÇA (29/09)', val: estatisticasCiclo.coletaTerca || 21, cor: [238, 242, 255] },
-    { label: 'CICLO OFICIAL', val: '7 Dias', cor: [254, 243, 199] }
+    { label: 'CICLO OFICIAL', val: `${DIAS_CICLO_PADRAO} Dias`, cor: [254, 243, 199] }
   ];
 
   kpis.forEach((kpi, idx) => {
@@ -864,8 +866,8 @@ export async function gerarPdfPendenciasCampoComGraficos(pendencias, estatistica
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(30, 58, 138);
-    doc.text('• Instalações em 21/09 (Sede) e 22/09 (Distritos). Coletas em 28/09 e 29/09 perfazem exatamente 7 dias.', 18, finalY + 9.5);
-    doc.text('• O limite máximo entomológico é de 7 dias (168h). Recolhimento pontual evita rigorosamente eclosão larval.', 18, finalY + 13.5);
+    doc.text(`• Ciclo padrão de ${DIAS_CICLO_PADRAO} dias entre a instalação e o recolhimento da palheta.`, 18, finalY + 9.5);
+    doc.text('• Recolhimento pontual no prazo evita a eclosão larval dentro da armadilha.', 18, finalY + 13.5);
   }
 
   aplicarRodapeOficial(doc);

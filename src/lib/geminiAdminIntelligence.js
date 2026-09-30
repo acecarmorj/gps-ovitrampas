@@ -48,7 +48,7 @@ Padrão Técnico SES-RJ / Ministério da Saúde • Data: ${dataHoje}
 • Total de Ovos Computados: ${totalOvos} ovos
 • IPO Geral (Índice de Positividade): ${ipoGeral}%
 • IDO Geral (Índice de Densidade de Ovos): ${idoGeral} ovos/palheta positiva
-• Situação Atual do Ciclo: ${isFaseInstalacao ? 'FASE DE INSTALAÇÃO EM CAMPO (Palhetas recém-instaladas aguardando ciclo de 5 a 7 dias de postura)' : Number(ipoGeral) > 40 ? 'RISCO ALTO (IPO > 40%)' : Number(ipoGeral) > 20 ? 'RISCO MÉDIO (IPO 20-40%)' : 'RISCO BAIXO / CONTROLADO'}
+• Situação Atual do Ciclo: ${isFaseInstalacao ? 'FASE DE INSTALAÇÃO EM CAMPO (Palhetas recém-instaladas aguardando ciclo de 5 dias de postura)' : Number(ipoGeral) > 40 ? 'RISCO ALTO (IPO > 40%)' : Number(ipoGeral) > 20 ? 'RISCO MÉDIO (IPO 20-40%)' : 'RISCO BAIXO / CONTROLADO'}
 
 ======================================================================
 2. COBERTURA POR MICROÁREAS E BAIRROS:
@@ -60,7 +60,7 @@ ${linhasBairros || '   • Nenhuma armadilha registrada no momento.'}
 ======================================================================
 ${isFaseInstalacao
   ? `• As armadilhas foram devidamente georreferenciadas pelos agentes de campo com satélites GNSS (precisão de 3m a 5m).
-• As palhetas permanecerão ativas na água por 5 a 7 dias, quando serão recolhidas para leitura microscópica no laboratório.
+• As palhetas permanecerão ativas na água por 5 dias, quando serão recolhidas para leitura microscópica no laboratório.
 • Ações Recomendadas: Manutenção dos pontos monitorados, acompanhamento da integridade dos recipientes e orientação preventiva aos moradores visitados.`
   : `• Bairros com maior incidência de ovos devem receber ação prioritária de bloqueio mecânico e busca ativa de focos.
 • Vistorias peridomiciliares intensificadas em raio de 300 metros ao redor dos pontos positivos.
@@ -129,7 +129,7 @@ export function consultarManualSUSLocal(duvidaTecnica = '') {
     return `📏 *REGRA DOS 300 METROS & PERIODICIDADE (Funasa / Ministério da Saúde):*
 • Espaçamento Recomendado: Entre 300 e 400 metros de raio entre armadilhas vizinhas em área urbana consolidada (malha de ~9 armadilhas por km²).
 • Justificativa Biológica: O raio médio de voo e dispersão das fêmeas de Aedes aegypti varia entre 50m e 150m; o espaçamento de 300m garante que não haja atração competitiva entre armadilhas e que toda a microárea seja monitorada.
-• Periodicidade de Troca: As palhetas devem ser mantidas em campo por 5 a 7 dias ininterruptos, nunca ultrapassando 7 dias para evitar eclosão no campo.`;
+• Periodicidade de Troca: As palhetas devem ser mantidas em campo por 5 dias ininterruptos e recolhidas no prazo para evitar eclosão no campo.`;
   }
   if (d.includes('albopictus') || d.includes('aegypti') || d.includes('diferenc')) {
     return `🔬 *DIFERENCIAÇÃO AEDES AEGYPTI VS AEDES ALBOPICTUS:*

@@ -147,7 +147,7 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 3. Está em campo aguardando término dos DIAS_CICLO_PADRAO dias de exposição (7 dias)
+  // 3. Está em campo: ciclo padrão de DIAS_CICLO_PADRAO dias de exposição.
   const diasCorridos = diasDesde(armadilha.instaladaEm);
   const diasRestantes = DIAS_CICLO_PADRAO - diasCorridos;
   const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_PADRAO);
@@ -155,13 +155,15 @@ export function calcularSituacaoArmadilha(armadilha) {
   const diaSemanaRaw = dataPrevista.toLocaleDateString('pt-BR', { weekday: 'long' });
   const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
-  // Atraso Crítico (> 7 dias sem recolher - risco iminente de eclosão de larvas)
-  if (diasCorridos > DIAS_CICLO_MAXIMO) {
-    const diasExcesso = diasCorridos - DIAS_CICLO_MAXIMO;
+  // Passou do ciclo sem recolher. Antes so virava "atrasada" depois de
+  // DIAS_CICLO_MAXIMO; entre o fim do ciclo e esse teto caia no "em campo"
+  // e mostrava "Faltam -1 dias".
+  if (diasRestantes < 0) {
+    const diasAtraso = -diasRestantes;
     return {
       fase: 'atrasada',
-      titulo: `Atraso Crítico (${diasCorridos}d em campo)`,
-      descricao: `Ultrapassou o limite máximo de ${DIAS_CICLO_MAXIMO} dias em ${diasExcesso} ${diasExcesso === 1 ? 'dia' : 'dias'}. Risco iminente de eclosão de larvas no vaso! Recolher imediatamente.`,
+      titulo: `Recolher: ${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso`,
+      descricao: `Ciclo de ${DIAS_CICLO_PADRAO} dias concluído em ${diaSemana}, ${dataPrevistaFormatada}. Recolher o quanto antes e enviar ao laboratório.`,
       diasCorridos,
       diasRestantes,
       dataPrevistaFormatada,
@@ -173,12 +175,11 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Hoje (exatamente 7 dias - Segunda 28/09 na Sede ou Terça 29/09 nos Distritos)
   if (diasRestantes === 0) {
     return {
       fase: 'hoje',
-      titulo: `Trocar Palheta Hoje! (Dia 7 - ${diaSemana})`,
-      descricao: `A armadilha completou 7 dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Limite máximo atingido: recolher hoje impreterivelmente para envio ao laboratório e prevenção de eclosão.`,
+      titulo: `Recolher Hoje (${diaSemana})`,
+      descricao: `A armadilha completou ${DIAS_CICLO_PADRAO} dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Recolher e enviar ao laboratório.`,
       diasCorridos,
       diasRestantes: 0,
       dataPrevistaFormatada,
@@ -190,12 +191,11 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Véspera (6 dias em campo, falta 1 dia)
   if (diasRestantes === 1) {
     return {
       fase: 'vespera',
       titulo: `Coleta Amanhã (${diaSemana})`,
-      descricao: `Armadilha em campo há 6 dias. Coleta agendada para amanhã, ${diaSemana} (${dataPrevistaFormatada}), completando o ciclo máximo de 7 dias.`,
+      descricao: `Armadilha em campo há ${diasCorridos} ${diasCorridos === 1 ? 'dia' : 'dias'}. Coleta agendada para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
       diasCorridos,
       diasRestantes: 1,
       dataPrevistaFormatada,
@@ -207,11 +207,10 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // Em campo normal (dias 0 a 5)
   return {
     fase: 'em_campo',
     titulo: `Em Campo: Faltam ${diasRestantes} dias`,
-    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Coleta agendada para ${diaSemana}, ${dataPrevistaFormatada} • Limite máx: ${DIAS_CICLO_MAXIMO} dias.`,
+    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Coleta agendada para ${diaSemana}, ${dataPrevistaFormatada}.`,
     diasCorridos,
     diasRestantes,
     dataPrevistaFormatada,
