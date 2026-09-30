@@ -202,6 +202,21 @@ export async function excluirFotoArmadilha(id) {
   }
 }
 
+// Lista as fotos de palheta salvas no IndexedDB deste aparelho, cruzadas com
+// as leituras (numero, palheta, ovos, data). As fotos nunca saem do aparelho
+// onde foram tiradas - isso existe para o tecnico baixar e enviar por fora
+// (WhatsApp, e-mail) quando precisar delas noutro lugar.
+export async function listarFotosDeLeituras() {
+  const leituras = getLeituras();
+  const comFoto = [];
+  for (const leitura of leituras) {
+    const foto = await obterFotoArmadilha(leitura.id).catch(() => null);
+    if (foto) comFoto.push({ leitura, foto });
+  }
+  comFoto.sort((a, b) => new Date(b.leitura.lidaEm || 0) - new Date(a.leitura.lidaEm || 0));
+  return comFoto;
+}
+
 export function compressImage(file, maxDimension = 1200, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

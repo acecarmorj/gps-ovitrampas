@@ -5,7 +5,7 @@
  * Ciclo Oficial: 5 dias de exposição no imóvel.
  */
 
-export const DIAS_CICLO_PADRAO = 7;
+export const DIAS_CICLO_PADRAO = 5;
 export const DIAS_CICLO_MAXIMO = 7;
 
 export function parseData(dataStr) {

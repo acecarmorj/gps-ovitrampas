@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   Camera, Upload, ZoomIn, ZoomOut,
   CheckCircle2, X, AlertTriangle, Sparkles, Sliders,
-  RefreshCw, Bot, Key, Hash, Circle, FileText, Download
+  RefreshCw, Bot, Key, Hash, Circle, FileText, Download, Eraser, Plus
 } from 'lucide-react';
 import { analyzeEggImage } from '../../lib/eggCounter';
 import { localizarOvosComGemini } from '../../lib/geminiEggAuditor';
@@ -89,6 +89,10 @@ export function AssistenteContadorOvos({
   const [zoom, setZoom] = useState(1);
   const [showSlider, setShowSlider] = useState(false);
   const [modoExibicao, setModoExibicao] = useState('numeros');
+  // Por padrao todo toque ADICIONA um ovo, mesmo perto de outro ja marcado -
+  // o tecnico precisa poder marcar ovos colados/proximos sem medo de apagar
+  // o vizinho sem querer. So apaga quando este modo esta ligado de proposito.
+  const [modoApagar, setModoApagar] = useState(false);
 
   // Conferência por IA (Gemini, por quadros)
   const [auditandoIA, setAuditandoIA] = useState(false);
@@ -364,7 +368,7 @@ export function AssistenteContadorOvos({
     const x = ((e.clientX - rect.left) / rect.width) * imgData.width;
     const y = ((e.clientY - rect.top) / rect.height) * imgData.height;
     // Raio de toque em pixels de TELA, convertido para a imagem: com zoom
-    // alto o dedo precisa acertar mais perto, senao apaga o ovo vizinho.
+    // alto o dedo precisa acertar mais perto.
     const pixelsImagemPorTela = imgData.width / rect.width;
     const hitRadius = Math.max(4, 16 * pixelsImagemPorTela);
     let nearestIndex = -1;
@@ -378,21 +382,28 @@ export function AssistenteContadorOvos({
       }
     });
 
-    if (nearestIndex >= 0) {
-      setMarkers((prev) => prev.filter((_, idx) => idx !== nearestIndex));
-    } else {
-      const newMarker = {
-        x,
-        y,
-        radius: Math.max(7, imgData.width / 120),
-        rx: Math.max(8, imgData.width / 110),
-        ry: Math.max(5, imgData.width / 160),
-        angle: -Math.PI / 2,
-        score: 1,
-        source: 'manual'
-      };
-      setMarkers((prev) => [...prev, newMarker]);
+    // Modo Apagar: so remove o mais proximo, nunca adiciona (um toque no
+    // vazio nao faz nada). Fora dele: SEMPRE adiciona, mesmo em cima de um
+    // ovo ja marcado - e assim que se marca ovos colados/proximos sem medo
+    // de apagar o vizinho por engano.
+    if (modoApagar) {
+      if (nearestIndex >= 0) {
+        setMarkers((prev) => prev.filter((_, idx) => idx !== nearestIndex));
+      }
+      return;
     }
+
+    const newMarker = {
+      x,
+      y,
+      radius: Math.max(7, imgData.width / 120),
+      rx: Math.max(8, imgData.width / 110),
+      ry: Math.max(5, imgData.width / 160),
+      angle: -Math.PI / 2,
+      score: 1,
+      source: 'manual'
+    };
+    setMarkers((prev) => [...prev, newMarker]);
   };
 
   const handleLimparFoto = () => {
@@ -482,7 +493,9 @@ export function AssistenteContadorOvos({
                 Assistente de Contagem de Ovos
               </h2>
               <p className="text-[10px] text-slate-400">
-                Toque num ovo para apagar · toque no vazio para marcar
+                {modoApagar
+                  ? 'Modo Apagar: toque num ovo para remover'
+                  : 'Toque em qualquer lugar para marcar um ovo'}
               </p>
             </div>
           </div>
@@ -563,7 +576,9 @@ export function AssistenteContadorOvos({
           ) : (
             <div
               ref={containerRef}
-              className="w-full h-full overflow-auto flex items-center justify-center p-2 cursor-crosshair relative touch-pinch-zoom"
+              className={`w-full h-full overflow-auto flex items-center justify-center p-2 relative touch-pinch-zoom ${
+                modoApagar ? 'cursor-cell' : 'cursor-crosshair'
+              }`}
             >
               {analyzing && (
                 <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white">
@@ -753,6 +768,30 @@ export function AssistenteContadorOvos({
                 <span className="flex-1 font-medium">{warning}</span>
               </div>
             )}
+
+            {/* MODO ADICIONAR / APAGAR - evita apagar ovo por engano ao marcar perto de outro */}
+            <div className="grid grid-cols-2 gap-1.5 bg-slate-200/70 p-1 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setModoApagar(false)}
+                className={`py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                  !modoApagar ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoApagar(true)}
+                className={`py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                  modoApagar ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600'
+                }`}
+              >
+                <Eraser className="w-3.5 h-3.5" />
+                <span>Apagar</span>
+              </button>
+            </div>
 
             {/* RESUMO E BOTÃO DE CONFERÊNCIA */}
             <div className="flex items-center justify-between gap-2 pt-0.5">

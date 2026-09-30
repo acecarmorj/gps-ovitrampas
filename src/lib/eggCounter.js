@@ -103,8 +103,17 @@ function dividirAglomerados(candidates) {
     // Aglomerado pode ser fila (o "S") ou ovos lado a lado.
     const emFila = porComprimento >= porLargura;
     const partes = clamp(Math.floor((emFila ? porComprimento : porLargura) + 0.3), 1, 4);
-    // Mancha escura torta que nao chega a 2 ovos: segue descartada, como antes.
-    if (partes === 1) continue;
+    // Antes descartava aqui (partes===1). Mas isso jogava fora ovo grande ou
+    // deitado sozinho que so caiu neste caminho por reprovar no filtro de
+    // formato/orientacao do ovo isolado - nao por ser lixo. O podeSerAglomerado
+    // ja exige bem escuro + bom preenchimento + contraste antes de chegar
+    // aqui, entao o que sobra com partes=1 e principalmente ovo de verdade
+    // fora do padrao, nao ruido. Medido em foto real (2.jpeg): recall
+    // 72% -> 83% nas 103 marcacoes do Almir, palhetas limpas continuam 0.
+    if (partes === 1) {
+      saida.push({ ...c, aglomerado: false });
+      continue;
+    }
     // Fila divide ao longo do lado maior; lado a lado, ao longo do menor.
     const ladoMaiorVertical = altura >= largura;
     const dividirNaAltura = emFila ? ladoMaiorVertical : !ladoMaiorVertical;

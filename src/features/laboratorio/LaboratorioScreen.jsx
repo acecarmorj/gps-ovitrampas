@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical, CheckCircle2, Plus, Minus,
-  Camera, X, History, Check, Sparkles, Bot, Bug, Key
+  Camera, X, History, Check, Sparkles, Bot, Bug, Key, Images
 } from 'lucide-react';
 import {
   registrarLeituraLaboratorio,
@@ -12,6 +12,7 @@ import { playSuccessSound } from '../../lib/soundAlert';
 import { AssistenteContadorOvos } from './AssistenteContadorOvos';
 import { IdentificadorEspecies } from './IdentificadorEspecies';
 import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
+import { FotosSalvasScreen } from './FotosSalvasScreen';
 
 export function LaboratorioScreen({
   armadilhas = [],
@@ -36,6 +37,7 @@ export function LaboratorioScreen({
   const [mostrarAssistente, setMostrarAssistente] = useState(false);
   const [laudoAuditoria, setLaudoAuditoria] = useState(null);
   const [mostrarModalChave, setMostrarModalChave] = useState(false);
+  const [mostrarFotosSalvas, setMostrarFotosSalvas] = useState(false);
 
   // Histórico de Leituras salvas offline
   const [historicoLeituras, setHistoricoLeituras] = useState([]);
@@ -160,6 +162,15 @@ export function LaboratorioScreen({
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setMostrarFotosSalvas(true)}
+              className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-[10px] font-black flex items-center gap-1 transition-all active:scale-95"
+              title="Ver e baixar as fotos de palheta guardadas neste aparelho"
+            >
+              <Images className="w-3 h-3" />
+              <span>Fotos</span>
+            </button>
             <button
               type="button"
               onClick={() => setMostrarModalChave(true)}
@@ -495,6 +506,10 @@ export function LaboratorioScreen({
         aberto={mostrarModalChave}
         onFechar={() => setMostrarModalChave(false)}
       />
+
+      {mostrarFotosSalvas && (
+        <FotosSalvasScreen onFechar={() => setMostrarFotosSalvas(false)} />
+      )}
     </div>
   );
 }
