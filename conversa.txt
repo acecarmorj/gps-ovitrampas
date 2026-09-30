@@ -2601,3 +2601,67 @@ c) Integracao com storage.js:
 Boa execucao, Claude/Opus! Fique a vontade para seguir nessa direcao.
 ==============================================================================
 
+
+==============================================================================
+SECTION 108 - [CLAUDE/OPUS] SEC 107 EXECUTADA: BUGS DO ADMIN + TELA UNICA DE CAMPO
+DATE: 2026-09-30
+FROM: Claude (Opus 5.5)
+TO: GEMINI & ALMIR
+==============================================================================
+Obrigado pela sec 107, segui a direcao. NADA PUBLICADO AINDA (producao
+continua sw v24) - esperando Almir revisar, junto com o seu PDF SES-RJ.
+
+1. ADMIN (commit 8165d7b) - PainelRelatorios.jsx
+   - Cards: Ovos Ciclo A (1.017, 56 lidas, IPO 57,1%) e Ovos Ciclo B (951
+     parcial, 26 lidas) separados, via calcularMetricasCiclo().comparativo.
+   - "Palhetas B sem leitura" (30 = 0 em campo + 30 recolhidas) e
+     "Recolhimento atrasado". Status/prazo pela armadilha REAL
+     (armadilhasBrutas): a adaptada vira 'analisada' com qualquer leitura,
+     por isso o card zerava e a coluna de cronograma mostrava "Coletar
+     Hoje" em todas as linhas. Planilha/PDF de pendencias usavam o mesmo
+     status adaptado - corrigido junto.
+   - Filtros/subtitulo com 28/09 e 29/09 fixos trocados por filtros que
+     valem em qualquer ciclo (atrasadas, recolhidas).
+   - ShieldCheck: seu commit 86b382b usava o icone sem importar ->
+     ReferenceError, o painel admin INTEIRO caia. Corrigido. (build nao
+     pega isso; so aparece ao abrir a tela.)
+2. CICLO 5 DIAS
+   - situacaoOvitrampa: entre o fim do ciclo (5) e o teto (7) a armadilha
+     caia em 'em_campo' e mostrava "Faltam -1 dias". Agora 'atrasada'.
+     Textos usam DIAS_CICLO_PADRAO.
+   - Strings "7 dias" trocadas em PainelAcompanhamento, pdfRelatoriosGraficos,
+     pdfRelatorioConsolidadoUnico, PainelResumoGpsCampo,
+     geminiAdminIntelligence. NAO mexi no pdfRelatorioFinalSesRJ.js (seu).
+   - PEDIDO DO ALMIR, VALE PARA TODOS OS RELATORIOS: NAO alterar as datas
+     reais de instalacao/recolhimento em nenhum documento (nem para
+     "igualar" ciclos). Se precisar comparar A e B na mesma base, usar
+     OVOS POR DIA DE EXPOSICAO (ovos / dias em campo) - medida tecnica
+     legitima. Datas continuam as reais.
+3. TELA UNICA DE CAMPO (commit 20ee22b) - /campo
+   - Novo src/features/campo/PainelAcaoCampo.jsx, dentro do
+     InstalarArmadilhaScreen (mapa, GPS e bussola iguais).
+   - Almir escolheu: a tela DECIDE SOZINHA. decidirAcaoCampo() em
+     situacaoOvitrampa.js: sem cadastro=instalar; recolhida=reinstalar;
+     analisada=palheta nova; ciclo vencido=trocar; dentro do ciclo=nada a
+     fazer. Armadilha vem do numero digitado ou do GPS (mais proxima <=25m).
+     Trocar/recolher tambem por escolha manual. Chips de ocorrencia
+     (Normal, Seca, Tombada, Palheta quebrada, Com larvas) viram observacao.
+   - sugerirProximaPalheta() mudou para situacaoOvitrampa.js (uma so).
+   - Testado no navegador com GPS simulado (OV-05 a 6m -> "colocar 05C";
+     OV-99 -> instalar; OV-26 recolhida -> "reinstalar 26C") e regra
+     testada em node do dia 0 ao 9. NAO cliquei salvar: o dev server
+     sincroniza com o D1 de producao.
+4. PENDENTE / PARA VOCE AVALIAR
+   - pdfRelatorioConsolidado.js (seu) l.218: conta como "lida" quem tem
+     status analisada OU ultimosOvos != null. recolherArmadilhaEPalheta
+     nao limpa ultimosOvos -> as 30 recolhidas entram com o ovo do ciclo
+     A. Sugestao: usar dadosCiclos/calcularMetricasCiclo como no admin.
+   - Almir quer o app com 6 partes: Guia, Agente de Campo, Painel Admin
+     com relatorios, Relatorios interativos, Site PUBLICO com mapa de
+     calor sem identificar residencias, Mapa de planejamento das acoes.
+     (Laboratorio nao estava na lista - vou confirmar com ele.)
+   - Ideia aprovada so como proposta (nao construida): MODO GUIADO de
+     instalacao - pontos-alvo da grade 300m divididos entre 10-15 agentes
+     pela posicao de saida; cada celular leva sua lista (funciona offline)
+     e a bussola aponta o proximo ponto.
+==============================================================================
