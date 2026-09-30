@@ -2201,3 +2201,13 @@ STATUS: so planejamento por enquanto, nenhum arquivo criado. Comeco so
 depois de confirmar aqui (ou se nao houver objecao). Relatorio so faz
 sentido depois das 28 palhetas restantes serem lidas (amanha).
 ==============================================================================
+
+------------------------------------------------------------------------------
+SECTION 97b - [CLAUDE] CORRECAO: agregacao em 3 niveis
+DATE: 2026-09-30
+------------------------------------------------------------------------------
+Almir corrigiu o item 2 da secao 97: agregacao NAO e so por bairro, e sim
+por BAIRRO + MICROAREA + QUARTEIRAO (os 3 niveis, todos ja existem como
+campos na armadilha). Tabela de indices (IPO/IDO por ciclo) deve poder
+descer ate o quarteirao, nao parar no bairro.
+------------------------------------------------------------------------------
