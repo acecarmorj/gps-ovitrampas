@@ -21,8 +21,15 @@ function carregarImagem(url) {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    const limite = setTimeout(() => resolve(null), 8000); // rede ruim: desiste do tile e segue sem travar
+    img.onload = () => {
+      clearTimeout(limite);
+      resolve(img);
+    };
+    img.onerror = () => {
+      clearTimeout(limite);
+      resolve(null);
+    };
     img.src = url;
   });
 }

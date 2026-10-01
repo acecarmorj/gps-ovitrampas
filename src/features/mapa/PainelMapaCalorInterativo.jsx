@@ -91,8 +91,8 @@ export function PainelMapaCalorInterativo({
   const doTerritorio = useMemo(() => {
     if (ciclo === CICLO_SEMANA_1) return doTerrA;
     if (ciclo === CICLO_SEMANA_2) return doTerrB;
-    return doTerrA.map((x, i) => {
-      const y = doTerrB[i];
+    return doTerrA.map((x) => {
+      const y = doTerrB.find((b) => String(b.numero) === String(x.numero));
       const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
       const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
       const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1);
@@ -161,7 +161,7 @@ export function PainelMapaCalorInterativo({
       nevoeiroLayerRef.current = null;
     }
     if (!verNevoeiro) return;
-    const r = gerarNevoeiroDoMapa(doTerritorio, 800, 600, 0.35, true);
+    const r = gerarNevoeiroDoMapa(doTerritorio, 180, 135, 0.35, true);
     if (!r) return;
     const { latMin, latMax, lngMin, lngMax } = r.caixa;
     nevoeiroLayerRef.current = L.imageOverlay(r.url, [[latMin, lngMin], [latMax, lngMax]], { opacity: 0.88, interactive: false, pane: 'nevoeiro' }).addTo(map);
@@ -257,17 +257,15 @@ export function PainelMapaCalorInterativo({
       setGerandoPdf(true);
       const territorioLabel = TERRITORIOS.find((t) => t.id === territorio)?.label || 'Todo o município';
       const ciclosParaGerar = ehAmbas ? ['A', 'B'] : [ciclo];
-      for (const c of ciclosParaGerar) {
-        const lista = c === 'A' ? doTerrA : doTerrB;
-        await gerarPdfMapaCalor({
-          armadilhas: lista,
-          grupos: agruparPorPoligono(lista),
-          metricas: c === 'A' ? mA : mB,
-          ciclo: c,
-          territorioLabel,
-          fundo
-        });
-      }
+      // um unico arquivo (os navegadores bloqueiam ou perdem o 2o download seguido)
+      await gerarPdfMapaCalor({
+        secoes: ciclosParaGerar.map((c) => {
+          const lista = c === 'A' ? doTerrA : doTerrB;
+          return { armadilhas: lista, grupos: agruparPorPoligono(lista), metricas: c === 'A' ? mA : mB, ciclo: c };
+        }),
+        territorioLabel,
+        fundo
+      });
     } catch (e) {
       console.error(e);
       alert('Não foi possível gerar o PDF do mapa.');
@@ -324,7 +322,7 @@ export function PainelMapaCalorInterativo({
           disabled={gerandoPdf}
           className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white text-black disabled:opacity-50 flex items-center gap-1"
         >
-          <Download size={13} /> {gerandoPdf ? 'Gerando...' : ehAmbas ? 'Baixar PDF (A e B)' : 'Baixar PDF'}
+          <Download size={13} /> {gerandoPdf ? 'Gerando...' : 'Baixar PDF'}
         </button>
         <select
           value={territorio}

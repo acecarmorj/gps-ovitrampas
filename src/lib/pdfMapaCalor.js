@@ -57,10 +57,18 @@ export function caixaDoMapa(subset, mw, mh, padFrac = 0.12) {
 }
 
 /** Prepara o fundo de satelite de um mapa (assincrono). Retorna data URL ou null. */
+const cacheFundos = new Map();
+export function limparCacheFundos() {
+  cacheFundos.clear();
+}
 export async function fundoSateliteDoMapa(subset, mw, mh) {
   const caixa = caixaDoMapa(subset, mw, mh);
   if (!caixa) return null;
-  return gerarFundoSatelite(caixa, Math.min(1400, Math.round(mw * 7))); // ~180 dpi na impressao
+  const chave = [caixa.latMin, caixa.latMax, caixa.lngMin, caixa.lngMax].map((n) => n.toFixed(5)).join('|') + `|${Math.round(mw)}x${Math.round(mh)}`;
+  if (!cacheFundos.has(chave)) {
+    cacheFundos.set(chave, gerarFundoSatelite(caixa, Math.min(1400, Math.round(mw * 7)))); // ~180 dpi na impressao
+  }
+  return cacheFundos.get(chave);
 }
 
 
@@ -289,12 +297,18 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
   doc.text(texto, lx, ly);
 }
 
-export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial' }) {
+export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial', secoes }) {
   const [{ jsPDF }, autoTableMod] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+
+  // uma secao por ciclo, todas no mesmo arquivo
+  const listaSecoes = secoes || [{ armadilhas, grupos, metricas, ciclo }];
+  for (let idxSecao = 0; idxSecao < listaSecoes.length; idxSecao++) {
+    const { armadilhas, grupos, metricas, ciclo } = listaSecoes[idxSecao];
+    if (idxSecao > 0) doc.addPage('a4', 'landscape');
 
   // ---------- cabecalho ----------
   let xTexto = M;
@@ -393,7 +407,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.setTextColor(...CINZA);
   doc.text('Superfície suave interpolada a partir das contagens de cada armadilha (alcance de cerca de 175 m).', M, 19);
   const fundoNev = usarSat ? await fundoSateliteDoMapa(armadilhas, 200, 168) : null;
-  const gTodosNev = agruparPorPoligono(armadilhas);
+  const gTodosNev = grupos;
   desenharMapaELegenda(doc, armadilhas, gTodosNev, 24, 168, {
     fundo: fundoNev,
     modo: 'nevoeiro',
@@ -435,6 +449,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
       }
     }
   });
+  }
 
   const total = doc.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
@@ -444,5 +459,6 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
     doc.text(`Página ${i} de ${total}`, W - M, H - 6, { align: 'right' });
   }
 
-  doc.save(`mapa-calor-ciclo-${ciclo}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  limparCacheFundos();
+  doc.save(`mapa-calor-ciclo-${listaSecoes.map((x) => x.ciclo).join('-')}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

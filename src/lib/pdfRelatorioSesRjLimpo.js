@@ -6,7 +6,7 @@
  */
 import { adaptarArmadilhasParaCiclo, calcularMetricasCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from './ciclosOvitrampas';
 import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono } from './mapaPoligonos';
-import { desenharMapaELegenda, fundoSateliteDoMapa, gerarNevoeiroDoMapa } from './pdfMapaCalor';
+import { desenharMapaELegenda, fundoSateliteDoMapa, gerarNevoeiroDoMapa, limparCacheFundos } from './pdfMapaCalor';
 import { classificarTerritorio } from './pdfRelatorioEntomologico';
 import {
   carregarTimbresOficiais,
@@ -64,8 +64,9 @@ function agrupar(lista, chaveFn) {
 
 // Ambas: A e B lado a lado; a cor do mapa e a da maior contagem entre os dois (nada e somado).
 function mesclarAmbas(listaA, listaB) {
-  return listaA.map((x, i) => {
-    const y = listaB[i];
+  const porNumero = new Map(listaB.map((b) => [String(b.numero), b]));
+  return listaA.map((x) => {
+    const y = porNumero.get(String(x.numero));
     const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
     const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
     const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1);
@@ -534,5 +535,6 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     texto(doc, `Página ${i} de ${total}`, W - M, 290, { size: 7.5, cor: CINZA, align: 'right' });
   }
 
+  limparCacheFundos();
   doc.save(`${interno ? 'relatorio-resultados-carmo' : 'relatorio-ses-rj-carmo'}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

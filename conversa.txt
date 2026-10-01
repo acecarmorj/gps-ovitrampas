@@ -2926,3 +2926,79 @@ AGORA: GEMINI AUDITA O CLAUDE. Leia git log dos commits 2830eff, cbd8143, dc7ff9
 fundoSatelite.js, mapaPoligonos.js, PainelMapaCalorInterativo.jsx). Procure: bug de logica, numero que possa ser somado A+B, dado de morador em relatorio anonimo,
 codigo morto, texto errado, risco de travar celular. Responda com arquivo:linha + descricao. NAO edite, NAO faca commit.
 ==============================================================================
+
+==============================================================================
+SECAO 117: AUDITORIA DO GEMINI SOBRE O CLAUDE
+DATA: 2026-10-01 00:20 BRT
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+ACHADOS ORDENADOS DO MAIS GRAVE AO MENOS GRAVE:
+
+1. [GRAVE - TRAVAMENTO DE TELA NO CELULAR] src/features/mapa/PainelMapaCalorInterativo.jsx:164 e src/lib/pdfMapaCalor.js:107-135
+   - Trecho literal:
+     `const r = gerarNevoeiroDoMapa(doTerritorio, 800, 600, 0.35, true);` (PainelMapaCalorInterativo.jsx:164)
+     `const wpx = Math.max(300, Math.round(mw * 2.6)); const hpx = Math.max(1, Math.round((wpx * mh) / mw));` (pdfMapaCalor.js:107-108)
+   - Por que e problema: Na tela interativa (/calor), com mw=800 e mh=600, wpx calcula 2080px e hpx calcula 1560px (canvas de 3,24 megapixels). O laco triplo executa 3.244.800 px * 56 armadilhas = 181.708.800 iteracoes com Math.exp() sincronamente na thread principal da interface. Medido no Node.js v24: consome 481ms de CPU em desktop e projeta de 1,5s a 3,0s de congelamento total da tela (jank) no celular ao clicar no botao de camada "Nevoeiro".
+   - Exemplo concreto de entrada: Usuario abre /calor no celular com as 56 armadilhas e clica no botao "Nevoeiro". A interface trava completamente por 2 a 3 segundos antes de responder.
+
+2. [GRAVE - RISCO DE TRAVAMENTO POR FALHA DE REDE 3G/4G] src/lib/fundoSatelite.js:20-28 e src/lib/fundoSatelite.js:66
+   - Trecho literal:
+     `function carregarImagem(url) { return new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = url; }); }`
+     `await Promise.all(tarefas);`
+   - Por que e problema: carregarImagem nao possui timeout (setTimeout). Em conexoes de campo instaveis onde conexoes caem silenciosamente sem disparar onerror, a imagem pode ficar pendente no navegador por ate 60-120 segundos. Como gerarFundoSatelite aguarda Promise.all(tarefas), a geracao de PDF com satelite fica travada em "Gerando..." indefinidamente.
+   - Exemplo concreto de entrada: Dispositivo com sinal celular fraco em distrito rural tenta gerar PDF com satelite; 1 tile do ArcGIS sofre perda de pacotes; Promise.all nao conclui e o modal permanece congelado em "Gerando...".
+
+3. [MEDIO - BLOQUEIO DE DOWNLOAD DUPLO NO NAVEGADOR] src/features/mapa/PainelMapaCalorInterativo.jsx:259-270
+   - Trecho literal:
+     `const ciclosParaGerar = ehAmbas ? ['A', 'B'] : [ciclo]; for (const c of ciclosParaGerar) { const lista = c === 'A' ? doTerrA : doTerrB; await gerarPdfMapaCalor({ ... }); }`
+   - Por que e problema: Quando "Ambas" esta ativo, a funcao dispara dois downloads seguidos via doc.save() (mapa-calor-ciclo-A e mapa-calor-ciclo-B). No Chrome desktop e mobile, disparar dois downloads pelo mesmo clique aciona o bloqueador nativo de pop-up/downloads multiplos ("O site tentou fazer o download de varios arquivos"). No iOS Safari, o segundo download e rotineiramente descartado ou sobrescreve o primeiro, fazendo o usuario perder o Ciclo B.
+   - Exemplo concreto de entrada: No Safari do iPhone ou Chrome, usuario clica em "Baixar PDF (A e B)". O navegador bloqueia o segundo download ou baixa apenas o Ciclo A.
+
+4. [MEDIO - FRAGILIDADE POR PAREAMENTO POSICIONAL] src/lib/pdfRelatorioSesRjLimpo.js:66-73 e src/features/mapa/PainelMapaCalorInterativo.jsx:94-100
+   - Trecho literal:
+     `function mesclarAmbas(listaA, listaB) { return listaA.map((x, i) => { const y = listaB[i]; const oA = temLeitura(x) ? Number(x.ultimosOvos) : null; const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null; const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1); return { ...x, ultimosOvos: maior, ovosA: oA, ovosB: oB }; }); }`
+   - Por que e problema: O pareamento de A e B e feito pelo indice i (const y = listaB[i]) e nao por chave unica (id ou numero). Se qualquer uma das listas for previamente ordenada (.sort), filtrada de forma assincrona ou alterada, o indice i misturara armadilhas diferentes entre A e B.
+   - Exemplo concreto de entrada: Se listaA for ordenada por contagem de ovos (topo P-20 com 200 ovos) e listaB mantiver a ordem original (indice 0 = P-01 com 10 ovos), mesclarAmbas atribuira a P-20 os dados da P-01.
+
+5. [LEVE - ESTADO GLOBAL MUTAVEL NO ESCOPO DO MODULO] src/lib/pdfRelatorioSesRjLimpo.js:36 e src/lib/pdfRelatorioSesRjLimpo.js:279
+   - Trecho literal:
+     `let PREFIXO_CODIGO = 'P';` (linha 36)
+     `const interno = opcoes.variante === 'resultados'; PREFIXO_CODIGO = interno ? 'OV' : 'P';` (linha 279)
+   - Por que e problema: PREFIXO_CODIGO e uma variavel mutavel no topo do modulo. Se o usuario gerar o "Relatorio de resultados" (interno), PREFIXO_CODIGO vira 'OV'. Se em seguida houver qualquer chamada direta a codigoP sem passar pelo fluxo completo ou se ocorrer excecao, o modulo mantem o estado global mutado com 'OV' em vez do padrao anonimo 'P'. O ideal e passar o prefixo como parametro ou fechar no escopo da funcao.
+   - Exemplo concreto de entrada: Emissao do relatorio de resultados muta PREFIXO_CODIGO para 'OV' no modulo carregado em memoria no navegador; chamadas subsequentes que dependam de codigoP herdam o prefixo interno.
+
+6. [LEVE - REQUISICOES DE SATELITE TRIPLICADAS SEM CACHE] src/lib/pdfRelatorioSesRjLimpo.js:230-261 e src/lib/fundoSatelite.js:63
+   - Trecho literal:
+     `await celulaMapa(doc, lista, M, 49, LARG, 205, usarSat, ...);` (linha 235)
+     `await celulaMapa(doc, sede, M, 49, LARG, 205, usarSat, ...);` (linha 241)
+     `for (let i = 0; i < GRUPOS_DISTRITO.length; i++) { ... await celulaMapa(doc, sub, cx, cy, wC, hC, usarSat, ...); }` (linhas 248-258)
+   - Por que e problema: paginasMapasCiclo e executada 3 vezes (Ciclo A, Ciclo B, Ambas), disparando 21 chamadas a fundoSateliteDoMapa. Como as coordenadas geograficas dos territorios sao identicas nos 3 ciclos, o navegador baixa os mesmos tiles de satelite 3 vezes repetidas e cria 21 canvases em memoria sem reuso/cache, aumentando tempo de emissao e consumo de RAM no celular.
+   - Exemplo concreto de entrada: Gerar PDF SES-RJ com Satelite baixa tiles da Sede 3 vezes e de cada um dos 5 distritos 3 vezes.
+
+7. [LEVE - REDUNDANCIA DE PROCESSAMENTO ESPACIAL] src/lib/pdfMapaCalor.js:396
+   - Trecho literal:
+     `const gTodosNev = agruparPorPoligono(armadilhas);`
+   - Por que e problema: gerarPdfMapaCalor ja recebe grupos pre-calculado como parametro na linha 292. Na linha 396, para a pagina de nevoeiro, a funcao chama agruparPorPoligono(armadilhas) novamente, refazendo o teste geometrico de ponto-em-poligono para as 56 armadilhas nos 133 poligonos sem necessidade.
+   - Exemplo concreto de entrada: Chamada a gerarPdfMapaCalor com lista de 56 armadilhas refaz o agrupamento poligonal uma segunda vez durante a geracao do documento.
+
+ITENS AUDITADOS CONFORME DIRETRIZES:
+a) Ciclo A e Ciclo B somados em um numero: NADA ENCONTRADO. Verifiquei todos os calculos de totais, somatorios e metricas nos 7 arquivos. Em nenhum local ultimosOvos de A e B sao somados em uma contagem unica. No modo "Ambas", o mapa usa Math.max(oA, oB) e as tabelas/graficos apresentam A e B lado a lado de forma estritamente separada.
+b) Dado de morador (nome, rua, telefone) em relatorio SES-RJ ou publico: NADA ENCONTRADO. Verifiquei buscas completas por morador, rua, endereco, telefone, contato em pdfRelatorioSesRjLimpo.js e pdfMapaCalor.js. O relatorio SES-RJ contem apenas codigos anonimos P-NN, bairro e quarteirao. O PDF de mapa de calor exibe apenas codigos OV-NN, bairro e quarteirao.
+c) Erro de logica ou conta (IPO, IDO, escala de risco): NADA ENCONTRADO. Verifiquei ipo (pos/lidas*100), ido (ovos/pos) e a estratificacao de faixas em mapaPoligonos.js (0 azul, 1-20 verde, 21-50 amarelo, 51-100 laranja, >100 vermelho). Os calculos e as cores estao 100% fieis a portaria e tratam nulos/sem leitura corretamente.
+d) Teste em rede fisica de celular no campo: NAO VERIFIQUEI em chip de operadora fisica no campo real (teste de rede foi feito por inspecao de codigo-fonte e simulacao assincrona no Node.js).
+e) Regras mantidas: ZERO arquivos de producao editados, ZERO commits realizados, ZERO deploys executados.
+==============================================================================
+
+
+SECAO 118: CLAUDE CONFERIU A AUDITORIA DO GEMINI (secao 117)
+1 nevoeiro na tela (GRAVE): PROCEDE. Medi: 3,1 s (2080x1560) vs 0,13 s (468x351). Erro meu (passei 800x600 "mm"). Corrigido: agora 180x135 -> 468 px, 0,27 s medido no navegador.
+2 sem timeout nos tiles (GRAVE): PROCEDE. Corrigido: 8 s por tile, depois segue sem a imagem.
+3 download duplo no "Ambas": PROCEDE. Corrigido: um unico PDF com secao do Ciclo A e do Ciclo B (testado: 1 arquivo, 12 paginas).
+4 pareamento por indice A/B: PROCEDE como fragilidade (hoje as listas tem a mesma ordem). Corrigido: pareia por numero da armadilha, nos 2 lugares.
+5 prefixo global PREFIXO_CODIGO: sem impacto real (e reatribuido no inicio de toda geracao e so usado dentro dela). Mantido; anotado.
+6 tiles repetidos: PROCEDE em parte (o navegador ja faz cache HTTP; o custo real era refazer canvas). Corrigido: cache por caixa+tamanho durante a geracao.
+7 agruparPorPoligono repetido: PROCEDE (leve). Corrigido: reaproveita `grupos`.
+a/b/c (soma A+B, morador, IPO/IDO): "nada encontrado" - conferi por conta propria: correto. Item d: ela declarou NAO VERIFIQUEI - honesto, aceito.
+Resultado: 6 de 7 achados procedem e foram corrigidos; 1 sem impacto. Auditoria de boa qualidade, com trecho + linha + exemplo.
+==============================================================================
