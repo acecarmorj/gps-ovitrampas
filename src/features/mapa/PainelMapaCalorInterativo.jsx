@@ -14,7 +14,9 @@ import {
   faixaDeOvos,
   temLeitura,
   agruparPorPoligono,
-  nomePoligono
+  nomePoligono,
+  estimarOvosNoPonto,
+  centroDoPoligono
 } from '../../lib/mapaPoligonos';
 import { getAllPolygons } from '../../lib/geoDetection';
 
@@ -230,9 +232,26 @@ export function PainelMapaCalorInterativo({
 
     if (verPoligonos) {
       // contexto: quarteiroes sem armadilha, so contorno cinza
+      // Quarteiroes SEM armadilha: cor estimada pela mescla das armadilhas proximas (mais clarinho = estimado)
+      const lidasParaEstimar = doTerritorio.filter(temLeitura);
       getAllPolygons().forEach((p) => {
         if (p.territoryType === 'distrito' || comArmadilha.has(p.id)) return;
-        L.polygon(p.coordinates, { color: '#94a3b8', weight: 0.6, fillOpacity: 0.03, interactive: false }).addTo(poligonos);
+        const c = centroDoPoligono(p.coordinates);
+        const est = c ? estimarOvosNoPonto(c[0], c[1], lidasParaEstimar) : null;
+        if (!est) {
+          L.polygon(p.coordinates, { color: '#94a3b8', weight: 0.6, fillOpacity: 0.03, interactive: false }).addTo(poligonos);
+          return;
+        }
+        const f = faixaDeOvos(est.valor);
+        L.polygon(p.coordinates, {
+          color: f.cor,
+          weight: 0.8,
+          dashArray: '3 3',
+          fillColor: f.cor,
+          fillOpacity: 0.32
+        })
+          .bindTooltip(`${nomePoligono(p)}<br/>sem armadilha · estimado pelas armadilhas próximas ≈ ${Math.round(est.valor)} ovos`, { sticky: true })
+          .addTo(poligonos);
       });
       // distritos primeiro (por baixo), depois quarteiroes
       const ordenados = [...grupos].sort(

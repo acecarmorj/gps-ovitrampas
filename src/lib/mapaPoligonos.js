@@ -79,3 +79,36 @@ export function montarRotulosOvos(listaA = [], listaB = []) {
   });
   return m;
 }
+
+/**
+ * Estima os ovos num ponto (ex.: centro de um quarteirao SEM armadilha) misturando as armadilhas proximas:
+ * media ponderada pela distancia (nucleo gaussiano). Devolve { valor, cobertura } ou null se nao ha
+ * armadilha por perto (cobertura baixa = longe de tudo, nao pinta).
+ */
+export function estimarOvosNoPonto(lat, lng, armadilhasLidas, sigmaM = 300) {
+  const mLat = 110540;
+  const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
+  const inv2s2 = 1 / (2 * sigmaM * sigmaM);
+  let somaK = 0;
+  let somaKV = 0;
+  armadilhasLidas.forEach((a) => {
+    const la = Number(a.latitude);
+    const lo = Number(a.longitude);
+    const v = Number(a.ultimosOvos);
+    if (!Number.isFinite(la) || !Number.isFinite(lo) || !Number.isFinite(v)) return;
+    const dx = (lng - lo) * mLng;
+    const dy = (lat - la) * mLat;
+    const k = Math.exp(-(dx * dx + dy * dy) * inv2s2);
+    somaK += k;
+    somaKV += k * v;
+  });
+  if (somaK < 0.05) return null;
+  return { valor: somaKV / somaK, cobertura: somaK };
+}
+
+export function centroDoPoligono(coords = []) {
+  if (!coords.length) return null;
+  const lat = coords.reduce((s, c) => s + c[0], 0) / coords.length;
+  const lng = coords.reduce((s, c) => s + c[1], 0) / coords.length;
+  return [lat, lng];
+}
