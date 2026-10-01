@@ -3521,3 +3521,15 @@ ENTREGAS NO AR: https://gps-ovitrampas.pages.dev (admin /admin, laboratorio /lab
 PENDENTE/PROXIMOS PASSOS: (a) Gemini: auditoria dos itens da secao 133/134 ja conferida; nova auditoria so se o Almir pedir. (b) Emitir o SES-RJ oficial: fazer backup do D1 antes e conferir os totais acima. (c) Telas ainda no estilo antigo: nenhuma conhecida alem de paginas internas pouco usadas (PainelResumoGpsCampo, Portal publico). (d) App de campo e para o ano que vem. (e) Repositorio GitHub e publico e o historico antigo tem arquivos com dados de moradores (Almir decidiu manter publico).
 BACKUPS (pasta backups/, fora do git): d1_antes_protecao (56 trap/82 leit), d1_pre_relatorio (02:13), d1_antes_atribuicao, d1_antes_atribuir_almir (113 leit, 12:13).
 ==============================================================================
+
+==============================================================================
+SECAO 137 - EMISSAO DOS RELATORIOS OFICIAIS + ASSINATURAS (01/10/2026) - LEIA ANTES DE AUDITAR
+Escrito por Claude (Sonnet 5.5). A IA auditora so AUDITA (nao edita). Cada afirmacao abaixo pode ser conferida no codigo/arquivos.
+O QUE ACONTECEU DEPOIS DA SECAO 136:
+ 1 Backup do D1 antes de emitir: backups/d1_emissao_SES_20261001_1217.sql (56 armadilhas, 113 leituras, todas "Almir"). Totais conferidos: Ciclo A 1.017 ovos (IPO 57,1%); Ciclo B 2.665 ovos (IPO 57,1%); Ambas 3.682 ovos (IPO 73,2%, faixa pela media por palheta). OV-51 palheta B = 106 (leitura mais recente, via maisRecente() em src/lib/ciclosOvitrampas.js).
+ 2 Emitidos (pasta emissoes/, fora do git): RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf (24 pag., anonimo: so codigos P-NN, bairro, quarteirao; fundo de satelite) e RELATORIO_RESULTADOS_INTERNO_CARMO_2026-10-01.pdf (24 pag., OV-NN, uso interno). Verificado por texto: 0 ocorrencias de "parcial", 56 codigos P-NN, nenhum "OV-" no SES, nenhum nome/rua de morador.
+ 3 Pedido do Almir: assinaturas do relatorio. Responsaveis tecnicos: Almir Lemgruber e Larissa Araujo. Coordenacao: Joice Gama Lopes e Paula Adriana de Miranda (o Almir digitou "Paula Acriana"; assumi erro de digitacao e escrevi "Adriana" - CONFIRMAR com o Almir). Cargos escritos de forma neutra ("Responsavel Tecnico", "Coordenacao").
+ 4 Alteracao: src/lib/pdfRelatorioSesRjLimpo.js, bloco de assinatura no fim da Metodologia: antes 2 linhas (Almir + Secretaria Municipal de Saude); agora 4 linhas lado a lado (array "assinaturas"). Vale para o SES-RJ e para o Resultados interno (mesmo gerador). Os PDFs emitidos antes dessa mudanca ainda tem a assinatura antiga e precisam ser reemitidos.
+ 5 .gitignore ganhou "emissoes/" (commit 6dd4924).
+PONTOS PARA A AUDITORIA CONFERIR: (a) assinatura cabe na pagina sem invadir o rodape e sem cortar nomes (Paula Adriana de Miranda e o mais longo); (b) nenhuma outra parte do SES-RJ cita so o Almir como responsavel; (c) o Entomologico interno e o Mapa de calor PDF nao foram alterados; (d) o repositorio de trabalho e F:\Desktop\GPS OVITRAMPAS (a pasta em C:\ e outra copia).
+==============================================================================

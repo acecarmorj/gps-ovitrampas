@@ -656,12 +656,20 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const ys = Math.max(ym + 24, 215);
   doc.setDrawColor(...PRETO);
   doc.setLineWidth(0.3);
-  doc.line(M, ys, M + 75, ys);
-  doc.line(W - M - 75, ys, W - M, ys);
-  texto(doc, 'Almir Lemgruber', M + 37.5, ys + 5, { size: 9.5, bold: true, align: 'center' });
-  texto(doc, 'Responsável Técnico · Vigilância Entomológica', M + 37.5, ys + 9.5, { size: 8, cor: CINZA, align: 'center' });
-  texto(doc, 'Secretaria Municipal de Saúde', W - M - 37.5, ys + 5, { size: 9.5, bold: true, align: 'center' });
-  texto(doc, 'Prefeitura Municipal de Carmo/RJ', W - M - 37.5, ys + 9.5, { size: 8, cor: CINZA, align: 'center' });
+  const assinaturas = [
+    ['Almir Lemgruber', 'Responsável Técnico'],
+    ['Larissa Araujo', 'Responsável Técnico'],
+    ['Joice Gama Lopes', 'Coordenação'],
+    ['Paula Adriana de Miranda', 'Coordenação']
+  ];
+  const colA = (W - 2 * M - 3 * 4) / 4;
+  assinaturas.forEach(([nome, cargo], i) => {
+    const x0 = M + i * (colA + 4);
+    doc.line(x0, ys, x0 + colA, ys);
+    texto(doc, nome, x0 + colA / 2, ys + 5, { size: 8.5, bold: true, align: 'center' });
+    texto(doc, cargo, x0 + colA / 2, ys + 9, { size: 7.5, cor: CINZA, align: 'center' });
+    texto(doc, 'Vigilância Entomológica · Carmo/RJ', x0 + colA / 2, ys + 12.5, { size: 6.5, cor: CINZA, align: 'center' });
+  });
 
   // ---------- sumario (pagina 2) com os numeros reais ----------
   doc.setPage(paginaSumario);
