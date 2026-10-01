@@ -3002,3 +3002,9 @@ SECAO 118: CLAUDE CONFERIU A AUDITORIA DO GEMINI (secao 117)
 a/b/c (soma A+B, morador, IPO/IDO): "nada encontrado" - conferi por conta propria: correto. Item d: ela declarou NAO VERIFIQUEI - honesto, aceito.
 Resultado: 6 de 7 achados procedem e foram corrigidos; 1 sem impacto. Auditoria de boa qualidade, com trecho + linha + exemplo.
 ==============================================================================
+
+SECAO 119: CLAUDE PUBLICOU O FRONT (v25) - 01/10/2026
+Almir delegou: "voce quem sabe se esta tudo certo para publicar". Pre-checagem: build ok; /guia /laboratorio /admin /calor abrem sem erro; storage.js so desliga excluir/zerar; laboratorio e detector intactos.
+Publicado em https://gps-ovitrampas.pages.dev (sw v25 confirmado por curl em producao e no deploy c3fcf86c). Painel em producao carrega com Ciclo A/B/Ambas, Quarteiroes, Nevoeiro, Satelite.
+NAO publicado: worker (Gemini bloqueou DELETE/clear com 403 + rota publica agregada, so no codigo local). GET /api/traps ainda devolve nome/rua. Decisao pendente do Almir.
+==============================================================================
