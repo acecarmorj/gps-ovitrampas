@@ -3200,3 +3200,6 @@ SECAO 128: ORDEM NOVA DO RELATORIO (Almir aprovou) - v33 (01/10)
 SES-RJ e Relatorio de resultados: 1 Capa | 2 Sumario (paginas reais) | 3 Resumo executivo (A, B, Ambas com IPO/IDO/IDV) | 4 Plano de acao | 5 Manual estrategico | 6-7 Indicadores por territorio (A e B; Ambas) | Anexo A graficos | Anexo B mapas de calor (municipio, cidade e distritos) | Anexo C inventario | Metodologia, referencias e assinaturas. (23 paginas)
 Auditoria do Gemini (secao 126) continua valendo; a ordem das paginas mudou, o conteudo nao.
 ==============================================================================
+
+SECAO 129: PDF DO MAPA - cidade em pagina inteira e os 5 distritos JUNTOS numa pagina por ciclo (22 paginas, antes 34). v34, 01/10.
+==============================================================================

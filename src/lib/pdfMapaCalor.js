@@ -459,32 +459,92 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
     rotulos: todoMunicipio ? null : rotulos // no municipio inteiro os rotulos se sobrepoem; ficam nas paginas de cada local
   });
 
-  // ---------- uma pagina para a cidade (sede) e uma para CADA distrito ----------
+  // ---------- uma pagina para a cidade (sede) e UMA pagina com os cinco distritos juntos ----------
   if (todoMunicipio) {
-    for (const [idTerr, nomeTerr] of TERRITORIOS_PDF) {
-      const sub = armadilhas.filter((a) => classificarTerritorio(a).id === idTerr);
-      if (sub.length === 0) continue;
-      doc.addPage('a4', 'landscape');
+    const cabecalhoLocal = (titulo, subtitulo) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...PRETO);
-      doc.text(`${nomeTerr} — ${rotCiclo(ciclo)}`, M, 14);
+      doc.text(titulo, M, 14);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(...CINZA);
-      doc.text(
-        `${sub.length} armadilhas · ${nevoeiro ? 'calor em nevoeiro' : 'quarteirões e calor'} · cada armadilha mostra o número e os ovos de A e de B`,
-        M,
-        19
+      doc.text(subtitulo, M, 19);
+    };
+    const estiloTxt = nevoeiro ? 'calor em nevoeiro' : 'quarteirões e calor';
+
+    // cidade: pagina inteira
+    const subSede = armadilhas.filter((a) => classificarTerritorio(a).id === 'sede');
+    if (subSede.length > 0) {
+      doc.addPage('a4', 'landscape');
+      cabecalhoLocal(
+        `Cidade (sede urbana) — ${rotCiclo(ciclo)}`,
+        `${subSede.length} armadilhas · ${estiloTxt} · cada armadilha mostra o número e os ovos de A e de B`
       );
-      const idsSub = new Set(sub.map((a) => a.id ?? a.numero));
-      const gSub = grupos.filter((g) => g.armadilhas.some((a) => idsSub.has(a.id ?? a.numero)));
-      const fundoSub = usarSat ? await fundoSateliteDoMapa(sub, 200, 168) : null;
-      desenharMapaELegenda(doc, sub, gSub, 24, 168, {
-        fundo: fundoSub,
+      const idsSede = new Set(subSede.map((a) => a.id ?? a.numero));
+      const gSede = grupos.filter((g) => g.armadilhas.some((a) => idsSede.has(a.id ?? a.numero)));
+      const fundoSede = usarSat ? await fundoSateliteDoMapa(subSede, 200, 168) : null;
+      desenharMapaELegenda(doc, subSede, gSede, 24, 168, {
+        fundo: fundoSede,
         modo: nevoeiro ? 'nevoeiro' : 'poligonos',
-        nevoeiroImg: nevoeiro ? gerarNevoeiroDoMapa(sub, 200, 168) : null,
+        nevoeiroImg: nevoeiro ? gerarNevoeiroDoMapa(subSede, 200, 168) : null,
         rotulos
+      });
+    }
+
+    // distritos: todos numa pagina (grade 2 colunas; o ultimo ocupa a largura toda)
+    const distritos = TERRITORIOS_PDF.filter(([id]) => id !== 'sede')
+      .map(([id, nome]) => ({ id, nome, sub: armadilhas.filter((a) => classificarTerritorio(a).id === id) }))
+      .filter((d) => d.sub.length > 0);
+    if (distritos.length > 0) {
+      doc.addPage('a4', 'landscape');
+      cabecalhoLocal(
+        `Distritos — ${rotCiclo(ciclo)}`,
+        `${distritos.reduce((sm, d) => sm + d.sub.length, 0)} armadilhas · ${estiloTxt} · número e ovos de A e de B em cada armadilha`
+      );
+      const linhas = Math.ceil(distritos.length / 2);
+      const topo = 26;
+      const base = H - 17;
+      const passo = (base - topo) / linhas;
+      const hCel = passo - 7;
+      const wCel = (W - 2 * M - 6) / 2;
+      for (let i = 0; i < distritos.length; i++) {
+        const d = distritos[i];
+        const ultimoSozinho = i === distritos.length - 1 && distritos.length % 2 === 1;
+        const x = ultimoSozinho ? M : M + (i % 2) * (wCel + 6);
+        const w = ultimoSozinho ? W - 2 * M : wCel;
+        const y = topo + Math.floor(i / 2) * passo + 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...PRETO);
+        doc.text(`${d.nome} — ${d.sub.length} armadilhas`, x, y - 1.6);
+        const idsD = new Set(d.sub.map((a) => a.id ?? a.numero));
+        const gD = grupos.filter((g) => g.armadilhas.some((a) => idsD.has(a.id ?? a.numero)));
+        const fundoD = usarSat ? await fundoSateliteDoMapa(d.sub, w, hCel) : null;
+        desenharMapaELegenda(doc, d.sub, gD, y, hCel, {
+          x,
+          w,
+          legenda: false,
+          fundo: fundoD,
+          modo: nevoeiro ? 'nevoeiro' : 'poligonos',
+          nevoeiroImg: nevoeiro ? gerarNevoeiroDoMapa(d.sub, w, hCel) : null,
+          rotulos,
+          tamanhoRotulo: 5
+        });
+      }
+      // legenda compacta no rodape da pagina
+      let lx = M;
+      const ly = H - 11;
+      FAIXAS_RISCO.forEach((f) => {
+        doc.setFillColor(f.cor);
+        doc.setDrawColor(...PRETO);
+        doc.setLineWidth(0.2);
+        doc.rect(lx, ly - 3, 4, 3.5, 'FD');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...PRETO);
+        doc.text(f.label, lx + 5.5, ly);
+        lx += 5.5 + doc.getTextWidth(f.label) + 6;
       });
     }
   }
