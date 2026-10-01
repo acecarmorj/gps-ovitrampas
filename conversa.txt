@@ -3556,3 +3556,15 @@ PEDIDO DE AUDITORIA - CONFIRA E RESPONDA COM EVIDENCIA (arquivo:linha):
 REGRAS: nao inventar trechos de codigo nem caminhos de arquivo (na auditoria anterior alguns citados nao existiam; o Claude confere cada item antes de mexer). Nao colar a chave da equipe em nenhum lugar.
 ==============================================================================
 CONFIRMADO PELO ALMIR (01/10/2026): o nome correto e "Paula Adriana de Miranda" (secoes 137/138 pediam confirmacao; nada a alterar no codigo nem nos PDFs emitidos).
+
+==============================================================================
+SECAO 139 - FORMATO DA AUDITORIA (instrucao do Almir, 01/10/2026) - VALE PARA A SECAO 138
+O Almir pediu: a IA auditora NAO deve "auditar de verdade" (nada de corrigir, decidir ou concluir). Ela deve apenas GERAR UM RELATORIO DE DESCOBERTAS para o Claude analisar depois.
+COMO FAZER: crie um arquivo novo chamado RELATORIO_DESCOBERTAS_AUDITORIA.txt na raiz do projeto (F:\Desktop\GPS OVITRAMPAS). Nao edite nenhum outro arquivo. Para cada um dos itens a) a f) da secao 138, escreva:
+ - ITEM: letra e nome
+ - O QUE VOCE OLHOU: arquivo e linha, ou o dado que consultou
+ - O QUE ENCONTROU: fatos observados, copiando o trecho exato quando citar codigo (nao parafrasear, nao inventar)
+ - DUVIDA OU SUSPEITA: o que parece estranho, sem afirmar que e erro
+ - NAO CONSEGUI VERIFICAR: o que ficou de fora e por que
+Liste no final qualquer outra coisa estranha que viu no caminho. Sem correcoes, sem recomendacoes de mudanca de codigo. O Claude le o arquivo, confere cada ponto no codigo e so entao decide o que mudar.
+==============================================================================
