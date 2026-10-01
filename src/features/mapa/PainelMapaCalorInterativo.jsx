@@ -32,7 +32,7 @@ const TILE_SATELITE = {
 
 const TERRITORIOS = [
   { id: 'todos', label: 'Todo o município' },
-  { id: 'sede', label: 'Sede urbana' },
+  { id: 'sede', label: 'Cidade (sede urbana)' },
   { id: 'influencia', label: 'Influência' },
   { id: 'corrego_da_prata', label: 'Córrego da Prata' },
   { id: 'porto_velho', label: 'Porto Velho do Cunha' },
@@ -61,13 +61,14 @@ export function PainelMapaCalorInterativo({
   const mudarFundo = onMudarFundoMapa || setFundoInterno;
   const tileRef = useRef(null);
   const [ciclo, setCiclo] = useState(CICLO_SEMANA_1);
-  const [territorio, setTerritorio] = useState('todos');
+  const [territorio, setTerritorio] = useState('sede');
   const [busca, setBusca] = useState('');
   const [verPoligonos, setVerPoligonos] = useState(false);
   const [verCalor, setVerCalor] = useState(false);
   const [verPontos, setVerPontos] = useState(true);
   const [verNevoeiro, setVerNevoeiro] = useState(true);
   const [verNumeros, setVerNumeros] = useState(true);
+  const [zoomNevoeiro, setZoomNevoeiro] = useState(false); // nevoeiro liberado com zoom de cidade, mesmo no municipio
   const [zoomPerto, setZoomPerto] = useState(false); // rotulos so aparecem com zoom (evita poluir o mapa)
   const [selecionada, setSelecionada] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
@@ -166,7 +167,10 @@ export function PainelMapaCalorInterativo({
   useEffect(() => {
     const map = mapaRef.current;
     if (!map) return undefined;
-    const atualizar = () => setZoomPerto(map.getZoom() >= 14);
+    const atualizar = () => {
+      setZoomPerto(map.getZoom() >= 16);
+      setZoomNevoeiro(map.getZoom() >= 13);
+    };
     atualizar();
     map.on('zoomend', atualizar);
     return () => map.off('zoomend', atualizar);
@@ -195,8 +199,8 @@ export function PainelMapaCalorInterativo({
     const map = mapaRef.current;
     if (!map) return;
     const anterior = nevoeiroLayerRef.current;
-    if (!verNevoeiro || territorio === 'todos') {
-      // municipio aberto: so os pontinhos; o nevoeiro aparece ao escolher a cidade ou um distrito
+    if (!verNevoeiro || (territorio === 'todos' && !zoomNevoeiro)) {
+      // municipio bem aberto: so os pontinhos; o nevoeiro aparece com zoom de cidade ou ao escolher um local
       if (anterior) map.removeLayer(anterior);
       nevoeiroLayerRef.current = null;
       return;
@@ -217,7 +221,7 @@ export function PainelMapaCalorInterativo({
         }).addTo(map)
       : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verNevoeiro, assinaturaDados, visaoTick, territorio]);
+  }, [verNevoeiro, assinaturaDados, visaoTick, territorio, zoomNevoeiro]);
 
   // Desenha as camadas quando dados ou chaves mudam
   useEffect(() => {
@@ -229,6 +233,20 @@ export function PainelMapaCalorInterativo({
     pontos.clearLayers();
 
     const comArmadilha = new Set(grupos.map((g) => g.poly.id));
+
+    if (verNevoeiro && !verPoligonos) {
+      // contorno dos quarteiroes por cima do nevoeiro (como nos PDFs)
+      getAllPolygons().forEach((p) => {
+        if (p.territoryType === 'distrito') return;
+        L.polygon(p.coordinates, {
+          color: fundo === 'satelite' ? '#ffffff' : '#374151',
+          weight: 0.9,
+          opacity: 0.85,
+          fillOpacity: 0,
+          interactive: false
+        }).addTo(poligonos);
+      });
+    }
 
     if (verPoligonos) {
       // contexto: quarteiroes sem armadilha, so contorno cinza
@@ -287,7 +305,7 @@ export function PainelMapaCalorInterativo({
           interactive: false
         }).addTo(calor);
       }
-      if (verPontos || (verNevoeiro && territorio === 'todos')) {
+      if (verPontos || (verNevoeiro && territorio === 'todos' && !zoomNevoeiro)) {
         const marcador = L.circleMarker([lat, lng], {
           radius: 6,
           color: '#ffffff',
@@ -307,7 +325,7 @@ export function PainelMapaCalorInterativo({
       }
     });
 
-  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos, verNevoeiro, territorio]);
+  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos, verNevoeiro, territorio, zoomNevoeiro, fundo]);
 
   // Enquadra o mapa so quando o territorio muda (ou na primeira vez que ha pontos).
   // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
@@ -459,9 +477,9 @@ export function PainelMapaCalorInterativo({
 
       <div className="grid lg:grid-cols-5 gap-3">
         <div className="lg:col-span-3 rounded-xl overflow-hidden border border-slate-200 bg-white relative">
-          {verNevoeiro && territorio === 'todos' && (
+          {verNevoeiro && territorio === 'todos' && !zoomNevoeiro && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[500] pointer-events-none bg-white/95 border border-black rounded-lg px-3 py-1 text-[11px] font-bold text-black text-center">
-              Escolha a cidade ou um distrito para ver o nevoeiro
+              Aproxime o zoom ou escolha a cidade ou um distrito para ver o nevoeiro
             </div>
           )}
           <div ref={mapaDivRef} className="w-full" style={{ height: "clamp(380px, 70vh, 640px)" }} />
