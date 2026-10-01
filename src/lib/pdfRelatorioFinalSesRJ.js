@@ -36,8 +36,12 @@ import {
 } from './ciclosOvitrampas.js';
 import {
   TIMBRE_BRASAO_CARMO,
-  TIMBRE_LOGO_PREFEITURA
+  TIMBRE_LOGO_PREFEITURA,
+  PROPORCAO_BRASAO_CARMO,
+  PROPORCAO_LOGO_PREFEITURA
 } from './timbresOficiais.js';
+import { extrairDadosBairrosConsolidado } from './pdfRelatorioConsolidadoUnico.js';
+import { gerarCanvasBarrasLateraisRiscoBairros, gerarCanvasRankingFocos } from './pdfRelatoriosGraficos.js';
 
 // Paleta de Cores Institucionais
 const CORES = {
@@ -104,7 +108,7 @@ function desenharCabecalhoSesRj(doc, { paginaAtual, totalPaginas, subtitulo = ''
   doc.setTextColor(190, 220, 245);
   doc.text('Destinatário: SES-RJ / Vigilância Estadual', dirX, 18, { align: 'right' });
   doc.text(`Data Base: Setembro/2026 • 56 Ovitrampas`, dirX, 21.5, { align: 'right' });
-  doc.text(`Folha ${paginaAtual} de ${totalPaginas}`, dirX, 25.5, { align: 'right' });
+  // "Folha N de T" e carimbado no fim (numerarPaginasSesRj), com o total real.
 }
 
 /**
@@ -123,8 +127,6 @@ function desenharRodapeSesRj(doc, paginaAtual, totalPaginas) {
   doc.setTextColor(100, 116, 139);
   doc.text('PROGRAMA DE VIGILÂNCIA ENTOMOLÓGICA DE CARMO/RJ • RELATÓRIO TÉCNICO COMPARATIVO SES-RJ', 10, pageH - 5);
 
-  doc.setFont('helvetica', 'bold');
-  doc.text(`PÁGINA ${paginaAtual} DE ${totalPaginas}`, pageW - 10, pageH - 5, { align: 'right' });
 }
 
 /**
@@ -277,7 +279,7 @@ function desenharCapaOficialSesRj(doc, { totalPaginas = 8, dataFormatada = '' })
   // Brasão de Carmo (350x350 -> quadrado 22x22mm)
   if (TIMBRE_BRASAO_CARMO) {
     try {
-      doc.addImage(TIMBRE_BRASAO_CARMO, 'PNG', 16, 15, 22, 22);
+      doc.addImage(TIMBRE_BRASAO_CARMO, 'PNG', 16, 15, 22 * PROPORCAO_BRASAO_CARMO, 22);
     } catch (e) {
       console.warn('Erro ao carregar TIMBRE_BRASAO_CARMO:', e);
     }
@@ -286,7 +288,7 @@ function desenharCapaOficialSesRj(doc, { totalPaginas = 8, dataFormatada = '' })
   // Logo da Prefeitura de Carmo (400x165 -> proporção 2.42 -> 42x17.3mm)
   if (TIMBRE_LOGO_PREFEITURA) {
     try {
-      doc.addImage(TIMBRE_LOGO_PREFEITURA, 'PNG', 152, 17.5, 42, 17.3);
+      doc.addImage(TIMBRE_LOGO_PREFEITURA, 'PNG', 194 - 17.3 * PROPORCAO_LOGO_PREFEITURA, 17.5, 17.3 * PROPORCAO_LOGO_PREFEITURA, 17.3);
     } catch (e) {
       console.warn('Erro ao carregar TIMBRE_LOGO_PREFEITURA:', e);
     }
@@ -420,7 +422,7 @@ function desenharCapaOficialSesRj(doc, { totalPaginas = 8, dataFormatada = '' })
     { rotulo: 'Apoio Laboratorial', valor: 'Núcleo Municipal de Microscopia e Leitura de Ovos' },
     { rotulo: 'Diretriz Metodológica', valor: 'Ministério da Saúde / Fiocruz (PNCD)' },
     { rotulo: 'Plataforma Digital', valor: 'GPS Ovitrampas Carmo-RJ (Cloud Georreferenciado)' },
-    { rotulo: 'Protocolo de Campo', valor: 'Exposição contínua por 5 a 7 dias no peridomicílio' },
+    { rotulo: 'Protocolo de Campo', valor: 'Exposição contínua por 5 dias no peridomicílio' },
     { rotulo: 'Padrão de Leitura', valor: 'Dupla contagem em estereomicroscópio óptico' }
   ]);
 
@@ -486,14 +488,151 @@ function desenharCapaOficialSesRj(doc, { totalPaginas = 8, dataFormatada = '' })
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.2);
   doc.setTextColor(148, 163, 184);
-  doc.text(`FOLHA 1 DE ${totalPaginas}`, 105, rodapeY + 18, { align: 'center' });
+  doc.__yFolhaCapa = rodapeY + 18;
+}
+
+/**
+ * Carimba a numeracao de todas as paginas depois que o documento esta
+ * completo. Antes o total era fixo ("de 8"): o PDF saia com 9 paginas e a
+ * pagina de continuacao de tabela nem tinha numero.
+ */
+function numerarPaginasSesRj(doc) {
+  const total = doc.getNumberOfPages();
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  for (let i = 1; i <= total; i += 1) {
+    doc.setPage(i);
+    if (i === 1) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.2);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`FOLHA 1 DE ${total}`, 105, doc.__yFolhaCapa || pageH - 12, { align: 'center' });
+      continue;
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.2);
+    doc.setTextColor(190, 220, 245);
+    doc.text(`Folha ${i} de ${total}`, pageW - 14, 25.5, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 116, 139);
+    doc.text(`PÁGINA ${i} DE ${total}`, pageW - 10, pageH - 5, { align: 'right' });
+  }
+}
+
+/**
+ * Armadilhas vistas por um so ciclo, no formato que os graficos do
+ * Relatorio de Resultados esperam. Os graficos de la somam A+B por
+ * armadilha (30 ovos num ciclo + 30 no outro viravam "alto"); aqui cada
+ * ciclo e classificado pelos proprios ovos.
+ */
+function armadilhasDoCiclo(resolvidas, ciclo) {
+  const campoOvos = ciclo === 'A' ? 'ovosA' : 'ovosB';
+  const campoTem = ciclo === 'A' ? 'temLeituraA' : 'temLeituraB';
+  const campoPalheta = ciclo === 'A' ? 'palhetaA' : 'palhetaB';
+  return resolvidas.map((a) => {
+    const d = a.dadosCiclos || {};
+    const lida = Boolean(d[campoTem]);
+    return {
+      ...a,
+      // Codigo tecnico no lugar do morador: o grafico de ranking so mostra
+      // numero e palheta.
+      moradorNome: undefined,
+      rua: undefined,
+      palheta: d[campoPalheta] || a.palheta,
+      ultimosOvos: lida ? Number(d[campoOvos] || 0) : null,
+      dadosCiclos: { ...d, ovosTotal: lida ? Number(d[campoOvos] || 0) : 0, temLeituraAmbas: lida }
+    };
+  });
+}
+
+/**
+ * Texto de analise do mapa de cada ciclo, calculado dos dados. Antes era
+ * escrito a mao com os numeros do dia (o do Ciclo B com 26 de 56 lidas).
+ */
+function analiseDoCiclo(listaCiclo, listaOutroCiclo, ciclo) {
+  const lidas = listaCiclo.filter((a) => a.ultimosOvos != null);
+  const linhas = [];
+  if (!lidas.length) {
+    return ['• Nenhuma palheta deste ciclo foi lida no laboratório até a data de emissão.'];
+  }
+  const fmtPct = (v) => v.toFixed(1).replace('.', ',');
+  const positivas = lidas.filter((a) => a.ultimosOvos > 0);
+  const totalOvos = lidas.reduce((s, a) => s + a.ultimosOvos, 0);
+  const top = [...lidas].sort((x, y) => y.ultimosOvos - x.ultimosOvos).filter((a) => a.ultimosOvos > 0).slice(0, 3);
+  if (top.length) {
+    linhas.push(`• Maiores contagens: ${top.map((a) => `P-${a.numero} (${a.ultimosOvos} ovos, ${a.bairro || 'Carmo'})`).join('; ')}.`);
+  }
+  const porBairro = new Map();
+  lidas.forEach((a) => {
+    const b = a.bairro || 'Carmo';
+    const r = porBairro.get(b) || { ovos: 0, n: 0 };
+    r.ovos += a.ultimosOvos;
+    r.n += 1;
+    porBairro.set(b, r);
+  });
+  const [bairroTop, dadosTop] = [...porBairro.entries()].sort((x, y) => y[1].ovos - x[1].ovos)[0];
+  linhas.push(`• Bairro com mais ovos: ${bairroTop} (${dadosTop.ovos} ovos em ${dadosTop.n} armadilha${dadosTop.n === 1 ? '' : 's'} lida${dadosTop.n === 1 ? '' : 's'}).`);
+  const zeros = lidas.length - positivas.length;
+  linhas.push(`• Armadilhas sem ovos: ${zeros} de ${lidas.length} lidas (${fmtPct((zeros / lidas.length) * 100)}%).`);
+  const ipo = (positivas.length / lidas.length) * 100;
+  const ido = positivas.length ? totalOvos / positivas.length : 0;
+  linhas.push(`• Índices do ciclo: IPO ${fmtPct(ipo)}% e IDO ${fmtPct(ido)} ovos por armadilha positiva (${totalOvos.toLocaleString('pt-BR')} ovos).`);
+  if (ciclo === 'B') {
+    const outro = new Map(listaOutroCiclo.map((a) => [a.numero, a.ultimosOvos]));
+    let subiu = 0;
+    let caiu = 0;
+    let igual = 0;
+    lidas.forEach((a) => {
+      const anterior = outro.get(a.numero);
+      if (anterior == null) return;
+      if (a.ultimosOvos > anterior) subiu += 1;
+      else if (a.ultimosOvos < anterior) caiu += 1;
+      else igual += 1;
+    });
+    linhas.push(`• Em relação ao Ciclo A (mesma armadilha): aumentou em ${subiu}, diminuiu em ${caiu}, igual em ${igual}.`);
+    const pendentes = listaCiclo.length - lidas.length;
+    if (pendentes > 0) {
+      linhas.push(`• Leitura parcial: ${lidas.length} de ${listaCiclo.length} palhetas lidas; ${pendentes} aguardando o laboratório na data de emissão.`);
+    }
+  } else {
+    const criticos = lidas.filter((a) => a.ultimosOvos > 100).length;
+    const altos = lidas.filter((a) => a.ultimosOvos > 50 && a.ultimosOvos <= 100).length;
+    linhas.push(`• Focos acima de 100 ovos: ${criticos}; de 51 a 100 ovos: ${altos}.`);
+  }
+  return linhas;
+}
+
+function desenharBoxAnalise(doc, curY, titulo, linhas) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  const quebradas = linhas.map((l) => doc.splitTextToSize(l, 180));
+  const altura = 10 + quebradas.reduce((s, q) => s + q.length * 3.2 + 1.6, 0);
+  doc.setFillColor(...CORES.fundoCard);
+  doc.roundedRect(10, curY, 190, altura, 2, 2, 'F');
+  doc.setDrawColor(...CORES.bordaCard);
+  doc.roundedRect(10, curY, 190, altura, 2, 2, 'S');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text(titulo, 14, curY + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...CORES.textoSecundario);
+  let y = curY + 11.5;
+  quebradas.forEach((q) => {
+    doc.text(q, 14, y);
+    y += q.length * 3.2 + 1.6;
+  });
+  return curY + altura;
 }
 
 /**
  * PÁGINA 2: Desenha o Sumário Executivo & Índice Geral do Relatório
  */
-function desenharSumarioExecutivoSesRj(doc, autoTable, { totalPaginas = 8 }) {
+function desenharSumarioExecutivoSesRj(doc, autoTable, { paginas = {} }) {
   const paginaAtual = 2;
+  const totalPaginas = '';
+  const pag = (p) => (p ? `Pág. ${p}` : '-');
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas,
@@ -520,39 +659,51 @@ function desenharSumarioExecutivoSesRj(doc, autoTable, { totalPaginas = 8 }) {
   const linhasSumario = [
     [
       'Seção 01',
-      'PAINEL EXECUTIVO CONSOLIDADO\nE INDICADORES EPIDEMIOLÓGICOS',
-      '• Comparativo consolidado de indicadores: Rede Total, Palhetas Lidas, Positivas, Total de Ovos, IPO e IDO.\n• Síntese comparativa por macrorregião / distritos (1º ao 5º Distrito de Carmo-RJ).\n• Distribuição das armadilhas por estrato oficial de risco do Ministério da Saúde.',
-      'Pág. 3'
+      'PAINEL EXECUTIVO COMPARATIVO\nCICLO A x CICLO B',
+      '• Comparativo dos indicadores: rede total, palhetas lidas, positivas, total de ovos, IPO e IDO.\n• Síntese por macrorregião / distrito de Carmo-RJ.\n• Distribuição das armadilhas por estrato oficial de risco do Ministério da Saúde.',
+      pag(paginas.resumo)
     ],
     [
       'Seção 02',
-      'ESTRATIFICAÇÃO TERRITORIAL EM 3 NÍVEIS:\nBAIRRO > MICROÁREA > QUARTEIRÃO',
-      '• Análise entomológica detalhada descendo ao nível do quarteirão técnico cadastrado.\n• Comparação de contagem de ovos e índices IPO/IDO entre o Ciclo A e Ciclo B.\n• Diagnóstico de tendência evolutiva por quarteirão (Subiu ↑, Reduziu ↓, Estável = ou Aguardando).',
-      'Pág. 4'
+      'INDICADORES EM GRÁFICOS:\nRISCO POR BAIRRO NOS DOIS CICLOS',
+      '• Gráfico dos 5 estratos de risco por bairro e distrito, do azul (sem ovos) ao vermelho (crítico).\n• Um gráfico por ciclo, cada armadilha classificada pelos ovos daquele ciclo.',
+      pag(paginas.graficos)
     ],
     [
       'Seção 03',
-      'INVENTÁRIO TÉCNICO INDIVIDUALIZADO\nDAS 56 OVITRAMPAS (P-01 A P-56)',
-      '• Rastreabilidade cadastral de cada armadilha instalada em campo, 100% anonimizada (sem morador).\n• Leituras laboratoriais de cada palheta (Palheta A e Palheta B com conferência óptica).\n• Classificação individual de risco epidemiológico e cálculo da variação absoluta de ovos.',
-      'Pág. 5'
+      'FOCOS PRIORITÁRIOS:\nRANKING POR CICLO',
+      '• Ranking das armadilhas com mais de 50 ovos em cada ciclo, identificadas apenas pelo código técnico.',
+      pag(paginas.focos)
     ],
     [
       'Seção 04',
-      'MAPEAMENTO GEOESPACIAL E NEVOEIRO\nTÉRMICO DE DISPERSÃO — CICLO A',
-      '• Cartografia satélite de alta definição cobrindo a malha urbana e distrital de Carmo.\n• Nevoeiro térmico com interpolação de densidade de ovos (1.017 ovos contados na 1ª semana).\n• Identificação do epicentro no Bairro Progresso e barreiras frias da primeira semana amostral.',
-      'Pág. 6'
+      'ESTRATIFICAÇÃO TERRITORIAL EM 3 NÍVEIS:\nBAIRRO > MICROÁREA > QUARTEIRÃO',
+      '• Ovos, IPO e IDO por quarteirão nos Ciclos A e B.\n• Tendência por quarteirão (subiu, reduziu, estável ou aguardando leitura).',
+      pag(paginas.tabela)
     ],
     [
       'Seção 05',
-      'MAPEAMENTO GEOESPACIAL E NEVOEIRO\nTÉRMICO DE DISPERSÃO — CICLO B',
-      '• Cartografia satélite atualizada com a dinâmica espacial do 2º ciclo amostral.\n• Mapeamento das 26 palhetas lidas e representação dos pontos em processamento laboratorial.\n• Análise de novos epicentros (Centro, Jardim Centenário) e interiorização vetorial (Influência).',
-      'Pág. 7'
+      'INVENTÁRIO TÉCNICO INDIVIDUALIZADO\nDAS OVITRAMPAS (P-01 A P-56)',
+      '• Leitura de cada palheta nos dois ciclos e classificação individual de risco, sem identificação do morador.',
+      pag(paginas.inventario)
     ],
     [
       'Seção 06',
-      'METODOLOGIA PADRONIZADA, PLANO\nDE AÇÃO & ASSINATURA TÉCNICA',
-      '• Protocolo técnico Ministério da Saúde / SES-RJ / Fiocruz (armadilha, substrato e fórmulas).\n• Diretrizes de manejo ambiental e plano de bloqueio focal em raio de 150m para focos críticos.\n• Bloco de chancela oficial, assinaturas técnicas (Coordenação e Secretaria) e chave de autenticação.',
-      'Pág. 8'
+      'MAPEAMENTO GEOESPACIAL\nCICLO A',
+      '• Mapa de densidade de ovos sobre imagem de satélite e análise espacial do ciclo.',
+      pag(paginas.mapaA)
+    ],
+    [
+      'Seção 07',
+      'MAPEAMENTO GEOESPACIAL\nCICLO B',
+      '• Mapa de densidade de ovos do 2º ciclo e comparação com o ciclo anterior.',
+      pag(paginas.mapaB)
+    ],
+    [
+      'Seção 08',
+      'METODOLOGIA, PLANO DE AÇÃO\n& ASSINATURA TÉCNICA',
+      '• Protocolo técnico, diretrizes de manejo e bloqueio focal, e bloco de assinaturas.',
+      pag(paginas.metodologia)
     ]
   ];
 
@@ -693,24 +844,34 @@ export async function gerarRelatorioFinalSesRj(
     dataFormatada
   });
 
-  // =========================================================================
-  // PÁGINA 2: SUMÁRIO EXECUTIVO & ÍNDICE GERAL DO RELATÓRIO
-  // =========================================================================
-  doc.addPage();
-  desenharSumarioExecutivoSesRj(doc, autoTable, {
-    totalPaginas: totalPaginasEstimadas
-  });
+  // O sumário (página 2) é desenhado no fim, já com a página real de cada
+  // seção, e movido para a posição 2. Aqui guardamos onde cada seção começa
+  // (chamar logo depois do addPage; o +1 é o sumário que entra na posição 2).
+  const paginasSecao = {};
+  const marcarSecao = (nome) => {
+    paginasSecao[nome] = doc.getNumberOfPages() + 1;
+  };
+  const continuarCabecalho = (subtitulo) => {
+    const inicio = doc.getNumberOfPages();
+    return () => {
+      if (doc.internal.getCurrentPageInfo().pageNumber !== inicio) {
+        desenharCabecalhoSesRj(doc, { subtitulo });
+        desenharRodapeSesRj(doc);
+      }
+    };
+  };
 
   // =========================================================================
   // PÁGINA 3: RESUMO EXECUTIVO COMPARATIVO MUNICIPAL (CICLO A x CICLO B)
   // =========================================================================
   doc.addPage();
+  paginasSecao.resumo = doc.getNumberOfPages() + 1;
   let paginaAtual = 3;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '1. PAINEL EXECUTIVO COMPARATIVO — CICLO A x CICLO B'
+    subtitulo: 'PAINEL EXECUTIVO COMPARATIVO — CICLO A x CICLO B'
   });
 
   let curY = 35;
@@ -738,7 +899,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('1. COMPARATIVO CONSOLIDADO DOS INDICADORES EPIDEMIOLÓGICOS', 10, curY);
+  doc.text('1.1 COMPARATIVO CONSOLIDADO DOS INDICADORES EPIDEMIOLÓGICOS', 10, curY);
 
   curY += 4;
 
@@ -836,7 +997,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('2. SÍNTESE COMPARATIVA POR MACRORREGIÃO / DISTRITO', 10, curY);
+  doc.text('1.2 SÍNTESE COMPARATIVA POR MACRORREGIÃO / DISTRITO', 10, curY);
 
   curY += 3;
 
@@ -949,7 +1110,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('3. DISTRIBUIÇÃO DAS ARMADILHAS POR ESTRATO OFICIAL DE RISCO', 10, curY);
+  doc.text('1.3 DISTRIBUIÇÃO DAS ARMADILHAS POR ESTRATO OFICIAL DE RISCO', 10, curY);
 
   curY += 3;
 
@@ -1034,15 +1195,100 @@ export async function gerarRelatorioFinalSesRj(
   desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
 
   // =========================================================================
+  // INDICADORES EM GRÁFICOS: RISCO POR BAIRRO (CICLO A x CICLO B)
+  // Mesmos gráficos do Relatório de Resultados, um por ciclo.
+  // =========================================================================
+  const somenteA = armadilhasDoCiclo(armadilhasResolvidas, 'A');
+  const somenteB = armadilhasDoCiclo(armadilhasResolvidas, 'B');
+
+  doc.addPage();
+  marcarSecao('graficos');
+  desenharCabecalhoSesRj(doc, { subtitulo: 'INDICADORES EM GRÁFICOS — RISCO POR BAIRRO' });
+  curY = 36;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('2. INDICADORES EM GRÁFICOS — ESTRATOS DE RISCO POR BAIRRO E DISTRITO', 10, curY);
+  curY += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text('Cada barra mostra quantas armadilhas lidas do bairro caíram em cada estrato: sem ovos, baixo (1–20), médio (21–50), alto (51–100) e crítico (acima de 100).', 10, curY);
+  curY += 5;
+  [
+    ['CICLO A (1ª SEMANA)', somenteA],
+    ['CICLO B (2ª SEMANA)', somenteB]
+  ].forEach(([rotulo, lista]) => {
+    const lidas = lista.filter((a) => a.ultimosOvos != null).length;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...CORES.textoPrincipal);
+    doc.text(`${rotulo} — ${lidas} de ${lista.length} palhetas lidas`, 10, curY + 3);
+    curY += 5;
+    const tela = gerarCanvasBarrasLateraisRiscoBairros(extrairDadosBairrosConsolidado(lista), { width: 1400, height: 640 });
+    if (tela) {
+      doc.addImage(tela.toDataURL('image/png'), 'PNG', 10, curY, 190, 190 * (640 / 1400), undefined, 'FAST');
+    }
+    curY += 190 * (640 / 1400) + 4;
+  });
+  desenharRodapeSesRj(doc);
+
+  // =========================================================================
+  // FOCOS PRIORITÁRIOS: RANKING POR CICLO
+  // =========================================================================
+  doc.addPage();
+  marcarSecao('focos');
+  desenharCabecalhoSesRj(doc, { subtitulo: 'FOCOS PRIORITÁRIOS — RANKING POR CICLO' });
+  curY = 36;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('3. FOCOS PRIORITÁRIOS — ARMADILHAS COM MAIS DE 50 OVOS', 10, curY);
+  curY += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text('Ranking das 10 maiores contagens de cada ciclo. Identificação apenas pelo código técnico da armadilha, sem endereço nem morador.', 10, curY);
+  curY += 5;
+  [
+    ['CICLO A (1ª SEMANA)', somenteA],
+    ['CICLO B (2ª SEMANA)', somenteB]
+  ].forEach(([rotulo, lista]) => {
+    const focos = lista
+      .filter((a) => a.ultimosOvos != null && a.ultimosOvos > 50)
+      .sort((x, y) => y.ultimosOvos - x.ultimosOvos);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...CORES.textoPrincipal);
+    doc.text(`${rotulo} — ${focos.length} armadilha${focos.length === 1 ? '' : 's'} acima de 50 ovos`, 10, curY + 3);
+    curY += 5;
+    if (focos.length) {
+      const tela = gerarCanvasRankingFocos(focos, { width: 1200, height: 520 });
+      if (tela) {
+        doc.addImage(tela.toDataURL('image/png'), 'PNG', 10, curY, 190, 190 * (520 / 1200), undefined, 'FAST');
+      }
+      curY += 190 * (520 / 1200) + 5;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...CORES.textoSecundario);
+      doc.text('Nenhuma armadilha acima de 50 ovos entre as palhetas lidas deste ciclo.', 14, curY + 4);
+      curY += 12;
+    }
+  });
+  desenharRodapeSesRj(doc);
+
+  // =========================================================================
   // PÁGINA 4: TABELA TÉCNICA EM 3 NÍVEIS (BAIRRO > MICROÁREA > QUARTEIRÃO)
   // =========================================================================
   doc.addPage();
+  paginasSecao.tabela = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '2. TABELA TÉCNICA EM 3 NÍVEIS: BAIRRO > MICROÁREA > QUARTEIRÃO'
+    subtitulo: 'TABELA TÉCNICA EM 3 NÍVEIS: BAIRRO > MICROÁREA > QUARTEIRÃO'
   });
 
   curY = 34;
@@ -1094,6 +1340,8 @@ export async function gerarRelatorioFinalSesRj(
 
   autoTable(doc, {
     startY: curY,
+    margin: { top: 36, bottom: 14 },
+    didDrawPage: continuarCabecalho('ESTRATIFICAÇÃO TERRITORIAL EM 3 NÍVEIS (CONTINUAÇÃO)'),
     head: [[
       { content: 'Bairro', rowSpan: 2, styles: { valign: 'middle' } },
       { content: 'Microárea', rowSpan: 2, styles: { valign: 'middle' } },
@@ -1159,12 +1407,13 @@ export async function gerarRelatorioFinalSesRj(
   // PÁGINA 5: CLASSIFICAÇÃO INDIVIDUAL DE RISCO POR ARMAIDILHA (ANONIMIZADA)
   // =========================================================================
   doc.addPage();
+  paginasSecao.inventario = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '3. INVENTÁRIO TÉCNICO DAS 56 OVITRAMPAS (SEM MORADOR)'
+    subtitulo: 'INVENTÁRIO TÉCNICO DAS 56 OVITRAMPAS (SEM MORADOR)'
   });
 
   curY = 34;
@@ -1223,6 +1472,8 @@ export async function gerarRelatorioFinalSesRj(
 
   autoTable(doc, {
     startY: curY,
+    margin: { top: 36, bottom: 14 },
+    didDrawPage: continuarCabecalho('INVENTÁRIO TÉCNICO DAS OVITRAMPAS (CONTINUAÇÃO)'),
     head: [[
       'OV', 'Bairro', 'Microárea', 'Quart.',
       'Palh. A', 'Ovos A', 'Risco Ciclo A',
@@ -1319,12 +1570,13 @@ export async function gerarRelatorioFinalSesRj(
   // PÁGINA 6: MAPEAMENTO GEOESPACIAL DE DENSIDADE VETORIAL — CICLO A
   // =========================================================================
   doc.addPage();
+  paginasSecao.mapaA = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '4. DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO A'
+    subtitulo: 'DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO A'
   });
 
   curY = 34;
@@ -1339,7 +1591,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.4);
   doc.setTextColor(...CORES.textoSecundario);
-  doc.text('Visualização cartográfica por imagem de satélite com dispersão térmica das 56 armadilhas do Ciclo A (1.017 ovos contados).', 10, curY);
+  doc.text(`Visualização cartográfica por imagem de satélite com dispersão térmica das ${metricasA.total} armadilhas do Ciclo A (${metricasA.comparativo.ovosA.toLocaleString('pt-BR')} ovos contados).`, 10, curY);
 
   curY += 6;
 
@@ -1351,10 +1603,15 @@ export async function gerarRelatorioFinalSesRj(
       tituloTerritorio: 'MUNICÍPIO DE CARMO — CICLO A (1ª SEMANA)'
     });
 
-    if (canvasMapaA) {
-      const imgDataA = canvasMapaA.toDataURL('image/jpeg', 0.90);
-      doc.addImage(imgDataA, 'JPEG', 10, curY, 190, 122);
-      curY += 125;
+    // gerarCanvasMapaNevoeiro devolve { canvas, width, height }, nao o
+    // canvas direto: chamar toDataURL no objeto dava TypeError e o PDF saia
+    // sempre com "Mapa em processamento vetorial" no lugar do mapa.
+    const telaA = canvasMapaA?.canvas || canvasMapaA;
+    if (telaA) {
+      const imgDataA = telaA.toDataURL('image/jpeg', 0.90);
+      const alturaA = Math.min(150, 190 * (telaA.height / telaA.width));
+      doc.addImage(imgDataA, 'JPEG', 10, curY, 190, alturaA);
+      curY += alturaA + 3;
     }
   } catch (errMapaA) {
     console.warn('Erro ao gerar imagem do mapa Ciclo A:', errMapaA);
@@ -1363,25 +1620,8 @@ export async function gerarRelatorioFinalSesRj(
     curY += 85;
   }
 
-  // Box Analítico do Ciclo A
-  doc.setFillColor(...CORES.fundoCard);
-  doc.roundedRect(10, curY, 190, 36, 2, 2, 'F');
-  doc.setDrawColor(...CORES.bordaCard);
-  doc.roundedRect(10, curY, 190, 36, 2, 2, 'S');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('ANÁLISE ESPACIAL DA INFESTAÇÃO — CICLO A:', 14, curY + 6);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...CORES.textoSecundario);
-  doc.text('• Epicentro Crítico Máximo: Bairro Progresso (P-23: 147 ovos e P-21: 100 ovos), configurando área de altíssima atividade de oviposição.', 14, curY + 11.5);
-  doc.text('• Focos de Alto Risco na Sede: Morro do Estado (P-28: 86 ovos), Boa Ideia (P-15: 78 ovos; P-08: 64 ovos) e Centro (P-12: 64 ovos).', 14, curY + 16.5);
-  doc.text('• Dispersão Distrital: Destaque para o 2º Distrito (Influência) com foco importante na armadilha P-36 (53 ovos).', 14, curY + 21.5);
-  doc.text('• Cobertura Negativa (Barreira Fria): 24 armadilhas apresentaram contagem zero (42,9%), distribuídas especialmente na periferia urbana.', 14, curY + 26.5);
-  doc.text('• Índice Geral: IPO de 57,1% e IDO de 31,8 ovos/armadilha positiva, exigindo direcionamento imediato das equipes de campo.', 14, curY + 31.5);
+  // Box analítico do Ciclo A (calculado dos dados)
+  curY = desenharBoxAnalise(doc, curY, 'ANÁLISE ESPACIAL DA INFESTAÇÃO — CICLO A:', analiseDoCiclo(somenteA, somenteB, 'A'));
 
   desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
 
@@ -1389,12 +1629,13 @@ export async function gerarRelatorioFinalSesRj(
   // PÁGINA 7: MAPEAMENTO GEOESPACIAL DE DENSIDADE VETORIAL — CICLO B
   // =========================================================================
   doc.addPage();
+  paginasSecao.mapaB = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '5. DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO B'
+    subtitulo: 'DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO B'
   });
 
   curY = 34;
@@ -1420,10 +1661,15 @@ export async function gerarRelatorioFinalSesRj(
       tituloTerritorio: 'MUNICÍPIO DE CARMO — CICLO B (2ª SEMANA)'
     });
 
-    if (canvasMapaB) {
-      const imgDataB = canvasMapaB.toDataURL('image/jpeg', 0.90);
-      doc.addImage(imgDataB, 'JPEG', 10, curY, 190, 122);
-      curY += 125;
+    // gerarCanvasMapaNevoeiro devolve { canvas, width, height }, nao o
+    // canvas direto: chamar toDataURL no objeto dava TypeError e o PDF saia
+    // sempre com "Mapa em processamento vetorial" no lugar do mapa.
+    const telaB = canvasMapaB?.canvas || canvasMapaB;
+    if (telaB) {
+      const imgDataB = telaB.toDataURL('image/jpeg', 0.90);
+      const alturaB = Math.min(150, 190 * (telaB.height / telaB.width));
+      doc.addImage(imgDataB, 'JPEG', 10, curY, 190, alturaB);
+      curY += alturaB + 3;
     }
   } catch (errMapaB) {
     console.warn('Erro ao gerar imagem do mapa Ciclo B:', errMapaB);
@@ -1432,25 +1678,8 @@ export async function gerarRelatorioFinalSesRj(
     curY += 85;
   }
 
-  // Box Analítico do Ciclo B
-  doc.setFillColor(...CORES.fundoCard);
-  doc.roundedRect(10, curY, 190, 36, 2, 2, 'F');
-  doc.setDrawColor(...CORES.bordaCard);
-  doc.roundedRect(10, curY, 190, 36, 2, 2, 'S');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('ANÁLISE COMPARATIVA E DINÂMICA DE DESLOCAMENTO — CICLO B:', 14, curY + 6);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...CORES.textoSecundario);
-  doc.text('• Persistência Crítica no Progresso: A armadilha P-23 voltou a apresentar densidade extrema (195 ovos), ratificando o local como foco prioritário.', 14, curY + 11.5);
-  doc.text('• Novo Epicentro no Centro: Aumento significativo na P-10 (201 ovos) e persistência na P-16 (Caixa d\'Água: 89 ovos).', 14, curY + 16.5);
-  doc.text('• Elevação no Jardim Centenário: P-05 apresentou contagem expressiva (167 ovos), demonstrando dispersão para área contígua.', 14, curY + 21.5);
-  doc.text('• Interiorização Vetorial: Foco crítico identificado em Influência (P-51 com 108 ovos), apontando transmissão ativa no 2º Distrito.', 14, curY + 26.5);
-  doc.text(`• Status de Coleta: ${metricasB.totalLidas} palhetas lidas e ${56 - metricasB.totalLidas} palhetas em processamento laboratorial (conclusão em 01/10).`, 14, curY + 31.5);
+  // Box analítico do Ciclo B (calculado dos dados)
+  curY = desenharBoxAnalise(doc, curY, 'ANÁLISE COMPARATIVA — CICLO B:', analiseDoCiclo(somenteB, somenteA, 'B'));
 
   desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
 
@@ -1458,12 +1687,13 @@ export async function gerarRelatorioFinalSesRj(
   // PÁGINA 8: METODOLOGIA OFICIAL, CONDUTAS & ASSINATURA TÉCNICA
   // =========================================================================
   doc.addPage();
+  paginasSecao.metodologia = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
     totalPaginas: totalPaginasEstimadas,
-    subtitulo: '6. METODOLOGIA OFICIAL, DIRETRIZES DE MANEJO & CHANCELA TÉCNICA'
+    subtitulo: 'METODOLOGIA OFICIAL, DIRETRIZES DE MANEJO & CHANCELA TÉCNICA'
   });
 
   curY = 34;
@@ -1493,7 +1723,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.text('  madeira de eucalipto rugosa (palheta 12 x 2,5 cm) e 300ml de infusão biológica atrativa padronizada (Panicum maximum a 10%).', 14, curY + 14);
   doc.text('• Desenho Amostral: 56 armadilhas georreferenciadas com GPS métrico, distribuídas em grade regular com espaçamento médio de 300 a 400 metros,', 14, curY + 18);
   doc.text('  cobrindo a sede urbana do 1º Distrito e os distritos de Influência, Córrego da Prata, Porto Velho do Cunha, Ilha dos Pombos e Barra de S. Francisco.', 14, curY + 21.5);
-  doc.text('• Ciclo de Coleta: Instalação e exposição contínua por período padrão de 5 a 7 dias no peridomicílio em locais sombreados e protegidos.', 14, curY + 25.5);
+  doc.text('• Ciclo de Coleta: Instalação e exposição contínua por período padrão de 5 dias no peridomicílio em locais sombreados e protegidos.', 14, curY + 25.5);
   doc.text('• Triagem Laboratorial: Análise e quantificação individualizada sob estereomicroscopia óptica em bancada laboratorial com dupla conferência.', 14, curY + 29.5);
   doc.text('• Fórmulas de Cálculo:', 14, curY + 34);
   doc.text('    - Índice de Positividade de Ovitrampas (IPO) = (Nº de Armadilhas Positivas / Nº de Armadilhas Lidas) x 100', 18, curY + 38);
@@ -1504,7 +1734,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('9. PLANO DE AÇÃO IMEDIATA E MEDIDAS DE CONTROLE AMBIENTAL', 10, curY);
+  doc.text('8.1 PLANO DE AÇÃO IMEDIATA E MEDIDAS DE CONTROLE AMBIENTAL', 10, curY);
 
   curY += 4;
 
@@ -1597,6 +1827,12 @@ export async function gerarRelatorioFinalSesRj(
   desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
 
   // 4. Salvar / Baixar o arquivo PDF
+  // Sumário com as páginas reais de cada seção, movido para a posição 2.
+  doc.addPage();
+  desenharSumarioExecutivoSesRj(doc, autoTable, { paginas: paginasSecao });
+  doc.movePage(doc.getNumberOfPages(), 2);
+  numerarPaginasSesRj(doc);
+
   doc.save(nomeArquivo);
   return true;
 }
