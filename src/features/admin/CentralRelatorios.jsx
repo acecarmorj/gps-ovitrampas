@@ -6,7 +6,7 @@ import {
   CICLO_SEMANA_1,
   CICLO_SEMANA_2
 } from '../../lib/ciclosOvitrampas';
-import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono } from '../../lib/mapaPoligonos';
+import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
@@ -46,7 +46,9 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
         metricas: c === 'A' ? ciclos.mA : ciclos.mB,
         ciclo: c,
         territorioLabel: 'Todo o município',
-        fundo: fundoMapa
+        fundo: fundoMapa,
+        estilo: 'nevoeiro',
+        rotulos: montarRotulosOvos(ciclos.A, ciclos.B)
       });
     });
 

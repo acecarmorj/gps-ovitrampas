@@ -68,3 +68,14 @@ export function nomePoligono(poly) {
   if (poly.territoryType === 'praca') return poly.name;
   return `${poly.folder} · Q-${poly.name}`;
 }
+
+/** Rotulo de cada armadilha: ovos de A e de B lado a lado (cada ciclo separado, nunca somados). */
+export function montarRotulosOvos(listaA = [], listaB = []) {
+  const m = new Map();
+  listaA.forEach((x) => m.set(String(x.numero), { a: temLeitura(x) ? Number(x.ultimosOvos) : null, b: null }));
+  listaB.forEach((x) => {
+    const atual = m.get(String(x.numero)) || { a: null, b: null };
+    m.set(String(x.numero), { ...atual, b: temLeitura(x) ? Number(x.ultimosOvos) : null });
+  });
+  return m;
+}

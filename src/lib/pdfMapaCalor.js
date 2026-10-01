@@ -103,25 +103,12 @@ function corDaIntensidade(v) {
  * Cada pixel recebe a media ponderada dos ovos das armadilhas proximas (nucleo gaussiano, ~175 m),
  * pintada na escala oficial de 5 cores; fora do alcance das armadilhas a imagem some (halo suave).
  */
-export function gerarNevoeiroDoMapa(subset, mw, mh, padFrac = 0.12, retornarCaixa = false) {
-  const cx = caixaDoMapa(subset, mw, mh, padFrac);
-  if (!cx) return null;
-  const trs = subset
-    .filter(temLeitura)
-    .map((a) => ({ lat: Number(a.latitude), lng: Number(a.longitude), v: Number(a.ultimosOvos) }))
-    .filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lng) && Number.isFinite(t.v));
-  if (trs.length === 0) return null;
-
-  const wpx = Math.max(300, Math.round(mw * 2.6));
-  const hpx = Math.max(1, Math.round((wpx * mh) / mw));
+function renderizarNevoeiro(trs, cx, wpx, hpx, sigma) {
   const canvas = document.createElement('canvas');
   canvas.width = wpx;
   canvas.height = hpx;
   const ctx = canvas.getContext('2d');
   const img = ctx.createImageData(wpx, hpx);
-  // Alcance do calor: ~140 m em escala de bairro; cresce com a area para o municipio inteiro continuar visivel.
-  const larguraM = (cx.lngMax - cx.lngMin) * 111320 * Math.cos(((cx.latMin + cx.latMax) / 2) * (Math.PI / 180));
-  const sigma = Math.max(140, larguraM / 45);
   const inv2s2 = 1 / (2 * sigma * sigma);
   const topo = mercN(cx.latMax);
 
@@ -150,9 +137,57 @@ export function gerarNevoeiroDoMapa(subset, mw, mh, padFrac = 0.12, retornarCaix
     }
   }
   ctx.putImageData(img, 0, 0);
-  const url = canvas.toDataURL('image/png');
+  return canvas.toDataURL('image/png');
+}
+
+function armadilhasLidasParaNevoeiro(subset) {
+  return subset
+    .filter(temLeitura)
+    .map((a) => ({ lat: Number(a.latitude), lng: Number(a.longitude), v: Number(a.ultimosOvos) }))
+    .filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lng) && Number.isFinite(t.v));
+}
+
+function larguraEmMetros(cx) {
+  return (cx.lngMax - cx.lngMin) * 111320 * Math.cos(((cx.latMin + cx.latMax) / 2) * (Math.PI / 180));
+}
+
+export function gerarNevoeiroDoMapa(subset, mw, mh, padFrac = 0.12, retornarCaixa = false) {
+  const cx = caixaDoMapa(subset, mw, mh, padFrac);
+  if (!cx) return null;
+  const trs = armadilhasLidasParaNevoeiro(subset);
+  if (trs.length === 0) return null;
+  const wpx = Math.max(300, Math.round(mw * 2.6));
+  const hpx = Math.max(1, Math.round((wpx * mh) / mw));
+  // Alcance do calor: ~140 m em escala de bairro; cresce com a area para o municipio inteiro continuar visivel.
+  const sigma = Math.max(140, larguraEmMetros(cx) / 45);
+  const url = renderizarNevoeiro(trs, cx, wpx, hpx, sigma);
   return retornarCaixa ? { url, caixa: cx } : url;
 }
+
+/**
+ * Nevoeiro para o que esta visivel na tela (zoom/arraste): o alcance acompanha a escala do mapa,
+ * entao com zoom o detalhe aparece (alcance de ~150 m) e com o mapa aberto as manchas se juntam.
+ */
+export function gerarNevoeiroDaVisao(subset, limites, wpx, hpx) {
+  const trs = armadilhasLidasParaNevoeiro(subset);
+  if (trs.length === 0) return null;
+  const cx = {
+    ...limites,
+    spanX: (limites.lngMax - limites.lngMin) / 360,
+    spanY: mercN(limites.latMin) - mercN(limites.latMax)
+  };
+  const sigma = Math.max(150, larguraEmMetros(cx) / 60);
+  return renderizarNevoeiro(trs, cx, wpx, hpx, sigma);
+}
+
+const TERRITORIOS_PDF = [
+  ['sede', 'Cidade (sede urbana)'],
+  ['influencia', 'Distrito de Influência'],
+  ['corrego_da_prata', 'Distrito de Córrego da Prata'],
+  ['porto_velho', 'Distrito de Porto Velho do Cunha'],
+  ['ilha_dos_pombos', 'Ilha dos Pombos'],
+  ['barra_sao_francisco', 'Barra de São Francisco']
+];
 
 export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) {
   // ---------- mapa vetorial ----------
@@ -190,6 +225,7 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
     }
 
     const modoNevoeiro = opts.modo === 'nevoeiro';
+    const soPontos = opts.modo === 'pontos'; // mapa aberto (municipio): so os pontinhos coloridos
     if (modoNevoeiro && opts.nevoeiroImg) {
       try {
         doc.addImage(opts.nevoeiroImg, 'PNG', mx, my, mw, mh);
@@ -217,10 +253,10 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
 
     const comArmadilha = new Set(gruposSub.map((g) => g.poly.id));
     getAllPolygons().forEach((p) => {
-      if (p.territoryType === 'distrito' || comArmadilha.has(p.id)) return;
+      if (soPontos || p.territoryType === 'distrito' || comArmadilha.has(p.id)) return;
       desenhaPoligono(p.coordinates, null, comFundo || modoNevoeiro ? '#ffffff' : '#9ca3af', comFundo ? 0.7 : 0.6, 0.15);
     });
-    [...gruposSub]
+    (soPontos ? [] : [...gruposSub])
       .sort((a, b) => (b.poly.territoryType === 'distrito') - (a.poly.territoryType === 'distrito'))
       .forEach((g) => {
         const f = faixaDeOvos(g.maxOvos);
@@ -236,7 +272,7 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
       const la = Number(a.latitude);
       const lo = Number(a.longitude);
       if (!Number.isFinite(la) || !Number.isFinite(lo)) return;
-      if (!modoNevoeiro && temLeitura(a) && Number(a.ultimosOvos) > 0) {
+      if (!modoNevoeiro && !soPontos && temLeitura(a) && Number(a.ultimosOvos) > 0) {
         doc.setGState(new doc.GState({ opacity: 0.28 }));
         doc.setFillColor(faixaDeOvos(a.ultimosOvos).cor);
         doc.circle(px(lo), py(la), raioCalorMm, 'F');
@@ -250,8 +286,29 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
       doc.setFillColor(faixaDeOvos(a.ultimosOvos).cor);
       doc.setDrawColor(255, 255, 255);
       doc.setLineWidth(0.4);
-      doc.circle(px(lo), py(la), 1.3, 'FD');
+      doc.circle(px(lo), py(la), soPontos ? 1.6 : 1.3, 'FD');
     });
+    if (opts.rotulos) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(opts.tamanhoRotulo ?? 5.5);
+      subset.forEach((a) => {
+        const la = Number(a.latitude);
+        const lo = Number(a.longitude);
+        if (!Number.isFinite(la) || !Number.isFinite(lo)) return;
+        const r = opts.rotulos.get(String(a.numero));
+        const v = (n) => (n === null || n === undefined ? '-' : n);
+        const t = `${a.numero}  A ${v(r?.a)} · B ${v(r?.b)}`;
+        const tw = doc.getTextWidth(t);
+        const x = px(lo);
+        const y = py(la);
+        doc.setGState(new doc.GState({ opacity: 0.9 }));
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x - tw / 2 - 0.8, y + 1.7, tw + 1.6, 3.1, 0.6, 0.6, 'F');
+        doc.setGState(new doc.GState({ opacity: 1 }));
+        doc.setTextColor(...PRETO);
+        doc.text(t, x, y + 3.95, { align: 'center' });
+      });
+    }
     doc.restoreGraphicsState();
     doc.setDrawColor(...PRETO);
     doc.setLineWidth(0.3);
@@ -287,17 +344,20 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...CINZA);
-  const texto = doc.splitTextToSize(
-    'Cada quarteirão é pintado pela cor do pior foco (maior contagem) das palhetas dentro dele. ' +
-      'As manchas suaves mostram a área de influência de 175 m em torno de cada armadilha positiva. ' +
-      'Pontos são as armadilhas. IPO = armadilhas positivas ÷ lidas. IDO = ovos ÷ armadilhas positivas. ' +
-      'Cada ciclo é calculado separadamente.',
-    W - M - lx
-  );
+  const textoAjuda =
+    opts.modo === 'nevoeiro'
+      ? 'Superfície suave de calor: em cada ponto vale a média dos ovos das armadilhas próximas, com mais peso para as mais perto (alcance de cerca de 175 m). ' +
+        'Pontos são as armadilhas; cada rótulo mostra o número da armadilha e os ovos de A e de B. ' +
+        'IPO = armadilhas positivas ÷ lidas. IDO = ovos ÷ armadilhas positivas. Cada ciclo é calculado separadamente.'
+      : 'Cada quarteirão é pintado pela cor do pior foco (maior contagem) das palhetas dentro dele. ' +
+        'As manchas suaves mostram a área de influência de 175 m em torno de cada armadilha positiva. ' +
+        'Pontos são as armadilhas. IPO = armadilhas positivas ÷ lidas. IDO = ovos ÷ armadilhas positivas. ' +
+        'Cada ciclo é calculado separadamente.';
+  const texto = doc.splitTextToSize(textoAjuda, W - M - lx);
   doc.text(texto, lx, ly);
 }
 
-export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial', secoes }) {
+export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial', secoes, estilo = 'nevoeiro', rotulos = null }) {
   const [{ jsPDF }, autoTableMod] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
@@ -373,46 +433,46 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
 
   // ---------- mapa (pagina 1: territorio selecionado) ----------
   const usarSat = fundo === 'satelite';
+  const nevoeiro = estilo === 'nevoeiro';
+  const todoMunicipio = territorioLabel === 'Todo o município';
   const fundoPrincipal = usarSat ? await fundoSateliteDoMapa(armadilhas, 200, 148) : null;
-  desenharMapaELegenda(doc, armadilhas, grupos, 50, 148, { fundo: fundoPrincipal });
+  desenharMapaELegenda(doc, armadilhas, grupos, 50, 148, {
+    fundo: fundoPrincipal,
+    // municipio inteiro: so os pontinhos (o nevoeiro fica na cidade e em cada distrito)
+    modo: todoMunicipio ? 'pontos' : nevoeiro ? 'nevoeiro' : 'poligonos',
+    nevoeiroImg: nevoeiro && !todoMunicipio ? gerarNevoeiroDoMapa(armadilhas, 200, 148) : null,
+    rotulos: todoMunicipio ? null : rotulos // no municipio inteiro os rotulos se sobrepoem; ficam nas paginas de cada local
+  });
 
-  // ---------- pagina de ampliacao da sede urbana (so na visao do municipio) ----------
-  if (territorioLabel === 'Todo o município') {
-    const sede = armadilhas.filter((a) => classificarTerritorio(a).id === 'sede');
-    if (sede.length > 0) {
+  // ---------- uma pagina para a cidade (sede) e uma para CADA distrito ----------
+  if (todoMunicipio) {
+    for (const [idTerr, nomeTerr] of TERRITORIOS_PDF) {
+      const sub = armadilhas.filter((a) => classificarTerritorio(a).id === idTerr);
+      if (sub.length === 0) continue;
       doc.addPage('a4', 'landscape');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...PRETO);
-      doc.text(`Sede urbana ampliada — Ciclo ${ciclo}`, M, 14);
+      doc.text(`${nomeTerr} — Ciclo ${ciclo}`, M, 14);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(...CINZA);
-      doc.text(`${sede.length} armadilhas na sede. Mesma escala de cores da página anterior.`, M, 19);
-      const ids = new Set(sede.map((a) => a.id ?? a.numero));
-      const gSede = grupos.filter((g) => g.armadilhas.some((a) => ids.has(a.id ?? a.numero)));
-      const fundoSede = usarSat ? await fundoSateliteDoMapa(sede, 200, 175) : null;
-      desenharMapaELegenda(doc, sede, gSede, 24, 175, { fundo: fundoSede });
+      doc.text(
+        `${sub.length} armadilhas · ${nevoeiro ? 'calor em nevoeiro' : 'quarteirões e calor'} · cada armadilha mostra o número e os ovos de A e de B`,
+        M,
+        19
+      );
+      const idsSub = new Set(sub.map((a) => a.id ?? a.numero));
+      const gSub = grupos.filter((g) => g.armadilhas.some((a) => idsSub.has(a.id ?? a.numero)));
+      const fundoSub = usarSat ? await fundoSateliteDoMapa(sub, 200, 168) : null;
+      desenharMapaELegenda(doc, sub, gSub, 24, 168, {
+        fundo: fundoSub,
+        modo: nevoeiro ? 'nevoeiro' : 'poligonos',
+        nevoeiroImg: nevoeiro ? gerarNevoeiroDoMapa(sub, 200, 168) : null,
+        rotulos
+      });
     }
   }
-
-  // ---------- pagina de calor em nevoeiro ----------
-  doc.addPage('a4', 'landscape');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(...PRETO);
-  doc.text(`Mapa de calor em nevoeiro — Ciclo ${ciclo} — ${territorioLabel}`, M, 14);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...CINZA);
-  doc.text('Superfície suave interpolada a partir das contagens de cada armadilha (alcance de cerca de 175 m).', M, 19);
-  const fundoNev = usarSat ? await fundoSateliteDoMapa(armadilhas, 200, 168) : null;
-  const gTodosNev = grupos;
-  desenharMapaELegenda(doc, armadilhas, gTodosNev, 24, 168, {
-    fundo: fundoNev,
-    modo: 'nevoeiro',
-    nevoeiroImg: gerarNevoeiroDoMapa(armadilhas, 200, 168)
-  });
 
   // ---------- pagina 2: tabela ----------
   doc.addPage('a4', 'landscape');

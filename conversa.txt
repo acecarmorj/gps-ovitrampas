@@ -3018,3 +3018,9 @@ App (sw v26): rodape do menu "Acesso da equipe": digita a chave 1 vez por aparel
 Testado em producao: sem chave 0/56 nomes; com chave 56/56; chave errada recusada; DELETE/CLEAR 403; apos o app sincronizar sem chave o banco ficou IDENTICO ao backup (0 divergencias em nome/rua/imovel/numero/lat/lng).
 Pendente: coordenadas exatas ainda saem sem chave (necessarias aos apps); repositorio GitHub publico tem arquivos com dados de moradores no historico (decisao do Almir).
 ==============================================================================
+
+SECAO 121: CLAUDE - mapas de nevoeiro, PDFs por cidade/distrito, graficos coloridos (publicado sw v27, 01/10)
+- /calor: padrao = Nevoeiro + Pontos + rotulos "numero A x - B y" (com zoom); nevoeiro recalculado para o que esta na tela; municipio aberto = so pontinhos.
+- PDF "Mapa de calor": 1 pagina do municipio (pontinhos) + 1 da cidade + 1 de CADA distrito, todas em nevoeiro, com numero e ovos de A e B em cada armadilha; "Ambas" gera 1 arquivo com secao A e B.
+- SES-RJ (18 pag) e Resultados (OV-NN): tabelas com bolinha de cor no IDO (escala das 5 cores), Grafico 3 = faixas para Ambas (maior contagem entre A e B), Grafico 4 = IPO A x B colorido pelo pior foco; mapa do municipio so com pontos.
+- Privacidade: dados de moradores so com chave da equipe (secao 120).

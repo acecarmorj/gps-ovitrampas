@@ -163,42 +163,60 @@ function graficoEstratos(doc, bairros, lista) {
 function graficoAmbas(doc, bairros, listaA, listaB) {
   const pA = agrupar(listaA, bairroDe);
   const pB = agrupar(listaB, bairroDe);
-  const x0 = M + 52;
-  const larguraMax = 90;
+  const x0 = M + 56;
+  const larguraMax = 88;
   const passo = Math.min(16, 175 / Math.max(bairros.length, 1));
+  const piorFoco = (lista) => {
+    const lidas = lista.filter(temLeitura);
+    return lidas.length ? Math.max(...lidas.map((a) => Number(a.ultimosOvos))) : null;
+  };
+  // Cor da barra = faixa de risco do PIOR FOCO do bairro no ciclo; comprimento = IPO.
+  const barra = (y, ipo, ind, pior, cheia) => {
+    const larg = Math.max((ipo / 100) * larguraMax, 0.4);
+    const cor = faixaDeOvos(pior).cor;
+    if (ind.lidas) {
+      doc.setGState(new doc.GState({ opacity: cheia ? 1 : 0.5 }));
+      doc.setFillColor(cor);
+      doc.rect(x0, y, larg, 4.6, 'F');
+      doc.setGState(new doc.GState({ opacity: 1 }));
+    } else {
+      doc.setDrawColor(...LINHA);
+      doc.setLineWidth(0.2);
+      doc.line(x0, y, x0, y + 4.6);
+    }
+    texto(doc, cheia ? 'A' : 'B', x0 - 2.5, y + 3.7, { size: 7, bold: true, align: 'right' });
+    texto(doc, ind.lidas ? `${n1(ipo)}%` : 'aguardando', x0 + (ind.lidas ? larg : 0) + 2, y + 3.7, {
+      size: 7.5,
+      cor: ind.lidas ? PRETO : CINZA
+    });
+  };
   let y = 52;
   bairros.forEach((b) => {
-    const iA = indicadores(pA.get(b) || []);
-    const iB = indicadores(pB.get(b) || []);
+    const lA = pA.get(b) || [];
+    const lB = pB.get(b) || [];
+    const iA = indicadores(lA);
+    const iB = indicadores(lB);
     texto(doc, b, M, y + 6, { size: 8.5, bold: true, max: 50 });
-    doc.setFillColor(...PRETO);
-    doc.rect(x0, y, Math.max((iA.ipo / 100) * larguraMax, 0.4), 4.6, 'F');
-    texto(doc, iA.lidas ? `${n1(iA.ipo)}%` : '-', x0 + (iA.ipo / 100) * larguraMax + 2, y + 3.6, { size: 7.5 });
-    doc.setFillColor(150, 150, 150);
-    doc.rect(x0, y + 5.4, Math.max((iB.ipo / 100) * larguraMax, 0.4), 4.6, 'F');
-    texto(doc, iB.lidas ? `${n1(iB.ipo)}%` : 'aguardando', x0 + (iB.ipo / 100) * larguraMax + 2, y + 9, { size: 7.5, cor: CINZA });
+    barra(y, iA.ipo, iA, piorFoco(lA), true);
+    barra(y + 5.4, iB.ipo, iB, piorFoco(lB), false);
     y += passo;
   });
   doc.setDrawColor(...LINHA);
   doc.setLineWidth(0.2);
   doc.line(x0, 50, x0, y - passo + 12);
-  doc.setFillColor(...PRETO);
-  doc.rect(M, y + 4, 4, 3.5, 'F');
-  texto(doc, 'Ciclo A (completo)', M + 6, y + 7, { size: 8 });
-  doc.setFillColor(150, 150, 150);
-  doc.rect(M + 45, y + 4, 4, 3.5, 'F');
-  texto(doc, 'Ciclo B (parcial)', M + 51, y + 7, { size: 8 });
+  legendaFaixas(doc, y + 6);
+  texto(doc, 'Barra cheia = Ciclo A (completo) · barra clara = Ciclo B (parcial).', M, y + 13, { size: 8, bold: true });
   texto(
     doc,
-    'IPO = armadilhas positivas ÷ armadilhas lidas, por bairro. O Ciclo B só inclui palhetas já lidas; os ciclos são comparados lado a lado e nunca somados.',
+    'O comprimento é o IPO do bairro (armadilhas positivas ÷ lidas). A cor é a faixa do pior foco do bairro no ciclo (maior contagem de ovos). O Ciclo B só inclui palhetas já lidas; os ciclos são comparados lado a lado e nunca somados.',
     M,
-    y + 14,
+    y + 19,
     { size: 8, cor: CINZA, max: LARG }
   );
 }
 
 // ---------- mapas de calor em nevoeiro: municipio, sede e cada distrito ----------
-async function celulaMapa(doc, subset, x, y, w, h, usarSat, rotulo) {
+async function celulaMapa(doc, subset, x, y, w, h, usarSat, rotulo, soPontos = false) {
   texto(doc, rotulo, x, y - 2, { size: 8.5, bold: true });
   const lidas = subset.filter(temLeitura).length;
   const fundo = usarSat ? await fundoSateliteDoMapa(subset, w, h) : null;
@@ -207,8 +225,8 @@ async function celulaMapa(doc, subset, x, y, w, h, usarSat, rotulo) {
     w,
     legenda: false,
     fundo,
-    modo: 'nevoeiro',
-    nevoeiroImg: lidas ? gerarNevoeiroDoMapa(subset, w, h) : null
+    modo: soPontos ? 'pontos' : 'nevoeiro',
+    nevoeiroImg: !soPontos && lidas ? gerarNevoeiroDoMapa(subset, w, h) : null
   });
   if (!lidas) {
     doc.setFillColor(255, 255, 255);
@@ -217,9 +235,9 @@ async function celulaMapa(doc, subset, x, y, w, h, usarSat, rotulo) {
   }
 }
 
-function notaNevoeiro(doc) {
+function notaNevoeiro(doc, soPontos = false) {
   legendaFaixas(doc, 262);
-  texto(doc, 'Superfície suave interpolada a partir das contagens de cada armadilha (alcance de cerca de 175 m). Onde não há leitura, não há cor.', M, 268, {
+  texto(doc, soPontos ? 'Cada ponto é uma armadilha, colorida pela faixa de risco da sua contagem. O calor em nevoeiro está nas páginas da cidade e de cada distrito.' : 'Superfície suave interpolada a partir das contagens de cada armadilha (alcance de cerca de 175 m). Onde não há leitura, não há cor.', M, 268, {
     size: 7.5,
     cor: CINZA,
     max: LARG
@@ -233,9 +251,9 @@ async function paginasMapasCiclo(doc, timbres, lista, rotuloCiclo, subt, usarSat
   const doGrupo = (nome) => lista.filter((a) => macroDe(a) === nome);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, `Mapa de calor — Município — ${rotuloCiclo}`, subt);
-  await celulaMapa(doc, lista, M, 49, LARG, 205, usarSat, `Município de Carmo — ${lista.length} armadilhas`);
-  notaNevoeiro(doc);
+  cabecalhoPagina(doc, timbres, `Mapa — Município — ${rotuloCiclo}`, 'Pontos coloridos pela faixa de risco de cada armadilha.');
+  await celulaMapa(doc, lista, M, 49, LARG, 205, usarSat, `Município de Carmo — ${lista.length} armadilhas`, true);
+  notaNevoeiro(doc, true);
 
   doc.addPage();
   const sede = doGrupo('Sede urbana');
@@ -371,7 +389,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const linhaInd = (nome, la, lb) => {
     const a = indicadores(la);
     const b = indicadores(lb);
-    return [
+    const linha = [
       nome,
       String(a.total),
       String(a.lidas),
@@ -385,6 +403,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
       b.lidas ? `${n1(b.ipo)}%` : '-',
       b.lidas ? n1(b.ido) : '-'
     ];
+    linha.idos = { 6: a.lidas ? a.ido : null, 11: b.lidas ? b.ido : null }; // para a bolinha de cor
+    return linha;
   };
   const cab = [
     [
@@ -399,7 +419,15 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     styles: { fontSize: 8, cellPadding: 1.8, textColor: PRETO, lineColor: LINHA, lineWidth: 0.1, halign: 'right' },
     headStyles: { fillColor: [255, 255, 255], textColor: PRETO, fontStyle: 'bold', lineColor: PRETO, lineWidth: 0.3, halign: 'center' },
     columnStyles: { 0: { halign: 'left', cellWidth: 44, fontStyle: 'bold' } },
-    margin: { left: M, right: M }
+    margin: { left: M, right: M },
+    // Bolinha na cor do padrao (5 cores) ao lado do IDO: media de ovos por armadilha positiva
+    didDrawCell: (d) => {
+      if (d.section !== 'body') return;
+      const v = d.row.raw && d.row.raw.idos ? d.row.raw.idos[d.column.index] : undefined;
+      if (v === undefined || v === null) return;
+      d.doc.setFillColor(faixaDeOvos(v).cor);
+      d.doc.circle(d.cell.x + 2.4, d.cell.y + d.cell.height / 2, 1.15, 'F');
+    }
   };
 
   texto(doc, 'Por região do município', M, 47, { size: 10, bold: true });
@@ -440,7 +468,11 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   graficoEstratos(doc, ordemB, B);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 3 — Ambas: Ciclo A × Ciclo B', 'Positividade (IPO) por bairro, os dois ciclos lado a lado.');
+  cabecalhoPagina(doc, timbres, 'Gráfico 3 — Ambas: Ciclo A e Ciclo B', 'Armadilhas por faixa de risco em cada bairro. Em cada armadilha vale a MAIOR contagem entre o Ciclo A e o Ciclo B; nada é somado.');
+  graficoEstratos(doc, ordemB, AB);
+
+  doc.addPage();
+  cabecalhoPagina(doc, timbres, 'Gráfico 4 — Ambas: positividade A × B', 'Positividade (IPO) por bairro, os dois ciclos lado a lado. A cor é a faixa do pior foco do bairro.');
   graficoAmbas(doc, ordemB, A, B);
 
   // ---------- MAPAS DE CALOR: cidade e distritos, por ciclo ----------

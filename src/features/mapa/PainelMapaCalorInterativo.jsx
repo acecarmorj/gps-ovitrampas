@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { ArrowLeft, Search, Flame, Layers, MapPin, Download } from 'lucide-react';
-import { gerarPdfMapaCalor, gerarNevoeiroDoMapa } from '../../lib/pdfMapaCalor';
+import { gerarPdfMapaCalor, gerarNevoeiroDaVisao } from '../../lib/pdfMapaCalor';
 import { classificarTerritorio } from '../../lib/pdfRelatorioEntomologico';
 import {
   adaptarArmadilhasParaCiclo,
@@ -61,10 +61,12 @@ export function PainelMapaCalorInterativo({
   const [ciclo, setCiclo] = useState(CICLO_SEMANA_1);
   const [territorio, setTerritorio] = useState('todos');
   const [busca, setBusca] = useState('');
-  const [verPoligonos, setVerPoligonos] = useState(true);
-  const [verCalor, setVerCalor] = useState(true);
+  const [verPoligonos, setVerPoligonos] = useState(false);
+  const [verCalor, setVerCalor] = useState(false);
   const [verPontos, setVerPontos] = useState(true);
-  const [verNevoeiro, setVerNevoeiro] = useState(false);
+  const [verNevoeiro, setVerNevoeiro] = useState(true);
+  const [verNumeros, setVerNumeros] = useState(true);
+  const [zoomPerto, setZoomPerto] = useState(false); // rotulos so aparecem com zoom (evita poluir o mapa)
   const [selecionada, setSelecionada] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
 
@@ -101,6 +103,17 @@ export function PainelMapaCalorInterativo({
   }, [ciclo, doTerrA, doTerrB]);
 
   const ehAmbas = ciclo === 'ambas';
+
+  // Ovos de A e de B de cada armadilha (rotulo do mapa): cada ciclo separado, nunca somados.
+  const rotuloOvos = useMemo(() => {
+    const m = new Map();
+    doTerrA.forEach((x) => m.set(String(x.numero), { a: temLeitura(x) ? Number(x.ultimosOvos) : null, b: null }));
+    doTerrB.forEach((x) => {
+      const atual = m.get(String(x.numero)) || { a: null, b: null };
+      m.set(String(x.numero), { ...atual, b: temLeitura(x) ? Number(x.ultimosOvos) : null });
+    });
+    return m;
+  }, [doTerrA, doTerrB]);
   const metricas = ciclo === CICLO_SEMANA_2 ? mB : mA;
   const parcialB = mB.totalLidas < mB.total;
 
@@ -147,26 +160,62 @@ export function PainelMapaCalorInterativo({
     tileRef.current.bringToBack();
   }, [fundo]);
 
-  // Camada de nevoeiro (superficie de calor interpolada). Recalcula so quando os numeros mudam de fato.
+  // Camada de nevoeiro: recalculada para o que esta na tela (zoom/arraste) e quando os numeros mudam.
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return undefined;
+    const atualizar = () => setZoomPerto(map.getZoom() >= 14);
+    atualizar();
+    map.on('zoomend', atualizar);
+    return () => map.off('zoomend', atualizar);
+  }, []);
   const nevoeiroLayerRef = useRef(null);
+  const [visaoTick, setVisaoTick] = useState(0);
   const assinaturaDados = useMemo(
     () => `${ciclo}|${territorio}|` + doTerritorio.map((a) => `${a.numero}:${a.ultimosOvos ?? '-'}`).join(','),
     [ciclo, territorio, doTerritorio]
   );
   useEffect(() => {
     const map = mapaRef.current;
+    if (!map) return undefined;
+    let t;
+    const aoMover = () => {
+      clearTimeout(t);
+      t = setTimeout(() => setVisaoTick((v) => v + 1), 250);
+    };
+    map.on('moveend', aoMover);
+    return () => {
+      clearTimeout(t);
+      map.off('moveend', aoMover);
+    };
+  }, []);
+  useEffect(() => {
+    const map = mapaRef.current;
     if (!map) return;
-    if (nevoeiroLayerRef.current) {
-      map.removeLayer(nevoeiroLayerRef.current);
+    const anterior = nevoeiroLayerRef.current;
+    if (!verNevoeiro || territorio === 'todos') {
+      // municipio aberto: so os pontinhos; o nevoeiro aparece ao escolher a cidade ou um distrito
+      if (anterior) map.removeLayer(anterior);
       nevoeiroLayerRef.current = null;
+      return;
     }
-    if (!verNevoeiro) return;
-    const r = gerarNevoeiroDoMapa(doTerritorio, 180, 135, 0.35, true);
-    if (!r) return;
-    const { latMin, latMax, lngMin, lngMax } = r.caixa;
-    nevoeiroLayerRef.current = L.imageOverlay(r.url, [[latMin, lngMin], [latMax, lngMax]], { opacity: 0.88, interactive: false, pane: 'nevoeiro' }).addTo(map);
+    const b = map.getBounds().pad(0.15);
+    const tam = map.getSize();
+    if (!tam.x || !tam.y) return;
+    const wpx = 480;
+    const hpx = Math.max(1, Math.round((wpx * tam.y) / tam.x));
+    const limites = { latMin: b.getSouth(), latMax: b.getNorth(), lngMin: b.getWest(), lngMax: b.getEast() };
+    const url = gerarNevoeiroDaVisao(doTerritorio, limites, wpx, hpx);
+    if (anterior) map.removeLayer(anterior);
+    nevoeiroLayerRef.current = url
+      ? L.imageOverlay(url, [[limites.latMin, limites.lngMin], [limites.latMax, limites.lngMax]], {
+          opacity: 0.88,
+          interactive: false,
+          pane: 'nevoeiro'
+        }).addTo(map)
+      : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verNevoeiro, assinaturaDados]);
+  }, [verNevoeiro, assinaturaDados, visaoTick, territorio]);
 
   // Desenha as camadas quando dados ou chaves mudam
   useEffect(() => {
@@ -215,7 +264,7 @@ export function PainelMapaCalorInterativo({
           radius: RAIO_CALOR_METROS,
           stroke: false,
           fillColor: faixa.cor,
-          fillOpacity: 0.28,
+          fillOpacity: 0.5,
           interactive: false
         }).addTo(calor);
       }
@@ -227,15 +276,19 @@ export function PainelMapaCalorInterativo({
           fillColor: faixa.cor,
           fillOpacity: 1
         }).addTo(pontos);
+        const vA = rotuloOvos.get(String(a.numero));
+        const txt = (v) => (v === null || v === undefined ? '-' : v);
         marcador.bindTooltip(
-          `OV-${a.numero} · ${temLeitura(a) ? a.ultimosOvos + ' ovos' : 'sem leitura'}`,
-          { direction: 'top' }
+          `<b>${a.numero}</b> A ${txt(vA?.a)} · B ${txt(vA?.b)}`,
+          verNumeros && zoomPerto
+            ? { permanent: true, direction: 'bottom', offset: [0, 5], className: 'rotulo-ovo' }
+            : { direction: 'top', className: 'rotulo-ovo' }
         );
         marcador.on('click', () => setSelecionada(a.id ?? a.numero));
       }
     });
 
-  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos]);
+  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos]);
 
   // Enquadra o mapa so quando o territorio muda (ou na primeira vez que ha pontos).
   // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
@@ -264,7 +317,9 @@ export function PainelMapaCalorInterativo({
           return { armadilhas: lista, grupos: agruparPorPoligono(lista), metricas: c === 'A' ? mA : mB, ciclo: c };
         }),
         territorioLabel,
-        fundo
+        fundo,
+        estilo: 'nevoeiro', // todos os mapas dos PDFs em calor de nevoeiro (cidade e cada distrito)
+        rotulos: rotuloOvos
       });
     } catch (e) {
       console.error(e);
@@ -302,6 +357,7 @@ export function PainelMapaCalorInterativo({
 
   return (
     <div className="flex flex-col gap-3 p-3 sm:p-4 max-w-[1400px] mx-auto w-full">
+      <style>{`.rotulo-ovo{background:rgba(255,255,255,.93);border:1px solid #111;border-radius:5px;padding:0 4px;font:600 10px/1.35 system-ui,sans-serif;color:#111;box-shadow:none}.rotulo-ovo:before{display:none}`}</style>
       <div className="flex flex-wrap items-center gap-2">
         {onVoltar && (
           <button onClick={onVoltar} className="p-2 rounded-lg border border-slate-200 bg-white" aria-label="Voltar">
@@ -368,6 +424,7 @@ export function PainelMapaCalorInterativo({
         <button className={chave(verCalor)} onClick={() => setVerCalor((v) => !v)}><Flame size={12} className="inline -mt-0.5" /> Calor</button>
         <button className={chave(verPontos)} onClick={() => setVerPontos((v) => !v)}><MapPin size={12} className="inline -mt-0.5" /> Pontos</button>
         <button className={chave(verNevoeiro)} onClick={() => setVerNevoeiro((v) => !v)}>Nevoeiro</button>
+        <button className={chave(verNumeros)} onClick={() => setVerNumeros((v) => !v)}>Números</button>
         <span className="mx-1 h-4 w-px bg-slate-300" />
         <button className={chave(fundo === 'vetorial')} onClick={() => mudarFundo('vetorial')}>Mapa</button>
         <button className={chave(fundo === 'satelite')} onClick={() => mudarFundo('satelite')}>Satélite</button>
