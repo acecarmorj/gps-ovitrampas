@@ -3555,3 +3555,4 @@ PEDIDO DE AUDITORIA - CONFIRA E RESPONDA COM EVIDENCIA (arquivo:linha):
  f) Qualquer erro de ortografia/acentuacao nos PDFs gerados.
 REGRAS: nao inventar trechos de codigo nem caminhos de arquivo (na auditoria anterior alguns citados nao existiam; o Claude confere cada item antes de mexer). Nao colar a chave da equipe em nenhum lugar.
 ==============================================================================
+CONFIRMADO PELO ALMIR (01/10/2026): o nome correto e "Paula Adriana de Miranda" (secoes 137/138 pediam confirmacao; nada a alterar no codigo nem nos PDFs emitidos).
