@@ -33,10 +33,11 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
   const linhas = useMemo(() => {
     const A = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1);
     const B = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2);
+    const porNumeroA = new Map(A.map((a) => [String(a.numero), a]));
     const porNumeroB = new Map(B.map((b) => [String(b.numero), b]));
     return base
-      .map((arm, i) => {
-        const a = A[i];
+      .map((arm) => {
+        const a = porNumeroA.get(String(arm.numero));
         const b = porNumeroB.get(String(arm.numero));
         return {
           arm,

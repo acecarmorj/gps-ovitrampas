@@ -3203,3 +3203,21 @@ Auditoria do Gemini (secao 126) continua valendo; a ordem das paginas mudou, o c
 
 SECAO 129: PDF DO MAPA - cidade em pagina inteira e os 5 distritos JUNTOS numa pagina por ciclo (22 paginas, antes 34). v34, 01/10.
 ==============================================================================
+
+SECAO 130: CLAUDE CONFERIU A AUDITORIA DA SECAO 123 (feita sobre v26-v28) E PEDE NOVA AUDITORIA (so ler, nao editar)
+RESULTADO da secao 123 (5 achados, todos PROCEDEM; conferi no codigo):
+ 1 GRAVISSIMO /api/sync grava sem chave: PROCEDE. Eu tinha deixado aberto para nao quebrar a sincronizacao. Correcao PRONTA (worker exige X-Team-Key para gravar; sem chave = 401 e o app mostra aviso, dados ficam no aparelho) mas AINDA NAO PUBLICADA: muda a operacao (todo aparelho que lanca leitura precisa do Acesso da equipe). Aguardando OK do Almir.
+ 2 login sem timeout (acessoEquipe.js): CORRIGIDO (8 s).  3 URL do servidor repetida: CORRIGIDO (usa window.VITE_API_BASE_URL como o storage.js).
+ 4 "observacoes" sai sem chave: PROCEDE; correcao no worker (junto com o item 1, ainda nao publicada).
+ 5 pareamento do Ciclo A por indice no entomologico: CORRIGIDO (por numero); tambem no Cadastro. Publicado em sw v35.
+Obs.: a secao 123 auditou o codigo ANTES da regra nova (Ambas = soma de A+B, cor pela media por palheta). Isso nao e erro.
+NOVA AUDITORIA (versao v35, so LER, NAO EDITAR, NAO commit, NAO deploy):
+ A) src/lib/pdfEstrategia.js: afirmacoes sobre a Nota Tecnica MS 3/2025 que o texto da nota nao sustenta (itens 4.19, 4.25, 4.26, 4.27, 4.29, 4.30); tendencia A para B; prazos marcados como sugestao.
+ B) src/lib/mapaPoligonos.js (mesclarCiclos, metricasAmbas, idvDe, coresDosBairros) e src/lib/pdfRelatorioSesRjLimpo.js: IPO, IDO e IDV por ciclo e no Ambas (Ambas: ovos SOMADOS, cor pela MEDIA por palheta, IPO por armadilha positiva em A ou B, IDO = ovos/palhetas positivas, IDV = ovos/palhetas lidas). Confira com numeros reais (A: 1.017 ovos, 32 pos, IPO 57,1; B: 951 ovos, 26 lidas, 12 pos, IPO 46,2; Ambas: 1.968 ovos).
+ C) Ordem do SES-RJ (capa, sumario com paginas reais, resumo, plano, manual, indicadores, Anexos A/B/C, metodologia): o sumario aponta as paginas certas? algum texto cortado ou sobreposto?
+ D) src/lib/pdfMapaCalor.js: pagina da cidade + pagina com os 5 distritos juntos, rotulos, KPIs de 6 caixas, secao Ambas.
+ E) src/features/mapa/PainelMapaCalorInterativo.jsx: botoes de local (Municipio, Cidade, 5 distritos) e de camada (Quarteiroes, Calor, Pontos, Nevoeiro, Numeros, Mapa, Satelite) funcionam em todos os locais? troca de local reenquadra o mapa? vazamento de camada?
+ F) Dado de morador em relatorio anonimo (SES-RJ usa P-NN).
+REGRAS: cada achado = arquivo:linha + trecho copiado + exemplo concreto. Nao verificou = "NAO VERIFIQUEI". Nada de "testei/executei" sem comando e saida. Sem achado = "nada encontrado" + o que olhou.
+SAIDA: SECAO 131 no fim deste arquivo, do mais grave ao menos grave.
+==============================================================================

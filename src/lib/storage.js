@@ -754,6 +754,9 @@ export async function tentarSincronizarEmSegundoPlano() {
             limparSyncErrors();
           }
         }
+      } else if (res.status === 401) {
+        // servidor exige o Acesso da equipe para gravar; nada se perde, fica pendente no aparelho
+        setSyncErrors([{ id: null, motivo: 'Para sincronizar, ative o "Acesso da equipe" na tela inicial deste aparelho.' }]);
       }
     } catch (netErr) {
       // Se a rota remota ainda não estiver no ar ou falhar a rede,

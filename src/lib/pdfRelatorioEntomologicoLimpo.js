@@ -28,14 +28,15 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
 
   const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1);
   const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2);
+  const porNumA = new Map(A.map((a) => [String(a.numero), a]));
   const porNumB = new Map(B.map((b) => [String(b.numero), b]));
   const mA = calcularMetricasCiclo(A);
   const mB = calcularMetricasCiclo(B);
   const mAB = metricasAmbas(mesclarCiclos(A, B));
 
   const linhas = armadilhas
-    .map((arm, i) => {
-      const a = A[i];
+    .map((arm) => {
+      const a = porNumA.get(String(arm.numero));
       const b = porNumB.get(String(arm.numero));
       return {
         arm,
