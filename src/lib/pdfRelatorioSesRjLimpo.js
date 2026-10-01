@@ -353,14 +353,14 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
 
   // quadros A e B
   const colW = (LARG - 12) / 3;
-  const quadro = (x, titulo, nota, ind, m) => {
+  const quadro = (x, titulo, nota, ind, m, rotuloLidas = 'Palhetas lidas') => {
     doc.setDrawColor(...PRETO);
     doc.setLineWidth(0.4);
     doc.rect(x, 50, colW, 53);
     texto(doc, titulo, x + 4, 57, { size: 10, bold: true });
     texto(doc, nota, x + 4, 62, { size: 8, cor: CINZA });
     const itens = [
-      ['Palhetas lidas', `${ind.lidas} de ${ind.total}`],
+      [rotuloLidas, `${ind.lidas} de ${ind.total}`],
       ['Total de ovos', nInt(ind.ovos)],
       ['IPO', `${n1(ind.ipo)}%`],
       ['IDO', n1(ind.ido)],
@@ -375,7 +375,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   };
   quadro(M, 'CICLO A', 'Completo', iA, mA);
   quadro(M + colW + 6, 'CICLO B', `Parcial: ${iB.lidas} de ${iB.total} lidas`, iB, mB);
-  quadro(M + 2 * (colW + 6), 'AMBAS (A + B)', 'Soma; cor pela média por palheta', iAB, mAB);
+  quadro(M + 2 * (colW + 6), 'AMBAS (A + B)', 'Soma; cor pela média por palheta', iAB, mAB, 'Armadilhas lidas (A ou B)');
 
   // achados
   const topA = [...A].filter(temLeitura).sort((a, b) => b.ultimosOvos - a.ultimosOvos).slice(0, 3);

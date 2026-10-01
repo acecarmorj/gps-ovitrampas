@@ -55,7 +55,7 @@ export function Header({
           className="flex items-center gap-1 px-3 py-1.5 bg-slate-100/90 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-2xl border border-slate-200/90 text-xs font-black transition-all shadow-xs group"
           title="Voltar ao Guia do Sistema"
         >
-          <ChevronLeft className="w-4 h-4 text-emerald-600 group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft className="w-4 h-4 text-slate-700 group-hover:-translate-x-0.5 transition-transform" />
           <span>Guia</span>
         </button>
 
@@ -65,7 +65,7 @@ export function Header({
             <h1 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
               {modulo.titulo}
             </h1>
-            <span className="text-[9px] text-emerald-700 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 hidden sm:inline-block">
+            <span className="text-[9px] text-black font-extrabold bg-white px-1.5 py-0.5 rounded border border-slate-300 hidden sm:inline-block">
               CARMO RJ
             </span>
           </div>
@@ -86,13 +86,13 @@ export function Header({
                 <span>Enviando em segundo plano...</span>
               </span>
             ) : syncInfo.totalPendentes > 0 ? (
-              <span className="text-amber-700 flex items-center gap-1 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+              <span className="text-black flex items-center gap-1 bg-white px-1.5 py-0.2 rounded border border-slate-300">
                 <Cloud className="w-2.5 h-2.5" />
                 <span>{syncInfo.totalPendentes} pendente(s)</span>
               </span>
             ) : syncInfo.isOnline ? (
-              <span className="text-emerald-700 flex items-center gap-1">
-                <Check className="w-2.5 h-2.5 text-emerald-600" />
+              <span className="text-black flex items-center gap-1">
+                <Check className="w-2.5 h-2.5 text-slate-700" />
                 <span>Salvo e sincronizado</span>
               </span>
             ) : (
@@ -110,7 +110,7 @@ export function Header({
         {totalArmadilhas > 0 && (
           <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
             <span>Armadilhas:</span>
-            <span className="text-emerald-700 font-extrabold">{totalArmadilhas}</span>
+            <span className="text-black font-extrabold">{totalArmadilhas}</span>
           </div>
         )}
 
@@ -120,7 +120,7 @@ export function Header({
           className="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors border border-slate-200"
           title={isMuted ? 'Ativar som' : 'Silenciar som'}
         >
-          {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-emerald-600" />}
+          {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-slate-700" />}
         </button>
       </div>
 

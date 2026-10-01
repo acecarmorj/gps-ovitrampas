@@ -544,7 +544,7 @@ export function PainelMapaCalorInterativo({
                     <tr
                       key={a.id ?? a.numero}
                       onClick={() => irPara(a)}
-                      className={`cursor-pointer border-t border-slate-100 hover:bg-slate-50 ${ativa ? 'bg-sky-50' : ''}`}
+                      className={`cursor-pointer border-t border-slate-100 hover:bg-slate-50 ${ativa ? 'bg-slate-200' : ''}`}
                     >
                       <td className="px-2 py-1.5 font-bold">OV-{a.numero}</td>
                       <td className="px-2 py-1.5 text-slate-600">

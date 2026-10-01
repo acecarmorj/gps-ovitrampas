@@ -249,21 +249,21 @@ export function InstalarArmadilhaScreen({
           {localizacao.accuracy !== null ? (
             <div
               className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-[11px] font-black transition-all ${
-                localizacao.accuracy <= 10
-                  ? 'bg-emerald-50/95 border-emerald-300 text-emerald-800'
-                  : localizacao.accuracy <= 25
-                  ? 'bg-sky-50/95 border-sky-300 text-sky-800'
-                  : 'bg-amber-50/95 border-amber-300 text-amber-800'
-              }`}
+ localizacao.accuracy <= 10
+ ? 'bg-white border-slate-300 text-black'
+ : localizacao.accuracy <= 25
+ ? 'bg-white border-slate-300 text-black'
+ : 'bg-white border-slate-300 text-black'
+ }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
-                  localizacao.accuracy <= 10
-                    ? 'bg-emerald-500 animate-pulse'
-                    : localizacao.accuracy <= 25
-                    ? 'bg-sky-500'
-                    : 'bg-amber-500 animate-ping'
-                }`}
+ localizacao.accuracy <= 10
+ ? 'bg-black animate-pulse'
+ : localizacao.accuracy <= 25
+ ? 'bg-black'
+ : 'bg-black animate-ping'
+ }`}
               />
               <span>
                 {localizacao.accuracy <= 10
@@ -280,7 +280,7 @@ export function InstalarArmadilhaScreen({
             </div>
           ) : (
             <div className="bg-white/92 backdrop-blur-md border border-slate-200 text-slate-700 px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-[11px] font-black">
-              <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 text-slate-700 animate-spin" />
               <span>Buscando Satélites...</span>
             </div>
           )}
@@ -289,10 +289,10 @@ export function InstalarArmadilhaScreen({
           <button
             type="button"
             onClick={handleForcarRecalibracao}
-            className="bg-white/92 hover:bg-white active:scale-90 backdrop-blur-md text-slate-700 hover:text-emerald-700 w-8 h-8 rounded-full border border-slate-200/90 shadow-md flex items-center justify-center transition-all shrink-0"
+            className="bg-white/92 hover:bg-white active:scale-90 backdrop-blur-md text-slate-700 hover:text-black w-8 h-8 rounded-full border border-slate-200/90 shadow-md flex items-center justify-center transition-all shrink-0"
             title="Recalibrar sinal de satélites agora"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-700 ${gpsStatus === 'buscando' ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
@@ -302,13 +302,13 @@ export function InstalarArmadilhaScreen({
             type="button"
             onClick={() => setMostrarBussolaFlutuante((v) => !v)}
             className={`backdrop-blur-md px-3 py-1.5 rounded-full border shadow-md flex items-center gap-1.5 text-xs font-black transition-all ${
-              mostrarBussolaFlutuante
-                ? 'bg-sky-600 text-white border-sky-400'
-                : 'bg-white/92 text-slate-800 border-slate-200/90 hover:bg-white'
-            }`}
+ mostrarBussolaFlutuante
+ ? 'bg-black text-white border-slate-300'
+ : 'bg-white/92 text-slate-800 border-slate-200/90 hover:bg-white'
+ }`}
             title="Abrir bússola e orientação cardeal"
           >
-            <Compass className={`w-3.5 h-3.5 ${mostrarBussolaFlutuante ? 'text-white' : 'text-sky-600'}`} />
+            <Compass className={`w-3.5 h-3.5 ${mostrarBussolaFlutuante ? 'text-white' : 'text-slate-700'}`} />
             <span>Bússola</span>
           </button>
         </div>
@@ -327,10 +327,10 @@ export function InstalarArmadilhaScreen({
 
       {/* 3. ALERTA DE SUCESSO */}
       {sucessoMsg && (
-        <div className="absolute top-14 left-3 right-3 z-40 max-w-sm mx-auto bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in">
+        <div className="absolute top-14 left-3 right-3 z-40 max-w-sm mx-auto bg-black text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
           <span className="flex-1">{sucessoMsg}</span>
-          <button onClick={() => setSucessoMsg(null)} className="p-1 text-emerald-100">
+          <button onClick={() => setSucessoMsg(null)} className="p-1 text-slate-500">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -347,7 +347,7 @@ export function InstalarArmadilhaScreen({
             onClick={() => setPainelAberto(true)}
             className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/15 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
           >
-            <div className="w-9 h-9 rounded-2xl bg-emerald-600 flex items-center justify-center shrink-0 shadow-md">
+            <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center shrink-0 shadow-md">
               <ChevronUp className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -355,7 +355,7 @@ export function InstalarArmadilhaScreen({
                 Ações de campo
               </p>
               <p className="text-[11px] text-slate-600 truncate leading-tight mt-0.5">
-                {localizacao.rua} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span>
+                {localizacao.rua} • <span className="text-black font-extrabold">{localizacao.quarteirao}</span>
               </p>
             </div>
             {vizinhaMaisProxima && (
@@ -375,8 +375,8 @@ export function InstalarArmadilhaScreen({
 
         <div
           className={`bg-white/98 sm:bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/20 border border-slate-300 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-900 max-h-[82dvh] overflow-y-auto ${
-            painelAberto ? '' : 'hidden'
-          }`}
+ painelAberto ? '' : 'hidden'
+ }`}
         >
           {/* Alça para ocultar o painel e liberar o mapa */}
           <button
@@ -389,9 +389,9 @@ export function InstalarArmadilhaScreen({
           </button>
 
           {/* ENDEREÇO E QUARTEIRÃO DETECTADOS 100% PELO GPS */}
-          <div className="flex items-center gap-2.5 bg-emerald-50 px-3.5 py-2.5 rounded-2xl border border-emerald-300 shadow-xs">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200 flex items-center justify-center shrink-0">
-              <MapPin className="w-4 h-4 text-emerald-700" />
+          <div className="flex items-center gap-2.5 bg-white px-3.5 py-2.5 rounded-2xl border border-slate-300 shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-black" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-black text-slate-900 truncate leading-tight">
@@ -399,16 +399,16 @@ export function InstalarArmadilhaScreen({
               </p>
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 <span className="text-[11px] text-slate-600 font-medium">
-                  {localizacao.microarea} • <span className="text-emerald-700 font-extrabold">{localizacao.quarteirao}</span>
+                  {localizacao.microarea} • <span className="text-black font-extrabold">{localizacao.quarteirao}</span>
                 </span>
                 {localizacao.accuracy !== null && (
                   <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md border ${
-                    localizacao.accuracy <= 10
-                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                      : localizacao.accuracy <= 25
-                      ? 'bg-sky-100 text-sky-800 border-sky-300'
-                      : 'bg-amber-100 text-amber-800 border-amber-300'
-                  }`}>
+ localizacao.accuracy <= 10
+ ? 'bg-slate-100 text-black border-slate-300'
+ : localizacao.accuracy <= 25
+ ? 'bg-slate-100 text-black border-slate-300'
+ : 'bg-slate-100 text-black border-slate-300'
+ }`}>
                     {localizacao.accuracy <= 10 ? '🎯 ' : '📡 '}±{localizacao.accuracy}m
                   </span>
                 )}
@@ -417,16 +417,16 @@ export function InstalarArmadilhaScreen({
             <button
               type="button"
               onClick={handleForcarRecalibracao}
-              className="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-emerald-100/50 transition-colors"
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               title="Recalibrar endereço e quarteirão com satélites"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${gpsStatus === 'buscando' ? 'animate-spin text-emerald-600' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${gpsStatus === 'buscando' ? 'animate-spin text-slate-700' : ''}`} />
             </button>
           </div>
 
           {/* Dica amigável se a precisão estiver em calibração (> 25 metros) */}
           {localizacao.accuracy !== null && localizacao.accuracy > 25 && (
-            <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50/90 px-3 py-1.5 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-1.5 text-[11px] text-black bg-white px-3 py-1.5 rounded-xl border border-slate-300">
               <span className="shrink-0 text-xs">🛰️</span>
               <span className="leading-tight">
                 Calibrando satélites (±{localizacao.accuracy}m). Sob céu aberto atinge precisão máxima (≤ 10m).

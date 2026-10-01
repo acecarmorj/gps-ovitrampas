@@ -74,6 +74,7 @@ export function PainelAcaoCampo({
   useEffect(() => {
     setAcaoManual(null);
     setOcorrencia('Normal');
+    setNomeMorador(''); // o nome digitado para uma OV nao pode ir para outra casa
     setPalheta(armadilha ? sugerirProximaPalheta(armadilha) : numero ? `${numero}A` : '');
   }, [chaveAlvo]);
 
@@ -229,7 +230,7 @@ export function PainelAcaoCampo({
           placeholder={autoPorGps ? `Perto de você: OV-${maisProxima.armadilha.numero}` : 'Ex: 05'}
           value={numeroDigitado}
           onChange={(e) => setNumeroDigitado(e.target.value)}
-          className="w-full bg-white border-2 border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 text-center tracking-wider placeholder:text-base placeholder:font-bold placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none"
+          className="w-full bg-white border-2 border-slate-300 focus:border-black focus:ring-2 focus:ring-slate-300 rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 text-center tracking-wider placeholder:text-base placeholder:font-bold placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none"
         />
         {vizinhasProximas.length > 0 && !numero && (
           <div className="flex gap-1.5 mt-2 overflow-x-auto pb-0.5">
@@ -239,10 +240,10 @@ export function PainelAcaoCampo({
                 type="button"
                 onClick={() => setNumeroDigitado(v.armadilha.numero)}
                 className={`shrink-0 px-3 py-2 rounded-xl border text-xs font-black active:scale-95 transition-transform ${
-                  autoPorGps && v === maisProxima
-                    ? 'bg-emerald-600 text-white border-emerald-600'
-                    : 'bg-white text-slate-800 border-slate-300'
-                }`}
+ autoPorGps && v === maisProxima
+ ? 'bg-black text-white border-slate-300'
+ : 'bg-white text-slate-800 border-slate-300'
+ }`}
               >
                 OV-{v.armadilha.numero} · {v.distancia} m
               </button>
@@ -259,7 +260,7 @@ export function PainelAcaoCampo({
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-black text-slate-900">
                   OV-{armadilha.numero}
-                  {autoPorGps && <span className="ml-1.5 text-[11px] font-bold text-emerald-700">(pelo GPS)</span>}
+                  {autoPorGps && <span className="ml-1.5 text-[11px] font-bold text-black">(pelo GPS)</span>}
                 </p>
                 <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-800">
                   Palheta {armadilha.palheta || '-'}
@@ -306,12 +307,12 @@ export function PainelAcaoCampo({
                     <span
                       key={v.armadilha.id}
                       className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 ${
-                        isIdeal
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                          : isPerto
-                          ? 'bg-rose-50 text-rose-800 border-rose-300'
-                          : 'bg-amber-50 text-amber-800 border-amber-300'
-                      }`}
+ isIdeal
+ ? 'bg-white text-black border-slate-300'
+ : isPerto
+ ? 'bg-rose-50 text-rose-800 border-rose-300'
+ : 'bg-white text-black border-slate-300'
+ }`}
                     >
                       <span>OV-{v.armadilha.numero}:</span>
                       <span>{d}m</span>
@@ -344,7 +345,7 @@ export function PainelAcaoCampo({
             autoComplete="off"
             value={palheta}
             onChange={(e) => setPalheta(e.target.value.toUpperCase())}
-            className="w-full bg-white border-2 border-slate-300 focus:border-emerald-500 rounded-2xl px-3.5 py-2.5 text-lg font-black text-slate-900 text-center focus:outline-none"
+            className="w-full bg-white border-2 border-slate-300 focus:border-black rounded-2xl px-3.5 py-2.5 text-lg font-black text-slate-900 text-center focus:outline-none"
           />
         </div>
       )}
@@ -361,8 +362,8 @@ export function PainelAcaoCampo({
                 type="button"
                 onClick={() => setOcorrencia(o)}
                 className={`px-3 py-2 rounded-xl border text-xs font-black active:scale-95 transition-transform ${
-                  ocorrencia === o ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-300'
-                }`}
+ ocorrencia === o ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-300'
+ }`}
               >
                 {o}
               </button>
@@ -383,7 +384,7 @@ export function PainelAcaoCampo({
               placeholder="Ex: Dona Maria"
               value={nomeMorador}
               onChange={(e) => setNomeMorador(e.target.value)}
-              className="w-full bg-white border-2 border-slate-300 focus:border-emerald-500 rounded-2xl px-3.5 py-2.5 text-base font-bold text-slate-900 focus:outline-none"
+              className="w-full bg-white border-2 border-slate-300 focus:border-black rounded-2xl px-3.5 py-2.5 text-base font-bold text-slate-900 focus:outline-none"
             />
           </div>
         </div>
@@ -395,8 +396,8 @@ export function PainelAcaoCampo({
           onClick={executar}
           disabled={bloqueado}
           className={`w-full py-4 rounded-2xl font-black text-base uppercase tracking-wide text-white shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all ${
-            acao === 'recolher' ? 'bg-indigo-600 shadow-indigo-700/25' : 'bg-emerald-600 shadow-emerald-700/25'
-          }`}
+ acao === 'recolher' ? 'bg-black ' : 'bg-black '
+ }`}
         >
           {salvando ? (
             'Salvando...'

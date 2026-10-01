@@ -220,7 +220,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
                   {ovosB === null ? '-' : (<><Ponto ovos={ovosB} />{ovosB}</>)}
                 </td>
                 <td className="px-2 py-1.5 text-right font-black">
-                  {ovosAB === null ? '-' : (<><Ponto ovos={mediaAB} />{ovosAB}</>)}
+                  {ovosAB === null ? '-' : (<><Ponto ovos={mediaAB} />{ovosAB}<span className="ml-1 font-normal text-[10px] text-slate-500">(méd. {Number(mediaAB).toFixed(0)})</span></>)}
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <button

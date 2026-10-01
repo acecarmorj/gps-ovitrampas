@@ -46,9 +46,9 @@ export function GuiaScreen({
     {
       rota: '/campo',
       tag: 'Agente em Campo',
-      tagCor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      tagCor: 'bg-white text-black border-slate-300',
       icone: PlusCircle,
-      iconeBg: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      iconeBg: 'bg-slate-100 text-black border-slate-300',
       titulo: 'Agente de Campo',
       descricao: 'Instalar, trocar palheta e recolher numa tela só. O GPS reconhece a armadilha e o app mostra o que fazer. Funciona sem internet.',
       destaque: true,
@@ -57,25 +57,25 @@ export function GuiaScreen({
     {
       rota: '/laboratorio',
       tag: 'Entomologia',
-      tagCor: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+      tagCor: 'bg-white text-black border-slate-300',
       icone: FlaskConical,
-      iconeBg: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      iconeBg: 'bg-slate-100 text-black border-slate-300',
       titulo: 'Laboratório de Ovos',
       descricao: 'Contagem de ovos por palheta e cálculo instantâneo de armadilhas positivas e negativas.'
     },
     {
       rota: '/admin',
       tag: 'Coordenação no Tablet / PC',
-      tagCor: 'bg-amber-50 text-amber-800 border-amber-200',
+      tagCor: 'bg-white text-black border-slate-300',
       icone: ShieldCheck,
-      iconeBg: 'bg-amber-100 text-amber-700 border-amber-200',
+      iconeBg: 'bg-slate-100 text-black border-slate-300',
       titulo: 'Painel do Administrador',
       descricao: 'Mapa de calor por quarteirão (Ciclo A e B), tabela, IPO/IDO e relatórios oficiais em PDF.'
     },
   ];
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-[#F1F2F5] text-slate-900 flex flex-col justify-between overflow-y-auto font-sans select-none">
+    <div className="w-full h-full min-h-[100dvh] bg-white text-slate-900 flex flex-col justify-between overflow-y-auto font-sans select-none">
       
       {/* 1. CABEÇALHO CLEAN (ESTILO MOTOJA) */}
       <header className="bg-white/95 border-b border-slate-200/90 backdrop-blur-md px-4 sm:px-8 py-5 shrink-0 shadow-xs">
@@ -83,7 +83,7 @@ export function GuiaScreen({
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-2xl shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-slate-300 flex items-center justify-center text-2xl shadow-xs">
                 🪤
               </div>
               <div>
@@ -91,7 +91,7 @@ export function GuiaScreen({
                   <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                     GPS OVITRAMPAS
                   </span>
-                  <span className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-[10px] text-black font-extrabold bg-white px-2 py-0.5 rounded-full border border-slate-300">
                     CARMO RJ
                   </span>
                 </div>
@@ -107,7 +107,7 @@ export function GuiaScreen({
               className="p-2.5 text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-2xl transition-colors shadow-xs"
               title={isMuted ? 'Ativar som' : 'Silenciar som'}
             >
-              {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-emerald-600" />}
+              {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4 text-slate-700" />}
             </button>
           </div>
 
@@ -124,7 +124,7 @@ export function GuiaScreen({
             title="Toque para sincronizar"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <div className="w-2.5 h-2.5 rounded-full bg-black animate-pulse shrink-0" />
               <div className="text-xs">
                 <span className="font-bold text-slate-800">
                   {syncInfo.syncInProgress ? (
@@ -142,7 +142,7 @@ export function GuiaScreen({
               </div>
             </div>
 
-            <div className="flex items-center gap-1 text-slate-400 group-hover:text-emerald-700 text-xs font-semibold">
+            <div className="flex items-center gap-1 text-slate-400 group-hover:text-black text-xs font-semibold">
               <span className="text-[11px] hidden sm:inline">Atualizar</span>
               <RefreshCw className={`w-3.5 h-3.5 ${syncInfo.syncInProgress ? 'animate-spin text-blue-600' : ''}`} />
             </div>
@@ -161,10 +161,10 @@ export function GuiaScreen({
                 key={item.rota}
                 onClick={() => onNavegar(item.rota)}
                 className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all active:scale-[0.99] flex flex-col justify-between gap-3 group shadow-xs hover:shadow-md ${
-                  item.destaque
-                    ? 'bg-gradient-to-br from-emerald-50/70 via-white to-white border-emerald-300/80 hover:border-emerald-500'
-                    : 'bg-white hover:bg-slate-50/90 border-slate-200/90 hover:border-slate-300'
-                }`}
+ item.destaque
+ ? ' via-white to-white border-slate-300 hover:border-slate-500'
+ : 'bg-white hover:bg-slate-50/90 border-slate-200/90 hover:border-slate-300'
+ }`}
               >
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-center gap-3 min-w-0">
@@ -175,7 +175,7 @@ export function GuiaScreen({
                       <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border inline-block mb-0.5 ${item.tagCor}`}>
                         {item.tag}
                       </span>
-                      <h2 className="text-base font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">
+                      <h2 className="text-base font-black text-slate-900 leading-tight group-hover:text-black transition-colors">
                         {item.titulo}
                       </h2>
                     </div>
@@ -192,11 +192,11 @@ export function GuiaScreen({
 
                 {/* BOTÃO ÚNICO E ULTRA SIMPLES: SÓ PARA O APP DO AGENTE */}
                 {item.temWhatsApp && (
-                  <div className="pt-2 border-t border-emerald-100/90 mt-0.5">
+                  <div className="pt-2 border-t border-slate-300 mt-0.5">
                     <button
                       type="button"
                       onClick={handleEnviarWhatsAppAgente}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
+                      className="w-full bg-black hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
                       title="Enviar link do aplicativo para o WhatsApp do Agente"
                     >
                       <MessageCircle className="w-4 h-4 shrink-0" />

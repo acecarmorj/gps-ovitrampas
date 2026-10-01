@@ -57,8 +57,12 @@ export async function entrarNaEquipe(chave, nome = '') {
     }
     const dados = await res.json();
     if (!dados.equipe) return { ok: false, motivo: 'Senha incorreta.' };
-    localStorage.setItem(CHAVE_LS, k);
-    localStorage.setItem(AGENTE_LS, agente);
+    try {
+      localStorage.setItem(CHAVE_LS, k);
+      localStorage.setItem(AGENTE_LS, agente);
+    } catch (_) {
+      return { ok: false, motivo: 'A senha está certa, mas o navegador não deixou salvar neste aparelho (aba anônima ou armazenamento bloqueado). Abra o app em uma aba normal.' };
+    }
     return { ok: true };
   } catch (_) {
     return { ok: false, motivo: 'Sem conexão com o servidor (ou sinal muito fraco). Tente de novo com internet.' };

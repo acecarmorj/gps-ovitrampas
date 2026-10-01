@@ -485,7 +485,7 @@ export function AssistenteContadorOvos({
         {/* CABEÇALHO */}
         <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-400">
+            <div className="w-8 h-8 rounded-xl bg-black border border-black flex items-center justify-center text-white">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
@@ -501,14 +501,14 @@ export function AssistenteContadorOvos({
           </div>
           <div className="flex items-center gap-2">
             {fotoDataUrl && (
-              <span className="bg-indigo-600 text-white font-black text-xs px-2.5 py-1 rounded-full shadow-xs">
+              <span className="bg-black text-white font-black text-xs px-2.5 py-1 rounded-full shadow-xs">
                 {markers.length} ovos
               </span>
             )}
             <button
               type="button"
               onClick={() => setMostrarModalChave(true)}
-              className="w-8 h-8 rounded-full bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 text-purple-300 hover:text-white flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-black hover:bg-slate-800 border border-slate-300 text-slate-500 hover:text-white flex items-center justify-center transition-colors"
               title="Configurar Chave da IA Google Gemini"
             >
               <Key className="w-4 h-4" />
@@ -543,7 +543,7 @@ export function AssistenteContadorOvos({
 
           {!fotoDataUrl ? (
             <div className="p-6 text-center space-y-4 max-w-sm">
-              <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 rounded-3xl bg-black border border-black text-white flex items-center justify-center mx-auto shadow-inner">
                 <Camera className="w-8 h-8" />
               </div>
               <div>
@@ -558,7 +558,7 @@ export function AssistenteContadorOvos({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xs py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all"
+                  className="w-full bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all"
                 >
                   <Camera className="w-4 h-4" />
                   <span>Tirar Foto</span>
@@ -577,24 +577,24 @@ export function AssistenteContadorOvos({
             <div
               ref={containerRef}
               className={`w-full h-full overflow-auto flex items-center justify-center p-2 relative touch-pinch-zoom ${
-                modoApagar ? 'cursor-cell' : 'cursor-crosshair'
-              }`}
+ modoApagar ? 'cursor-cell' : 'cursor-crosshair'
+ }`}
             >
               {analyzing && (
                 <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white">
-                  <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
+                  <RefreshCw className="w-8 h-8 text-slate-500 animate-spin" />
                   <span className="text-xs font-bold tracking-wider">Identificando ovos localmente...</span>
                 </div>
               )}
 
               {auditandoIA && (
-                <div className="absolute inset-0 z-20 bg-indigo-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-white p-4 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400 flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-indigo-400 animate-bounce" />
+                <div className="absolute inset-0 z-20 bg-black backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-white p-4 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-black border border-slate-300 flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-slate-500 animate-bounce" />
                   </div>
                   <div>
                     <h4 className="text-sm font-black">Conferindo com a IA do Google</h4>
-                    <p className="text-xs text-indigo-200">
+                    <p className="text-xs text-slate-500">
                       {progressoIA.total
                         ? `Quadro ${progressoIA.feitos} de ${progressoIA.total} da palheta...`
                         : 'Dividindo a palheta em quadros...'}
@@ -646,10 +646,10 @@ export function AssistenteContadorOvos({
                   type="button"
                   onClick={() => setShowSlider((s) => !s)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold backdrop-blur-md border shadow-lg transition-all ${
-                    showSlider
-                      ? 'bg-indigo-600 text-white border-indigo-400'
-                      : 'bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80'
-                  }`}
+ showSlider
+ ? 'bg-black text-white border-slate-300'
+ : 'bg-slate-900/90 text-slate-300 hover:text-white border-slate-700/80'
+ }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
                   <span>{sensitivity}%</span>
@@ -686,13 +686,13 @@ export function AssistenteContadorOvos({
 
             {/* SLIDER DE SENSIBILIDADE */}
             {showSlider && (
-              <div className="bg-white border border-indigo-100 rounded-2xl p-3 space-y-1.5 shadow-xs">
+              <div className="bg-white border border-slate-300 rounded-2xl p-3 space-y-1.5 shadow-xs">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-indigo-600" />
+                    <Sliders className="w-3.5 h-3.5 text-slate-700" />
                     Sensibilidade do Filtro
                   </span>
-                  <span className="font-mono font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">
+                  <span className="font-mono font-black text-slate-700 bg-white px-2 py-0.5 rounded-lg">
                     {sensitivity}%
                   </span>
                 </div>
@@ -702,20 +702,20 @@ export function AssistenteContadorOvos({
                   max="95"
                   value={sensitivity}
                   onChange={(e) => handleSensitivityChange(Number(e.target.value))}
-                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-black"
                 />
               </div>
             )}
 
             {/* RESULTADO DA CONFERÊNCIA COM IA */}
             {auditoria && (
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-2xl p-3 shadow-xs space-y-2 animate-in fade-in">
+              <div className=" border-2 border-slate-300 rounded-2xl p-3 shadow-xs space-y-2 animate-in fade-in">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-black text-indigo-900 flex items-center gap-1.5">
-                    <Bot className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-black text-black flex items-center gap-1.5">
+                    <Bot className="w-4 h-4 text-slate-700" />
                     Conferência IA · {auditoria.quadros} quadros
                   </span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-indigo-800 border border-indigo-200">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-black border border-slate-300">
                     {auditoria.concordancia}% de acordo
                   </span>
                 </div>
@@ -723,13 +723,13 @@ export function AssistenteContadorOvos({
                   A IA marcou <b>{auditoria.ovosIA}</b> ovos. Os dois concordam em <b>{auditoria.concordam}</b>.
                 </p>
                 <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
-                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-sky-700">● app e IA</span>
+                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-black">● app e IA</span>
                   <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-orange-600">● só o app: {contagem.soApp}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-fuchsia-600">● só a IA: {contagem.soIA}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-emerald-600">● à mão: {contagem.manuais}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">● só a IA: {contagem.soIA}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">● à mão: {contagem.manuais}</span>
                 </div>
                 {listaRevisar.length > 0 && (
-                  <p className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-xl border border-indigo-100 leading-relaxed">
+                  <p className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-xl border border-slate-300 leading-relaxed">
                     <b>Confira na foto</b> (laranja e roxo ficam na contagem até você apagar):{' '}
                     {listaRevisar.map((n) => String(n).padStart(2, '0')).join(', ')}
                     {restoRevisar > 0 ? ` e mais ${restoRevisar}` : ''}
@@ -752,7 +752,7 @@ export function AssistenteContadorOvos({
                   <button
                     type="button"
                     onClick={() => setMostrarModalChave(true)}
-                    className="w-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase tracking-wider"
+                    className="w-full bg-black hover:bg-slate-800 active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase tracking-wider"
                   >
                     <Key className="w-3.5 h-3.5" />
                     <span>Configurar Chave Google Gemini</span>
@@ -763,8 +763,8 @@ export function AssistenteContadorOvos({
 
             {/* AVISO DO DETECTOR LOCAL */}
             {warning && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-900 px-3 py-1.5 rounded-xl flex items-start gap-2 text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="bg-white border border-slate-300 text-black px-3 py-1.5 rounded-xl flex items-start gap-2 text-xs">
+                <AlertTriangle className="w-4 h-4 text-slate-700 shrink-0 mt-0.5" />
                 <span className="flex-1 font-medium">{warning}</span>
               </div>
             )}
@@ -775,8 +775,8 @@ export function AssistenteContadorOvos({
                 type="button"
                 onClick={() => setModoApagar(false)}
                 className={`py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
-                  !modoApagar ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
-                }`}
+ !modoApagar ? 'bg-black text-white shadow-xs' : 'text-slate-600'
+ }`}
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Adicionar</span>
@@ -785,8 +785,8 @@ export function AssistenteContadorOvos({
                 type="button"
                 onClick={() => setModoApagar(true)}
                 className={`py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
-                  modoApagar ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600'
-                }`}
+ modoApagar ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600'
+ }`}
               >
                 <Eraser className="w-3.5 h-3.5" />
                 <span>Apagar</span>
@@ -806,7 +806,7 @@ export function AssistenteContadorOvos({
                 type="button"
                 onClick={handleConferirComIA}
                 disabled={auditandoIA || analyzing}
-                className="bg-purple-600 hover:bg-purple-500 active:scale-95 disabled:opacity-50 text-white font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-all shrink-0"
+                className="bg-black hover:bg-slate-800 active:scale-95 disabled:opacity-50 text-white font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all shrink-0"
               >
                 <Bot className="w-3.5 h-3.5" />
                 <span>{auditandoIA ? 'Conferindo...' : auditoria ? 'Conferir de novo' : 'Conferir com IA'}</span>
@@ -826,7 +826,7 @@ export function AssistenteContadorOvos({
                 type="button"
                 onClick={handleAplicar}
                 disabled={analyzing || auditandoIA}
-                className="col-span-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-50 text-white font-black text-xs py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all uppercase tracking-wider"
+                className="col-span-2 bg-black hover:bg-slate-800 active:scale-95 disabled:opacity-50 text-white font-black text-xs py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-wider"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Confirmar ({markers.length} Ovos)</span>
