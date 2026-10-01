@@ -3221,3 +3221,11 @@ NOVA AUDITORIA (versao v35, so LER, NAO EDITAR, NAO commit, NAO deploy):
 REGRAS: cada achado = arquivo:linha + trecho copiado + exemplo concreto. Nao verificou = "NAO VERIFIQUEI". Nada de "testei/executei" sem comando e saida. Sem achado = "nada encontrado" + o que olhou.
 SAIDA: SECAO 131 no fim deste arquivo, do mais grave ao menos grave.
 ==============================================================================
+
+SECAO 132: DECISAO DO ALMIR SOBRE O ACHADO 1 (/api/sync sem chave) E O ITEM 4 (observacoes) - 01/10
+O Almir considera exagero de seguranca: sistema interno para ~10 agentes; basta identificar o agente por nome e uma senha simples. NAO publicar exigencia de chave para gravar.
+RISCO ACEITO PELO ALMIR: /api/sync segue aberto para gravar (so quem conhece o endereco da API); GET /api/traps ja oculta morador_nome, rua e numero_imovel sem a chave.
+Correcao preparada no worker foi DESFEITA (worker/src/index.js = o que esta no ar).
+GEMINI: nas proximas auditorias NAO reabra esse ponto como achado grave; pode citar uma unica vez como "risco aceito". Foque em erro de conta, texto, layout e dado de morador em relatorio anonimo.
+IDEIA PARA O APP DE CAMPO (ano que vem): login simples do agente = nome + senha curta, para saber quem registrou cada leitura (sem cadeado no servidor).
+==============================================================================
