@@ -387,6 +387,13 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     .map(([b, l]) => ({ b, ...indicadores(l) }))
     .sort((x, y) => y.ovos - x.ovos)
     .slice(0, 3);
+  // Como ler A x B: o IPO conta armadilhas com ovo (nao quantos ovos); o IDO mostra a densidade.
+  const nosDois = AB.filter((a) => a.ovosA > 0 && a.ovosB > 0).length;
+  const soA = AB.filter((a) => a.ovosA > 0 && !(a.ovosB > 0)).length;
+  const soB = AB.filter((a) => a.ovosB > 0 && !(a.ovosA > 0)).length;
+  const comparacaoCiclos = !parcialB && iA.lidas === iA.total
+    ? `Como comparar A e B: o IPO conta quantas armadilhas tiveram ovos, não quantos ovos. ${iA.pos === iB.pos ? `Os dois ciclos têm ${iA.pos} armadilhas positivas e, por isso, o mesmo IPO (${n1(iA.ipo)}%); ` : `IPO de ${n1(iA.ipo)}% no A e ${n1(iB.ipo)}% no B; `}o IDO (ovos por armadilha positiva) mostra a diferença de intensidade: ${n1(iA.ido)} no A e ${n1(iB.ido)} no B. As positivas não são as mesmas armadilhas: ${nosDois} foram positivas nos dois ciclos, ${soA} só no A e ${soB} só no B (${iAB.pos} em A ou B).`
+    : null;
   const achados = [
     `Ciclo A concluído: ${iA.lidas} de ${iA.total} palhetas lidas, ${nInt(iA.ovos)} ovos, ${iA.pos} armadilhas positivas (IPO ${n1(iA.ipo)}%) e IDO ${n1(iA.ido)}.`,
     topA.length ? `Maiores contagens no Ciclo A: ${topA.map((a) => `${codigoP(a)} (${a.ultimosOvos} ovos)`).join(', ')}.` : null,
@@ -396,7 +403,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     parcialB
       ? `Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, IPO ${n1(iB.ipo)}% e IDO ${n1(iB.ido)}. As demais aguardam leitura laboratorial e os valores serão atualizados.`
       : `Ciclo B concluído: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, ${iB.pos} armadilhas positivas (IPO ${n1(iB.ipo)}%) e IDO ${n1(iB.ido)}.`,
-    `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}.${parcialB ? ' Como o Ciclo B é parcial, Ambas será atualizado.' : ''}`
+    `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}.${parcialB ? ' Como o Ciclo B é parcial, Ambas será atualizado.' : ''}`,
+    comparacaoCiclos
   ].filter(Boolean);
   texto(doc, 'Principais achados', M, 115, { size: 11, bold: true });
   let ya = 122;
