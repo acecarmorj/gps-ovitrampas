@@ -9,7 +9,6 @@ import {
 import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
-import { gerarRelatorioPdfConsolidadoUnico } from '../../lib/pdfRelatorioConsolidadoUnico';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
 
 /**
@@ -156,14 +155,11 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
 
       {bloco(
         'Relatório de resultados (consolidado)',
-        'Resultados do monitoramento com gráficos e mapas de satélite, Ciclo A e Ciclo B.',
+        'Mesmo conteúdo do relatório SES-RJ (indicadores, gráficos de Ciclo A, B e Ambas e mapas de calor da cidade e dos distritos), com as armadilhas identificadas por OV-NN.',
         botao('consolidado', 'Baixar PDF', () =>
-          executar('consolidado', () =>
-            gerarRelatorioPdfConsolidadoUnico(base, todasLeituras, {
-              filtroDescricao: 'Vigilância Entomológica de Carmo/RJ • Palhetas A, B e Consolidado • 56 Ovitrampas'
-            })
-          )
-        )
+          executar('consolidado', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, variante: 'resultados' }))
+        ),
+        'Uso interno.'
       )}
 
       {bloco(

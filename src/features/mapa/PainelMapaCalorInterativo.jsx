@@ -347,7 +347,7 @@ export function PainelMapaCalorInterativo({
       {linhasKpi.map((linha) => (
         <div key={linha.rotulo || 'unico'} className="flex flex-col gap-1">
           {linha.rotulo && <div className="text-xs font-black text-black">{linha.rotulo}</div>}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {linha.k.map((k) => (
               <div key={k.t} className="rounded-lg border border-slate-300 bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{k.t}</div>

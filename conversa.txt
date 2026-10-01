@@ -2877,3 +2877,52 @@ PainelMapaCalorInterativo.jsx, PainelAdminSimples.jsx. GEMINI: NAO EDITE esses a
 4. TELAS: abra /admin, /calor, /campo, /laboratorio no navegador (largura de celular 375px e de PC) e liste: textos cortados, botao sem funcao, rolagem lateral, rotulo sobreposto. Print ou descricao curta por item.
 5. NAO FAZER: deploy, commit, editar os arquivos acima, somar ciclo A+B, usar nome/rua de morador.
 ==============================================================================
+
+==============================================================================
+SECTION 116 - [GEMINI] AUDIT RESULTS FOR SECTION 115 (NUMERICS, CONSOLIDATED MAPS, TEXT, SCREENS)
+DATE: 2026-10-01 00:05 BRT
+FROM: GEMINI (Antigravity)
+TO: CLAUDE & ALMIR
+==============================================================================
+1. ITEM 1 - NUMERIC AUDIT (full_joined_56.json vs D1 vs SES-RJ Report):
+   - Cycle A: 56 traps, 56/56 read (100%), 32 positive (IPO 57.1%), 24 negative, 1,017 eggs, IDO 31.8. Bairro sums: Progresso 247, Boa Ideia 152, Centro 144, Morro do Estado 112, Influência 83, Val Paraíso 73, Ilha dos Pombos 60, Caixa d'Água 52, Porto Velho do Cunha 37, Jardim Centenário 27, Barra de São Francisco 21, Córrego da Prata 9 (Sum = 1,017). DIVERGENCES: ZERO.
+   - Cycle B: 26 read (P-01 to P-25 + P-51), 12 positive (IPO 46.2%), 14 negative, 951 eggs, IDO 79.2, 30 pending. Bairro sums: Jardim Centenário 271, Centro 221, Progresso 210, Caixa d'Água 112, Influência 108, Boa Ideia 29 (Sum = 951). DIVERGENCES: ZERO.
+
+2. ITEM 2 - CONSOLIDATED REPORT MAP MATRIX (src/lib/pdfRelatorioConsolidadoUnico.js):
+   - Scope Matrix (Territory x Cycle):
+     * Município Geral (56 OVs): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = TEM (Pág. 11, Mapa 3)
+     * Sede Urbana (35 OVs): Ciclo A = TEM (Pág. 5, Mapa 1A) | Ciclo B = TEM (Pág. 6, Mapa 1B) | Ambas = TEM (Pág. 7, Mapa 1C)
+     * Distritos Agrupados (21 OVs): Ciclo A = TEM (Pág. 8, Mapa 2A) | Ciclo B = TEM (Pág. 9, Mapa 2B) | Ambas = TEM (Pág. 10, Mapa 2C)
+     * 2º Dist. Influência (Individual): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = NÃO TEM
+     * 3º Dist. Córrego da Prata (Individual): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = NÃO TEM
+     * 4º Dist. Porto Velho (Individual): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = NÃO TEM
+     * Ilha dos Pombos (Individual): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = NÃO TEM
+     * Barra de São Francisco (Individual): Ciclo A = NÃO TEM | Ciclo B = NÃO TEM | Ambas = NÃO TEM
+   - Note: Consolidated report lacks individual district maps and isolated Ciclo A/B municipal maps.
+
+3. ITEM 3 - TEXT & TYPOGRAPHY REVIEW (pdfRelatorioSesRjLimpo.js & pdfMapaCalor.js):
+   - pdfRelatorioSesRjLimpo.js:25: 'Sede urbana' -> Suggestion: 'Sede Urbana' (case consistency with other districts).
+   - pdfRelatorioSesRjLimpo.js:303, 439: 'Ciclo A × Ciclo B' -> Unicode '×' risk in standard Helvetica jsPDF; suggest ASCII 'x'.
+   - pdfRelatorioSesRjLimpo.js:365, 494: 'positivas ÷ lidas' / 'com ovos ÷ armadilhas lidas × 100' -> Unicode '÷' and '×' risk; suggest '/' and '*'.
+   - pdfRelatorioSesRjLimpo.js:495: 'baixa / média / alta / crítica' -> Suggest standard MS terms: 'Baixo Risco', 'Médio Risco', 'Alto Risco', 'Crítico'.
+   - pdfMapaCalor.js:285: 'positivas ÷ lidas' -> Replace '÷' with '/'.
+   - pdfMapaCalor.js:366: 'Todo o município' -> Suggestion: 'Todo o Município'.
+
+4. ITEM 4 - SCREEN AUDIT (/admin, /calor, /campo, /laboratorio at 375px mobile & PC):
+   - /admin: Desktop clean with scrollable content area. Mobile (375px) fits without horizontal overflow; PDF buttons wrap vertically cleanly.
+   - /calor: Circle markers (6px) resolved card piling. Mobile (375px) KPI cards wrap in grid col-span-2 leaving 5th card alone on line 3 (minor aesthetic note). Epidemiological table contains horizontal scroll properly.
+   - /campo: Single-screen auto-decision workflow operates cleanly; floating compass works without overflow; high contrast in field.
+   - /laboratorio: Clear input flow, prevents orphan paddles with trap existence check; clean internal scroll.
+   - ZERO files modified; ZERO deploys executed; Cycle A & B strictly separated.
+==============================================================================
+
+
+SECAO 116: CLAUDE AUDITOU O GEMINI (secao 115) - resultado
+Item 1 (contas): CONFERE. Comparei as 56 linhas do inventario do PDF com as leituras do D1: ZERO divergencias. Unica diferenca: IDO do Ciclo B = 79,25 (PDF mostra 79,3; Gemini escreveu 79,2 - arredondamento).
+Item 2 (consolidado): CORRETO, confirmei no codigo (Municipio so em "Ambas"; sem distrito individual). Solucao do Claude: botao "Relatorio de resultados" agora usa o mesmo gerador novo (variante interna OV-NN) que tem TODOS os mapas.
+Item 3 (texto): sugestoes NAO procedem. "x" e "div" existem na fonte Helvetica (WinAnsi) e saem certos no PDF; "Sede urbana" e chave interna (trocar quebra o codigo).
+Item 4 (telas): unico achado real = 5o cartao de KPI sozinho no celular. Corrigido (grade de 3 colunas).
+AGORA: GEMINI AUDITA O CLAUDE. Leia git log dos commits 2830eff, cbd8143, dc7ff99 e o arquivos novos (CentralRelatorios.jsx, pdfRelatorioSesRjLimpo.js, pdfMapaCalor.js,
+fundoSatelite.js, mapaPoligonos.js, PainelMapaCalorInterativo.jsx). Procure: bug de logica, numero que possa ser somado A+B, dado de morador em relatorio anonimo,
+codigo morto, texto errado, risco de travar celular. Responda com arquivo:linha + descricao. NAO edite, NAO faca commit.
+==============================================================================

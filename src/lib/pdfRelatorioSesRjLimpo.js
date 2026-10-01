@@ -33,7 +33,8 @@ const ORDEM_MACRO = ['Sede urbana', 'Influência', 'Córrego da Prata', 'Porto V
 
 const n1 = (n) => Number(n).toFixed(1).replace('.', ',');
 const nInt = (n) => Number(n).toLocaleString('pt-BR');
-const codigoP = (a) => `P-${String(a.numero).padStart(2, '0')}`;
+let PREFIXO_CODIGO = 'P'; // 'P' no relatorio SES-RJ (anonimo); 'OV' no relatorio de resultados (interno)
+const codigoP = (a) => `${PREFIXO_CODIGO}-${String(a.numero).padStart(2, '0')}`;
 const bairroDe = (a) => (a.bairro || a.microarea || 'Sem bairro').trim();
 const macroDe = (a) => MACRO[classificarTerritorio(a).id] || 'Sede urbana';
 
@@ -274,6 +275,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const iB = indicadores(B);
 
   const usarSat = opcoes.fundo === 'satelite';
+  const interno = opcoes.variante === 'resultados';
+  PREFIXO_CODIGO = interno ? 'OV' : 'P';
   const hoje = new Date().toLocaleDateString('pt-BR');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
@@ -299,9 +302,9 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   doc.setLineWidth(0.5);
   doc.line(M, 36, W - M, 36);
 
-  texto(doc, 'Relatório Técnico de Monitoramento Vetorial', M, 52, { size: 20, bold: true });
+  texto(doc, interno ? 'Relatório de Resultados do Monitoramento' : 'Relatório Técnico de Monitoramento Vetorial', M, 52, { size: 20, bold: true });
   texto(doc, 'Ovitrampas — Aedes aegypti — Ciclo A × Ciclo B', M, 60, { size: 12 });
-  texto(doc, `Destinatário: Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ) · Emitido em ${hoje}`, M, 67, {
+  texto(doc, interno ? `Uso interno · Coordenação de Vigilância em Saúde · Emitido em ${hoje}` : `Destinatário: Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ) · Emitido em ${hoje}`, M, 67, {
     size: 9,
     cor: CINZA
   });
@@ -354,7 +357,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     ya += linhas * 4.6 + 2.6;
   });
 
-  texto(doc, 'Documento técnico com dados anonimizados: armadilhas identificadas por códigos (P-01 a P-56) e resultados agregados por bairro e quarteirão.', M, 266, {
+  texto(doc, interno ? 'Documento de uso interno: armadilhas identificadas por OV-01 a OV-56. Sem nomes de moradores e sem endereços.' : 'Documento técnico com dados anonimizados: armadilhas identificadas por códigos (P-01 a P-56) e resultados agregados por bairro e quarteirão.', M, 266, {
     size: 8,
     cor: CINZA,
     max: LARG
@@ -527,9 +530,9 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     doc.setDrawColor(...LINHA);
     doc.setLineWidth(0.2);
     doc.line(M, 285, W - M, 285);
-    texto(doc, `Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · ${opcoes.rodape || 'dados anonimizados'}`, M, 290, { size: 7.5, cor: CINZA });
+    texto(doc, `Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · ${interno ? 'uso interno' : 'dados anonimizados'}`, M, 290, { size: 7.5, cor: CINZA });
     texto(doc, `Página ${i} de ${total}`, W - M, 290, { size: 7.5, cor: CINZA, align: 'right' });
   }
 
-  doc.save(`relatorio-ses-rj-carmo-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`${interno ? 'relatorio-resultados-carmo' : 'relatorio-ses-rj-carmo'}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
