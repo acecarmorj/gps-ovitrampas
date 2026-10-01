@@ -356,13 +356,23 @@ export function PainelRelatorios({
 
   const gerarPdfConsolidadoUnicoOficial = () =>
     executarGeracaoPdf(
-      () => gerarRelatorioPdfConsolidadoUnico(filtradas, todasLeituras, { filtroDescricao: filtroTexto, ocultarMorador }),
+      () => gerarRelatorioPdfConsolidadoUnico(
+        filtradas.map((a) => brutaPorId.get(a.id) || a),
+        todasLeituras,
+        { filtroDescricao: filtroTexto, ocultarMorador }
+      ),
       'Relatório Consolidado de Resultados (10 Páginas)'
     );
 
   const gerarPdfSesRjOficial = () =>
     executarGeracaoPdf(
-      () => gerarRelatorioFinalSesRj(armadilhas, todasLeituras, { filtroDescricao: filtroTexto }),
+      // Armadilhas originais: as adaptadas ao ciclo 'Ambas' trazem palheta
+      // '26A + 26B' e os ovos do A, e o relatorio lia esses ovos como Ciclo B.
+      () => gerarRelatorioFinalSesRj(
+        armadilhasBrutas.length ? armadilhasBrutas : armadilhas,
+        todasLeituras,
+        { filtroDescricao: filtroTexto }
+      ),
       'Relatório Oficial SES-RJ (8 Páginas • Capa, Sumário & Ciclo A x B)'
     );
 

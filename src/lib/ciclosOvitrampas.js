@@ -63,13 +63,18 @@ export function agruparLeiturasPorArmadilha(todasLeituras = []) {
 export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   const num = normalizarNumeroArmadilha(armadilha.numero);
   const agrupado = mapaLeituras.get(num) || { leiturasA: [], leiturasB: [] };
+  // Armadilha ja adaptada a um ciclo (tem cicloAtivo): palheta, status e
+  // ultimosOvos sao sinteticos ('26A + 26B', 'analisada', ovos de A ou A+B).
+  // Os fallbacks abaixo leriam esses campos como dado real - era assim que
+  // o Ciclo B saia com os ovos do A. Nesse caso so valem as leituras.
+  const bruta = !armadilha.cicloAtivo;
 
   // Palheta A: busca da leitura ou do histórico da armadilha
   let leituraA = agrupado.leiturasA[0] || null;
   let ovosA = leituraA != null ? Number(leituraA.ovos ?? leituraA.qtdOvos ?? 0) : null;
 
   // Se não encontrou no store de leituras, checa se a própria armadilha tem registro de Palheta A
-  if (ovosA === null) {
+  if (ovosA === null && bruta) {
     // 1. Checa histórico de palhetas
     if (Array.isArray(armadilha.historicoPalhetas)) {
       const itemA = armadilha.historicoPalhetas.find((h) => {
@@ -95,7 +100,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   let ovosB = leituraB != null ? Number(leituraB.ovos ?? leituraB.qtdOvos ?? 0) : null;
 
   // Se a armadilha está atualmente com palheta B e foi analisada no laboratório
-  if (ovosB === null && (armadilha.palheta || '').toUpperCase().endsWith('B')) {
+  if (ovosB === null && bruta && (armadilha.palheta || '').toUpperCase().endsWith('B')) {
     if (armadilha.status === 'analisada' && armadilha.ultimosOvos != null) {
       ovosB = Number(armadilha.ultimosOvos);
     }
