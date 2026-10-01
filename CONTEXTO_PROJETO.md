@@ -140,4 +140,14 @@ npx wrangler d1 execute ovitrampas-gps-db --remote --command="SELECT id, numero,
 ## 🎯 7. Regras e Cuidados para Novas Sessões
 1. **Regra de Ouro — Privacidade e LGPD no Relatório SES-RJ:** NUNCA incluir nomes de moradores ou endereços residenciais no relatório destinado à SES-RJ (`pdfRelatorioFinalSesRJ.js`). Os relatórios internos (`pdfRelatorioEntomologico.js` e `pdfRelatorioConsolidado.js`) permanecem inalterados.
 2. **Revisão Obrigatória antes do Deploy:** Qualquer emissão de documento oficial externo deve ser previamente validada e aprovada pelo coordenador Almir Lemgruber antes de ser publicada ou enviada à SES-RJ.
-3. **Sincronia entre IAs:** Manter o arquivo `conversa.txt` atualizado com as seções sequenciais para que Claude e Gemini operem em perfeita sintonia e sem colisão de arquivos.
+3. **Sincronia entre IAs (Seção 113):** Manter o arquivo `conversa.txt` atualizado com as seções sequenciais para que Claude e Gemini operem em perfeita sintonia e sem colisão de arquivos.
+   - **Claude:** Responsável pelas rotas profundas `/calor`, `/publico`, worker, cálculo de IPO/IDO, polígonos e deploy.
+   - **Gemini:** Responsável por ajustes visuais nos PDFs (SES-RJ, Consolidados, Entomológico), canvas térmico sem sobreposição de rótulos, testes de laboratório e documentação.
+
+---
+
+## 🚀 8. Atualizações Recentes do Sistema (30/09 - 01/10/2026)
+* **Cabeçalhos Executivos Claros:** Remoção dos blocos pretos maciços `#0F172A`, substituídos por cartões executivos claros `#F8FAFC`, bordas `#E2E8F0` e friso superior de 1.8mm nas cores institucionais (esmeralda e azul SES).
+* **Prevenção de Colisão nos Mapas de Satélite:** Inclusão do algoritmo `boxesDesenhados` no canvas para evitar sobreposição de rótulos de armadilhas próximas.
+* **Otimização do Build e Timbres:** Refatoração de `src/lib/timbresOficiais.js` para carregamento assíncrono via DataURL, eliminando o erro de falta de memória do esbuild (`npm run build` concluído com sucesso em ~7s).
+* **Tabela de Inventário 28+28 no SES-RJ:** Eliminação da quebra irregular que deixava 1 linha órfã na página 8.

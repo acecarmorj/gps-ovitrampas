@@ -187,34 +187,38 @@ function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDes
   const barW = pageW - 20;
   const barH = 22;
 
-  // Barra superior Slate/Navy escuro executivo
-  doc.setFillColor(15, 23, 42); // #0F172A
-  doc.rect(10, 8, barW, barH, 'F');
+  // Fundo executivo claro (clean slate-50 com borda suave)
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(10, 8, barW, barH, 2, 2, 'FD');
 
-  // Faixa esmeralda decorativa na base da barra superior
+  // Faixa superior esmeralda institucional (Saúde / Carmo)
   doc.setFillColor(5, 150, 105); // #059669
-  doc.rect(10, 8 + barH - 1.2, barW, 1.2, 'F');
+  doc.rect(10, 8, barW, 1.8, 'F');
+
+  // Filete lateral esmeralda para acabamento executivo
+  doc.rect(10, 8, 2.5, barH, 'F');
 
   // Texto do Cabeçalho (esquerda)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('PREFEITURA MUNICIPAL DE CARMO — RJ', 14, 14.5);
+  doc.setTextColor(15, 23, 42); // slate-900 nítido
+  doc.text('PREFEITURA MUNICIPAL DE CARMO — RJ', 15, 14.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
-  doc.setTextColor(203, 213, 225); // slate-300
-  doc.text('SECRETARIA MUNICIPAL DE SAÚDE  •  COORDENADORIA DE VIGILÂNCIA EM SAÚDE', 14, 18.5);
-  doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 14, 22.5);
+  doc.setTextColor(71, 85, 105); // slate-600
+  doc.text('SECRETARIA MUNICIPAL DE SAÚDE  •  COORDENADORIA DE VIGILÂNCIA EM SAÚDE', 15, 18.5);
+  doc.text('PROGRAMA MUNICIPAL DE MONITORAMENTO VETORIAL POR OVITRAMPAS (Aedes aegypti)', 15, 22.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(52, 211, 153); // emerald-400
-  doc.text(`FILTRO: ${filtroDescricao || 'Todos os Registros'}`, 14, 26.5);
+  doc.setTextColor(4, 120, 87); // emerald-700
+  doc.text(`FILTRO: ${filtroDescricao || 'Todos os Registros'}`, 15, 26.5);
 
   // Box à direita
   const direitaX = pageW - 14;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(15, 23, 42);
   doc.text('RELATÓRIO EPIDEMIOLÓGICO OFICIAL', direitaX, 14.5, { align: 'right' });
 
   const txtDataBase = dataBase || dataFormatada;
@@ -224,9 +228,12 @@ function desenharCabecalhoOficial(doc, { dataFormatada, horaFormatada, filtroDes
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
-  doc.setTextColor(203, 213, 225);
+  doc.setTextColor(100, 116, 139);
   doc.text(`Data Base: ${txtDataBase} • ${statusStr}`, direitaX, 18.5, { align: 'right' });
   doc.text(`Emissão: ${dataFormatada} às ${horaFormatada}`, direitaX, 22.5, { align: 'right' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(5, 150, 105);
   doc.text('SISTEMA OFICIAL GPS OVITRAMPAS', direitaX, 26.5, { align: 'right' });
 }
 
@@ -329,7 +336,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('📊 1. Indicadores Entomológicos Oficiais Consolidados (Totalidade Municipal)', 10, 46);
+  doc.text('1. Indicadores Entomológicos Oficiais Consolidados (Totalidade Municipal)', 10, 46);
 
   const kpis = [
     { label: 'TOTAL ARMADILHAS', val: `${totalArmadilhas}`, sub: `${percLidas}% Lidas / ${pendentes} em Campo`, cor: '#0F172A' },
@@ -371,7 +378,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('📍 2. Estratificação Territorial por Região e Distrito', 10, 71);
+  doc.text('2. Estratificação Territorial por Região e Distrito', 10, 71);
 
   // Calcula números territoriais a partir dos dados recebidos
   const grupos = agruparArmadilhasPorTerritorio(armadilhas);
@@ -454,7 +461,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('🚨 3. Ranking dos 10 Maiores Focos Críticos e de Alto Risco', 10, yHotspots);
+  doc.text('3. Ranking dos 10 Maiores Focos Críticos e de Alto Risco', 10, yHotspots);
 
   // Ordena armadilhas com ovos decrescente
   const top10Armadilhas = [...armadilhas]
@@ -527,7 +534,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text('🎯 4. Distribuição Epidemiológica por Nível de Risco (Ministério da Saúde)', 10, yDistRisco);
+  doc.text('4. Distribuição Epidemiológica por Nível de Risco (Ministério da Saúde)', 10, yDistRisco);
 
   const qtdCritico = armadilhas.filter((a) => (Number(a.ultimosOvos) || 0) > 100).length;
   const qtdAlto = armadilhas.filter((a) => (Number(a.ultimosOvos) || 0) > 50 && (Number(a.ultimosOvos) || 0) <= 100).length;
@@ -569,7 +576,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(`📋 4. Registro Individual das ${totalArmadilhas} Ovitrampas (Classificado por Bairro)`, 10, 36);
+  doc.text(`4. Registro Individual das ${totalArmadilhas} Ovitrampas (Classificado por Bairro)`, 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -709,7 +716,7 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🗺️ MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)', 10, 36);
+  doc.text('MAPA 1: CALOR EPIDEMIOLÓGICO (5 NÍVEIS OFICIAIS — FUNDO SATÉLITE)', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
@@ -718,28 +725,24 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.text('A intensidade térmica baseia-se na contagem microscópica de ovos segundo os 5 estratos do Ministério da Saúde: 1. Azul: 0 ovos (Negativa);', 10, 43.5);
   doc.text('2. Verde: 1-20 (Baixo); 3. Amarelo: 21-50 (Médio); 4. Laranja: 51-100 (Alto); 5. Vermelho: >100 (Crítico). Circunferências: raio 175m.', 10, 47);
 
-  // Carrega imagem de alta definição pré-renderizada (fallback dinâmico via canvas se necessário)
-  const imgMapa1 = await carregarImagemDataUrl('maps/mapa_1_sede_5_niveis.jpg');
-  if (imgMapa1) {
-    doc.addImage(imgMapa1, 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  } else {
-    const sedeArms = armadilhas.filter((a) => classificarTerritorio(a).id === 'sede');
-    const { canvas } = await gerarCanvasMapaCalor(sedeArms.length > 0 ? sedeArms : armadilhas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'CARMO (SEDE URBANA)',
-      provider: 'satellite'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  }
+  const sedeArms = armadilhas.filter((a) => classificarTerritorio(a).id === 'sede');
+  const { canvas: canvasEntom1 } = await gerarCanvasMapaCalor(sedeArms.length > 0 ? sedeArms : armadilhas, {
+    width: 1500,
+    height: 1750,
+    tituloTerritorio: '1º DISTRITO — SEDE URBANA (CARMO-RJ)',
+    semRotulosSobreCalor: false,
+    dataBase: 'Monitoramento Epidemiológico',
+    provider: 'satellite'
+  });
+  doc.addImage(canvasEntom1.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('• Cobertura com as 35 armadilhas da Sede Urbana sobre imagem de satélite de alta resolução • Cores térmicas vivas e contrastantes.', 10, 276);
+  doc.text('• Cobertura com as 35 armadilhas da Sede Urbana sobre imagem de satélite de alta resolução • Cores térmicas oficiais do Ministério da Saúde.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 4: MAPA 2: MAPA DE DISPERSÃO E NEVOEIRO TÉRMICO (SATÉLITE — SEDE URBANA)
+  // PÁGINA 4: MAPA 2: MAPA DE DISPERSÃO E CALOR DA SEDE URBANA (AMPLIAÇÃO)
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, cabecalhoParams);
@@ -747,35 +750,32 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🛰️ MAPA 2: MAPA DE DISPERSÃO E NEVOEIRO TÉRMICO (VISUALIZAÇÃO SATÉLITE)', 10, 36);
+  doc.text('MAPA 2: DETALHAMENTO DE FOCOS E CALOR DA SEDE URBANA', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
-  doc.text('Visualização Contínua em Névoa Térmica sobre Ortofotos de Satélite de Alta Resolução (Estilo Prefeitura de Amparo):', 10, 40);
-  doc.text('Demonstra a mancha contínua de dispersão ativa do vetor Aedes aegypti no tecido urbano. As manchas em Vermelho Carmesim concentram as', 10, 43.5);
-  doc.text('maiores cargas de postura no Progresso, Boa Ideia e Centro, esfumando suavemente em Laranja e Amarelo Dourado.', 10, 47);
+  doc.text('Visualização Detalhada em Ortofoto de Satélite de Alta Resolução (Padrão Oficial de Vigilância):', 10, 40);
+  doc.text('Demonstra os halos de dispersão do vetor Aedes aegypti no tecido urbano. As áreas com focos de maior postura concentram-se no', 10, 43.5);
+  doc.text('Progresso, Boa Ideia e Centro, indicando os locais prioritários para ações imediatas dos agentes de endemias.', 10, 47);
 
-  const imgMapa2 = await carregarImagemDataUrl('maps/mapa_2_sede_nevoeiro.jpg');
-  if (imgMapa2) {
-    doc.addImage(imgMapa2, 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  } else {
-    const sedeArms = armadilhas.filter((a) => classificarTerritorio(a).id === 'sede');
-    const { canvas } = await gerarCanvasMapaNevoeiro(sedeArms.length > 0 ? sedeArms : armadilhas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'CARMO (SEDE URBANA)'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  }
+  const { canvas: canvasEntom2 } = await gerarCanvasMapaCalor(sedeArms.length > 0 ? sedeArms : armadilhas, {
+    width: 1500,
+    height: 1750,
+    tituloTerritorio: 'DETALHAMENTO DE FOCOS — SEDE URBANA',
+    semRotulosSobreCalor: false,
+    dataBase: 'Vigilância Entomológica',
+    provider: 'satellite'
+  });
+  doc.addImage(canvasEntom2.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('• Visualização contínua de dispersão sem bordas duras • Pílulas territoriais escuras de bairros • Pins com contagem microscópica exata.', 10, 276);
+  doc.text('• Visualização com raios oficiais de 175m • Pins de alta precisão com legenda estratificada de risco.', 10, 276);
 
   // =========================================================================
-  // PÁGINA 5: MAPA 3: PAINEL DE DISPERSÃO EM NEVOEIRO DOS DISTRITOS E LOCALIDADES
+  // PÁGINA 5: MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES
   // =========================================================================
   doc.addPage('a4', 'portrait');
   desenharCabecalhoOficial(doc, cabecalhoParams);
@@ -783,32 +783,30 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text('🏞️ MAPA 3: PAINEL DE DISPERSÃO EM NEVOEIRO DOS DISTRITOS E LOCALIDADES', 10, 36);
+  doc.text('MAPA 3: PAINEL DE DISPERSÃO E CALOR DOS DISTRITOS E LOCALIDADES', 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
   doc.text('Monitoramento Geoespacial Contínuo nas Zonas Rurais e Distritais do Município de Carmo/RJ:', 10, 40);
   doc.text('Painel analítico individualizado para o 2º Distrito (Influência), 3º Distrito (Córrego da Prata), 4º Distrito (Porto Velho), Ilha dos Pombos e Barra.', 10, 43.5);
-  doc.text('Escala calibrada proporcionalmente ao município: cargas moderadas (ex: 7 ovos) irradiam aura suave amarela de baixo risco, sem superdimensionamento.', 10, 47);
+  doc.text('Escala calibrada proporcionalmente ao município: cargas moderadas irradiam aura suave de baixo risco, sem superdimensionamento.', 10, 47);
 
-  const imgMapa3 = await carregarImagemDataUrl('maps/mapa_3_distritos_nevoeiro.jpg');
-  if (imgMapa3) {
-    doc.addImage(imgMapa3, 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  } else {
-    const distritosArms = armadilhas.filter((a) => classificarTerritorio(a).id !== 'sede');
-    const { canvas } = await gerarCanvasMapaNevoeiro(distritosArms.length > 0 ? distritosArms : armadilhas, {
-      width: 1500,
-      height: 1750,
-      tituloTerritorio: 'DISTRITOS E LOCALIDADES DE CARMO'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
-  }
+  const distritosArms = armadilhas.filter((a) => classificarTerritorio(a).id !== 'sede');
+  const { canvas: canvasEntom3 } = await gerarCanvasMapaCalor(distritosArms.length > 0 ? distritosArms : armadilhas, {
+    width: 1500,
+    height: 1750,
+    tituloTerritorio: 'DISTRITOS E LOCALIDADES (MUNICÍPIO DE CARMO)',
+    semRotulosSobreCalor: false,
+    dataBase: 'Monitoramento Distrital',
+    provider: 'satellite'
+  });
+  doc.addImage(canvasEntom3.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 50, 190, 220, undefined, 'FAST');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('• Proporcionalidade global calibrada entre distritos e sede • 21 armadilhas distritais monitoradas • Total integração com o sistema municipal.', 10, 276);
+  doc.text('• Proporcionalidade global calibrada entre distritos e sede • 21 armadilhas distritais monitoradas • Total integração municipal.', 10, 276);
 
   // =========================================================================
   // PÁGINA 6: MAPA 4: VISÃO PANORÂMICA MUNICIPAL + DIRETRIZES + ASSINATURAS
@@ -819,24 +817,22 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
-  doc.text(`🌐 MAPA 4: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — FUNDO SATÉLITE)`, 10, 36);
+  doc.text(`MAPA 4: VISÃO PANORÂMICA MUNICIPAL (${totalArmadilhas} ARMADILHAS — FUNDO SATÉLITE)`, 10, 36);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
   doc.text('Integração macroterritorial conectando a sede urbana aos 4 distritos e localidades sobre ortofoto de satélite de alta resolução:', 10, 40);
 
-  const imgMapa4 = await carregarImagemDataUrl('maps/mapa_4_municipal_panoramico.jpg');
-  if (imgMapa4) {
-    doc.addImage(imgMapa4, 'JPEG', 10, 44, 190, 148, undefined, 'FAST');
-  } else {
-    const { canvas } = await gerarCanvasMapaNevoeiro(armadilhas, {
-      width: 1600,
-      height: 1250,
-      tituloTerritorio: 'MUNICÍPIO DE CARMO - RJ'
-    });
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 44, 190, 148, undefined, 'FAST');
-  }
+  const { canvas: canvasEntom4 } = await gerarCanvasMapaCalor(armadilhas, {
+    width: 1600,
+    height: 1250,
+    tituloTerritorio: 'MUNICÍPIO DE CARMO - RJ',
+    semRotulosSobreCalor: false,
+    dataBase: 'Panorama Municipal Integrado',
+    provider: 'satellite'
+  });
+  doc.addImage(canvasEntom4.toDataURL('image/jpeg', 0.92), 'JPEG', 10, 44, 190, 148, undefined, 'FAST');
 
   // 6.1 Bloco de Diretrizes Técnicas Entomológicas (Ministério da Saúde / Fiocruz)
   const yDiretrizes = 197;

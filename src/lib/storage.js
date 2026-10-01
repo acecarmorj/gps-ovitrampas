@@ -6,6 +6,8 @@
  * - Background Sync: Fila de envio automático assim que o aparelho detectar internet.
  */
 
+import { getChaveEquipe } from './acessoEquipe';
+
 const DB_NAME = 'gps_ovitrampas_db';
 const DB_VERSION = 2;
 const PHOTO_STORE = 'trap_photos';
@@ -65,7 +67,13 @@ export async function fetchComTimeout(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
+    // Aparelho da equipe envia a chave: o servidor so entrega nome/rua/numero do imovel com ela.
+    const opcoes = { ...options, signal: controller.signal };
+    const chaveEquipe = getChaveEquipe();
+    if (chaveEquipe && String(url).startsWith(API_BASE_URL)) {
+      opcoes.headers = { ...(options.headers || {}), 'X-Team-Key': chaveEquipe };
+    }
+    const res = await fetch(url, opcoes);
     return res;
   } finally {
     clearTimeout(timeoutId);
@@ -521,57 +529,15 @@ export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, obser
 }
 
 export async function excluirArmadilha(id) {
-  if (!id) return;
-  marcarTrapComoDeletada(id);
-  await excluirFotoArmadilha(id);
-  const todas = getArmadilhas().filter((a) => a.id !== id);
-  await salvarArmadilhas(todas);
-
-  try {
-    const db = await openOvitrampasDB();
-    const tx = db.transaction(TRAPS_STORE, 'readwrite');
-    tx.objectStore(TRAPS_STORE).delete(id);
-  } catch (e) {}
-
-  // Exclui imediatamente no Cloudflare D1 se houver conexão
-  if (typeof navigator !== 'undefined' && navigator.onLine) {
-    try {
-      await fetchComTimeout(`${API_TRAPS_ENDPOINT}?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE'
-      }, 8000);
-    } catch (e) {
-      console.warn('Exclusão remota falhou (permanece deletada localmente):', e);
-    }
-  }
+  // BANCO OFICIAL PROTEGIDO: exclusão desativada para proteger as 56 armadilhas oficiais
+  console.warn('[STORAGE] Exclusão bloqueada: banco oficial de Carmo protegido contra remoção acidental.');
+  return false;
 }
 
 export async function limparTodasArmadilhas() {
-  try {
-    localStorage.removeItem(TRAPS_STORAGE_KEY);
-    localStorage.removeItem(LAB_STORAGE_KEY);
-    localStorage.removeItem(DELETED_TRAPS_KEY);
-    limparSyncErrors();
-
-    const db = await openOvitrampasDB();
-    const tx = db.transaction([TRAPS_STORE, LAB_STORE, PHOTO_STORE], 'readwrite');
-    tx.objectStore(TRAPS_STORE).clear();
-    tx.objectStore(LAB_STORE).clear();
-    tx.objectStore(PHOTO_STORE).clear();
-
-    notificarAtualizacaoStorage({ type: 'TRAPS_UPDATE', traps: [] });
-    notificarAtualizacaoStorage({ type: 'LAB_UPDATE', readings: [] });
-
-    // Chama endpoint remoto de limpeza total se online
-    if (typeof navigator !== 'undefined' && navigator.onLine) {
-      try {
-        await fetchComTimeout(`${API_BASE_URL}/api/traps/clear`, { method: 'POST' }, 8000);
-      } catch (e) {
-        console.warn('Limpeza remota D1 falhou:', e);
-      }
-    }
-  } catch (e) {
-    console.warn('Erro ao limpar todas as armadilhas:', e);
-  }
+  // BANCO OFICIAL PROTEGIDO: zeramento do banco permanentemente bloqueado
+  console.warn('[STORAGE] Limpeza total bloqueada: banco oficial de Carmo protegido contra zeramento.');
+  return false;
 }
 
 // ---------------------------------------------------------------------------

@@ -3,9 +3,10 @@ import {
   PlusCircle, Map as MapIcon, FlaskConical,
   ShieldCheck, RefreshCw, Volume2, VolumeX,
   ChevronRight, Check, Cloud, CloudOff,
-  MessageCircle, Compass
+  MessageCircle, Compass, Globe, Flame
 } from 'lucide-react';
 import { DevCredit } from '../../components/DevCredit';
+import { AcessoEquipe } from '../../components/AcessoEquipe';
 
 function greetingNow() {
   const h = new Date().getHours();
@@ -54,15 +55,6 @@ export function GuiaScreen({
       temWhatsApp: true
     },
     {
-      rota: '/mapa',
-      tag: 'Monitoramento',
-      tagCor: 'bg-blue-50 text-blue-800 border-blue-200',
-      icone: MapIcon,
-      iconeBg: 'bg-blue-100 text-blue-700 border-blue-200',
-      titulo: 'Mapa de Armadilhas',
-      descricao: 'Visualização geográfica de Carmo, malha de distâncias ideais (300m a 400m) e rotas.'
-    },
-    {
       rota: '/laboratorio',
       tag: 'Entomologia',
       tagCor: 'bg-indigo-50 text-indigo-800 border-indigo-200',
@@ -78,17 +70,8 @@ export function GuiaScreen({
       icone: ShieldCheck,
       iconeBg: 'bg-amber-100 text-amber-700 border-amber-200',
       titulo: 'Painel do Administrador',
-      descricao: 'Mapa + Tabela integrados, edição e remoção de armadilhas, IPO/IDO e relatório oficial em PDF.'
+      descricao: 'Mapa de calor por quarteirão (Ciclo A e B), tabela, IPO/IDO e relatórios oficiais em PDF.'
     },
-    {
-      rota: '/planejamento',
-      tag: 'Planejamento & Rotas',
-      tagCor: 'bg-purple-50 text-purple-800 border-purple-200',
-      icone: Compass,
-      iconeBg: 'bg-purple-100 text-purple-700 border-purple-200',
-      titulo: 'Mapa de Planejamento das Ações',
-      descricao: 'Grade ideal com espaçamento regular (~300m) e rotas otimizadas para 1 ou 2 veículos recolherem as palhetas gastando menos tempo e combustível.'
-    }
   ];
 
   return (
@@ -232,6 +215,7 @@ export function GuiaScreen({
         <p className="text-xs text-slate-500 font-medium">
           Prefeitura Municipal de Carmo - RJ • Vigilância em Saúde Ambiental
         </p>
+        <AcessoEquipe />
         <DevCredit className="text-slate-400" />
       </footer>
 

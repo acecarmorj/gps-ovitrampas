@@ -37,8 +37,11 @@ import {
 import {
   TIMBRE_BRASAO_CARMO,
   TIMBRE_LOGO_PREFEITURA,
+  TIMBRE_FAIXA_CARMO,
   PROPORCAO_BRASAO_CARMO,
-  PROPORCAO_LOGO_PREFEITURA
+  PROPORCAO_LOGO_PREFEITURA,
+  PROPORCAO_FAIXA_CARMO,
+  carregarTimbresOficiais
 } from './timbresOficiais.js';
 import { extrairDadosBairrosConsolidado } from './pdfRelatorioConsolidadoUnico.js';
 import { gerarCanvasBarrasLateraisRiscoBairros, gerarCanvasRankingFocos } from './pdfRelatoriosGraficos.js';
@@ -62,53 +65,57 @@ const CORES = {
 };
 
 /**
- * Desenha o cabeçalho executivo oficial da SES-RJ e Prefeitura de Carmo
+ * Desenha o cabeçalho executivo oficial da SES-RJ e Prefeitura de Carmo (Design Claro e Límpido)
  */
 function desenharCabecalhoSesRj(doc, { paginaAtual, totalPaginas, subtitulo = '' }) {
   const pageW = doc.internal.pageSize.getWidth();
   const barW = pageW - 20;
   const barH = 22;
 
-  // Barra de fundo em Slate 900
-  doc.setFillColor(...CORES.navyHeader);
-  doc.rect(10, 8, barW, barH, 'F');
+  // Fundo executivo claro (clean slate-50 com borda suave)
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(10, 8, barW, barH, 2, 2, 'FD');
 
   // Filete decorativo duplo (Esmeralda Saúde + Azul Governo RJ)
   doc.setFillColor(...CORES.emeraldBorda);
-  doc.rect(10, 8 + barH - 1.6, barW / 2, 1.6, 'F');
+  doc.rect(10, 8, barW / 2, 1.8, 'F');
   doc.setFillColor(...CORES.azulSes);
-  doc.rect(10 + barW / 2, 8 + barH - 1.6, barW / 2, 1.6, 'F');
+  doc.rect(10 + barW / 2, 8, barW / 2, 1.8, 'F');
+
+  // Filete lateral esmeralda para acabamento executivo
+  doc.setFillColor(...CORES.emeraldBorda);
+  doc.rect(10, 8, 2.5, barH, 'F');
 
   // Textos Institucionais (Esquerda)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('GOVERNO DO ESTADO DO RIO DE JANEIRO — SECRETARIA DE ESTADO DE SAÚDE (SES-RJ)', 14, 14);
+  doc.setTextColor(...CORES.textoPrincipal); // slate-900 nítido
+  doc.text('GOVERNO DO ESTADO DO RIO DE JANEIRO — SECRETARIA DE ESTADO DE SAÚDE (SES-RJ)', 15, 14);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
-  doc.setTextColor(203, 213, 225);
-  doc.text('SUBSECRETARIA DE VIGILÂNCIA EM SAÚDE  •  SUPERINTENDÊNCIA DE VIGILÂNCIA AMBIENTAL', 14, 18);
-  doc.text('PREFEITURA MUNICIPAL DE CARMO  •  SECRETARIA MUNICIPAL DE SAÚDE  •  VIGILÂNCIA ENTOMOLÓGICA', 14, 21.5);
+  doc.setTextColor(...CORES.textoSecundario); // slate-600
+  doc.text('SUBSECRETARIA DE VIGILÂNCIA EM SAÚDE  •  SUPERINTENDÊNCIA DE VIGILÂNCIA AMBIENTAL', 15, 18);
+  doc.text('PREFEITURA MUNICIPAL DE CARMO  •  SECRETARIA MUNICIPAL DE SAÚDE  •  VIGILÂNCIA ENTOMOLÓGICA', 15, 21.5);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
-  doc.setTextColor(52, 211, 153); // emerald-400
-  doc.text(subtitulo ? subtitulo.toUpperCase() : 'MONITORAMENTO VETORIAL POR OVITRAMPAS — Aedes aegypti', 14, 25.5);
+  doc.setTextColor(4, 120, 87); // emerald-700
+  doc.text(subtitulo ? subtitulo.toUpperCase() : 'MONITORAMENTO VETORIAL POR OVITRAMPAS — Aedes aegypti', 15, 25.5);
 
   // Box Institucional (Direita)
   const dirX = pageW - 14;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(...CORES.textoPrincipal);
   doc.text('DOCUMENTO TÉCNICO OFICIAL', dirX, 14, { align: 'right' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.2);
-  doc.setTextColor(190, 220, 245);
+  doc.setTextColor(...CORES.textoSecundario);
   doc.text('Destinatário: SES-RJ / Vigilância Estadual', dirX, 18, { align: 'right' });
   doc.text(`Data Base: Setembro/2026 • 56 Ovitrampas`, dirX, 21.5, { align: 'right' });
-  // "Folha N de T" e carimbado no fim (numerarPaginasSesRj), com o total real.
 }
 
 /**
@@ -689,20 +696,26 @@ function desenharSumarioExecutivoSesRj(doc, autoTable, { paginas = {} }) {
     ],
     [
       'Seção 06',
-      'MAPEAMENTO GEOESPACIAL\nCICLO A',
-      '• Mapa de densidade de ovos sobre imagem de satélite e análise espacial do ciclo.',
-      pag(paginas.mapaA)
+      'MAPEAMENTO GEOESPACIAL 1:\nCALOR DA SEDE URBANA (CARMO)',
+      '• Imagem de satélite e dispersão térmica em alta resolução das 35 armadilhas urbanas.',
+      pag(paginas.mapaSede)
     ],
     [
       'Seção 07',
-      'MAPEAMENTO GEOESPACIAL\nCICLO B',
-      '• Mapa de densidade de ovos do 2º ciclo e comparação com o ciclo anterior.',
-      pag(paginas.mapaB)
+      'MAPEAMENTO GEOESPACIAL 2:\nDISTRITOS E LOCALIDADES',
+      '• Dispersão espacial e calor das 21 armadilhas nos 4 distritos e localidades de Carmo.',
+      pag(paginas.mapaDistritos)
     ],
     [
       'Seção 08',
+      'MAPEAMENTO GEOESPACIAL 3:\nPANORAMA MUNICIPAL & SÉRIE TEMPORAL',
+      '• Visão integrada das 56 armadilhas municipais e evolução comparativa espacial (Ciclo A x B).',
+      pag(paginas.mapaMunicipal)
+    ],
+    [
+      'Seção 09',
       'METODOLOGIA, PLANO DE AÇÃO\n& ASSINATURA TÉCNICA',
-      '• Protocolo técnico, diretrizes de manejo e bloqueio focal, e bloco de assinaturas.',
+      '• Protocolo técnico MS/SES-RJ, diretrizes de manejo e bloqueio focal, e bloco de assinaturas.',
       pag(paginas.metodologia)
     ]
   ];
@@ -797,7 +810,7 @@ export async function gerarRelatorioFinalSesRj(
   opcoes = {}
 ) {
   // 1. Carregamento sob demanda das bibliotecas pesadas (jsPDF, autoTable e canvas)
-  const [{ default: jsPDF }, { default: autoTable }, { gerarCanvasMapaNevoeiro }] = await Promise.all([
+  const [{ default: jsPDF }, { default: autoTable }, { gerarCanvasMapaNevoeiro, gerarCanvasMapaCalor }] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
     import('./heatmapCanvas.js')
@@ -821,6 +834,7 @@ export async function gerarRelatorioFinalSesRj(
   // Preparar coleções adaptadas para geração dos mapas específicos de cada ciclo
   const armadilhasCicloA = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1);
   const armadilhasCicloB = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2);
+  const armadilhasAmbas = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_AMBAS);
 
   // Métricas gerais de cada ciclo
   const metricasA = calcularMetricasCiclo(armadilhasCicloA);
@@ -835,6 +849,8 @@ export async function gerarRelatorioFinalSesRj(
   });
 
   const totalPaginasEstimadas = 8;
+
+  await carregarTimbresOficiais();
 
   // =========================================================================
   // PÁGINA 1: CAPA INSTITUCIONAL OFICIAL COM TIMBRES E METADADOS
@@ -1470,21 +1486,23 @@ export async function gerarRelatorioFinalSesRj(
     ];
   });
 
+  const parte1 = linhasIndividual.slice(0, 28);
+  const parte2 = linhasIndividual.slice(28);
+
   autoTable(doc, {
     startY: curY,
     margin: { top: 36, bottom: 14 },
-    didDrawPage: continuarCabecalho('INVENTÁRIO TÉCNICO DAS OVITRAMPAS (CONTINUAÇÃO)'),
     head: [[
       'OV', 'Bairro', 'Microárea', 'Quart.',
       'Palh. A', 'Ovos A', 'Risco Ciclo A',
       'Palh. B', 'Ovos B', 'Risco Ciclo B',
       'Variação Ovos'
     ]],
-    body: linhasIndividual,
+    body: parte1,
     theme: 'grid',
     styles: {
-      fontSize: 5.5,
-      cellPadding: 1.0,
+      fontSize: 5.6,
+      cellPadding: 1.2,
       textColor: [15, 23, 42],
       lineColor: [226, 232, 240],
       lineWidth: 0.15
@@ -1493,7 +1511,125 @@ export async function gerarRelatorioFinalSesRj(
       fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 5.6
+      fontSize: 5.8
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', halign: 'center', cellWidth: 11 },
+      1: { fontStyle: 'bold', cellWidth: 26 },
+      2: { cellWidth: 26 },
+      3: { halign: 'center', cellWidth: 15 },
+      4: { halign: 'center', cellWidth: 13 },
+      5: { halign: 'center', fontStyle: 'bold', cellWidth: 13 },
+      6: { halign: 'center', cellWidth: 24 },
+      7: { halign: 'center', cellWidth: 13 },
+      8: { halign: 'center', fontStyle: 'bold', cellWidth: 15 },
+      9: { halign: 'center', cellWidth: 24 },
+      10: { halign: 'center', fontStyle: 'bold', cellWidth: 20 }
+    },
+    didParseCell: (data) => {
+      // Colorir risco A
+      if (data.column.index === 6) {
+        const val = String(data.cell.raw || '');
+        if (val.includes('Crítico')) {
+          data.cell.styles.textColor = [185, 28, 28];
+          data.cell.styles.fillColor = [254, 242, 242];
+        } else if (val.includes('Alto')) {
+          data.cell.styles.textColor = [194, 65, 12];
+          data.cell.styles.fillColor = [255, 247, 237];
+        } else if (val.includes('Médio')) {
+          data.cell.styles.textColor = [180, 83, 9];
+          data.cell.styles.fillColor = [254, 252, 232];
+        } else if (val.includes('Baixo')) {
+          data.cell.styles.textColor = [4, 120, 87];
+          data.cell.styles.fillColor = [236, 253, 245];
+        } else if (val.includes('Negativa')) {
+          data.cell.styles.textColor = [29, 78, 216];
+          data.cell.styles.fillColor = [239, 246, 255];
+        }
+      }
+      // Colorir risco B
+      if (data.column.index === 9) {
+        const val = String(data.cell.raw || '');
+        if (val.includes('Crítico')) {
+          data.cell.styles.textColor = [185, 28, 28];
+          data.cell.styles.fillColor = [254, 242, 242];
+        } else if (val.includes('Alto')) {
+          data.cell.styles.textColor = [194, 65, 12];
+          data.cell.styles.fillColor = [255, 247, 237];
+        } else if (val.includes('Médio')) {
+          data.cell.styles.textColor = [180, 83, 9];
+          data.cell.styles.fillColor = [254, 252, 232];
+        } else if (val.includes('Baixo')) {
+          data.cell.styles.textColor = [4, 120, 87];
+          data.cell.styles.fillColor = [236, 253, 245];
+        } else if (val.includes('Negativa')) {
+          data.cell.styles.textColor = [29, 78, 216];
+          data.cell.styles.fillColor = [239, 246, 255];
+        } else if (val.includes('Aguardando')) {
+          data.cell.styles.textColor = [100, 116, 139];
+          data.cell.styles.fontStyle = 'italic';
+        }
+      }
+      // Colorir variação
+      if (data.column.index === 10) {
+        const val = String(data.cell.raw || '');
+        if (val.includes('Subiu')) {
+          data.cell.styles.textColor = [185, 28, 28];
+        } else if (val.includes('Reduziu')) {
+          data.cell.styles.textColor = [4, 120, 87];
+        }
+      }
+    }
+  });
+
+  desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
+
+  // PÁGINA 5B: INVENTÁRIO TÉCNICO PARTE 2 (P-29 A P-56)
+  doc.addPage();
+  paginaAtual += 1;
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
+    totalPaginas: totalPaginasEstimadas,
+    subtitulo: 'INVENTÁRIO TÉCNICO DAS 56 OVITRAMPAS (PARTE 2)'
+  });
+
+  curY = 34;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('5. INVENTÁRIO TÉCNICO INDIVIDUALIZADO — PARTE 2 (P-29 A P-56)', 10, curY);
+
+  curY += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text('Continuação do inventário das 56 ovitrampas de Carmo (Sede e Distritos) com classificação direta de risco:', 10, curY);
+
+  curY += 7;
+
+  autoTable(doc, {
+    startY: curY,
+    margin: { top: 36, bottom: 14 },
+    head: [[
+      'OV', 'Bairro', 'Microárea', 'Quart.',
+      'Palh. A', 'Ovos A', 'Risco Ciclo A',
+      'Palh. B', 'Ovos B', 'Risco Ciclo B',
+      'Variação Ovos'
+    ]],
+    body: parte2,
+    theme: 'grid',
+    styles: {
+      fontSize: 5.6,
+      cellPadding: 1.2,
+      textColor: [15, 23, 42],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15
+    },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 5.8
     },
     columnStyles: {
       0: { fontStyle: 'bold', halign: 'center', cellWidth: 11 },
@@ -1567,16 +1703,15 @@ export async function gerarRelatorioFinalSesRj(
   desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
 
   // =========================================================================
-  // PÁGINA 6: MAPEAMENTO GEOESPACIAL DE DENSIDADE VETORIAL — CICLO A
+  // SEÇÃO 06A: MAPEAMENTO GEOESPACIAL 1A — SEDE URBANA: 1ª SEMANA (PALHETA A)
   // =========================================================================
   doc.addPage();
-  paginasSecao.mapaA = doc.getNumberOfPages() + 1;
+  marcarSecao('mapaSede');
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
-    totalPaginas: totalPaginasEstimadas,
-    subtitulo: 'DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO A'
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 1A — SEDE URBANA (1ª SEMANA - PALHETA A)'
   });
 
   curY = 34;
@@ -1584,58 +1719,63 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('6. MAPA DE DENSIDADE E CALOR EPIDEMIOLÓGICO — CICLO A (SEMANA 1)', 10, curY);
+  doc.text('6A. MAPEAMENTO GEOESPACIAL 1A — SEDE URBANA (1ª SEMANA • LINHA DE BASE)', 10, curY);
 
   curY += 4;
+
+  const sedeArmsA = armadilhasCicloA.filter((a) => classificarTerritorio(a).id === 'sede');
+  const sedeArmsB = armadilhasCicloB.filter((a) => classificarTerritorio(a).id === 'sede');
+  const sedeSomenteA = somenteA.filter((a) => classificarTerritorio(a).id === 'sede');
+  const sedeSomenteB = somenteB.filter((a) => classificarTerritorio(a).id === 'sede');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.4);
   doc.setTextColor(...CORES.textoSecundario);
-  doc.text(`Visualização cartográfica por imagem de satélite com dispersão térmica das ${metricasA.total} armadilhas do Ciclo A (${metricasA.comparativo.ovosA.toLocaleString('pt-BR')} ovos contados).`, 10, curY);
+  doc.text(`Mapeamento em alta resolução por imagem de satélite das ${sedeArmsA.length} armadilhas da malha urbana (Progresso, Centro, Caixa d'Água, etc.) com dispersão térmica.`, 10, curY);
 
   curY += 6;
 
   try {
-    // Gerar Canvas de satélite com nevoeiro térmico para Ciclo A
-    const canvasMapaA = await gerarCanvasMapaNevoeiro(armadilhasCicloA, {
-      width: 1400,
-      height: 900,
-      tituloTerritorio: 'MUNICÍPIO DE CARMO — CICLO A (1ª SEMANA)'
+    const canvasMapaSedeA = await gerarCanvasMapaCalor(sedeArmsA, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: '1º DISTRITO — SEDE URBANA (1ª SEMANA - PALHETA A)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Ciclo A (1ª Semana)',
+      provider: 'satellite'
     });
-
-    // gerarCanvasMapaNevoeiro devolve { canvas, width, height }, nao o
-    // canvas direto: chamar toDataURL no objeto dava TypeError e o PDF saia
-    // sempre com "Mapa em processamento vetorial" no lugar do mapa.
-    const telaA = canvasMapaA?.canvas || canvasMapaA;
-    if (telaA) {
-      const imgDataA = telaA.toDataURL('image/jpeg', 0.90);
-      const alturaA = Math.min(150, 190 * (telaA.height / telaA.width));
-      doc.addImage(imgDataA, 'JPEG', 10, curY, 190, alturaA);
-      curY += alturaA + 3;
+    const telaSedeA = canvasMapaSedeA?.canvas || canvasMapaSedeA;
+    if (telaSedeA) {
+      const imgDataSedeA = telaSedeA.toDataURL('image/jpeg', 0.90);
+      const alturaSede = Math.min(135, 190 * (telaSedeA.height / telaSedeA.width));
+      doc.addImage(imgDataSedeA, 'JPEG', 10, curY, 190, alturaSede);
+      curY += alturaSede + 3;
     }
-  } catch (errMapaA) {
-    console.warn('Erro ao gerar imagem do mapa Ciclo A:', errMapaA);
+  } catch (errMapaSede) {
+    console.warn('Erro ao gerar imagem do mapa da Sede:', errMapaSede);
     doc.rect(10, curY, 190, 80);
     doc.text('Mapa em processamento vetorial', 20, curY + 40);
     curY += 85;
   }
 
-  // Box analítico do Ciclo A (calculado dos dados)
-  curY = desenharBoxAnalise(doc, curY, 'ANÁLISE ESPACIAL DA INFESTAÇÃO — CICLO A:', analiseDoCiclo(somenteA, somenteB, 'A'));
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'ANÁLISE ESPACIAL DA INFESTAÇÃO — SEDE URBANA (1º DISTRITO - 1ª SEMANA):',
+    analiseDoCiclo(sedeSomenteA, sedeSomenteB, 'A')
+  );
 
-  desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
+  desenharRodapeSesRj(doc, paginaAtual);
 
   // =========================================================================
-  // PÁGINA 7: MAPEAMENTO GEOESPACIAL DE DENSIDADE VETORIAL — CICLO B
+  // SEÇÃO 06B: MAPEAMENTO GEOESPACIAL 1B — SEDE URBANA: 2ª SEMANA (PALHETA B)
   // =========================================================================
   doc.addPage();
-  paginasSecao.mapaB = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
-    totalPaginas: totalPaginasEstimadas,
-    subtitulo: 'DISPERSÃO GEOESPACIAL E NEVOEIRO TÉRMICO — CICLO B'
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 1B — SEDE URBANA (2ª SEMANA - PALHETA B)'
   });
 
   curY = 34;
@@ -1643,56 +1783,353 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('7. MAPA DE DENSIDADE E CALOR EPIDEMIOLÓGICO — CICLO B (SEMANA 2)', 10, curY);
+  doc.text('6B. MAPEAMENTO GEOESPACIAL 1B — SEDE URBANA (2ª SEMANA • EVOLUÇÃO TEMPORAL)', 10, curY);
 
   curY += 4;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.4);
   doc.setTextColor(...CORES.textoSecundario);
-  doc.text(`Visualização com leituras realizadas (${metricasB.totalLidas} lidas) e marcações das palhetas em processamento (${56 - metricasB.totalLidas} pendentes).`, 10, curY);
+  doc.text(`Evolução geoespacial da infestação vetorial na Sede Urbana durante a 2ª Semana (Palheta B) e impacto das medidas focais.`, 10, curY);
 
   curY += 6;
 
   try {
-    const canvasMapaB = await gerarCanvasMapaNevoeiro(armadilhasCicloB, {
-      width: 1400,
-      height: 900,
-      tituloTerritorio: 'MUNICÍPIO DE CARMO — CICLO B (2ª SEMANA)'
+    const canvasMapaSedeB = await gerarCanvasMapaCalor(sedeArmsB, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: '1º DISTRITO — SEDE URBANA (2ª SEMANA - PALHETA B)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Ciclo B (2ª Semana)',
+      provider: 'satellite'
     });
-
-    // gerarCanvasMapaNevoeiro devolve { canvas, width, height }, nao o
-    // canvas direto: chamar toDataURL no objeto dava TypeError e o PDF saia
-    // sempre com "Mapa em processamento vetorial" no lugar do mapa.
-    const telaB = canvasMapaB?.canvas || canvasMapaB;
-    if (telaB) {
-      const imgDataB = telaB.toDataURL('image/jpeg', 0.90);
-      const alturaB = Math.min(150, 190 * (telaB.height / telaB.width));
-      doc.addImage(imgDataB, 'JPEG', 10, curY, 190, alturaB);
-      curY += alturaB + 3;
+    const telaSedeB = canvasMapaSedeB?.canvas || canvasMapaSedeB;
+    if (telaSedeB) {
+      const imgDataSedeB = telaSedeB.toDataURL('image/jpeg', 0.90);
+      const alturaSede = Math.min(135, 190 * (telaSedeB.height / telaSedeB.width));
+      doc.addImage(imgDataSedeB, 'JPEG', 10, curY, 190, alturaSede);
+      curY += alturaSede + 3;
     }
-  } catch (errMapaB) {
-    console.warn('Erro ao gerar imagem do mapa Ciclo B:', errMapaB);
-    doc.rect(10, curY, 190, 80);
-    doc.text('Mapa em processamento vetorial', 20, curY + 40);
-    curY += 85;
+  } catch (errMapaSedeB) {
+    console.warn('Erro ao gerar imagem do mapa da Sede B:', errMapaSedeB);
   }
 
-  // Box analítico do Ciclo B (calculado dos dados)
-  curY = desenharBoxAnalise(doc, curY, 'ANÁLISE COMPARATIVA — CICLO B:', analiseDoCiclo(somenteB, somenteA, 'B'));
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'ANÁLISE ESPACIAL DA INFESTAÇÃO — SEDE URBANA (1º DISTRITO - 2ª SEMANA):',
+    analiseDoCiclo(sedeSomenteB, sedeSomenteA, 'B')
+  );
 
-  desenharRodapeSesRj(doc, paginaAtual, totalPaginasEstimadas);
+  desenharRodapeSesRj(doc, paginaAtual);
 
   // =========================================================================
-  // PÁGINA 8: METODOLOGIA OFICIAL, CONDUTAS & ASSINATURA TÉCNICA
+  // SEÇÃO 06C: MAPEAMENTO GEOESPACIAL 1C — SEDE URBANA: DUAS SEMANAS JUNTAS (CONSOLIDADO A + B)
   // =========================================================================
   doc.addPage();
-  paginasSecao.metodologia = doc.getNumberOfPages() + 1;
   paginaAtual += 1;
 
   desenharCabecalhoSesRj(doc, {
     paginaAtual,
-    totalPaginas: totalPaginasEstimadas,
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 1C — SEDE URBANA (CONSOLIDADO A + B)'
+  });
+
+  curY = 34;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('6C. MAPEAMENTO GEOESPACIAL 1C — SEDE URBANA (DUAS SEMANAS JUNTAS • A+B)', 10, curY);
+
+  curY += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text(`Carga bi-semanal acumulada de oviposição e estratificação consolidada na Sede Urbana de Carmo.`, 10, curY);
+
+  curY += 6;
+
+  try {
+    const sedeArmsAmbas = armadilhasAmbas.filter((a) => classificarTerritorio(a).id === 'sede');
+    const canvasMapaSedeAmbas = await gerarCanvasMapaCalor(sedeArmsAmbas, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: '1º DISTRITO — SEDE URBANA (CONSOLIDADO A + B)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Consolidado Palhetas A + B',
+      provider: 'satellite'
+    });
+    const telaSedeAmbas = canvasMapaSedeAmbas?.canvas || canvasMapaSedeAmbas;
+    if (telaSedeAmbas) {
+      const imgDataSedeAmbas = telaSedeAmbas.toDataURL('image/jpeg', 0.90);
+      const alturaSede = Math.min(135, 190 * (telaSedeAmbas.height / telaSedeAmbas.width));
+      doc.addImage(imgDataSedeAmbas, 'JPEG', 10, curY, 190, alturaSede);
+      curY += alturaSede + 3;
+    }
+  } catch (errMapaSedeAmbas) {
+    console.warn('Erro ao gerar imagem do mapa da Sede Ambas:', errMapaSedeAmbas);
+  }
+
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'CONSOLIDAÇÃO EPIDEMIOLÓGICA — SEDE URBANA (A + B ACUMULADO):',
+    [
+      `• Carga acumulada bi-semanal nos bairros da Sede Urbana com 35 armadilhas monitoradas.`,
+      `• Concentração de postura priorizada para os bairros Progresso, Centro e Boa Ideia.`,
+      `• Nevoeiro térmico calibrado em raio oficial de 175m (~300m circunferência) delimitando com precisão o foco reprodutivo.`
+    ]
+  );
+
+  desenharRodapeSesRj(doc, paginaAtual);
+
+  // =========================================================================
+  // SEÇÃO 07A: MAPEAMENTO GEOESPACIAL 2A — DISTRITOS E LOCALIDADES (1ª SEMANA)
+  // =========================================================================
+  doc.addPage();
+  marcarSecao('mapaDistritos');
+  paginaAtual += 1;
+
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 2A — DISTRITOS (1ª SEMANA - PALHETA A)'
+  });
+
+  curY = 34;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('7A. MAPEAMENTO GEOESPACIAL 2A — DISTRITOS E LOCALIDADES (1ª SEMANA • PALHETA A)', 10, curY);
+
+  curY += 4;
+
+  const distritosArmsA = armadilhasCicloA.filter((a) => classificarTerritorio(a).id !== 'sede');
+  const distritosArmsB = armadilhasCicloB.filter((a) => classificarTerritorio(a).id !== 'sede');
+  const distSomenteA = somenteA.filter((a) => classificarTerritorio(a).id !== 'sede');
+  const distSomenteB = somenteB.filter((a) => classificarTerritorio(a).id !== 'sede');
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text(`Dispersão espacial das ${distritosArmsA.length} armadilhas distribuídas nos distritos de Influência (2º), Córrego da Prata (3º), Porto Velho (4º), Ilha dos Pombos e Barra de S. Francisco na 1ª Semana.`, 10, curY);
+
+  curY += 6;
+
+  try {
+    const canvasMapaDistA = await gerarCanvasMapaCalor(distritosArmsA, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: 'DISTRITOS E LOCALIDADES (1ª SEMANA - PALHETA A)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Ciclo A (1ª Semana)',
+      provider: 'satellite'
+    });
+    const telaDistA = canvasMapaDistA?.canvas || canvasMapaDistA;
+    if (telaDistA) {
+      const imgDataDistA = telaDistA.toDataURL('image/jpeg', 0.90);
+      const alturaDist = Math.min(135, 190 * (telaDistA.height / telaDistA.width));
+      doc.addImage(imgDataDistA, 'JPEG', 10, curY, 190, alturaDist);
+      curY += alturaDist + 3;
+    }
+  } catch (errMapaDist) {
+    console.warn('Erro ao gerar imagem do mapa dos Distritos:', errMapaDist);
+  }
+
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'ANÁLISE ESPACIAL DA INFESTAÇÃO — DISTRITOS (1ª SEMANA):',
+    analiseDoCiclo(distSomenteA, distSomenteB, 'A')
+  );
+
+  desenharRodapeSesRj(doc, paginaAtual);
+
+  // =========================================================================
+  // SEÇÃO 07B: MAPEAMENTO GEOESPACIAL 2B — DISTRITOS E LOCALIDADES (2ª SEMANA)
+  // =========================================================================
+  doc.addPage();
+  paginaAtual += 1;
+
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 2B — DISTRITOS (2ª SEMANA - PALHETA B)'
+  });
+
+  curY = 34;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('7B. MAPEAMENTO GEOESPACIAL 2B — DISTRITOS E LOCALIDADES (2ª SEMANA • PALHETA B)', 10, curY);
+
+  curY += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text(`Evolução do monitoramento vetorial nos distritos e localidades durante a 2ª Semana (Palheta B).`, 10, curY);
+
+  curY += 6;
+
+  try {
+    const canvasMapaDistB = await gerarCanvasMapaCalor(distritosArmsB, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: 'DISTRITOS E LOCALIDADES (2ª SEMANA - PALHETA B)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Ciclo B (2ª Semana)',
+      provider: 'satellite'
+    });
+    const telaDistB = canvasMapaDistB?.canvas || canvasMapaDistB;
+    if (telaDistB) {
+      const imgDataDistB = telaDistB.toDataURL('image/jpeg', 0.90);
+      const alturaDist = Math.min(135, 190 * (telaDistB.height / telaDistB.width));
+      doc.addImage(imgDataDistB, 'JPEG', 10, curY, 190, alturaDist);
+      curY += alturaDist + 3;
+    }
+  } catch (errMapaDistB) {
+    console.warn('Erro ao gerar imagem do mapa dos Distritos B:', errMapaDistB);
+  }
+
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'ANÁLISE ESPACIAL DA INFESTAÇÃO — DISTRITOS (2ª SEMANA):',
+    analiseDoCiclo(distSomenteB, distSomenteA, 'B')
+  );
+
+  desenharRodapeSesRj(doc, paginaAtual);
+
+  // =========================================================================
+  // SEÇÃO 07C: MAPEAMENTO GEOESPACIAL 2C — DISTRITOS E LOCALIDADES (CONSOLIDADO A + B)
+  // =========================================================================
+  doc.addPage();
+  paginaAtual += 1;
+
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 2C — DISTRITOS (CONSOLIDADO A + B)'
+  });
+
+  curY = 34;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('7C. MAPEAMENTO GEOESPACIAL 2C — DISTRITOS E LOCALIDADES (DUAS SEMANAS JUNTAS • A+B)', 10, curY);
+
+  curY += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text(`Consolidação bi-semanal acumulada da oviposição e risco nos distritos de Carmo/RJ.`, 10, curY);
+
+  curY += 6;
+
+  try {
+    const distritosArmsAmbas = armadilhasAmbas.filter((a) => classificarTerritorio(a).id !== 'sede');
+    const canvasMapaDistAmbas = await gerarCanvasMapaCalor(distritosArmsAmbas, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: 'DISTRITOS E LOCALIDADES (CONSOLIDADO A + B)',
+      semRotulosSobreCalor: false,
+      dataBase: 'Consolidado Palhetas A + B',
+      provider: 'satellite'
+    });
+    const telaDistAmbas = canvasMapaDistAmbas?.canvas || canvasMapaDistAmbas;
+    if (telaDistAmbas) {
+      const imgDataDistAmbas = telaDistAmbas.toDataURL('image/jpeg', 0.90);
+      const alturaDist = Math.min(135, 190 * (telaDistAmbas.height / telaDistAmbas.width));
+      doc.addImage(imgDataDistAmbas, 'JPEG', 10, curY, 190, alturaDist);
+      curY += alturaDist + 3;
+    }
+  } catch (errMapaDistAmbas) {
+    console.warn('Erro ao gerar imagem do mapa dos Distritos Ambas:', errMapaDistAmbas);
+  }
+
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'CONSOLIDAÇÃO EPIDEMIOLÓGICA — DISTRITOS (A + B ACUMULADO):',
+    [
+      `• Consolidação das 21 armadilhas rurais e distritais de Carmo/RJ.`,
+      `• Identificação de focos isolados no 2º Distrito (Influência) e estabilidade em Porto Velho.`,
+      `• Mapeamento de precisão sobre ortofoto de satélite com raio de 175m (~300m circunferência).`
+    ]
+  );
+
+  desenharRodapeSesRj(doc, paginaAtual);
+
+  // =========================================================================
+  // SEÇÃO 08: MAPEAMENTO GEOESPACIAL 3 — PANORAMA MUNICIPAL INTEGRADO
+  // =========================================================================
+  doc.addPage();
+  marcarSecao('mapaMunicipal');
+  paginaAtual += 1;
+
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
+    subtitulo: 'MAPEAMENTO GEOESPACIAL 3 — PANORAMA MUNICIPAL INTEGRADO'
+  });
+
+  curY = 34;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.setTextColor(...CORES.textoPrincipal);
+  doc.text('8. PANORAMA GEOESPACIAL MUNICIPAL INTEGRADO (56 ARMADILHAS — SEDE E DISTRITOS)', 10, curY);
+
+  curY += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(...CORES.textoSecundario);
+  doc.text('Visão macroterritorial integrada conectando a sede urbana aos 4 distritos municipais sobre imagem de satélite de alta resolução:', 10, curY);
+
+  curY += 6;
+
+  try {
+    const canvasMacro = await gerarCanvasMapaCalor(armadilhasAmbas, {
+      width: 1500,
+      height: 920,
+      tituloTerritorio: 'PANORAMA MUNICIPAL INTEGRADO (CARMO-RJ)',
+      semRotulosSobreCalor: false,
+      dataBase: '56 Armadilhas • Consolidado Palhetas A + B',
+      provider: 'satellite'
+    });
+    const telaMacro = canvasMacro?.canvas || canvasMacro;
+    if (telaMacro) {
+      const imgMacro = telaMacro.toDataURL('image/jpeg', 0.90);
+      const alturaMacro = Math.min(135, 190 * (telaMacro.height / telaMacro.width));
+      doc.addImage(imgMacro, 'JPEG', 10, curY, 190, alturaMacro);
+      curY += alturaMacro + 3;
+    }
+  } catch (errMacro) {
+    console.warn('Erro ao gerar mapas comparativos municipais:', errMacro);
+  }
+
+  // Box analítico comparativo municipal
+  curY = desenharBoxAnalise(
+    doc,
+    curY,
+    'SÍNTESE COMPARATIVA DA SÉRIE TEMPORAL MUNICIPAL (CICLO A x CICLO B):',
+    analiseDoCiclo(somenteB, somenteA, 'B')
+  );
+
+  desenharRodapeSesRj(doc, paginaAtual);
+
+  // =========================================================================
+  // SEÇÃO 09: METODOLOGIA OFICIAL, PLANO DE AÇÃO & ASSINATURA TÉCNICA
+  // =========================================================================
+  doc.addPage();
+  marcarSecao('metodologia');
+  paginaAtual += 1;
+
+  desenharCabecalhoSesRj(doc, {
+    paginaAtual,
     subtitulo: 'METODOLOGIA OFICIAL, DIRETRIZES DE MANEJO & CHANCELA TÉCNICA'
   });
 
@@ -1701,7 +2138,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('8. METODOLOGIA PADRONIZADA DE MONITORAMENTO ENTOMOLÓGICO', 10, curY);
+  doc.text('9. METODOLOGIA PADRONIZADA DE MONITORAMENTO ENTOMOLÓGICO', 10, curY);
 
   curY += 4;
 
@@ -1734,7 +2171,7 @@ export async function gerarRelatorioFinalSesRj(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(...CORES.textoPrincipal);
-  doc.text('8.1 PLANO DE AÇÃO IMEDIATA E MEDIDAS DE CONTROLE AMBIENTAL', 10, curY);
+  doc.text('9.1 PLANO DE AÇÃO IMEDIATA E MEDIDAS DE CONTROLE AMBIENTAL', 10, curY);
 
   curY += 4;
 

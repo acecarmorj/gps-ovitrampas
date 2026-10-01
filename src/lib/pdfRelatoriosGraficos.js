@@ -381,7 +381,7 @@ export function gerarCanvasRankingFocos(focos, { width = 1200, height = 520 } = 
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'left';
-    const tagRisco = ovos > 100 ? '🔥 CRÍTICO' : '⚠️ ALTO';
+    const tagRisco = ovos > 100 ? 'CRÍTICO' : 'ALTO';
     ctx.fillText(`${ovos} ovos • ${tagRisco}`, marginLeft + barW + 12, y + barH / 2 + 6);
   });
 

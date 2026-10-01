@@ -9,7 +9,7 @@ import {
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
 import { SeletorAgenteModal } from '../../components/SeletorAgenteModal';
 import { getMeuAgente } from '../../lib/agentLiveTracking';
-import { excluirArmadilha, trocarPalhetaArmadilha, recolherArmadilhaEPalheta } from '../../lib/storage';
+import { trocarPalhetaArmadilha, recolherArmadilhaEPalheta } from '../../lib/storage';
 import { calcularSituacaoArmadilha, DIAS_CICLO_PADRAO, sugerirProximaPalheta } from '../../lib/situacaoOvitrampa';
 import { findNearbyTraps, calcDistanceMeters } from '../../lib/geoDistance';
 import { playSuccessSound } from '../../lib/soundAlert';
@@ -147,14 +147,6 @@ export function PainelAcompanhamentoScreen({
 
   const handleAbrirWaze = (lat, lng) => {
     window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
-  };
-
-  const handleExcluir = async (id, numero) => {
-    if (window.confirm(`Tem certeza que deseja remover a armadilha ARM-${numero}?`)) {
-      await excluirArmadilha(id);
-      if (selecionada?.id === id) setSelecionada(null);
-      if (onExcluirArmadilha) onExcluirArmadilha(id);
-    }
   };
 
   return (
@@ -1005,15 +997,6 @@ export function PainelAcompanhamentoScreen({
               >
                 <FlaskConical className="w-4 h-4" />
                 <span>LANÇAR LEITURA NO LABORATÓRIO</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleExcluir(selecionada.id, selecionada.numero)}
-                className="col-span-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 py-1.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Remover esta armadilha</span>
               </button>
             </div>
 

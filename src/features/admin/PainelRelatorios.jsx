@@ -530,26 +530,25 @@ export function PainelRelatorios({
           </button>
         </section>
 
-        {/* CARD EM DESTAQUE MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO */}
-        <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 border-2 border-emerald-500/40 text-white rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        {/* CARD EM DESTAQUE MASTER: RELATÓRIO EPIDEMIOLÓGICO CONSOLIDADO ÚNICO (CLEAN & MINIMALISTA) */}
+        <section className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
             <div className="space-y-2 max-w-2xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Relatório de Resultados • 10 Páginas A4</span>
                 </span>
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Palhetas A + B + 3 Mapas Satélite
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <span>Relatório Consolidado de Resultados</span>
-                <Sparkles className="w-5 h-5 text-amber-400 animate-pulse hidden sm:inline" />
+                <Sparkles className="w-4 h-4 text-emerald-600 hidden sm:inline" />
               </h2>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Documento executivo e técnico definitivo: compila integralmente os resultados do monitoramento entomológico em um único relatório de 10 páginas com gráficos vetoriais (barras, ranking e donut), cronograma operacional, auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas com cores diretas nas células e diretrizes operacionais baseadas nos resultados com assinaturas oficiais.
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Documento executivo e técnico definitivo: compila integralmente os resultados do monitoramento entomológico em um único relatório de 10 páginas com gráficos vetoriais, cronograma operacional, auditoria geodésica de 300m-400m, <b>os 3 mapas de satélite de alta resolução (Sede 5 Níveis, Distritos e Panorâmica Municipal Integrada)</b>, inventário completo de 56 armadilhas e diretrizes operacionais baseadas nos resultados com assinaturas oficiais.
               </p>
             </div>
 
@@ -557,9 +556,9 @@ export function PainelRelatorios({
               <button
                 type="button"
                 onClick={gerarPdfConsolidadoUnicoOficial}
-                className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm py-3 px-5 rounded-2xl shadow-lg shadow-emerald-900/40 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer border border-emerald-300/40"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm py-3 px-5 rounded-xl shadow-xs active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Download className="w-4 h-4 text-slate-950" />
+                <Download className="w-4 h-4 text-white" />
                 <span>BAIXAR RELATÓRIO DE RESULTADOS (PDF)</span>
               </button>
               <span className="text-[10px] text-slate-400 text-center font-medium">
@@ -569,32 +568,32 @@ export function PainelRelatorios({
           </div>
         </section>
 
-        {/* CARDS DE DOWNLOAD SECUNDÁRIOS / ESPECÍFICOS */}
+        {/* CARDS DE DOWNLOAD SECUNDÁRIOS / ESPECÍFICOS (CLEAN & CLAROS) */}
         <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           
           {/* RELATÓRIO OFICIAL SES-RJ (CICLO A x CICLO B) */}
-          <div className="bg-slate-900 border border-blue-500/30 text-white rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-md sm:col-span-2 lg:col-span-3 bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-white border border-blue-200 text-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-3 shadow-xs sm:col-span-2 lg:col-span-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-600/30 text-blue-400 border border-blue-500/40">
+                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-sm sm:text-base font-black flex items-center gap-2">
+                  <div className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
                     <span>Relatório Oficial SES-RJ (Ciclo A x Ciclo B)</span>
-                    <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold">
-                      OFICIAL ESTADUAL • 8 PÁGINAS (CAPA & SUMÁRIO)
+                    <span className="text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                      OFICIAL ESTADUAL • SES-RJ (CAPA, SUMÁRIO & 3 MAPAS)
                     </span>
                   </div>
-                  <div className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-                    Documento oficial para a Secretaria de Estado de Saúde: Capa Institucional com timbres oficiais (Brasão e Logo da Prefeitura), Sumário Executivo, 100% anonimizado por território (sem morador nem endereços), estratificação técnica em 3 níveis (Bairro &gt; Microárea &gt; Quarteirão), comparativo direto Ciclo A x B, status &quot;Aguardando&quot; para palhetas em processamento, mapas térmicos de satélite e chancela técnica.
+                  <div className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+                    Documento técnico oficial para a Secretaria de Estado de Saúde (SES-RJ): Capa Institucional com timbres oficiais de Carmo, Sumário Executivo dinâmico, 100% anonimizado pela LGPD (sem nomes nem endereços residenciais), estratificação técnica em 3 níveis (Bairro &gt; Microárea &gt; Quarteirão), inventário individual das 56 armadilhas, 3 Mapas de Satélite em alta definição (Sede Urbana, Distritos e Panorama Municipal Comparativo), Plano de Ação Imediata e Bloco de Assinaturas Técnicas.
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={gerarPdfSesRjOficial}
-                className="shrink-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 active:scale-95 text-white text-xs font-black py-3 px-5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 border border-blue-400/30 cursor-pointer"
+                className="shrink-0 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold py-3 px-5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>BAIXAR RELATÓRIO SES-RJ (PDF)</span>
@@ -603,19 +602,19 @@ export function PainelRelatorios({
           </div>
 
           {/* 1. RELATÓRIO ENTOMOLÓGICO */}
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-sm">
+          <div className="bg-white border border-slate-200 text-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-2xs">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-slate-800 text-emerald-400">
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
                 <Satellite className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-sm font-black flex items-center gap-1.5">
+                <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                   Relatório Entomológico
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
                     6 PÁGINAS
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-0.5">
+                <div className="text-xs text-slate-500 mt-0.5">
                   Oficial municipal: KPIs, tabelas de bairros e mapas de calor em satélite e nevoeiro.
                 </div>
               </div>
@@ -623,7 +622,7 @@ export function PainelRelatorios({
             <button
               type="button"
               onClick={gerarPdfEntomologicoOficial}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              className="w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               Baixar PDF Oficial
@@ -631,19 +630,19 @@ export function PainelRelatorios({
           </div>
 
           {/* 2. RELATÓRIO OPERACIONAL */}
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-sm">
+          <div className="bg-white border border-slate-200 text-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-2xs">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-slate-800 text-blue-400">
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-sm font-black flex items-center gap-1.5">
+                <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                   Relatório Operacional
-                  <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[9px] bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded font-bold">
                     PAISAGEM
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-0.5">
+                <div className="text-xs text-slate-500 mt-0.5">
                   Coordenação de campo: cronograma de recolhimento, raio 300m-400m e orientações aos ACEs.
                 </div>
               </div>
@@ -651,7 +650,7 @@ export function PainelRelatorios({
             <button
               type="button"
               onClick={gerarPdfOperacionalOficial}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-black py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              className="w-full bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               Baixar PDF Operacional

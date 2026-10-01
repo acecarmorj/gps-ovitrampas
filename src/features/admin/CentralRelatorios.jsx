@@ -10,6 +10,7 @@ import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono } from '../..
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
 import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
+import { temAcessoEquipe } from '../../lib/acessoEquipe';
 
 /**
  * Central de relatorios: preto no branco; cor so nas faixas de risco (azul, verde, amarelo, laranja, vermelho).
@@ -168,7 +169,9 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
         botao('entomologico', 'Baixar PDF', () =>
           executar('entomologico', () => gerarRelatorioPdfEntomologico(base, { filtroDescricao: 'Todas as armadilhas' }))
         ),
-        'Uso interno: pode conter dados de moradores. Não enviar para fora.'
+        temAcessoEquipe()
+          ? 'Uso interno: contém nome e endereço de moradores. Não enviar para fora.'
+          : 'Uso interno. Sem o "Acesso da equipe" (tela inicial), nomes e endereços saem em branco.'
       )}
     </div>
   );

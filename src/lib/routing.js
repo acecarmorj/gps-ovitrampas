@@ -32,9 +32,14 @@ export function normalizePath(pathname) {
     return '/admin';
   }
 
-  // Mapa de Planejamento das Ações (Grade Ideal + Otimização de Rotas)
-  if (clean === '/planejamento' || clean === '/cenario-ideal' || clean === '/ideal') {
-    return '/planejamento';
+  // Mapa de Calor Interativo & Tabela Epidemiológica (por semana e território)
+  if (clean === '/calor' || clean === '/mapa-calor' || clean === '/planejamento' || clean === '/cenario-ideal' || clean === '/ideal') {
+    return '/calor';
+  }
+
+  // Portal Público de Transparência Epidemiológica (100% anônimo)
+  if (clean === '/publico' || clean === '/transparencia' || clean === '/portal') {
+    return '/publico';
   }
 
   // Rota desconhecida volta ao Guia

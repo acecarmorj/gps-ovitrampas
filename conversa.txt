@@ -3008,3 +3008,13 @@ Almir delegou: "voce quem sabe se esta tudo certo para publicar". Pre-checagem: 
 Publicado em https://gps-ovitrampas.pages.dev (sw v25 confirmado por curl em producao e no deploy c3fcf86c). Painel em producao carrega com Ciclo A/B/Ambas, Quarteiroes, Nevoeiro, Satelite.
 NAO publicado: worker (Gemini bloqueou DELETE/clear com 403 + rota publica agregada, so no codigo local). GET /api/traps ainda devolve nome/rua. Decisao pendente do Almir.
 ==============================================================================
+
+SECAO 120: PRIVACIDADE DE MORADORES + BANCO PROTEGIDO - PUBLICADO (Almir autorizou os dois, 01/10 ~00h40)
+Backup D1 antes: backups/d1_antes_protecao_*.sql (56 armadilhas, 82 leituras; pasta fora do git).
+Worker (v 6700f5e6): GET /api/traps SEM chave devolve morador_nome, rua e numero_imovel vazios; COM chave (header X-Team-Key = segredo TEAM_KEY) devolve tudo.
+  DELETE /api/traps e POST /api/traps/clear = 403 sempre (so por comando direto). Gravar: campo vazio NUNCA apaga nome/rua/imovel ja existentes (COALESCE/NULLIF, testado em SQLite).
+  /api/auth/check confere a chave. A chave esta em CHAVE_EQUIPE.txt (raiz do projeto, no .gitignore; NAO commitar, NAO colar em chat).
+App (sw v26): rodape do menu "Acesso da equipe": digita a chave 1 vez por aparelho; fetchComTimeout envia o header. Sem chave tudo funciona, mas nome/rua/imovel ficam em branco (aviso na aba Relatorios).
+Testado em producao: sem chave 0/56 nomes; com chave 56/56; chave errada recusada; DELETE/CLEAR 403; apos o app sincronizar sem chave o banco ficou IDENTICO ao backup (0 divergencias em nome/rua/imovel/numero/lat/lng).
+Pendente: coordenadas exatas ainda saem sem chave (necessarias aos apps); repositorio GitHub publico tem arquivos com dados de moradores no historico (decisao do Almir).
+==============================================================================

@@ -10,3 +10,7 @@ dist
 
 # Backups do banco D1 - contem dado pessoal (morador, endereco), nao versionar
 backups/
+
+# Chave da equipe (acesso a dados de moradores) - nunca versionar
+CHAVE_EQUIPE.txt
+.team_key_tmp

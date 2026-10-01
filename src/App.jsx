@@ -6,7 +6,8 @@ import { InstalarArmadilhaScreen } from './features/campo/InstalarArmadilhaScree
 import { PainelAcompanhamentoScreen } from './features/acompanhamento/PainelAcompanhamentoScreen';
 import { LaboratorioScreen } from './features/laboratorio/LaboratorioScreen';
 import { PainelAdminSimples as PainelAdminScreen } from './features/admin/PainelAdminSimples';
-import { CenarioIdealScreen } from './features/planejamento/CenarioIdealScreen';
+import { PainelMapaCalorInterativo } from './features/mapa/PainelMapaCalorInterativo';
+import { PortalPublicoScreen } from './features/publico/PortalPublicoScreen';
 import {
   getArmadilhas,
   getLeituras,
@@ -107,7 +108,7 @@ export function App() {
   useEffect(() => {
     // Na tela /campo, a própria tela gerencia o rastreamento entomológico com máxima precisão.
     // Em telas sem mapa (como /laboratorio e /guia), desliga o sensor para poupar bateria.
-    const precisaGpsNoRoot = path === '/mapa' || path === '/admin' || path === '/planejamento' || path === '/cenario-ideal';
+    const precisaGpsNoRoot = path === '/mapa' || path === '/admin' || path === '/calor';
     if (!precisaGpsNoRoot || !navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
@@ -152,7 +153,8 @@ export function App() {
     if (path === '/mapa') return 'mapa';
     if (path === '/laboratorio') return 'laboratorio';
     if (path === '/admin') return 'admin';
-    if (path === '/planejamento' || path === '/cenario-ideal') return 'planejamento';
+    if (path === '/calor' || path === '/mapa-calor' || path === '/planejamento' || path === '/cenario-ideal') return 'calor';
+    if (path === '/publico' || path === '/transparencia') return 'publico';
     return 'guia';
   };
 
@@ -168,8 +170,8 @@ export function App() {
         <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
       )}
       
-      {/* O Guia possui seu próprio cabeçalho completo. Nas telas internas, exibe o Header com botão < Guia */}
-      {chaveModulo !== 'guia' && (
+      {/* O Guia e o Portal Público possuem cabeçalhos próprios. Nas telas internas, exibe o Header do agente */}
+      {chaveModulo !== 'guia' && chaveModulo !== 'publico' && (
         <Header
           abaAtual={chaveModulo}
           onMudarAba={(destino) => {
@@ -258,12 +260,21 @@ export function App() {
           />
         )}
 
-        {(chaveModulo === 'planejamento' || chaveModulo === 'cenario-ideal') && (
-          <CenarioIdealScreen
+        {chaveModulo === 'calor' && (
+          <PainelMapaCalorInterativo
             armadilhas={armadilhasAdaptadas}
             armadilhasBrutas={armadilhas}
-            cicloAtivo={cicloAtivo}
-            onMudarCiclo={handleMudarCiclo}
+            todasLeituras={leituras}
+            userPos={userPos}
+            onVoltar={() => navigate('/guia')}
+            onAbrirLab={() => navigate('/laboratorio')}
+          />
+        )}
+
+        {chaveModulo === 'publico' && (
+          <PortalPublicoScreen
+            armadilhas={armadilhasAdaptadas}
+            todasLeituras={leituras}
             onVoltar={() => navigate('/guia')}
           />
         )}

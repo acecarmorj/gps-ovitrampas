@@ -7,8 +7,24 @@
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-Team-Key",
 };
+
+// ---- Privacidade: nome do morador, rua e numero do imovel so para a equipe ----
+// A chave fica como segredo do Worker (TEAM_KEY), nunca no codigo. Sem chave valida
+// o servidor devolve esses 3 campos vazios. Sem TEAM_KEY configurada, ninguem e equipe.
+function equipeAutorizada(request, env) {
+  const esperada = env.TEAM_KEY;
+  const recebida = request.headers.get("X-Team-Key") || "";
+  if (!esperada || recebida.length === 0 || recebida.length !== esperada.length) return false;
+  let diferenca = 0;
+  for (let i = 0; i < esperada.length; i++) diferenca |= esperada.charCodeAt(i) ^ recebida.charCodeAt(i);
+  return diferenca === 0;
+}
+
+function semDadosDeMorador(trap) {
+  return { ...trap, morador_nome: null, rua: null, numero_imovel: null };
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -68,9 +84,11 @@ async function upsertTrap(trap, env) {
      ON CONFLICT(id) DO UPDATE SET
        numero = excluded.numero,
        palheta = excluded.palheta,
-       morador_nome = excluded.morador_nome,
-       rua = excluded.rua,
-       numero_imovel = excluded.numero_imovel,
+       -- Aparelho sem a chave da equipe recebe esses campos vazios e os devolve vazios no
+       -- proximo sync: vazio NUNCA pode apagar o que ja esta gravado.
+       morador_nome = COALESCE(NULLIF(excluded.morador_nome, ''), traps.morador_nome),
+       rua = COALESCE(NULLIF(excluded.rua, ''), traps.rua),
+       numero_imovel = COALESCE(NULLIF(excluded.numero_imovel, ''), traps.numero_imovel),
        bairro = excluded.bairro,
        microarea = excluded.microarea,
        quarteirao = excluded.quarteirao,
@@ -253,9 +271,9 @@ async function handleSync(request, env) {
   });
 }
 
-async function listTraps(env) {
+async function listTraps(request, env) {
   const { results } = await env.DB.prepare("SELECT * FROM traps ORDER BY instalada_em DESC").all();
-  return json({ traps: results });
+  return json({ traps: equipeAutorizada(request, env) ? results : results.map(semDadosDeMorador) });
 }
 
 async function listReadings(request, env) {
@@ -339,6 +357,9 @@ export default {
       if (path === "/api/agents/locations" && request.method === "GET") {
         return await listActiveAgents(env);
       }
+      if (path === "/api/auth/check") {
+        return json({ equipe: equipeAutorizada(request, env) });
+      }
       if (path === "/api/health") {
         return json({ ok: true, service: "ovitrampas-api" });
       }
@@ -346,19 +367,72 @@ export default {
         return await handleSync(request, env);
       }
       if (path === "/api/traps" && request.method === "GET") {
-        return await listTraps(env);
+        return await listTraps(request, env);
       }
       if (path === "/api/traps" && request.method === "DELETE") {
-        const id = url.searchParams.get("id");
-        if (!id) return badRequest("sem id da armadilha");
-        await env.DB.prepare("DELETE FROM traps WHERE id = ?").bind(id).run();
-        await env.DB.prepare("DELETE FROM readings WHERE armadilha_id = ?").bind(id).run();
-        return json({ ok: true, deletedId: id });
+        // BANCO OFICIAL PROTEGIDO: exclusão desativada para botões aparentes ou chamadas externas
+        return json({
+          error: "forbidden",
+          message: "Operação bloqueada: o banco agora é oficial e não pode ser apagado por botões aparentes. Apenas comandos diretos do Almir/Claude são permitidos."
+        }, 403);
       }
       if (path === "/api/traps/clear" && request.method === "POST") {
-        await env.DB.prepare("DELETE FROM traps").run();
-        await env.DB.prepare("DELETE FROM readings").run();
-        return json({ ok: true, message: "Todas as armadilhas e leituras foram limpas." });
+        // BANCO OFICIAL PROTEGIDO: zeramento bloqueado permanentemente
+        return json({
+          error: "forbidden",
+          message: "Operação bloqueada: o banco agora é oficial e não pode ser zerado. Apenas comandos diretos do Almir/Claude via console são permitidos."
+        }, 403);
+      }
+      if (path === "/api/public/dados-territoriais" && request.method === "GET") {
+        // Rota pública 100% anônima e agregada: NUNCA expõe nome de morador, rua ou GPS exato
+        const { results: traps } = await env.DB.prepare(
+          "SELECT bairro, microarea, quarteirao, status, ultimos_ovos, ultima_palheta FROM traps"
+        ).all();
+
+        const mapaBairros = {};
+        for (const t of (traps || [])) {
+          const nomeBairro = (t.bairro || 'Outros').trim();
+          if (!mapaBairros[nomeBairro]) {
+            mapaBairros[nomeBairro] = {
+              bairro: nomeBairro,
+              totalArmadilhas: 0,
+              lidas: 0,
+              positivas: 0,
+              totalOvos: 0
+            };
+          }
+          const b = mapaBairros[nomeBairro];
+          b.totalArmadilhas += 1;
+          const ovos = t.ultimos_ovos;
+          if (ovos != null && ovos !== undefined) {
+            b.lidas += 1;
+            const qtd = Number(ovos);
+            b.totalOvos += qtd;
+            if (qtd > 0) b.positivas += 1;
+          }
+        }
+
+        const dadosAgregados = Object.values(mapaBairros).map((b) => {
+          const ipo = b.lidas > 0 ? (b.positivas / b.lidas) * 100 : 0;
+          const ido = b.positivas > 0 ? b.totalOvos / b.positivas : 0;
+          let nivelRisco = 'Baixo';
+          if (b.totalOvos > 100 || ipo > 60) nivelRisco = 'Crítico';
+          else if (b.totalOvos > 50 || ipo > 40) nivelRisco = 'Alto';
+          else if (b.totalOvos > 20 || ipo > 20) nivelRisco = 'Médio';
+          return {
+            ...b,
+            ipo: Number(ipo.toFixed(1)),
+            ido: Number(ido.toFixed(1)),
+            nivelRisco
+          };
+        });
+
+        return json({
+          municipio: "Carmo - RJ",
+          dataHora: agoraIso(),
+          totalArmadilhas: (traps || []).length,
+          bairros: dadosAgregados
+        });
       }
       if (path === "/api/readings" && request.method === "GET") {
         return await listReadings(request, env);

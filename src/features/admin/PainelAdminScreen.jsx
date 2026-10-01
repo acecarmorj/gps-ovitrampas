@@ -8,7 +8,7 @@ import {
   Save, Check, Info, Flame
 } from 'lucide-react';
 import { MapaGrandeOvitrampa } from '../../maps/MapaGrandeOvitrampa';
-import { excluirArmadilha, atualizarArmadilha, limparTodasArmadilhas } from '../../lib/storage';
+import { atualizarArmadilha } from '../../lib/storage';
 import { playNewRequestSound } from '../../lib/soundAlert';
 import { findNearbyTraps } from '../../lib/geoDistance';
 import { gerarRelatorioPdfConsolidado } from '../../lib/pdfRelatorioConsolidado';
@@ -52,12 +52,8 @@ export function PainelAdminScreen({
   const [armadilhaSelecionada, setArmadilhaSelecionada] = useState(null);
   const [notificacaoNovo, setNotificacaoNovo] = useState(null);
 
-  // Modais de Edição, Exclusão e Limpeza Total
+  // Modal de Edição (exclusão e zeramento desativados para proteger banco oficial)
   const [armadilhaEmEdicao, setArmadilhaEmEdicao] = useState(null);
-  const [armadilhaParaExcluir, setArmadilhaParaExcluir] = useState(null);
-  const [modalLimparTudoAberto, setModalLimparTudoAberto] = useState(false);
-  const [nomeResponsavelLimpeza, setNomeResponsavelLimpeza] = useState('');
-  const [textoConfirmacaoZerar, setTextoConfirmacaoZerar] = useState('');
   const [toastMensagem, setToastMensagem] = useState(null);
   const [mostrarRotulosAdmin, setMostrarRotulosAdmin] = useState(true);
   const [mostrarPainelAdmin, setMostrarPainelAdmin] = useState(true);
@@ -182,42 +178,6 @@ export function PainelAdminScreen({
       mostrarToast(`Ovitrampa ARM-${armAtualizada.numero} atualizada com sucesso!`, 'sucesso');
       if (onAtualizarArmadilhas) onAtualizarArmadilhas();
     }
-  };
-
-  // Confirmar Exclusão Individual
-  const handleConfirmarExclusao = async () => {
-    if (!armadilhaParaExcluir) return;
-    const num = armadilhaParaExcluir.numero;
-    await excluirArmadilha(armadilhaParaExcluir.id);
-    if (armadilhaSelecionada?.id === armadilhaParaExcluir.id) {
-      setArmadilhaSelecionada(null);
-    }
-    setArmadilhaParaExcluir(null);
-    mostrarToast(`Ovitrampa ARM-${num} removida com sucesso.`, 'info');
-    if (onAtualizarArmadilhas) onAtualizarArmadilhas();
-  };
-
-  // Confirmar Limpeza Total (Zerar ciclo para novo dia com trava tripla e auditoria)
-  const handleConfirmarLimpezaTotal = async () => {
-    if (!nomeResponsavelLimpeza || nomeResponsavelLimpeza.trim().length < 3) {
-      alert('Por segurança, informe o nome completo do responsável pela limpeza do banco.');
-      return;
-    }
-    if (textoConfirmacaoZerar.trim().toUpperCase() !== 'ZERAR') {
-      alert('Digite exatamente a palavra ZERAR para confirmar a exclusão definitiva.');
-      return;
-    }
-
-    console.warn(`[AUDITORIA SEGURANÇA] Limpeza total autorizada por: ${nomeResponsavelLimpeza.trim()} em ${new Date().toISOString()}`);
-    await limparTodasArmadilhas();
-    setArmadilhaSelecionada(null);
-    setArmadilhaEmEdicao(null);
-    setArmadilhaParaExcluir(null);
-    setNomeResponsavelLimpeza('');
-    setTextoConfirmacaoZerar('');
-    setModalLimparTudoAberto(false);
-    mostrarToast(`Banco zerado com sucesso por ${nomeResponsavelLimpeza.trim()}. Pronto para novo ciclo.`, 'sucesso');
-    if (onAtualizarArmadilhas) onAtualizarArmadilhas();
   };
 
   // Exportação para CSV / Excel
@@ -585,16 +545,14 @@ export function PainelAdminScreen({
               <span className="hidden sm:inline">Relatório Consolidado</span>
             </button>
 
-            {/* BOTÃO PARA ZERAR DADOS DE TESTE / INICIAR NOVO CICLO */}
-            <button
-              type="button"
-              onClick={() => setModalLimparTudoAberto(true)}
-              className="bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all shadow-xs"
-              title="Zerar dados de teste e começar ciclo limpo"
+            {/* SELO DE BANCO OFICIAL PROTEGIDO (SEM BOTÕES DE EXCLUSÃO) */}
+            <div
+              className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-xs select-none"
+              title="Banco oficial de Carmo ativo e protegido contra exclusão acidental"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Zerar Dados</span>
-            </button>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden md:inline">Banco Oficial Protegido</span>
+            </div>
           </div>
         </div>
 
@@ -958,14 +916,6 @@ export function PainelAdminScreen({
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => setArmadilhaParaExcluir(arm)}
-                                className="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 transition-colors border border-rose-200 active:scale-95"
-                                title="Excluir armadilha"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1119,16 +1069,6 @@ export function PainelAdminScreen({
               >
                 <Pencil className="w-3.5 h-3.5" />
                 <span>Editar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setArmadilhaParaExcluir(armadilhaSelecionada)}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3.5 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 border border-rose-200 transition-colors active:scale-95"
-                title="Excluir armadilha"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Excluir</span>
               </button>
             </div>
           </div>
@@ -1354,158 +1294,6 @@ export function PainelAdminScreen({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO INDIVIDUAL */}
-      {armadilhaParaExcluir && (
-        <div
-          onClick={() => setArmadilhaParaExcluir(null)}
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-3.5 text-slate-900 animate-in zoom-in-95 duration-150"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
-                <Trash2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900">
-                  Excluir ARM-{armadilhaParaExcluir.numero}?
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Morador: {armadilhaParaExcluir.moradorNome || 'Não informado'}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-200">
-              Esta ação removerá a armadilha do mapa, do relatório consolidado e da sincronização com os tablets de todos os agentes.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setArmadilhaParaExcluir(null)}
-                className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors active:scale-95"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmarExclusao}
-                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-2xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Sim, Excluir</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA TOTAL COM TRAVA TRIPLA DE SEGURANÇA */}
-      {modalLimparTudoAberto && (
-        <div
-          onClick={() => {
-            setModalLimparTudoAberto(false);
-            setNomeResponsavelLimpeza('');
-            setTextoConfirmacaoZerar('');
-          }}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white border-2 border-rose-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 text-slate-900 animate-in zoom-in-95 duration-150"
-          >
-            {/* Cabeçalho */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                  Operação Crítica e Irreversível
-                </span>
-                <h3 className="text-base font-black text-slate-900 mt-0.5">
-                  Zerar Todos os Dados do Sistema?
-                </h3>
-              </div>
-            </div>
-
-            {/* Etapa 1: Alerta dos Dados Reais */}
-            <div className="bg-rose-50 border border-rose-200 p-4 rounded-2xl text-xs text-rose-900 space-y-2">
-              <p className="font-bold flex items-center gap-1.5 text-rose-950">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                ETAPA 1: Confirmação do Impacto ({armadilhas.length} armadilhas ativas)
-              </p>
-              <p className="text-[11px] text-rose-800 leading-relaxed">
-                Esta ação vai <strong>apagar definitivamente</strong> todas as <strong>{armadilhas.length} armadilhas</strong> cadastradas em campo, tanto na memória deste aparelho quanto no banco em nuvem (Cloudflare D1). Não há como desfazer após confirmar.
-              </p>
-            </div>
-
-            {/* Etapa 2: Nome do Responsável Obrigatório */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-black text-slate-800">
-                ETAPA 2: Nome do Responsável Autorizado <span className="text-rose-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={nomeResponsavelLimpeza}
-                onChange={(e) => setNomeResponsavelLimpeza(e.target.value)}
-                placeholder="Ex: Carlos Oliveira - Coordenador de Vigilância"
-                className="w-full bg-slate-50 border border-slate-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-none transition-all"
-              />
-              <p className="text-[10px] text-slate-500">
-                O nome ficará registrado no log de auditoria técnica do município de Carmo-RJ.
-              </p>
-            </div>
-
-            {/* Etapa 3: Palavra de Confirmação ZERAR */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-black text-slate-800">
-                ETAPA 3: Digite a palavra <span className="text-rose-600 uppercase font-mono tracking-widest bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">ZERAR</span> para liberar <span className="text-rose-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={textoConfirmacaoZerar}
-                onChange={(e) => setTextoConfirmacaoZerar(e.target.value)}
-                placeholder="Digite ZERAR aqui"
-                className="w-full bg-slate-50 border border-slate-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-2xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none transition-all tracking-wider uppercase"
-              />
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setModalLimparTudoAberto(false);
-                  setNomeResponsavelLimpeza('');
-                  setTextoConfirmacaoZerar('');
-                }}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-colors active:scale-95"
-              >
-                Cancelar e Manter Dados
-              </button>
-              
-              <button
-                type="button"
-                disabled={nomeResponsavelLimpeza.trim().length < 3 || textoConfirmacaoZerar.trim().toUpperCase() !== 'ZERAR'}
-                onClick={handleConfirmarLimpezaTotal}
-                className={`px-4 py-2.5 text-xs font-black rounded-2xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
-                  nomeResponsavelLimpeza.trim().length >= 3 && textoConfirmacaoZerar.trim().toUpperCase() === 'ZERAR'
-                    ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer shadow-rose-600/30'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                }`}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Sim, Limpar e Zerar Definitivamente</span>
-              </button>
-            </div>
           </div>
         </div>
       )}

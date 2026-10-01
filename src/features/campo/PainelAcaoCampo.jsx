@@ -279,6 +279,39 @@ export function PainelAcaoCampo({
       {/* 4. FORMULARIO DA ACAO */}
       {acao === 'instalar' && (
         <div className="space-y-2.5">
+          {/* Assistente de Espaçamento de Campo (2 ou 3 armadilhas vizinhas) */}
+          {vizinhasProximas && vizinhasProximas.length > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span>Distância das Armadilhas Vizinhas:</span>
+                <span className="text-[10px] text-slate-500 font-semibold">Meta: 300m a 400m</span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {vizinhasProximas.slice(0, 3).map((v) => {
+                  const d = v.distancia;
+                  const isIdeal = d >= 280 && d <= 420;
+                  const isPerto = d < 280;
+                  return (
+                    <span
+                      key={v.armadilha.id}
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 ${
+                        isIdeal
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : isPerto
+                          ? 'bg-rose-50 text-rose-800 border-rose-300'
+                          : 'bg-amber-50 text-amber-800 border-amber-300'
+                      }`}
+                    >
+                      <span>OV-{v.armadilha.numero}:</span>
+                      <span>{d}m</span>
+                      {isIdeal && <span className="text-[10px]">✓</span>}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="campoMorador" className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5" /> Nome do morador

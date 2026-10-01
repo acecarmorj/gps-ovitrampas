@@ -162,13 +162,12 @@ async function montarBaseTerritorial(armadilhas, width, height, options = {}) {
       maxLng += diff;
     }
 
-    const padLat = Math.max((maxLat - minLat) * 0.18, 0.0025);
-    const padLng = Math.max((maxLng - minLng) * 0.18, 0.0025);
-    // Margem reforçada ao sul para que a legenda nunca sobreponha armadilhas do extremo sul (P-30 e P-31)
-    minLat -= (padLat + 0.0085);
+    const padLat = Math.max((maxLat - minLat) * 0.12, 0.003);
+    const padLng = Math.max((maxLng - minLng) * 0.12, 0.003);
+    minLat -= padLat;
     maxLat += padLat;
-    minLng -= (padLng + 0.004);
-    maxLng += (padLng + 0.004);
+    minLng -= padLng;
+    maxLng += padLng;
   } else {
     // Sem armadilhas: fallback no centro de Carmo
     minLat = -21.945; maxLat = -21.925; minLng = -42.62; maxLng = -42.60;
@@ -423,7 +422,16 @@ function desenharLegenda(ctx, W, H, itens, titulo = 'LEGENDA', isDark = false) {
 /**
  * Mapa de calor: densidade/risco de ovos das armadilhas sobre o contorno de Carmo.
  */
-export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null, somenteVerificadas = true, provider = 'satellite' } = {}) {
+export async function gerarCanvasMapaCalor(armadilhas = [], {
+  width = 1500,
+  height = 950,
+  tituloTerritorio = '',
+  distritoKey = null,
+  somenteVerificadas = true,
+  provider = 'satellite',
+  semRotulosSobreCalor = false, // Exibe rótulos P-XX: ovos conforme padrão oficial adorado pelo usuário
+  dataBase = ''
+} = {}) {
   // Filtra somente as armadilhas verificadas/analisadas quando solicitado
   const todasComCoords = (armadilhas || []).filter((a) => a.latitude != null && a.longitude != null);
   const verificadas = todasComCoords.filter((a) => a.status === 'analisada' || (a.ultimosOvos != null && a.ultimosOvos !== undefined));
@@ -431,9 +439,13 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   // Base territorial: se tiver verificadas e flag ativa, enquadra nas verificadas; senão em todas
   const armadilhasEnquadramento = (somenteVerificadas && verificadas.length > 0) ? verificadas : todasComCoords;
 
-  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhasEnquadramento, width, height, { tituloTerritorio, distritoKey, provider });
+  const { canvas, ctx, W, H, project, pontos, raio175px } = await montarBaseTerritorial(armadilhasEnquadramento, width, height, {
+    tituloTerritorio: '', // evita badge duplicado; o header principal desenha o título completo
+    distritoKey,
+    provider
+  });
 
-  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico) apenas para armadilhas exibidas
+  // 1. Circunferência de referência de 175m (raio de cobertura oficial entomológico de ~300m a 350m de diâmetro)
   pontos.forEach((arm) => {
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     ctx.save();
@@ -452,7 +464,6 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   heat.width = W;
   heat.height = H;
   const hctx = heat.getContext('2d');
-  const raioBase = Math.max(18, Math.min(W, H) * 0.026);
 
   // GERAÇÃO DO CALOR: EXCLUSIVAMENTE SOBRE AS ARMADILHAS JÁ VERIFICADAS
   // Ordena por ovos para que focos de maior risco sobreponham focos menores
@@ -465,7 +476,10 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
     const intensidade = intensidadePorArmadilha(arm);
     if (intensidade <= 0) return;
-    const raio = raio175px * 1.15;
+    
+    // Raio rigorosamente contido na faixa de ~300m de circunferência da armadilha (raio175px * 1.10)
+    // para não ficar exagerado igual ao antigo Progresso!
+    const raio = raio175px * (ovos > 100 ? 1.10 : ovos > 50 ? 1.00 : ovos > 20 ? 0.90 : 0.75);
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
     if (ovos > 100) {
@@ -511,7 +525,8 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
   ctx.drawImage(heat, 0, 0);
   ctx.globalAlpha = 1;
 
-  // Renderização dos Pins e Etiquetas Centralizadas Acima do Ponto
+  // Renderização dos Pins Centrais
+  // Desenha primeiro os pinos de todas as armadilhas
   pontos.forEach((arm) => {
     const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
     const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
@@ -523,49 +538,92 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
     else if (ovos > 20) badgeBg = '#f59e0b';
     else if (ovos > 0) badgeBg = '#10b981';
 
-    // Ponto marcador central com aro branco duplo
+    // Ponto marcador central com aro branco duplo e centro nítido
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 4;
     ctx.beginPath();
     ctx.arc(x, y, 7, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
+    ctx.restore();
+
     ctx.beginPath();
-    ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+    ctx.arc(x, y, 5.2, 0, Math.PI * 2);
     ctx.fillStyle = badgeBg;
     ctx.fill();
 
-    const tag = isAnalisada
-      ? (ovos > 0 ? `P-${arm.numero}: ${ovos} ovos` : `P-${arm.numero}: 0`)
-      : `P-${arm.numero}`;
-
-    ctx.font = 'bold 11px Arial';
-    const textW = ctx.measureText(tag).width;
-    const badgeW = textW + 14;
-    const badgeH = 19;
-    const badgeX = x - badgeW / 2;
-    const badgeY = y - 7 - badgeH - 4;
-
-    // Sombra sutil
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    // Ponto central branco para precisão de pino
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(badgeX + 1, badgeY + 1, badgeW, badgeH, 5) : ctx.rect(badgeX + 1, badgeY + 1, badgeW, badgeH);
-    ctx.fill();
-
-    // Badge com contorno branco
-    ctx.fillStyle = badgeBg;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
-    ctx.fill();
-    ctx.stroke();
-
+    ctx.arc(x, y, 1.8, 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(tag, badgeX + badgeW / 2, badgeY + 13.5);
-    ctx.textAlign = 'start';
+    ctx.fill();
   });
 
-  // Topo do Mapa Oficial
+  // Renderização de rótulos com prevenção rigorosa de colisão (boxesDesenhados)
+  // Ordena por ovos decrescente para que focos críticos garantam seu rótulo primeiro
+  if (!semRotulosSobreCalor) {
+    const boxesDesenhados = [];
+    const pontosOrdenadosRisco = [...pontos].sort((a, b) => {
+      const ovosA = Number(a.ultimosOvos ?? a.ultimos_ovos ?? 0);
+      const ovosB = Number(b.ultimosOvos ?? b.ultimos_ovos ?? 0);
+      return ovosB - ovosA;
+    });
+
+    pontosOrdenadosRisco.forEach((arm) => {
+      const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
+      const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
+      const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
+
+      let badgeBg = '#2563eb';
+      if (ovos > 100) badgeBg = '#dc2626';
+      else if (ovos > 50) badgeBg = '#f97316';
+      else if (ovos > 20) badgeBg = '#f59e0b';
+      else if (ovos > 0) badgeBg = '#10b981';
+
+      const tag = isAnalisada
+        ? (ovos > 0 ? `P-${arm.numero}: ${ovos} ovos` : `P-${arm.numero}: 0`)
+        : `P-${arm.numero}`;
+
+      ctx.font = 'bold 11px Arial';
+      const textW = ctx.measureText(tag).width;
+      const badgeW = textW + 14;
+      const badgeH = 19;
+      let badgeX = x - badgeW / 2;
+      let badgeY = y - 7 - badgeH - 4;
+
+      // Se sair pelo topo ou ficar sob o cabeçalho, posiciona abaixo do ponto
+      if (badgeY < 125) badgeY = y + 12;
+
+      const colide = boxesDesenhados.some((b) =>
+        Math.abs(b.x - badgeX) < (badgeW + 4) && Math.abs(b.y - badgeY) < (badgeH + 4)
+      );
+
+      if (!colide) {
+        boxesDesenhados.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH });
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(badgeX + 1, badgeY + 1, badgeW, badgeH, 5) : ctx.rect(badgeX + 1, badgeY + 1, badgeW, badgeH);
+        ctx.fill();
+
+        ctx.fillStyle = badgeBg;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(tag, badgeX + badgeW / 2, badgeY + 13.5);
+        ctx.textAlign = 'start';
+      }
+    });
+  }
+
+  // Topo do Mapa Oficial com Moldura e Título
   const headerW = W - 50;
   ctx.save();
   ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
@@ -582,11 +640,15 @@ export async function gerarCanvasMapaCalor(armadilhas = [], { width = 1500, heig
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 20px Arial';
-  ctx.fillText('MAPA DE CALOR EPIDEMIOLÓGICO — OVITRAMPAS (5 NÍVEIS OFICIAIS)', 45, 76);
+  const titPrincipal = tituloTerritorio
+    ? `MAPA DE CALOR: ${tituloTerritorio.toUpperCase()} (5 NÍVEIS OFICIAIS)`
+    : 'MAPA DE CALOR EPIDEMIOLÓGICO — OVITRAMPAS (5 NÍVEIS OFICIAIS)';
+  ctx.fillText(titPrincipal, 45, 76);
 
   ctx.fillStyle = '#e2e8f0';
   ctx.font = '11px Arial';
-  ctx.fillText(`Amostragem: ${pontos.length} armadilha(s) monitorada(s)  •  Raio Oficial: 175m  •  Data Base: 25/09/2026`, 45, 102);
+  const dataTxt = dataBase || 'Setembro / 2026';
+  ctx.fillText(`Amostragem: ${pontos.length} armadilha(s) monitorada(s)  •  Raio Oficial: 175m  •  Data Base: ${dataTxt}`, 45, 102);
   ctx.restore();
 
   // Legenda Oficial das 5 Cores na base inferior esquerda
@@ -764,7 +826,7 @@ export async function gerarCanvasMapaDistancias(armadilhas = [], { width = 1500,
  * transição suave Vermelho Carmesim -> Laranja -> Amarelo Dourado -> Transparente,
  * com pílulas escuras de bairros e pins destacados com contagem de ovos.
  */
-export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null, somenteVerificadas = true } = {}) {
+export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, height = 950, tituloTerritorio = '', distritoKey = null, somenteVerificadas = true, rotulosApenasFocos = true, somentePontos = false, mostrarBairrosPill = true } = {}) {
   const todasComCoords = (armadilhas || []).filter((a) => a.latitude != null && a.longitude != null);
   const verificadas = todasComCoords.filter((a) => a.status === 'analisada' || (a.ultimosOvos != null && a.ultimosOvos !== undefined));
   
@@ -809,9 +871,10 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
     if (ovos <= 0) return;
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
     
-    // Raio estritamente proporcional à gravidade de ovos:
-    const multRaio = ovos > 100 ? 2.2 : ovos > 50 ? 1.7 : ovos > 20 ? 1.2 : 0.75;
-    const raio = raioBase * multRaio;
+    // Raio rigorosamente contido na faixa de ~300m de circunferência da armadilha (raio175px * 1.10)
+    // para não ficar exagerado igual ao antigo Progresso!
+    const multRaio = ovos > 100 ? 1.10 : ovos > 50 ? 1.00 : ovos > 20 ? 0.90 : 0.75;
+    const raio = raio175px * multRaio;
 
     const grad = hctx.createRadialGradient(x, y, 0, x, y, raio);
     if (ovos > 100) {
@@ -853,7 +916,7 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
   ctx.drawImage(heat, 0, 0);
   ctx.restore();
 
-  // 3. Pílulas de Bairros / Distritos (Estilo Prefeitura de Amparo)
+  // 3. Pílulas de Bairros / Distritos (apenas os que pertencem à área visível e sem poluição)
   const centrosBairros = [
     { nome: 'CENTRO', lat: -21.9312, lng: -42.6080 },
     { nome: 'PROGRESSO', lat: -21.9246, lng: -42.6138 },
@@ -869,30 +932,40 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
     { nome: 'BARRA DE SÃO FRANCISCO', lat: -21.8750, lng: -42.5700 }
   ];
 
-  centrosBairros.forEach((b) => {
-    const [x, y] = project(b.lat, b.lng);
-    if (x >= 40 && x <= W - 40 && y >= 40 && y <= H - 40) {
-      ctx.font = 'bold 11px Arial';
-      const tw = ctx.measureText(b.nome).width;
-      const bw = tw + 18;
-      const bh = 22;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(x - bw / 2, y - bh / 2, bw, bh, 11) : ctx.rect(x - bw / 2, y - bh / 2, bw, bh);
-      ctx.fill();
-      ctx.stroke();
+  if (mostrarBairrosPill) {
+    centrosBairros.forEach((b) => {
+      const [x, y] = project(b.lat, b.lng);
+      if (x >= 50 && x <= W - 200 && y >= 50 && y <= H - 120) {
+        ctx.font = 'bold 9.5px Arial';
+        const tw = ctx.measureText(b.nome).width;
+        const bw = tw + 14;
+        const bh = 18;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(x - bw / 2, y - bh / 2, bw, bh, 9) : ctx.rect(x - bw / 2, y - bh / 2, bw, bh);
+        ctx.fill();
+        ctx.stroke();
 
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText(b.nome, x, y + 4);
-      ctx.textAlign = 'start';
-    }
+        ctx.fillStyle = '#f8fafc';
+        ctx.textAlign = 'center';
+        ctx.fillText(b.nome, x, y + 3.5);
+        ctx.textAlign = 'start';
+      }
+    });
+  }
+
+  // 4. Marcadores e Pins de Armadilhas (Design Limpo - NUNCA empilhar rótulos sobre o mapa)
+  const pontosOrdenados = [...pontos].sort((a, b) => {
+    const ovosA = Number(a.ultimosOvos ?? a.ultimos_ovos ?? 0);
+    const ovosB = Number(b.ultimosOvos ?? b.ultimos_ovos ?? 0);
+    return ovosA - ovosB;
   });
 
-  // 4. Marcadores e Pins de Armadilhas
-  pontos.forEach((arm) => {
+  const boxesDesenhados = [];
+
+  pontosOrdenados.forEach((arm) => {
     const isAnalisada = arm.status === 'analisada' || (arm.ultimosOvos != null && arm.ultimosOvos !== undefined);
     const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? 0);
     const [x, y] = project(Number(arm.latitude), Number(arm.longitude));
@@ -906,51 +979,91 @@ export async function gerarCanvasMapaNevoeiro(armadilhas = [], { width = 1500, h
       else pinCor = '#0284c7';
     }
 
+    // Sombra do marcador para alto contraste sobre foto de satélite
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
+    // Aro branco externo
     ctx.beginPath();
     ctx.arc(x, y, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.restore();
+
+    // Núcleo colorido da armadilha
+    ctx.beginPath();
+    ctx.arc(x, y, 5.5, 0, Math.PI * 2);
     ctx.fillStyle = pinCor;
     ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#ffffff';
-    ctx.stroke();
 
-    const label = isAnalisada
-      ? `OV-${arm.numero}: ${ovos} ovos`
-      : `OV-${arm.numero} (Pendente)`;
+    // Ponto branco pulsante central em focos significativos
+    if (ovos > 50) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
 
-    ctx.font = 'bold 12px Arial';
-    const textW = ctx.measureText(label).width;
-    const badgeW = textW + 14;
-    const badgeH = 22;
-    const badgeX = x + 10;
-    const badgeY = y - 11;
+    // Callout de texto APENAS para focos significativos (> 50 ovos) com prevenção de colisão
+    const exibirRotulo = !somentePontos && (!rotulosApenasFocos || ovos > 50);
 
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
-    ctx.fill();
-    ctx.strokeStyle = isAnalisada && ovos > 0 ? (ovos > 50 ? '#ef4444' : '#f59e0b') : '#38bdf8';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
+    if (exibirRotulo) {
+      const label = `OV-${arm.numero}: ${ovos} ovos`;
+      ctx.font = 'bold 11px Arial';
+      const textW = ctx.measureText(label).width;
+      const badgeW = textW + 14;
+      const badgeH = 20;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(label, badgeX + badgeW / 2, badgeY + 15);
-    ctx.textAlign = 'start';
+      let badgeX = x + 10;
+      let badgeY = y - 10;
+      if (badgeX + badgeW > W - 15) badgeX = x - badgeW - 10;
+      if (badgeY < 20) badgeY = y + 10;
+
+      const colide = boxesDesenhados.some((b) =>
+        Math.abs(b.x - badgeX) < (badgeW + 6) && Math.abs(b.y - badgeY) < (badgeH + 4)
+      );
+
+      if (!colide) {
+        boxesDesenhados.push({ x: badgeX, y: badgeY, w: badgeW, h: badgeH });
+
+        ctx.strokeStyle = ovos > 100 ? '#ef4444' : '#f97316';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(badgeX < x ? badgeX + badgeW : badgeX, badgeY + badgeH / 2);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4) : ctx.rect(badgeX, badgeY, badgeW, badgeH);
+        ctx.fill();
+        ctx.strokeStyle = ovos > 100 ? '#ef4444' : '#f97316';
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, badgeX + badgeW / 2, badgeY + 14);
+        ctx.textAlign = 'start';
+      }
+    }
   });
 
-  // Rosa dos Ventos escura
-  desenharNorte(ctx, W - 30, 30, true);
+  // Rosa dos Ventos no canto superior direito
+  desenharNorte(ctx, W - 32, 32, true);
 
-  // Legenda Satélite
+  // Legenda Satélite compacta
   desenharLegenda(ctx, W, H, [
     { cor: 'rgba(255, 255, 255, 0.85)', label: 'Raio de atração (175m)', isRing: true },
-    { cor: 'rgb(220, 38, 38)', label: 'Crítico (> 100 ovos)' },
-    { cor: 'rgb(234, 88, 12)', label: 'Alto (51 a 100 ovos)' },
-    { cor: 'rgb(245, 158, 11)', label: 'Médio (21 a 50 ovos)' },
-    { cor: 'rgb(234, 179, 8)', label: 'Baixo (1 a 20 ovos)' },
-    { cor: 'rgb(2, 132, 199)', label: 'Negativa (0 ovos)' }
-  ], 'NEVOEIRO TÉRMICO (SATÉLITE)', true);
+    { cor: '#dc2626', label: 'Crítico (> 100 ovos)' },
+    { cor: '#ea580c', label: 'Alto (51 a 100 ovos)' },
+    { cor: '#f59e0b', label: 'Médio (21 a 50 ovos)' },
+    { cor: '#eab308', label: 'Baixo (1 a 20 ovos)' },
+    { cor: '#0284c7', label: 'Negativa (0 ovos)' }
+  ], 'NEVOEIRO TÉRMICO', true);
 
   return { canvas, width: W, height: H };
 }
