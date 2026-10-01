@@ -65,7 +65,7 @@ export async function gerarFundoSatelite(caixa, larguraAlvoPx = 1500) {
   if (tarefas.length > 160) return null;
   await Promise.all(tarefas);
   try {
-    return canvas.toDataURL('image/jpeg', 0.85);
+    return canvas.toDataURL('image/jpeg', 0.78);
   } catch (_) {
     return null; // canvas contaminado (CORS)
   }

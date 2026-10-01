@@ -60,7 +60,7 @@ export function caixaDoMapa(subset, mw, mh, padFrac = 0.12) {
 export async function fundoSateliteDoMapa(subset, mw, mh) {
   const caixa = caixaDoMapa(subset, mw, mh);
   if (!caixa) return null;
-  return gerarFundoSatelite(caixa, 1500);
+  return gerarFundoSatelite(caixa, Math.min(1400, Math.round(mw * 7))); // ~180 dpi na impressao
 }
 
 
@@ -104,7 +104,7 @@ export function gerarNevoeiroDoMapa(subset, mw, mh, padFrac = 0.12, retornarCaix
     .filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lng) && Number.isFinite(t.v));
   if (trs.length === 0) return null;
 
-  const wpx = 640;
+  const wpx = Math.max(300, Math.round(mw * 2.6));
   const hpx = Math.max(1, Math.round((wpx * mh) / mw));
   const canvas = document.createElement('canvas');
   canvas.width = wpx;
@@ -294,7 +294,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
 
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
 
   // ---------- cabecalho ----------
   let xTexto = M;

@@ -244,7 +244,7 @@ async function paginasMapasCiclo(doc, timbres, lista, rotuloCiclo, subt, usarSat
   doc.addPage();
   cabecalhoPagina(doc, timbres, `Mapa de calor — Distritos — ${rotuloCiclo}`, subt);
   const wC = (LARG - 6) / 2;
-  const hC = 62;
+  const hC = 58;
   for (let i = 0; i < GRUPOS_DISTRITO.length; i++) {
     const nome = GRUPOS_DISTRITO[i];
     const sub = doGrupo(nome);
@@ -275,7 +275,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
 
   const usarSat = opcoes.fundo === 'satelite';
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
   // ---------- 1. CAPA E RESUMO ----------
   if (timbres.TIMBRE_BRASAO_CARMO) {
