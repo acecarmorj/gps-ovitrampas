@@ -252,18 +252,18 @@ async function paginasMapasCiclo(doc, timbres, lista, rotuloCiclo, subt, usarSat
   const doGrupo = (nome) => lista.filter((a) => macroDe(a) === nome);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, `Mapa — Município — ${rotuloCiclo}`, 'Pontos coloridos pela faixa de risco de cada armadilha.');
+  cabecalhoPagina(doc, timbres, `Anexo B · Mapa — Município — ${rotuloCiclo}`, 'Pontos coloridos pela faixa de risco de cada armadilha.');
   await celulaMapa(doc, lista, M, 49, LARG, 205, usarSat, `Município de Carmo — ${lista.length} armadilhas`, true);
   notaNevoeiro(doc, true);
 
   doc.addPage();
   const sede = doGrupo('Sede urbana');
-  cabecalhoPagina(doc, timbres, `Mapa de calor — Sede urbana — ${rotuloCiclo}`, subt);
+  cabecalhoPagina(doc, timbres, `Anexo B · Mapa de calor — Sede urbana — ${rotuloCiclo}`, subt);
   await celulaMapa(doc, sede, M, 49, LARG, 205, usarSat, `Sede urbana — ${sede.length} armadilhas`);
   notaNevoeiro(doc);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, `Mapa de calor — Distritos — ${rotuloCiclo}`, subt);
+  cabecalhoPagina(doc, timbres, `Anexo B · Mapa de calor — Distritos — ${rotuloCiclo}`, subt);
   const wC = (LARG - 6) / 2;
   const hC = 58;
   for (let i = 0; i < GRUPOS_DISTRITO.length; i++) {
@@ -324,21 +324,41 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   doc.setLineWidth(0.5);
   doc.line(M, 36, W - M, 36);
 
-  texto(doc, interno ? 'Relatório de Resultados do Monitoramento' : 'Relatório Técnico de Monitoramento Vetorial', M, 52, { size: 20, bold: true });
-  texto(doc, 'Ovitrampas — Aedes aegypti — Ciclo A × Ciclo B', M, 60, { size: 12 });
-  texto(doc, interno ? `Uso interno · Coordenação de Vigilância em Saúde · Emitido em ${hoje}` : `Destinatário: Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ) · Emitido em ${hoje}`, M, 67, {
-    size: 9,
-    cor: CINZA
+  texto(doc, interno ? 'Relatório de Resultados do Monitoramento' : 'Relatório Técnico de Monitoramento Vetorial', M, 105, { size: 22, bold: true, max: LARG });
+  texto(doc, 'Ovitrampas — Aedes aegypti — Ciclo A × Ciclo B', M, 124, { size: 13 });
+  texto(doc, interno ? `Uso interno · Coordenação de Vigilância em Saúde · Emitido em ${hoje}` : `Destinatário: Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ) · Emitido em ${hoje}`, M, 133, {
+    size: 9.5,
+    cor: CINZA,
+    max: LARG
   });
+  texto(doc, 'Vigilância entomológica com ovitrampas conforme a Nota Técnica MS nº 3/2025 · 56 ovitrampas · exposição de 5 dias · Setembro de 2026', M, 141, { size: 9, cor: CINZA, max: LARG });
+  doc.setDrawColor(...PRETO);
+  doc.setLineWidth(0.5);
+  doc.line(M, 98, W - M, 98);
+  texto(doc, interno ? 'Documento de uso interno: armadilhas identificadas por OV-01 a OV-56. Sem nomes de moradores e sem endereços.' : 'Documento técnico com dados anonimizados: armadilhas identificadas por códigos (P-01 a P-56) e resultados agregados por bairro e quarteirão.', M, 266, {
+    size: 8,
+    cor: CINZA,
+    max: LARG
+  });
+
+  // pagina 2: sumario (preenchido no fim, com os numeros reais de pagina)
+  doc.addPage();
+  const paginaSumario = doc.getNumberOfPages();
+  const secoesPag = {};
+
+  // pagina 3: resumo executivo
+  doc.addPage();
+  secoesPag.resumo = doc.getNumberOfPages();
+  cabecalhoPagina(doc, timbres, 'Resumo executivo', 'Ciclo A, Ciclo B e Ambas lado a lado, com os indicadores da Nota Técnica MS nº 3/2025 (IPO, IDO e IDV).');
 
   // quadros A e B
   const colW = (LARG - 12) / 3;
   const quadro = (x, titulo, nota, ind, m) => {
     doc.setDrawColor(...PRETO);
     doc.setLineWidth(0.4);
-    doc.rect(x, 76, colW, 53);
-    texto(doc, titulo, x + 4, 83, { size: 10, bold: true });
-    texto(doc, nota, x + 4, 88, { size: 8, cor: CINZA });
+    doc.rect(x, 50, colW, 53);
+    texto(doc, titulo, x + 4, 57, { size: 10, bold: true });
+    texto(doc, nota, x + 4, 62, { size: 8, cor: CINZA });
     const itens = [
       ['Palhetas lidas', `${ind.lidas} de ${ind.total}`],
       ['Total de ovos', nInt(ind.ovos)],
@@ -348,7 +368,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
       ['Focos > 100 ovos', String(m.criticos)]
     ];
     itens.forEach(([r, v], i) => {
-      const yy = 96 + i * 5.2;
+      const yy = 70 + i * 5.2;
       texto(doc, r, x + 4, yy, { size: 8.5, cor: CINZA });
       texto(doc, v, x + colW - 4, yy, { size: 9.5, bold: true, align: 'right' });
     });
@@ -372,8 +392,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     `Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, IPO ${n1(iB.ipo)}% e IDO ${n1(iB.ido)}. As demais aguardam leitura laboratorial e os valores serão atualizados.`,
     `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}. Como o Ciclo B é parcial, Ambas será atualizado.`
   ].filter(Boolean);
-  texto(doc, 'Principais achados', M, 141, { size: 11, bold: true });
-  let ya = 148;
+  texto(doc, 'Principais achados', M, 115, { size: 11, bold: true });
+  let ya = 122;
   achados.forEach((t) => {
     doc.setFillColor(...PRETO);
     doc.circle(M + 1.2, ya - 1, 0.7, 'F');
@@ -381,14 +401,21 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     ya += linhas * 4.6 + 2.6;
   });
 
-  texto(doc, interno ? 'Documento de uso interno: armadilhas identificadas por OV-01 a OV-56. Sem nomes de moradores e sem endereços.' : 'Documento técnico com dados anonimizados: armadilhas identificadas por códigos (P-01 a P-56) e resultados agregados por bairro e quarteirão.', M, 266, {
-    size: 8,
-    cor: CINZA,
-    max: LARG
+  // ---------- PLANO DE ACAO E MANUAL ESTRATEGICO ----------
+  const pgEstr = adicionarPaginasEstrategia(doc, {
+    autoTable,
+    A,
+    B,
+    prefixo: PREFIXO_CODIGO,
+    orientacao: 'portrait',
+    cabecalho: (d, t, st) => cabecalhoPagina(d, timbres, t, st),
+    yInicio: 46,
+    M
   });
 
   // ---------- 2. INDICADORES ----------
   doc.addPage();
+  secoesPag.indicadores = doc.getNumberOfPages();
   cabecalhoPagina(doc, timbres, 'Indicadores por território', 'Indicadores da Nota Técnica MS 3/2025 por ciclo: IPO = positivas ÷ examinadas; IDO = ovos ÷ positivas; IDV = ovos ÷ examinadas. O nome do bairro tem a cor da faixa do seu pior foco.');
 
   const linhaInd = (nome, la, lb) => {
@@ -520,29 +547,32 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
 
   // ---------- 3-5. GRAFICOS (1 por pagina) ----------
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 1 — Ciclo A', 'Armadilhas por faixa de risco em cada bairro. Ciclo A completo: 56 de 56 palhetas lidas.');
+  secoesPag.anexoA = doc.getNumberOfPages();
+  cabecalhoPagina(doc, timbres, 'Anexo A · Gráfico 1 — Ciclo A', 'Armadilhas por faixa de risco em cada bairro. Ciclo A completo: 56 de 56 palhetas lidas.');
   graficoEstratos(doc, ordemB, A);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 2 — Ciclo B (parcial)', `Armadilhas por faixa de risco em cada bairro. Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas. Armadilhas sem leitura não entram.`);
+  cabecalhoPagina(doc, timbres, 'Anexo A · Gráfico 2 — Ciclo B (parcial)', `Armadilhas por faixa de risco em cada bairro. Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas. Armadilhas sem leitura não entram.`);
   graficoEstratos(doc, ordemB, B);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 3 — Ambas: Ciclo A e Ciclo B', 'Armadilhas por faixa de risco em cada bairro. Ovos de A e B somados (total ao lado); a faixa usa a média por palheta (soma ÷ palhetas lidas).');
+  cabecalhoPagina(doc, timbres, 'Anexo A · Gráfico 3 — Ambas: Ciclo A e Ciclo B', 'Armadilhas por faixa de risco em cada bairro. Ovos de A e B somados (total ao lado); a faixa usa a média por palheta (soma ÷ palhetas lidas).');
   graficoEstratos(doc, ordemB, AB);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 4 — Ambas: positividade A × B', 'Positividade (IPO) por bairro, os dois ciclos lado a lado. A cor é a faixa do pior foco do bairro.');
+  cabecalhoPagina(doc, timbres, 'Anexo A · Gráfico 4 — Ambas: positividade A × B', 'Positividade (IPO) por bairro, os dois ciclos lado a lado. A cor é a faixa do pior foco do bairro.');
   graficoAmbas(doc, ordemB, A, B);
 
   // ---------- MAPAS DE CALOR: cidade e distritos, por ciclo ----------
+  secoesPag.anexoB = doc.getNumberOfPages() + 1;
   await paginasMapasCiclo(doc, timbres, A, 'Ciclo A', 'Escala oficial de 5 cores: azul (0), verde, amarelo, laranja e vermelho (mais de 100 ovos).', usarSat);
   await paginasMapasCiclo(doc, timbres, B, 'Ciclo B (parcial)', `Somente palhetas já lidas (${iB.lidas} de ${iB.total}).`, usarSat);
   await paginasMapasCiclo(doc, timbres, AB, 'Ambas', 'Ciclo A e Ciclo B juntos: o calor usa a média por palheta (soma dos ovos de A e B ÷ palhetas lidas).', usarSat);
 
   // ---------- 9-10. INVENTARIO ANONIMO ----------
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Inventário das 56 ovitrampas', 'Identificação anônima por código técnico, bairro e quarteirão. Sem nomes de moradores e sem endereços.');
+  secoesPag.anexoC = doc.getNumberOfPages();
+  cabecalhoPagina(doc, timbres, 'Anexo C · Inventário das 56 ovitrampas', 'Identificação anônima por código técnico, bairro e quarteirão. Sem nomes de moradores e sem endereços.');
   const ordenadas = [...A].sort((a, b) => Number(a.numero) - Number(b.numero));
   const porNum = new Map(B.map((b) => [String(b.numero), b]));
   const valor = (a) => (temLeitura(a) ? String(a.ultimosOvos) : 'Aguardando');
@@ -590,21 +620,10 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     }
   });
 
-  // ---------- PLANO DE ACAO E MANUAL ESTRATEGICO ----------
-  adicionarPaginasEstrategia(doc, {
-    autoTable,
-    A,
-    B,
-    prefixo: PREFIXO_CODIGO,
-    orientacao: 'portrait',
-    cabecalho: (d, t, st) => cabecalhoPagina(d, timbres, t, st),
-    yInicio: 46,
-    M
-  });
-
   // ---------- ULTIMA: METODOLOGIA E ASSINATURAS ----------
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Metodologia e responsabilidade técnica');
+  secoesPag.metodologia = doc.getNumberOfPages();
+  cabecalhoPagina(doc, timbres, 'Metodologia, referências e responsabilidade técnica');
   const blocos = [
     ['Objetivo', 'Monitorar a densidade de ovos de Aedes aegypti por meio de ovitrampas distribuídas no município, para orientar ações de controle vetorial.'],
     ['Método', 'Cada ovitrampa recebe uma palheta que fica exposta por 5 dias. Após o recolhimento, os ovos de cada palheta são contados em laboratório. Foram realizados dois ciclos: A (palhetas com final A) e B (palhetas com final B).'],
@@ -637,6 +656,32 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   texto(doc, 'Responsável Técnico · Vigilância Entomológica', M + 37.5, ys + 9.5, { size: 8, cor: CINZA, align: 'center' });
   texto(doc, 'Secretaria Municipal de Saúde', W - M - 37.5, ys + 5, { size: 9.5, bold: true, align: 'center' });
   texto(doc, 'Prefeitura Municipal de Carmo/RJ', W - M - 37.5, ys + 9.5, { size: 8, cor: CINZA, align: 'center' });
+
+  // ---------- sumario (pagina 2) com os numeros reais ----------
+  doc.setPage(paginaSumario);
+  cabecalhoPagina(doc, timbres, 'Sumário', 'Conteúdo deste relatório. Mapas, gráficos e inventário estão nos anexos.');
+  const itensSumario = [
+    ['Resumo executivo', secoesPag.resumo],
+    ['Plano de ação — o que fazer, por prioridade', pgEstr.paginaPlano],
+    ['Manual estratégico — próxima semana, próximo ciclo e próximo mês', pgEstr.paginaManual],
+    ['Indicadores por território (Ciclo A, Ciclo B e Ambas)', secoesPag.indicadores],
+    ['Anexo A — Gráficos (Ciclo A, Ciclo B e Ambas)', secoesPag.anexoA],
+    ['Anexo B — Mapas de calor: município, cidade e distritos', secoesPag.anexoB],
+    ['Anexo C — Inventário das 56 ovitrampas', secoesPag.anexoC],
+    ['Metodologia, referências e assinaturas', secoesPag.metodologia]
+  ];
+  let ySum = 56;
+  itensSumario.forEach(([t, pg]) => {
+    texto(doc, t, M, ySum, { size: 10.5 });
+    const larg = doc.getTextWidth(t);
+    doc.setDrawColor(...LINHA);
+    doc.setLineWidth(0.2);
+    doc.setLineDashPattern([0.6, 1.2], 0);
+    doc.line(M + larg + 3, ySum - 0.8, W - M - 9, ySum - 0.8);
+    doc.setLineDashPattern([], 0);
+    texto(doc, String(pg), W - M, ySum, { size: 10.5, bold: true, align: 'right' });
+    ySum += 11;
+  });
 
   // ---------- rodape com numeracao real ----------
   const total = doc.getNumberOfPages();

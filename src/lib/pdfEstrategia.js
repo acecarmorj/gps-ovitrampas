@@ -104,6 +104,7 @@ export function adicionarPaginasEstrategia(doc, ctx) {
 
   // ================= PLANO DE ACAO =================
   novaPagina();
+  const paginaPlano = doc.getNumberOfPages();
   cabecalho(doc, 'Plano de ação — o que fazer, por prioridade', 'Prioridade por bairro (cor do nome = faixa do pior foco). Comparação do Ciclo B com o Ciclo A nas armadilhas lidas nos dois.');
   let chamadasPlano = 0;
 
@@ -197,6 +198,7 @@ export function adicionarPaginasEstrategia(doc, ctx) {
 
   // ================= MANUAL ESTRATEGICO =================
   novaPagina();
+  const paginaManual = doc.getNumberOfPages();
   cabecalho(doc, 'Manual estratégico — próxima semana, próximo ciclo e próximo mês', 'Roteiro para conduzir a situação atual. Ajustar conforme a avaliação da coordenação.');
   let ym = yInicio;
   const pontos = e.focos.length;
@@ -289,4 +291,5 @@ export function adicionarPaginasEstrategia(doc, ctx) {
       }
     }
   });
+  return { paginaPlano, paginaManual };
 }
