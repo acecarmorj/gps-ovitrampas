@@ -3243,3 +3243,9 @@ PEDIDO DE AUDITORIA (SO LER, NAO EDITAR, NAO commit, NAO deploy) - responder na 
  D) src/lib/pdfEstrategia.js, mapaPoligonos.js, pdfRelatorioSesRjLimpo.js, pdfMapaCalor.js: conta de IPO/IDO/IDV e afirmacoes sobre a Nota Tecnica MS 3/2025 (ver secoes 126 e 130).
 REGRAS: cada achado = arquivo:linha + trecho + exemplo concreto; "NAO VERIFIQUEI" quando nao testou; nada de "testei" sem comando e saida; sem achado = "nada encontrado" + o que olhou.
 ==============================================================================
+
+SECAO 133b: ACRESCIMO AO PEDIDO DE AUDITORIA - PADRAO VISUAL DO ALMIR (01/10)
+O Almir ADOROU o estilo: simples, sobrio, PRETO NO BRANCO, com cor SOMENTE onde ela informa (as 5 cores do risco: azul 0 ovos, verde 1-20, amarelo 21-50, laranja 51-100, vermelho >100; mais cinza para "sem leitura"). Esse e o padrao de TODO o sistema.
+ E) PADRAO VISUAL (so LER e listar, nao editar): percorra as telas /guia, /laboratorio, /campo, /admin (Mapa de calor, Relatorios, Cadastro) e os PDFs gerados (SES-RJ, Resultados, Mapa de calor, Entomologico) e liste onde AINDA ha fundo colorido, degrade, sombra pesada, icone/botao colorido sem funcao de risco, ou texto colorido que nao seja faixa de risco. Formato: tela/arquivo:linha + trecho + o que deveria ser. Telas ainda no estilo antigo conhecidas: /guia (cards coloridos), /laboratorio, /campo (botoes verdes/indigo). Nao corrija; so liste, por ordem de visibilidade.
+RESPONDER NA SECAO 134 (junto com os itens A-D da secao 133).
+==============================================================================
