@@ -163,6 +163,11 @@ export function App() {
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full flex flex-col overflow-hidden bg-[#F1F2F5] text-slate-900 font-sans">
+      {import.meta.env.VITE_MODO_TREINAMENTO === '1' && (
+        <div className="bg-black text-white text-center text-[11px] font-black tracking-wide py-1.5 shrink-0 z-50">
+          MODO TREINAMENTO - os dados daqui sao de teste e nao valem
+        </div>
+      )}
       {/* GPS obrigatorio so na tela de cadastro em campo, onde a coordenada
           precisa ser real pra nao gravar a posicao errada. As demais telas
           (mapa, laboratorio, admin) so exibem/consultam dado ja existente,

@@ -4,11 +4,11 @@
  */
 const CHAVE_LS = 'ovi_team_key';
 const AGENTE_LS = 'ovi_agente_nome';
-// Mesmo endereco usado pelo storage.js (inclui o ajuste de homologacao window.VITE_API_BASE_URL).
+// Mesmo endereco usado pelo storage.js (inclui o ajuste de homologacao window.VITE_API_BASE_URL e import.meta.env).
 export const URL_API_EQUIPE =
-  typeof window !== 'undefined' && window.VITE_API_BASE_URL
-    ? window.VITE_API_BASE_URL
-    : 'https://ovitrampas-api.acecarmorj.workers.dev';
+  (typeof window !== 'undefined' && window.VITE_API_BASE_URL)
+    || import.meta.env.VITE_API_BASE_URL
+    || 'https://ovitrampas-api.acecarmorj.workers.dev';
 
 export function getChaveEquipe() {
   try {

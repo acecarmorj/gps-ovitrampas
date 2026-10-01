@@ -51,9 +51,9 @@ export function normalizarNumeroArmadilha(valor) {
 }
 
 // Endpoints da API de sincronização (Cloudflare Worker + D1)
-const API_BASE_URL = typeof window !== 'undefined' && window.VITE_API_BASE_URL
-  ? window.VITE_API_BASE_URL
-  : 'https://ovitrampas-api.acecarmorj.workers.dev';
+const API_BASE_URL = (typeof window !== 'undefined' && window.VITE_API_BASE_URL)
+  || import.meta.env.VITE_API_BASE_URL
+  || 'https://ovitrampas-api.acecarmorj.workers.dev';
 
 const API_SYNC_ENDPOINT = `${API_BASE_URL}/api/sync`;
 const API_TRAPS_ENDPOINT = `${API_BASE_URL}/api/traps`;

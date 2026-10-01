@@ -234,7 +234,7 @@ export function InstalarArmadilhaScreen({
           controlTop={56}
           showLabels={mostrarRotulos}
           onToggleLabels={() => setMostrarRotulos(!mostrarRotulos)}
-          showDistances={false}
+          showDistances={true}
         />
       </div>
 

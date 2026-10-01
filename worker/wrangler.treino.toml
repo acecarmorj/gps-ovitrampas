@@ -1,0 +1,8 @@
+name = "ovitrampas-api-treino"
+main = "src/index.js"
+compatibility_date = "2026-07-29"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ovitrampas-treino"
+database_id = "88a6c975-ea96-4192-9508-9be64eb34dcc"

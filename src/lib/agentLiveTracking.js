@@ -6,7 +6,7 @@
 
 import { calcDistanceMeters } from './geoDistance';
 
-const API_BASE = 'https://ovitrampas-api.acecarmorj.workers.dev';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://ovitrampas-api.acecarmorj.workers.dev';
 
 export const AGENTES_DISPONIVEIS = [
   { id: 'ace1', label: 'ACE 1' },

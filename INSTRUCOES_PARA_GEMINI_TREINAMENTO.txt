@@ -106,4 +106,71 @@ Preencha "RELATO DO GEMINI" com: o que fez em cada passo (0 a 4), os enderecos f
 - No ano que vem, quando o trabalho de campo for pra valer: os agentes passam a usar o app oficial com a chave oficial da equipe.
 
 ==================== RELATO DO GEMINI ====================
-(escreva aqui)
+Data: 01/10/2026 - Execução integral das tarefas da Seção 140
+
+[PASSO 0 - BACKUP DO BANCO OFICIAL]
+- Comando executado: npx wrangler d1 export ovitrampas-gps-db --remote --output "..\backups\d1_antes_treinamento_20261001.sql"
+- Status: SUCESSO.
+- Arquivo gerado: F:\Desktop\GPS OVITRAMPAS\backups\d1_antes_treinamento_20261001.sql (108.617 bytes, íntegro e validado).
+
+[PASSO 1 - CÓDIGO: ENDEREÇO DA API POR VARIÁVEL DE BUILD]
+- src/lib/storage.js: API_BASE_URL configurado com fallback para import.meta.env.VITE_API_BASE_URL (mantendo oficial como padrão).
+- src/lib/acessoEquipe.js: URL_API_EQUIPE configurado com fallback para import.meta.env.VITE_API_BASE_URL (mantendo oficial como padrão).
+- src/lib/agentLiveTracking.js: API_BASE configurado com fallback para import.meta.env.VITE_API_BASE_URL.
+- src/App.jsx: Inserida faixa superior preta exclusiva de treinamento:
+  `<div className="bg-black text-white text-center text-[11px] font-black tracking-wide py-1.5 shrink-0 z-50">MODO TREINAMENTO - os dados daqui sao de teste e nao valem</div>`
+  renderizada condicionalmente apenas se `import.meta.env.VITE_MODO_TREINAMENTO === '1'`.
+- Teste de build sem as variáveis: compilado com sucesso em 6.49s (0 erros).
+
+[PASSO 2 - DISTÂNCIA ENTRE ARMADILHAS PARA TODOS OS AGENTES]
+- src/features/campo/InstalarArmadilhaScreen.jsx: showDistances alterado para true (linha 237).
+- src/features/campo/PainelAcaoCampo.jsx:
+  * Inserido destaque em fonte grande da armadilha mais próxima ("Mais próxima: OV-NN a X m") com indicador de status no topo do bloco de instalação e no seletor de número.
+  * Inserida legenda explícita em texto simples:
+    - Meta: 300 m a 400 m entre armadilhas
+    - < 280 m: Perto demais - afaste-se (vermelho)
+    - 280 a 420 m: Distância boa ✓ (preto/borda sóbria)
+    - > 420 m: Longe - pode aproximar (cinza)
+  * Disponível universalmente para todos os agentes de campo.
+  * Estilo estritamente preto no branco, sem cores desnecessárias.
+
+[PASSO 3 - AMBIENTE DE TREINAMENTO ZERADO]
+- Liberação de slot Cloudflare D1:
+  A conta atingiu a cota máxima de 10 bancos D1 no plano gratuito ao tentar criar ovitrampas-treino.
+  O Gemini parou e consultou o Almir. O Almir autorizou a exclusão do banco desativado 'flavio-maia' (53 KB).
+  Por precaução adicional, o Gemini realizou backup completo prévio do banco para `backups/flavio-maia_backup.sql` antes da exclusão.
+- 3.1 Criação do banco de treino:
+  * Comando: npx wrangler d1 create ovitrampas-treino
+  * database_name = "ovitrampas-treino"
+  * database_id = "88a6c975-ea96-4192-9508-9be64eb34dcc" (região ENAM).
+- 3.2 Criação do worker/wrangler.treino.toml:
+  * Configurado com name = "ovitrampas-api-treino", main = "src/index.js", compatibility_date = "2026-07-29" e binding DB para ovitrampas-treino.
+- 3.3 Migrações no banco de treino:
+  * Comando: npx wrangler d1 migrations apply ovitrampas-treino --remote --config wrangler.treino.toml
+  * As 4 migrações (0001 a 0004) foram aplicadas com sucesso (tabelas traps e readings criadas).
+- 3.4 Deploy da API de treinamento:
+  * Comando: npx wrangler deploy --config wrangler.treino.toml
+  * Endpoint publicado: https://ovitrampas-api-treino.acecarmorj.workers.dev
+- 3.5 Chave da equipe de treinamento:
+  * Comando: "treino2026" | npx wrangler secret put TEAM_KEY --config wrangler.treino.toml
+  * Secret TEAM_KEY gravado com sucesso.
+- 3.6 Criação e deploy do site de treinamento Pages:
+  * Projeto Pages criado: gps-ovitrampas-treino (branch main).
+  * Build gerado com VITE_API_BASE_URL="https://ovitrampas-api-treino.acecarmorj.workers.dev" e VITE_MODO_TREINAMENTO="1".
+  * Deploy realizado com sucesso: https://gps-ovitrampas-treino.pages.dev
+  * Variáveis de ambiente limpas da sessão PowerShell após o deploy.
+- 3.7 Conferências de isolamento e validação:
+  * https://ovitrampas-api-treino.acecarmorj.workers.dev/api/traps -> Retornou {"traps":[]} (100% zerado).
+  * https://ovitrampas-api.acecarmorj.workers.dev/api/traps -> Retornou exatamente as 56 armadilhas oficiais (intacto).
+  * Teste de gravação no treino: Foi enviada armadilha teste OV-99 com header x-team-key: treino2026 para /api/sync. A API de treino aceitou a gravação. O banco de treino passou a listar 1 armadilha e a API oficial permaneceu com 56. Em seguida, a armadilha de teste foi excluída do banco de treino para que ele permaneça totalmente limpo.
+  * https://gps-ovitrampas-treino.pages.dev/campo -> Exibe a faixa preta "MODO TREINAMENTO" e 0 armadilhas.
+
+[PASSO 4 - ATUALIZAÇÃO OFICIAL, CACHE E COMMIT]
+- public/sw.js: CACHE_NAME atualizado de 'ovitrampas-shell-v39' para 'ovitrampas-shell-v40'.
+- Build e deploy oficial: Compilado sem variáveis de ambiente e publicado no Pages gps-ovitrampas:
+  * https://gps-ovitrampas.pages.dev
+  * Conferência: banco oficial ovitrampas-gps-db permanece intacto com 56 armadilhas, 113 leituras (Ciclo A: 1.017 ovos; Ciclo B: 2.665 ovos; Ambas: 3.682 ovos).
+- Git: Arquivos adicionados um a um (sem git add -A, sem backups e sem CHAVE_EQUIPE.txt):
+  src/lib/storage.js, src/lib/acessoEquipe.js, src/lib/agentLiveTracking.js, src/App.jsx, src/features/campo/InstalarArmadilhaScreen.jsx, src/features/campo/PainelAcaoCampo.jsx, worker/wrangler.treino.toml, public/sw.js, INSTRUCOES_PARA_GEMINI_TREINAMENTO.txt.
+
+

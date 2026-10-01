@@ -233,21 +233,37 @@ export function PainelAcaoCampo({
           className="w-full bg-white border-2 border-slate-300 focus:border-black focus:ring-2 focus:ring-slate-300 rounded-2xl px-4 py-3 text-2xl font-black text-slate-900 text-center tracking-wider placeholder:text-base placeholder:font-bold placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none"
         />
         {vizinhasProximas.length > 0 && !numero && (
-          <div className="flex gap-1.5 mt-2 overflow-x-auto pb-0.5">
-            {vizinhasProximas.map((v) => (
-              <button
-                key={v.armadilha.id}
-                type="button"
-                onClick={() => setNumeroDigitado(v.armadilha.numero)}
-                className={`shrink-0 px-3 py-2 rounded-xl border text-xs font-black active:scale-95 transition-transform ${
+          <div className="mt-2 space-y-1.5">
+            {maisProxima && (
+              <div className="text-xs font-bold text-slate-800 flex items-center justify-between px-1">
+                <span>Mais próxima: <b>OV-{maisProxima.armadilha.numero}</b> a <b>{maisProxima.distancia} m</b></span>
+                {maisProxima.distancia < 280 && (
+                  <span className="text-red-600 font-black text-[11px]">Perto demais</span>
+                )}
+                {maisProxima.distancia >= 280 && maisProxima.distancia <= 420 && (
+                  <span className="text-black font-black text-[11px]">Distância boa ✓</span>
+                )}
+                {maisProxima.distancia > 420 && (
+                  <span className="text-slate-500 font-semibold text-[11px]">Longe</span>
+                )}
+              </div>
+            )}
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+              {vizinhasProximas.map((v) => (
+                <button
+                  key={v.armadilha.id}
+                  type="button"
+                  onClick={() => setNumeroDigitado(v.armadilha.numero)}
+                  className={`shrink-0 px-3 py-2 rounded-xl border text-xs font-black active:scale-95 transition-transform ${
  autoPorGps && v === maisProxima
  ? 'bg-black text-white border-slate-300'
  : 'bg-white text-slate-800 border-slate-300'
  }`}
-              >
-                OV-{v.armadilha.numero} · {v.distancia} m
-              </button>
-            ))}
+                >
+                  OV-{v.armadilha.numero} · {v.distancia} m
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -291,12 +307,42 @@ export function PainelAcaoCampo({
       {/* 4. FORMULARIO DA ACAO */}
       {acao === 'instalar' && (
         <div className="space-y-2.5">
-          {/* Assistente de Espaçamento de Campo (2 ou 3 armadilhas vizinhas) */}
+          {/* Assistente de Espaçamento de Campo (Distância entre Armadilhas) */}
           {vizinhasProximas && vizinhasProximas.length > 0 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1.5">
+            <div className="bg-white border-2 border-slate-300 rounded-2xl p-3.5 space-y-2.5">
+              {/* Destaque em fonte grande da mais próxima */}
+              {maisProxima && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-slate-200">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Armadilha mais próxima</span>
+                    <span className="text-base sm:text-lg font-black text-black">
+                      Mais próxima: OV-{maisProxima.armadilha.numero} a {maisProxima.distancia} m
+                    </span>
+                  </div>
+                  <div className="text-xs sm:text-sm font-black shrink-0">
+                    {maisProxima.distancia < 280 && (
+                      <span className="text-red-600 bg-red-50 border border-red-300 px-2.5 py-1 rounded-lg inline-block">
+                        Perto demais - afaste-se
+                      </span>
+                    )}
+                    {maisProxima.distancia >= 280 && maisProxima.distancia <= 420 && (
+                      <span className="text-black bg-slate-100 border border-black px-2.5 py-1 rounded-lg inline-block">
+                        Distância boa ✓
+                      </span>
+                    )}
+                    {maisProxima.distancia > 420 && (
+                      <span className="text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg inline-block">
+                        Longe - pode aproximar
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Vizinhas no entorno */}
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                <span>Distância das Armadilhas Vizinhas:</span>
-                <span className="text-[10px] text-slate-500 font-semibold">Meta: 300m a 400m</span>
+                <span>Vizinhas no entorno:</span>
+                <span className="text-[10px] text-slate-500 font-semibold">Meta: 300 m a 400 m entre armadilhas</span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {vizinhasProximas.slice(0, 3).map((v) => {
@@ -306,20 +352,30 @@ export function PainelAcaoCampo({
                   return (
                     <span
                       key={v.armadilha.id}
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border flex items-center gap-1 ${
- isIdeal
- ? 'bg-white text-black border-slate-300'
- : isPerto
- ? 'bg-rose-50 text-rose-800 border-rose-300'
- : 'bg-white text-black border-slate-300'
- }`}
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${
+                        isPerto
+                          ? 'bg-red-50 text-red-700 border-red-300'
+                          : isIdeal
+                          ? 'bg-white text-black border-black'
+                          : 'bg-white text-slate-600 border-slate-300'
+                      }`}
                     >
-                      <span>OV-{v.armadilha.numero}:</span>
-                      <span>{d}m</span>
-                      {isIdeal && <span className="text-[10px]">✓</span>}
+                      <span className="font-black">OV-{v.armadilha.numero}:</span>
+                      <span>{d} m</span>
+                      {isPerto && <span className="text-[10px] text-red-600 font-semibold">(Perto demais)</span>}
+                      {isIdeal && <span className="text-[10px] font-bold">✓ (Distância boa)</span>}
+                      {d > 420 && <span className="text-[10px] text-slate-500 font-semibold">(Longe)</span>}
                     </span>
                   );
                 })}
+              </div>
+
+              {/* Legenda simples */}
+              <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="font-bold text-slate-900">Meta: 300 m a 400 m entre armadilhas</span>
+                <span className="text-red-600 font-bold">&lt; 280 m: Perto demais - afaste-se</span>
+                <span className="text-black font-bold">280 a 420 m: Distância boa ✓</span>
+                <span className="text-slate-600 font-bold">&gt; 420 m: Longe - pode aproximar</span>
               </div>
             </div>
           )}
