@@ -589,6 +589,9 @@ export async function registrarLeituraLaboratorio({
   fotoPalhetaDataUrl,
   laudoAuditoria = null
 }) {
+  if (!getChaveEquipe() || !getAgente()) {
+    throw new Error('Digite seu nome e a senha da equipe antes de lançar palhetas.');
+  }
   const leituraId = 'leit-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
   const qtdOvos = Math.max(0, parseInt(ovos, 10) || 0);
 
@@ -599,7 +602,7 @@ export async function registrarLeituraLaboratorio({
     numeroPalheta: String(numeroPalheta).trim() || 'P-01',
     ovos: qtdOvos,
     positiva: qtdOvos > 0,
-    tecnicoNome: tecnicoNome || getAgente() || 'Laboratório Carmo',
+    tecnicoNome: getAgente() || tecnicoNome || 'Laboratório Carmo',
     // Como a contagem foi feita (app, IA, correções à mão). Antes os campos
     // da IA chegavam aqui e eram descartados - nenhuma leitura guardava de
     // onde veio o número. Vai para o D1 como JSON (coluna laudo_auditoria).

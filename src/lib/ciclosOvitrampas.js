@@ -60,6 +60,12 @@ export function agruparLeiturasPorArmadilha(todasLeituras = []) {
 /**
  * Resolve os dados detalhados dos dois ciclos para uma armadilha
  */
+// Se a mesma palheta foi lida mais de uma vez (recontagem), vale a leitura MAIS RECENTE.
+function maisRecente(lista = []) {
+  if (lista.length === 0) return null;
+  return lista.reduce((m, l) => (String(l.lidaEm || l.lida_em || '') >= String(m.lidaEm || m.lida_em || '') ? l : m), lista[0]);
+}
+
 export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   const num = normalizarNumeroArmadilha(armadilha.numero);
   const agrupado = mapaLeituras.get(num) || { leiturasA: [], leiturasB: [] };
@@ -70,7 +76,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   const bruta = !armadilha.cicloAtivo;
 
   // Palheta A: busca da leitura ou do histórico da armadilha
-  let leituraA = agrupado.leiturasA[0] || null;
+  let leituraA = maisRecente(agrupado.leiturasA);
   let ovosA = leituraA != null ? Number(leituraA.ovos ?? leituraA.qtdOvos ?? 0) : null;
 
   // Se não encontrou no store de leituras, checa se a própria armadilha tem registro de Palheta A
@@ -96,7 +102,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   }
 
   // Palheta B: busca da leitura do Ciclo B
-  let leituraB = agrupado.leiturasB[0] || null;
+  let leituraB = maisRecente(agrupado.leiturasB);
   let ovosB = leituraB != null ? Number(leituraB.ovos ?? leituraB.qtdOvos ?? 0) : null;
 
   // Se a armadilha está atualmente com palheta B e foi analisada no laboratório

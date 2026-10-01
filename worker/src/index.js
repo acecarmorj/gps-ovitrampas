@@ -168,7 +168,11 @@ async function upsertReading(reading, env) {
        numero_palheta = excluded.numero_palheta,
        ovos = excluded.ovos,
        positiva = excluded.positiva,
-       tecnico_nome = excluded.tecnico_nome,
+       -- o nome padrao "Laboratório Carmo" (aparelho sem login) nunca apaga o nome de quem lancou
+       tecnico_nome = CASE
+         WHEN excluded.tecnico_nome IS NULL OR excluded.tecnico_nome IN ('', 'Laboratório Carmo') THEN readings.tecnico_nome
+         ELSE excluded.tecnico_nome
+       END,
        lida_em = excluded.lida_em,
        laudo_auditoria = COALESCE(excluded.laudo_auditoria, readings.laudo_auditoria),
        synced_at = datetime('now')`

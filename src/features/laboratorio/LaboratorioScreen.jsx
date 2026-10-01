@@ -1,4 +1,4 @@
-import { getAgente } from '../../lib/acessoEquipe';
+import { getAgente, temAcessoEquipe } from '../../lib/acessoEquipe';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical, CheckCircle2, Plus, Minus,
@@ -83,6 +83,12 @@ export function LaboratorioScreen({
   // Salvar Leitura (100% offline)
   const handleSalvar = async (e) => {
     e.preventDefault();
+
+    // Obrigatorio: so lanca palheta quem entrou com NOME e SENHA da equipe (fica registrado quem lancou).
+    if (!temAcessoEquipe() || !getAgente()) {
+      alert('Antes de lançar palhetas, digite seu nome e a senha da equipe no aviso do topo da tela.');
+      return;
+    }
 
     if (!numeroArmadilha.trim()) {
       alert('Digite o número da OV.');
@@ -426,7 +432,7 @@ export function LaboratorioScreen({
               {/* BOTÃO SALVAR */}
               <button
                 type="submit"
-                disabled={salvando}
+                disabled={salvando || !(temAcessoEquipe() && getAgente())}
                 className="w-full bg-black hover:bg-slate-800 active:scale-95 disabled:opacity-50 text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all"
               >
                 {salvando ? (
@@ -434,7 +440,7 @@ export function LaboratorioScreen({
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>SALVAR LEITURA</span>
+                    <span>{temAcessoEquipe() && getAgente() ? 'SALVAR LEITURA' : 'ENTRE COM NOME E SENHA PARA SALVAR'}</span>
                   </>
                 )}
               </button>

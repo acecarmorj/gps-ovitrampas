@@ -151,3 +151,15 @@ npx wrangler d1 execute ovitrampas-gps-db --remote --command="SELECT id, numero,
 * **Prevenção de Colisão nos Mapas de Satélite:** Inclusão do algoritmo `boxesDesenhados` no canvas para evitar sobreposição de rótulos de armadilhas próximas.
 * **Otimização do Build e Timbres:** Refatoração de `src/lib/timbresOficiais.js` para carregamento assíncrono via DataURL, eliminando o erro de falta de memória do esbuild (`npm run build` concluído com sucesso em ~7s).
 * **Tabela de Inventário 28+28 no SES-RJ:** Eliminação da quebra irregular que deixava 1 linha órfã na página 8.
+
+
+---
+
+## Estado em 01/10/2026 (atualizado pelo Claude, a pedido do Almir)
+
+- **Dados:** 56 armadilhas, 113 leituras. Ciclo A: 1.017 ovos (IPO 57,1%, IDO 31,8, IDV 18,2). **Ciclo B completo (56 de 56):** 2.665 ovos (IPO 57,1%, IDO 83,3, IDV 47,6). **Ambas (A+B somados):** 3.682 ovos, IPO 73,2%, IDO 57,5, IDV 32,9; faixa de risco do Ambas pela média por palheta.
+- **OV-51 B** lida 2 vezes (108 e 106); vale 106 (leitura mais recente). Todas as 113 leituras estão registradas como lançadas por "Almir".
+- **Regras do Almir:** Ambas = A + B somados; nome do morador obrigatório no app de campo; lançar palheta no laboratório exige nome + senha da equipe; dados de moradores só em relatórios internos; padrão visual preto no branco com cor só nas 5 faixas de risco.
+- **Relatórios:** seguem a Nota Técnica MS nº 3/2025 (IPO, IDO, IDV; exposição de 5 dias; ações em raio de 200 m). SES-RJ e Resultados: capa, sumário, resumo, plano de ação, manual estratégico, indicadores, anexos (gráficos, mapas, inventário) e metodologia com referências.
+- **Segurança proporcional:** gravar no servidor exige a senha da equipe; sem a senha o servidor oculta nome, rua, nº do imóvel e observações. Apagar/zerar o banco está bloqueado. Backups em `backups/` (fora do git).
+- **Publicação:** Cloudflare Pages `gps-ovitrampas` (service worker `ovitrampas-shell-v38`) e Worker `ovitrampas-api`. Log completo das decisões: `conversa.txt` (seções 110 a 136).

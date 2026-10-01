@@ -3502,3 +3502,22 @@ ACHADOS (substancia procede, todos corrigidos):
  4 Cadastro: bolinha da media ao lado da soma: agora mostra "(med. N)".
 PADRAO VISUAL (item E): confirmado e APLICADO em /guia, /laboratorio (incl. assistente de contagem), /campo e cabecalho: removidos degrades, fundos e botoes coloridos; cor so nas faixas (chips de positiva/negativa do laboratorio agora usam a cor da faixa). Linha selecionada do mapa: neutra.
 ==============================================================================
+
+SECAO 136: REGISTRO GERAL DO DIA 01/10/2026 (a pedido do Almir: "anote tudo") - app v38, worker 0e8c38ea
+ESTADO DOS DADOS (banco D1, conferido 01/10 ~12h):
+ - 56 armadilhas, 113 leituras. Ciclo A: 56 lidas, 32 positivas, 1.017 ovos (IPO 57,1% | IDO 31,8 | IDV 18,2).
+ - Ciclo B COMPLETO: 56 lidas, 32 positivas, 2.665 ovos (IPO 57,1% | IDO 83,3 | IDV 47,6); maiores: OV-45 (206), OV-10 (201), OV-23 (195), OV-38 (185), OV-36 (169), OV-05 (167); 12 focos >100.
+ - Ambas (A+B somados): 3.682 ovos, 41 armadilhas positivas em A ou B (IPO 73,2%), IDO 57,5, IDV 32,9. Faixa de risco do Ambas = MEDIA por palheta.
+DECISOES DO ALMIR HOJE:
+ 1 OV-51 palheta B foi lida 2x (108 ovos em 30/09 e 106 em 01/10, recontagem): VALE 106. O sistema usa sempre a leitura MAIS RECENTE de cada palheta (ciclosOvitrampas.js, maisRecente). A leitura antiga (108) segue no banco, sem apagar.
+ 2 TODAS as 113 leituras registradas como lancadas por "Almir" (UPDATE direto no D1, backup antes: backups/d1_antes_atribuir_almir_*.sql). O nome vem do login: digitar exatamente "Almir".
+ 3 Lancar palheta no laboratorio e OBRIGATORIO com nome + senha da equipe (botao fica "ENTRE COM NOME E SENHA PARA SALVAR"; storage.registrarLeituraLaboratorio tambem recusa). Servidor: nome padrao "Laboratorio Carmo" nunca apaga o nome real.
+ 4 Textos "Ciclo B parcial" so aparecem se o B estiver parcial; hoje o relatorio sai com "Ciclo B concluido/completo".
+ 5 Nome do morador OBRIGATORIO no app de campo (instalar; e trocar/recolher se a armadilha estiver sem nome).
+ 6 Gravar no servidor (POST /api/sync) exige a senha da equipe (a senha e a chave do Acesso da equipe; valor em CHAVE_EQUIPE.txt, fora do git). GET /api/traps sem senha: sem nome/rua/numero do imovel/observacoes.
+ 7 Padrao visual: preto no branco, cor so nas 5 faixas (aplicado em /guia, /laboratorio, /campo, /admin e PDFs).
+ 8 Relatorios seguem a Nota Tecnica MS 3/2025 (IPO, IDO, IDV; 5 dias; raio de 200 m); SES-RJ/Resultados: capa, sumario, resumo, plano de acao, manual estrategico, indicadores, Anexos A (graficos), B (mapas), C (inventario), metodologia/referencias. PDF do mapa: cidade + 5 distritos juntos por ciclo.
+ENTREGAS NO AR: https://gps-ovitrampas.pages.dev (admin /admin, laboratorio /laboratorio, campo /campo). Worker https://ovitrampas-api.acecarmorj.workers.dev.
+PENDENTE/PROXIMOS PASSOS: (a) Gemini: auditoria dos itens da secao 133/134 ja conferida; nova auditoria so se o Almir pedir. (b) Emitir o SES-RJ oficial: fazer backup do D1 antes e conferir os totais acima. (c) Telas ainda no estilo antigo: nenhuma conhecida alem de paginas internas pouco usadas (PainelResumoGpsCampo, Portal publico). (d) App de campo e para o ano que vem. (e) Repositorio GitHub e publico e o historico antigo tem arquivos com dados de moradores (Almir decidiu manter publico).
+BACKUPS (pasta backups/, fora do git): d1_antes_protecao (56 trap/82 leit), d1_pre_relatorio (02:13), d1_antes_atribuicao, d1_antes_atribuir_almir (113 leit, 12:13).
+==============================================================================

@@ -2,7 +2,7 @@
  * Relatorio tecnico SES-RJ (versao enxuta) - A4 retrato, preto no branco.
  * Cor SO nos graficos, mapas e faixas de risco (azul, verde, amarelo, laranja, vermelho).
  * Anonimo: codigos P-NN, bairro e quarteirao. Sem nome de morador nem rua.
- * Um grafico por pagina: Ciclo A, Ciclo B (parcial) e Ambas (A e B juntos: ovos somados por armadilha).
+ * Um grafico por pagina: Ciclo A, Ciclo B e Ambas (A e B juntos: ovos somados por armadilha).
  */
 import { adaptarArmadilhasParaCiclo, calcularMetricasCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from './ciclosOvitrampas';
 import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, mesclarCiclos, coresDosBairros, corTextoDaFaixa, metricasAmbas } from './mapaPoligonos';
@@ -206,7 +206,9 @@ function graficoAmbas(doc, bairros, listaA, listaB) {
   doc.setLineWidth(0.2);
   doc.line(x0, 50, x0, y - passo + 12);
   legendaFaixas(doc, y + 6);
-  texto(doc, 'Barra cheia = Ciclo A (completo) · barra clara = Ciclo B (parcial).', M, y + 13, { size: 8, bold: true });
+  const parcB = listaB.filter(temLeitura).length < listaB.length;
+  const parcA = listaA.filter(temLeitura).length < listaA.length;
+  texto(doc, `Barra cheia = Ciclo A (${parcA ? 'parcial' : 'completo'}) · barra clara = Ciclo B (${parcB ? 'parcial' : 'completo'}).`, M, y + 13, { size: 8, bold: true });
   texto(
     doc,
     'O comprimento é o IPO do bairro (armadilhas positivas ÷ lidas). A cor é a faixa do pior foco do bairro no ciclo (maior contagem de ovos). O Ciclo B só inclui palhetas já lidas; este gráfico compara A e B lado a lado.',
@@ -293,6 +295,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const mB = calcularMetricasCiclo(B);
   const iA = indicadores(A);
   const iB = indicadores(B);
+  const parcialB = iB.lidas < iB.total;
+  const rotB = parcialB ? 'Ciclo B (parcial)' : 'Ciclo B';
   const mAB = metricasAmbas(AB);
   const iAB = indicadores(AB);
 
@@ -373,8 +377,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
       texto(doc, v, x + colW - 4, yy, { size: 9.5, bold: true, align: 'right' });
     });
   };
-  quadro(M, 'CICLO A', 'Completo', iA, mA);
-  quadro(M + colW + 6, 'CICLO B', `Parcial: ${iB.lidas} de ${iB.total} lidas`, iB, mB);
+  quadro(M, 'CICLO A', iA.lidas < iA.total ? `Parcial: ${iA.lidas} de ${iA.total} lidas` : 'Completo', iA, mA);
+  quadro(M + colW + 6, 'CICLO B', parcialB ? `Parcial: ${iB.lidas} de ${iB.total} lidas` : 'Completo', iB, mB);
   quadro(M + 2 * (colW + 6), 'AMBAS (A + B)', 'Soma; cor pela média por palheta', iAB, mAB, 'Armadilhas lidas (A ou B)');
 
   // achados
@@ -389,8 +393,10 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     bairrosA.length
       ? `Bairros com mais ovos no Ciclo A: ${bairrosA.map((x) => `${x.b} (${nInt(x.ovos)})`).join(', ')}.`
       : null,
-    `Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, IPO ${n1(iB.ipo)}% e IDO ${n1(iB.ido)}. As demais aguardam leitura laboratorial e os valores serão atualizados.`,
-    `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}. Como o Ciclo B é parcial, Ambas será atualizado.`
+    parcialB
+      ? `Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, IPO ${n1(iB.ipo)}% e IDO ${n1(iB.ido)}. As demais aguardam leitura laboratorial e os valores serão atualizados.`
+      : `Ciclo B concluído: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, ${iB.pos} armadilhas positivas (IPO ${n1(iB.ipo)}%) e IDO ${n1(iB.ido)}.`,
+    `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}.${parcialB ? ' Como o Ciclo B é parcial, Ambas será atualizado.' : ''}`
   ].filter(Boolean);
   texto(doc, 'Principais achados', M, 115, { size: 11, bold: true });
   let ya = 122;
@@ -445,7 +451,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
       { content: '', rowSpan: 2 },
       { content: 'Armad.', rowSpan: 2 },
       { content: 'CICLO A', colSpan: 6, styles: { halign: 'center' } },
-      { content: 'CICLO B (parcial)', colSpan: 6, styles: { halign: 'center' } }
+      { content: parcialB ? 'CICLO B (parcial)' : 'CICLO B', colSpan: 6, styles: { halign: 'center' } }
     ],
     ['Lidas', 'Pos.', 'Ovos', 'IPO', 'IDO', 'IDV', 'Lidas', 'Pos.', 'Ovos', 'IPO', 'IDO', 'IDV']
   ];
@@ -552,7 +558,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   graficoEstratos(doc, ordemB, A);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Anexo A · Gráfico 2 — Ciclo B (parcial)', `Armadilhas por faixa de risco em cada bairro. Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas. Armadilhas sem leitura não entram.`);
+  cabecalhoPagina(doc, timbres, `Anexo A · Gráfico 2 — ${rotB}`, parcialB ? `Armadilhas por faixa de risco em cada bairro. Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas. Armadilhas sem leitura não entram.` : `Armadilhas por faixa de risco em cada bairro. Ciclo B completo: ${iB.lidas} de ${iB.total} palhetas lidas.`);
   graficoEstratos(doc, ordemB, B);
 
   doc.addPage();
@@ -566,7 +572,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   // ---------- MAPAS DE CALOR: cidade e distritos, por ciclo ----------
   secoesPag.anexoB = doc.getNumberOfPages() + 1;
   await paginasMapasCiclo(doc, timbres, A, 'Ciclo A', 'Escala oficial de 5 cores: azul (0), verde, amarelo, laranja e vermelho (mais de 100 ovos).', usarSat);
-  await paginasMapasCiclo(doc, timbres, B, 'Ciclo B (parcial)', `Somente palhetas já lidas (${iB.lidas} de ${iB.total}).`, usarSat);
+  await paginasMapasCiclo(doc, timbres, B, rotB, parcialB ? `Somente palhetas já lidas (${iB.lidas} de ${iB.total}).` : `Ciclo B completo: ${iB.lidas} de ${iB.total} palhetas lidas.`, usarSat);
   await paginasMapasCiclo(doc, timbres, AB, 'Ambas', 'Ciclo A e Ciclo B juntos: o calor usa a média por palheta (soma dos ovos de A e B ÷ palhetas lidas).', usarSat);
 
   // ---------- 9-10. INVENTARIO ANONIMO ----------
@@ -631,7 +637,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     ['Escala de risco', '0 ovos: negativa · 1 a 20: baixa · 21 a 50: média · 51 a 100: alta · mais de 100: crítica. É a escala por palheta adotada pelo programa municipal nos mapas e gráficos (a nota técnica define IPO, IDO e IDV, sem faixas por quantidade de ovos). No "Ambas" a faixa usa a média por palheta.'],
     ['Anonimização', 'As armadilhas são identificadas por códigos técnicos (P-01 a P-56). Os resultados são apresentados por bairro, microárea e quarteirão, sem nomes de moradores nem endereços.'],
     ['Referências', 'BRASIL. Ministério da Saúde. Secretaria de Vigilância em Saúde e Ambiente. Nota Técnica nº 3/2025-CGARB/DEDT/SVSA/MS: vigilância entomológica de Aedes aegypti e Aedes albopictus com armadilhas ovitrampas (SEI 25000.004576/2025-33). BRASIL. Ministério da Saúde. Nota Técnica nº 33/2022-CGARB/DEIDT/SVS/MS: recomendações para a implementação da vigilância entomológica com armadilhas de oviposição.'],
-    ['Limitações', `O Ciclo B está parcial (${iB.lidas} de ${iB.total} palhetas lidas) e será atualizado. O Ambas soma os ovos de A e de B das palhetas já lidas e será atualizado.`]
+    ['Limitações', parcialB ? `O Ciclo B está parcial (${iB.lidas} de ${iB.total} palhetas lidas) e será atualizado. O Ambas soma os ovos de A e de B das palhetas já lidas e será atualizado.` : `Os Ciclos A e B estão completos (${iA.lidas} e ${iB.lidas} de ${iA.total} palhetas lidas). Quando a mesma palheta foi lida mais de uma vez (recontagem), vale a leitura mais recente. O Ambas soma os ovos de A e de B; a faixa de risco usa a média por palheta.`]
   ];
   let ym = 48;
   blocos.forEach(([t, c]) => {
