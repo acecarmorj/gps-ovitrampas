@@ -1,0 +1,109 @@
+INSTRUCOES PARA A OUTRA IA (GEMINI) - TREINAMENTO DOS AGENTES DE CAMPO
+Escrito pelo Claude em 01/10/2026 a pedido do Almir (os creditos do Claude estao acabando). Siga EXATAMENTE, na ordem. Se algo nao bater com o que esta escrito aqui, PARE e escreva o problema no fim deste arquivo em "RELATO DO GEMINI"; nao improvise.
+Projeto: F:\Desktop\GPS OVITRAMPAS (e a pasta de trabalho; a copia em C:\ NAO e a correta).
+
+==================== OBJETIVO ====================
+1) Os dados oficiais (56 armadilhas, 113 leituras, Ciclos A e B) NAO PODEM SER PERDIDOS, ALTERADOS NEM ZERADOS.
+2) Criar uma versao de TREINAMENTO do app de campo, totalmente ZERADA (0 armadilhas), em outro endereco e com banco de dados separado, para treinar os agentes.
+3) No app de campo, TODOS os agentes que sairem pela cidade distribuindo armadilhas devem ver a DISTANCIA ate as armadilhas vizinhas (meta oficial: 300 a 400 m), na tela e no mapa.
+DECISAO JA TOMADA: o app ZERADO e uma copia separada (treinamento). O app oficial (https://gps-ovitrampas.pages.dev) continua intacto com os dados.
+
+==================== REGRAS INEGOCIAVEIS ====================
+- NUNCA execute DELETE, DROP, UPDATE, TRUNCATE nem "clear" no banco oficial "ovitrampas-gps-db" (id 7f230c39-789f-416d-95fd-4e22e7fd5d69).
+- NUNCA use o endpoint /api/clear nem os botoes de zerar do painel admin.
+- NUNCA faca "git add -A". Faca git add listando arquivo por arquivo.
+- NUNCA escreva a chave da equipe oficial (arquivo CHAVE_EQUIPE.txt, ignorado pelo git) em nenhum arquivo, commit ou chat. A senha do treinamento e outra (item 3.5).
+- NUNCA publique nada com nome de morador. O banco de treinamento nasce vazio.
+- O Claude so confere depois. Nao altere os arquivos: worker/src/index.js (a nao ser que o item 3 mande), src/lib/pdf*.js, conversa.txt (apenas ACRESCENTE no fim, sem apagar nada).
+
+==================== PASSO 0 - BACKUP DO BANCO OFICIAL (obrigatorio, antes de tudo) ====================
+No PowerShell:
+  cd "F:\Desktop\GPS OVITRAMPAS\worker"
+  npx wrangler d1 export ovitrampas-gps-db --remote --output "..\backups\d1_antes_treinamento_20261001.sql"
+Confirme que o arquivo existe e tem mais de 20 KB (dir ..\backups). Se falhar, PARE.
+
+==================== PASSO 1 - CODIGO: ENDERECO DA API POR VARIAVEL DE BUILD ====================
+Hoje o endereco da API esta fixo em 3 arquivos. Troque para ler tambem import.meta.env.VITE_API_BASE_URL (o Vite injeta no build). Mantenha o endereco oficial como padrao para nao quebrar o app oficial.
+ a) src/lib/storage.js, linhas 54-56. Troque por:
+      const API_BASE_URL = (typeof window !== 'undefined' && window.VITE_API_BASE_URL)
+        || import.meta.env.VITE_API_BASE_URL
+        || 'https://ovitrampas-api.acecarmorj.workers.dev';
+ b) src/lib/acessoEquipe.js, linhas 9-11: mesmo tratamento (mesma expressao).
+ c) src/lib/agentLiveTracking.js, linha 9: trocar
+      const API_BASE = 'https://ovitrampas-api.acecarmorj.workers.dev';
+    por
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://ovitrampas-api.acecarmorj.workers.dev';
+ d) Faixa de aviso no topo do app quando for treinamento: em src/App.jsx, dentro do componente principal, logo acima do conteudo das telas, renderize SOMENTE se import.meta.env.VITE_MODO_TREINAMENTO === '1':
+      <div className="bg-black text-white text-center text-[11px] font-black tracking-wide py-1.5">MODO TREINAMENTO - os dados daqui sao de teste e nao valem</div>
+    (estilo do projeto: preto no branco, sem cores).
+ Depois rode:  cd "F:\Desktop\GPS OVITRAMPAS" ; $env:NODE_OPTIONS="--max-old-space-size=2048" ; npx vite build
+ (se der erro de memoria, rode de novo ate passar). O build SEM as variaveis deve continuar apontando para o app oficial.
+
+==================== PASSO 2 - DISTANCIA ENTRE ARMADILHAS PARA TODOS OS AGENTES ====================
+O que ja existe: src/features/campo/PainelAcaoCampo.jsx (linhas ~295-325) mostra as 3 vizinhas mais proximas com a distancia ("OV-NN: 312m", verde/ok entre 280 e 420 m, vermelho se menos de 280 m). src/lib/geoDistance.js tem calcDistanceMeters() e findNearbyTraps(). O que falta/ajustar:
+ a) src/features/campo/InstalarArmadilhaScreen.jsx linha 237: showDistances={false}  ->  showDistances={true}  (assim o mapa desenha as linhas com metros ate as vizinhas). Confira no componente MapaGrandeOvitrampa (procure por showDistances) que as linhas aparecem so para as armadilhas proximas (ate ~600 m) e que o numero em metros e legivel; se poluir o mapa, limite as linhas as 3 vizinhas mais proximas.
+ b) Em PainelAcaoCampo.jsx, a legenda deve dizer claramente, em texto simples, para o agente:
+      "Meta: 300 m a 400 m entre armadilhas"
+      menos de 280 m  -> texto "Perto demais - afaste-se" (vermelho, unica cor permitida alem das faixas de risco)
+      280 a 420 m     -> texto "Distancia boa" com o simbolo de certo
+      mais de 420 m   -> texto "Longe - pode aproximar" (cinza)
+    Mostre tambem a distancia da armadilha MAIS PROXIMA em fonte grande (ex.: "Mais proxima: OV-12 a 287 m") no topo do formulario de instalar. Use os dados que o componente ja calcula (vizinhasProximas e vizinhaMaisProxima); nao crie calculo novo.
+ c) A regra vale para TODOS os agentes: nao esconda isso atras de senha nem de configuracao.
+ d) Estilo: preto no branco; nao invente cores novas.
+ Valide no navegador local (npm run dev ou o servidor ja configurado em .claude/launch.json) abrindo /campo com a localizacao simulada; confira que as distancias aparecem.
+
+==================== PASSO 3 - AMBIENTE DE TREINAMENTO ZERADO (novo banco + nova API + novo site) ====================
+Tudo em PowerShell, a partir de F:\Desktop\GPS OVITRAMPAS\worker. NADA disso toca no banco oficial.
+ 3.1 Criar o banco novo e VAZIO:
+      npx wrangler d1 create ovitrampas-treino
+    Anote o "database_id" que aparecer.
+ 3.2 Criar o arquivo worker\wrangler.treino.toml (copia do wrangler.toml com 3 mudancas):
+      name = "ovitrampas-api-treino"
+      main = "src/index.js"
+      compatibility_date = "2026-07-29"
+      [[d1_databases]]
+      binding = "DB"
+      database_name = "ovitrampas-treino"
+      database_id = "<ID ANOTADO NO 3.1>"
+ 3.3 Aplicar as 4 migracoes no banco NOVO (e somente nele):
+      npx wrangler d1 migrations apply ovitrampas-treino --remote --config wrangler.treino.toml
+    (se pedir pasta de migracoes, estao em worker\migrations: 0001 a 0004.)
+ 3.4 Publicar a API de treinamento:
+      npx wrangler deploy --config wrangler.treino.toml
+    Anote o endereco (deve ser https://ovitrampas-api-treino.acecarmorj.workers.dev).
+ 3.5 Definir a senha do treinamento (NAO e a chave oficial):
+      npx wrangler secret put TEAM_KEY --config wrangler.treino.toml
+    Quando pedir o valor, digite: treino2026
+ 3.6 Criar o site de treinamento e publicar o build com as variaveis:
+      cd "F:\Desktop\GPS OVITRAMPAS"
+      $env:VITE_API_BASE_URL="https://ovitrampas-api-treino.acecarmorj.workers.dev"
+      $env:VITE_MODO_TREINAMENTO="1"
+      $env:NODE_OPTIONS="--max-old-space-size=2048"
+      npx vite build
+      npx wrangler pages project create gps-ovitrampas-treino --production-branch main
+      npx wrangler pages deploy dist --project-name gps-ovitrampas-treino --commit-dirty=true
+    DEPOIS, para nao contaminar o app oficial, apague as variaveis da sessao ($env:VITE_API_BASE_URL=$null ; $env:VITE_MODO_TREINAMENTO=$null) e, quando for publicar o app OFICIAL de novo, faca o build SEM elas.
+    Endereco do app de treinamento: https://gps-ovitrampas-treino.pages.dev  (campo: /campo ; laboratorio: /laboratorio ; admin: /admin).
+ 3.7 Conferir que esta ZERADO e separado:
+      - Abra https://ovitrampas-api-treino.acecarmorj.workers.dev/api/traps  -> deve devolver lista vazia.
+      - Abra https://ovitrampas-api.acecarmorj.workers.dev/api/traps -> continua com as 56 armadilhas (nao pode ter mudado).
+      - Abra https://gps-ovitrampas-treino.pages.dev/campo: faixa preta "MODO TREINAMENTO" no topo e 0 armadilhas.
+      - Em "Acesso da equipe" do app de treino, entre com um nome de teste e a senha treino2026; instale uma armadilha de teste e confira que ela aparece em /api/traps do treino e NAO aparece na API oficial.
+
+==================== PASSO 4 - COMMIT E REGISTRO ====================
+ - git add arquivo por arquivo: src/lib/storage.js src/lib/acessoEquipe.js src/lib/agentLiveTracking.js src/App.jsx src/features/campo/InstalarArmadilhaScreen.jsx src/features/campo/PainelAcaoCampo.jsx worker/wrangler.treino.toml INSTRUCOES_PARA_GEMINI_TREINAMENTO.txt
+ - git commit -m "feat: ambiente de treinamento zerado + distancias entre armadilhas no app de campo"
+ - git push
+ - NAO commite nada de backups/ nem CHAVE_EQUIPE.txt.
+ - Publicar o app OFICIAL com o codigo novo (build SEM as variaveis VITE_*):  npx vite build ; npx wrangler pages deploy dist --project-name gps-ovitrampas --commit-dirty=true . Suba tambem a versao do cache em public/sw.js (CACHE_NAME de 'ovitrampas-shell-v39' para 'ovitrampas-shell-v40') ANTES desse build. Depois confira que https://gps-ovitrampas.pages.dev/admin ainda mostra as 56 armadilhas e os mesmos totais (Ciclo A 1.017 ovos; Ciclo B 2.665 ovos).
+
+==================== PASSO 5 - RELATO FINAL (escreva neste arquivo, abaixo) ====================
+Preencha "RELATO DO GEMINI" com: o que fez em cada passo (0 a 4), os enderecos finais, o database_id do banco de treinamento (NAO e segredo), o resultado de cada conferencia do 3.7 e qualquer coisa que nao funcionou. O Claude le o relato e confere.
+
+==================== COMO O ALMIR USA DEPOIS ====================
+- Treinamento com os agentes: https://gps-ovitrampas-treino.pages.dev/campo  (nome do agente + senha treino2026).
+- Oficial (nao mexer): https://gps-ovitrampas.pages.dev
+- No ano que vem, quando o trabalho de campo for pra valer: os agentes passam a usar o app oficial com a chave oficial da equipe.
+
+==================== RELATO DO GEMINI ====================
+(escreva aqui)

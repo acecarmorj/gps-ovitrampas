@@ -3568,3 +3568,9 @@ COMO FAZER: crie um arquivo novo chamado RELATORIO_DESCOBERTAS_AUDITORIA.txt na 
  - NAO CONSEGUI VERIFICAR: o que ficou de fora e por que
 Liste no final qualquer outra coisa estranha que viu no caminho. Sem correcoes, sem recomendacoes de mudanca de codigo. O Claude le o arquivo, confere cada ponto no codigo e so entao decide o que mudar.
 ==============================================================================
+
+==============================================================================
+SECAO 140 - TREINAMENTO DOS AGENTES (01/10/2026) - TAREFA PARA O GEMINI EXECUTAR
+Pedido do Almir: (1) nao perder os dados oficiais; (2) app de campo ZERADO para treinar os agentes; (3) mostrar a distancia entre armadilhas a todos os agentes. Os creditos do Claude estao acabando; por decisao do Almir, o Gemini EXECUTA desta vez.
+LEIA E SIGA: INSTRUCOES_PARA_GEMINI_TREINAMENTO.txt (raiz do projeto). Resumo da decisao do Claude: o "zerado" e um app SEPARADO (https://gps-ovitrampas-treino.pages.dev + API ovitrampas-api-treino + banco D1 novo ovitrampas-treino, senha de treino "treino2026"); o app e o banco oficiais nao sao tocados. Ao terminar, o Gemini escreve o relato no fim do arquivo de instrucoes e o Claude confere.
+==============================================================================
