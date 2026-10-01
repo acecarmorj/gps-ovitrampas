@@ -9,7 +9,7 @@ import {
 import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
-import { gerarRelatorioPdfEntomologico } from '../../lib/pdfRelatorioEntomologico';
+import { gerarRelatorioEntomologicoLimpo } from '../../lib/pdfRelatorioEntomologicoLimpo';
 import { temAcessoEquipe } from '../../lib/acessoEquipe';
 
 /**
@@ -167,9 +167,9 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
 
       {bloco(
         'Relatório entomológico detalhado',
-        'Painel por armadilha com situação de cada palheta.',
+        'Uma linha por armadilha: morador e endereço (com o acesso da equipe), palheta e ovos de A e de B, situação.',
         botao('entomologico', 'Baixar PDF', () =>
-          executar('entomologico', () => gerarRelatorioPdfEntomologico(base, { filtroDescricao: 'Todas as armadilhas' }))
+          executar('entomologico', () => gerarRelatorioEntomologicoLimpo(base, todasLeituras))
         ),
         temAcessoEquipe()
           ? 'Uso interno: contém nome e endereço de moradores. Não enviar para fora.'

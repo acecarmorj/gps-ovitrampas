@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PainelMapaCalorInterativo } from '../mapa/PainelMapaCalorInterativo';
 import { CentralRelatorios } from './CentralRelatorios';
-import { PainelAdminScreen } from './PainelAdminScreen';
+import { CadastroArmadilhas } from './CadastroArmadilhas';
 
 /**
  * Painel do administrador (versao simples, preto no branco):
@@ -51,7 +51,14 @@ export function PainelAdminSimples(props) {
           />
         )}
 
-        {aba === 'gestao' && <PainelAdminScreen {...props} />}
+        {aba === 'gestao' && (
+          <CadastroArmadilhas
+            armadilhas={props.armadilhas}
+            armadilhasBrutas={props.armadilhasBrutas}
+            todasLeituras={props.todasLeituras}
+            onAtualizarArmadilhas={props.onAtualizarArmadilhas}
+          />
+        )}
       </div>
     </div>
   );

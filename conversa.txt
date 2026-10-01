@@ -3037,3 +3037,9 @@ ALVOS, do mais critico ao menos:
 REGRAS: cada achado = arquivo:linha + trecho copiado + exemplo concreto que da errado. Nao sabe/nao testou = escreva "NAO VERIFIQUEI". Nada de "executei/testei" sem colar comando e saida. Sem achado = "nada encontrado" + o que olhou.
 SAIDA: SECAO 123 no fim deste arquivo, ordenado do mais grave ao menos grave. O Claude confere cada item antes de mexer.
 ==============================================================================
+
+SECAO 124: CLAUDE - Cadastro e Entomologico refeitos, chave trocada (sw v29, 01/10)
+- Aba Cadastro = src/features/admin/CadastroArmadilhas.jsx (tabela limpa, busca, filtros, editar, CSV; morador/rua so com acesso da equipe; sem botao de apagar). PainelAdminScreen antigo nao e mais usado no painel.
+- Relatorio entomologico = src/lib/pdfRelatorioEntomologicoLimpo.js (paisagem, preto no branco, A e B, bolinha de faixa; colunas de morador/endereco so com acesso da equipe).
+- Chave da equipe trocada a pedido do Almir (guardada em CHAVE_EQUIPE.txt, fora do git). Aviso dado: chave facil de adivinhar = protecao fraca.
+- Mapa: no municipio inteiro os pontos aparecem sempre e ha aviso para escolher cidade/distrito (nevoeiro).

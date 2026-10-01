@@ -287,7 +287,7 @@ export function PainelMapaCalorInterativo({
           interactive: false
         }).addTo(calor);
       }
-      if (verPontos) {
+      if (verPontos || (verNevoeiro && territorio === 'todos')) {
         const marcador = L.circleMarker([lat, lng], {
           radius: 6,
           color: '#ffffff',
@@ -307,7 +307,7 @@ export function PainelMapaCalorInterativo({
       }
     });
 
-  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos]);
+  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos, verNevoeiro, territorio]);
 
   // Enquadra o mapa so quando o territorio muda (ou na primeira vez que ha pontos).
   // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
@@ -458,7 +458,12 @@ export function PainelMapaCalorInterativo({
       </div>
 
       <div className="grid lg:grid-cols-5 gap-3">
-        <div className="lg:col-span-3 rounded-xl overflow-hidden border border-slate-200 bg-white">
+        <div className="lg:col-span-3 rounded-xl overflow-hidden border border-slate-200 bg-white relative">
+          {verNevoeiro && territorio === 'todos' && (
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[500] pointer-events-none bg-white/95 border border-black rounded-lg px-3 py-1 text-[11px] font-bold text-black text-center">
+              Escolha a cidade ou um distrito para ver o nevoeiro
+            </div>
+          )}
           <div ref={mapaDivRef} className="w-full" style={{ height: "clamp(380px, 70vh, 640px)" }} />
         </div>
 
