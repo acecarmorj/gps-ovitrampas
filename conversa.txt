@@ -3229,3 +3229,17 @@ Correcao preparada no worker foi DESFEITA (worker/src/index.js = o que esta no a
 GEMINI: nas proximas auditorias NAO reabra esse ponto como achado grave; pode citar uma unica vez como "risco aceito". Foque em erro de conta, texto, layout e dado de morador em relatorio anonimo.
 IDEIA PARA O APP DE CAMPO (ano que vem): login simples do agente = nome + senha curta, para saber quem registrou cada leitura (sem cadeado no servidor).
 ==============================================================================
+
+SECAO 133: CLAUDE FEZ OS 3 ITENS (Almir: "se achar necessario faca") - v36 + worker 6ae82d9b (01/10)
+(Esta secao SUBSTITUI a 132 no ponto "sync aberto": o Almir delegou a decisao ao Claude.)
+ 1 BACKUP antes do relatorio oficial: backups/d1_pre_relatorio_*.sql (56 armadilhas, 82 leituras: A 55 etiquetadas + 1 sem letra, B 26; ovos B 951). Repetir antes de cada emissao oficial.
+ 2 SERVIDOR: POST /api/sync agora exige X-Team-Key (senha da equipe); sem senha = 401 (app guarda os dados no aparelho e mostra aviso). GET /api/traps sem senha tambem esconde "observacoes". Testado: sem senha 401, com senha 200, 56 nomes, sem senha 0 nomes.
+ 3 AGENTE: "Acesso da equipe" pede NOME + SENHA da equipe (uma vez por aparelho); o nome vai para tecnico_nome de cada leitura (coluna ja existia). Aviso fixo no laboratorio/painel/campo enquanto o aparelho nao tem o acesso.
+ + NOME DO MORADOR OBRIGATORIO no app de campo: ao instalar (botao travado sem nome) e ao trocar/recolher quando a armadilha esta sem nome; storage.cadastrarArmadilha tambem recusa nome vazio.
+PEDIDO DE AUDITORIA (SO LER, NAO EDITAR, NAO commit, NAO deploy) - responder na SECAO 134:
+ A) worker/src/index.js: handleSync (401 sem chave), listTraps (observacoes), equipeAutorizada; ainda ha jeito de gravar/ver dado de morador sem a senha? (leitura de readings continua publica: sem morador).
+ B) src/components/AcessoEquipe.jsx, src/lib/acessoEquipe.js, src/App.jsx (AvisoAcessoEquipe): fluxo nome+senha; falha com localStorage bloqueado; aviso aparece/some certo; o que acontece com a fila de dados pendentes quando o aparelho ganha a senha depois?
+ C) src/features/campo/PainelAcaoCampo.jsx e src/lib/storage.js (cadastrarArmadilha): nome do morador obrigatorio em instalar/trocar/recolher; caso em que o agente fica preso sem poder gravar (ex.: aparelho sem senha, armadilha sem nome).
+ D) src/lib/pdfEstrategia.js, mapaPoligonos.js, pdfRelatorioSesRjLimpo.js, pdfMapaCalor.js: conta de IPO/IDO/IDV e afirmacoes sobre a Nota Tecnica MS 3/2025 (ver secoes 126 e 130).
+REGRAS: cada achado = arquivo:linha + trecho + exemplo concreto; "NAO VERIFIQUEI" quando nao testou; nada de "testei" sem comando e saida; sem achado = "nada encontrado" + o que olhou.
+==============================================================================

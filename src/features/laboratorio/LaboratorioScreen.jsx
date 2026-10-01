@@ -1,3 +1,4 @@
+import { getAgente } from '../../lib/acessoEquipe';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FlaskConical, CheckCircle2, Plus, Minus,
@@ -112,7 +113,7 @@ export function LaboratorioScreen({
         numeroArmadilha: numeroArmadilha.trim(),
         numeroPalheta: numeroPalheta.trim() || 'P-01',
         ovos: qtdOvos,
-        tecnicoNome: 'Laboratório Carmo',
+        tecnicoNome: getAgente() || 'Laboratório Carmo',
         fotoPalhetaDataUrl: fotoPalheta,
         laudoAuditoria
       });

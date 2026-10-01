@@ -22,6 +22,7 @@ import { CICLO_AMBAS, adaptarArmadilhasParaCiclo } from './lib/ciclosOvitrampas'
 import { setMuted } from './lib/soundAlert';
 import { iniciarMonitoramentoOutrosAgentes } from './lib/agentLiveTracking';
 import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
+import { AvisoAcessoEquipe } from './components/AcessoEquipe';
 
 export function App() {
   const { path, navigate } = useAppPath();
@@ -191,6 +192,8 @@ export function App() {
           onMudarCiclo={handleMudarCiclo}
         />
       )}
+
+      {(chaveModulo === 'laboratorio' || chaveModulo === 'admin' || chaveModulo === 'campo') && <AvisoAcessoEquipe />}
 
       {quotaAviso && (
         <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between z-40 shadow-md">

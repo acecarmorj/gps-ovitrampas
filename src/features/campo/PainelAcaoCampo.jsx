@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, User, RefreshCw, PackageOpen, PlusCircle, Clock, MapPin } from 'lucide-react';
 import {
+  atualizarArmadilha,
   cadastrarArmadilha,
   trocarPalhetaArmadilha,
   recolherArmadilhaEPalheta,
@@ -9,6 +10,7 @@ import {
 import { decidirAcaoCampo, sugerirProximaPalheta, calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
 import { calculateNavigationGuidance } from '../../lib/geoBearing';
 import { playSuccessSound } from '../../lib/soundAlert';
+import { temAcessoEquipe } from '../../lib/acessoEquipe';
 
 // Raio em que o GPS assume sozinho que o agente esta na armadilha mais
 // proxima. Acima disso o agente digita o numero ou toca na lista.
@@ -147,8 +149,10 @@ export function PainelAcaoCampo({
     if (!armadilha) return;
     const nova = palheta.trim();
     if (!nova) return alert('Informe o código da palheta nova.');
+    if (faltaMorador && !nomeMorador.trim()) return alert('Informe o nome do morador (obrigatório).');
     setSalvando(true);
     try {
+      if (faltaMorador) await atualizarArmadilha(armadilha.id, { moradorNome: nomeMorador.trim() });
       const saiu = armadilha.palheta || '-';
       await trocarPalhetaArmadilha(armadilha.id, {
         novaPalheta: nova,
@@ -164,8 +168,10 @@ export function PainelAcaoCampo({
 
   const recolher = async () => {
     if (!armadilha) return;
+    if (faltaMorador && !nomeMorador.trim()) return alert('Informe o nome do morador (obrigatório).');
     setSalvando(true);
     try {
+      if (faltaMorador) await atualizarArmadilha(armadilha.id, { moradorNome: nomeMorador.trim() });
       const saiu = armadilha.palheta || '-';
       await recolherArmadilhaEPalheta(armadilha.id, {
         condicoes: ocorrencia === 'Normal' ? 'Armadilha e palheta recolhidas intactas' : ocorrencia
@@ -177,6 +183,11 @@ export function PainelAcaoCampo({
       setSalvando(false);
     }
   };
+
+  // Nome do morador e SEMPRE obrigatorio. Em armadilha ja cadastrada sem nome, o agente completa ao trocar/recolher.
+  const faltaMorador = Boolean(armadilha) && acao !== 'instalar' && temAcessoEquipe() && !String(armadilha.moradorNome || '').trim();
+  const precisaMorador = acao === 'instalar' || faltaMorador;
+  const bloqueado = salvando || (precisaMorador && !nomeMorador.trim());
 
   const executar = { instalar, trocar, recolher }[acao];
 
@@ -312,19 +323,6 @@ export function PainelAcaoCampo({
             </div>
           )}
 
-          <div>
-            <label htmlFor="campoMorador" className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" /> Nome do morador
-            </label>
-            <input
-              id="campoMorador"
-              type="text"
-              placeholder="Ex: Dona Maria"
-              value={nomeMorador}
-              onChange={(e) => setNomeMorador(e.target.value)}
-              className="w-full bg-white border-2 border-slate-300 focus:border-emerald-500 rounded-2xl px-3.5 py-2.5 text-base font-bold text-slate-900 focus:outline-none"
-            />
-          </div>
           <p className="text-[11px] text-slate-600 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">
@@ -373,11 +371,29 @@ export function PainelAcaoCampo({
         </div>
       )}
 
+      {acao && precisaMorador && (
+        <div className="mb-3">
+          <div>
+            <label htmlFor="campoMorador" className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" /> Nome do morador <span className="text-red-600">* obrigatório</span>
+            </label>
+            <input
+              id="campoMorador"
+              type="text"
+              placeholder="Ex: Dona Maria"
+              value={nomeMorador}
+              onChange={(e) => setNomeMorador(e.target.value)}
+              className="w-full bg-white border-2 border-slate-300 focus:border-emerald-500 rounded-2xl px-3.5 py-2.5 text-base font-bold text-slate-900 focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+
       {acao && (
         <button
           type="button"
           onClick={executar}
-          disabled={salvando}
+          disabled={bloqueado}
           className={`w-full py-4 rounded-2xl font-black text-base uppercase tracking-wide text-white shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 transition-all ${
             acao === 'recolher' ? 'bg-indigo-600 shadow-indigo-700/25' : 'bg-emerald-600 shadow-emerald-700/25'
           }`}

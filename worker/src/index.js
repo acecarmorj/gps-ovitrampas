@@ -23,7 +23,8 @@ function equipeAutorizada(request, env) {
 }
 
 function semDadosDeMorador(trap) {
-  return { ...trap, morador_nome: null, rua: null, numero_imovel: null };
+  // observacoes tambem: o campo livre costuma ter nome/referencia de morador ("casa da Dona X")
+  return { ...trap, morador_nome: null, rua: null, numero_imovel: null, observacoes: null };
 }
 
 function json(data, status = 200) {
@@ -215,6 +216,14 @@ async function upsertReading(reading, env) {
 }
 
 async function handleSync(request, env) {
+  // Gravar leituras e armadilhas exige o Acesso da equipe. Sem isso qualquer pessoa que conhecesse o endereco
+  // do servidor poderia falsificar leituras ou sobrescrever armadilhas (auditoria do Gemini, achado 1).
+  if (!equipeAutorizada(request, env)) {
+    return json(
+      { error: "equipe_necessaria", message: "Ative o Acesso da equipe neste aparelho para sincronizar. Os dados continuam salvos no aparelho." },
+      401
+    );
+  }
   const body = await request.json().catch(() => null);
   if (!body) return badRequest("json invalido");
 

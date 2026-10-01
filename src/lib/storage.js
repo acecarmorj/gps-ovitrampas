@@ -6,7 +6,7 @@
  * - Background Sync: Fila de envio automático assim que o aparelho detectar internet.
  */
 
-import { getChaveEquipe } from './acessoEquipe';
+import { getChaveEquipe, getAgente } from './acessoEquipe';
 
 const DB_NAME = 'gps_ovitrampas_db';
 const DB_VERSION = 2;
@@ -352,6 +352,7 @@ export async function cadastrarArmadilha({
   moradorNome,
   fotoDataUrl
 }) {
+  if (!String(moradorNome || '').trim()) throw new Error('Nome do morador é obrigatório.');
   const id = 'arm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
 
   const novaArmadilha = {
@@ -598,7 +599,7 @@ export async function registrarLeituraLaboratorio({
     numeroPalheta: String(numeroPalheta).trim() || 'P-01',
     ovos: qtdOvos,
     positiva: qtdOvos > 0,
-    tecnicoNome: tecnicoNome || 'Laboratório Carmo',
+    tecnicoNome: tecnicoNome || getAgente() || 'Laboratório Carmo',
     // Como a contagem foi feita (app, IA, correções à mão). Antes os campos
     // da IA chegavam aqui e eram descartados - nenhuma leitura guardava de
     // onde veio o número. Vai para o D1 como JSON (coluna laudo_auditoria).
