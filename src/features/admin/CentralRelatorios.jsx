@@ -6,7 +6,7 @@ import {
   CICLO_SEMANA_1,
   CICLO_SEMANA_2
 } from '../../lib/ciclosOvitrampas';
-import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos, mesclarCiclos } from '../../lib/mapaPoligonos';
+import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos, mesclarCiclos, metricasAmbas, idvDe } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
 import { gerarRelatorioEntomologicoLimpo } from '../../lib/pdfRelatorioEntomologicoLimpo';
@@ -45,7 +45,7 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
         secoes: [
           { armadilhas: ciclos.A, grupos: agruparPorPoligono(ciclos.A), metricas: ciclos.mA, ciclo: 'A' },
           { armadilhas: ciclos.B, grupos: agruparPorPoligono(ciclos.B), metricas: ciclos.mB, ciclo: 'B' },
-          { armadilhas: AB, grupos: agruparPorPoligono(AB), metricas: calcularMetricasCiclo(AB), ciclo: 'Ambas' }
+          { armadilhas: AB, grupos: agruparPorPoligono(AB), metricas: metricasAmbas(AB), ciclo: 'Ambas' }
         ],
         territorioLabel: 'Todo o município',
         fundo: fundoMapa,
@@ -89,11 +89,12 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
           {m.totalLidas < m.total ? ' (parcial)' : ' (completo)'}
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+      <div className="mt-2 grid grid-cols-4 gap-2 text-center">
         {[
           ['Ovos', m.totalOvos],
           ['IPO', `${m.ipo.toFixed(1).replace('.', ',')}%`],
-          ['IDO', m.ido.toFixed(1).replace('.', ',')]
+          ['IDO', m.ido.toFixed(1).replace('.', ',')],
+          ['IDV', idvDe(m).toFixed(1).replace('.', ',')]
         ].map(([t, v]) => (
           <div key={t}>
             <div className="text-[10px] font-bold uppercase text-slate-500">{t}</div>

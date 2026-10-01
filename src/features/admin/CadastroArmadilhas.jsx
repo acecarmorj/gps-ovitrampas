@@ -42,6 +42,9 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
           arm,
           ovosA: a && temLeitura(a) ? Number(a.ultimosOvos) : null,
           ovosB: b && temLeitura(b) ? Number(b.ultimosOvos) : null,
+          mediaAB: ((a && temLeitura(a)) || (b && temLeitura(b)))
+            ? (((a && temLeitura(a) ? Number(a.ultimosOvos) : 0) + (b && temLeitura(b) ? Number(b.ultimosOvos) : 0)) / (((a && temLeitura(a)) ? 1 : 0) + ((b && temLeitura(b)) ? 1 : 0)))
+            : null,
           ovosAB: (a && temLeitura(a)) || (b && temLeitura(b)) ? (a && temLeitura(a) ? Number(a.ultimosOvos) : 0) + (b && temLeitura(b) ? Number(b.ultimosOvos) : 0) : null,
           palhetaA: a?.dadosCiclos?.palhetaA || '-',
           palhetaB: b?.dadosCiclos?.palhetaB || '-'
@@ -194,7 +197,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
             </tr>
           </thead>
           <tbody>
-            {filtradas.map(({ arm, ovosA, ovosB, ovosAB }) => (
+            {filtradas.map(({ arm, ovosA, ovosB, ovosAB, mediaAB }) => (
               <tr key={arm.id} className="border-t border-slate-200 hover:bg-slate-50">
                 <td className="px-2 py-1.5 font-black">OV-{arm.numero}</td>
                 <td className="px-2 py-1.5">
@@ -216,7 +219,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
                   {ovosB === null ? '-' : (<><Ponto ovos={ovosB} />{ovosB}</>)}
                 </td>
                 <td className="px-2 py-1.5 text-right font-black">
-                  {ovosAB === null ? '-' : (<><Ponto ovos={ovosAB} />{ovosAB}</>)}
+                  {ovosAB === null ? '-' : (<><Ponto ovos={mediaAB} />{ovosAB}</>)}
                 </td>
                 <td className="px-2 py-1.5 text-right">
                   <button

@@ -5,7 +5,7 @@
  * Cor so na bolinha da faixa de risco (5 cores).
  */
 import { adaptarArmadilhasParaCiclo, calcularMetricasCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from './ciclosOvitrampas';
-import { mesclarCiclos } from './mapaPoligonos';
+import { mesclarCiclos, coresDosBairros, metricasAmbas, idvDe } from './mapaPoligonos';
 import { faixaDeOvos, temLeitura } from './mapaPoligonos';
 import { temAcessoEquipe } from './acessoEquipe';
 import { carregarTimbresOficiais, PROPORCAO_BRASAO_CARMO } from './timbresOficiais';
@@ -31,7 +31,7 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   const porNumB = new Map(B.map((b) => [String(b.numero), b]));
   const mA = calcularMetricasCiclo(A);
   const mB = calcularMetricasCiclo(B);
-  const mAB = calcularMetricasCiclo(mesclarCiclos(A, B));
+  const mAB = metricasAmbas(mesclarCiclos(A, B));
 
   const linhas = armadilhas
     .map((arm, i) => {
@@ -74,7 +74,7 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
 
   // ---------- resumo A e B ----------
   const resumo = (nome, m, parcial) =>
-    `${nome}: ${m.totalLidas} de ${m.total} palhetas lidas${parcial ? ' (parcial)' : ''} · ${m.totalOvos.toLocaleString('pt-BR')} ovos · IPO ${n1(m.ipo)}% · IDO ${n1(m.ido)}`;
+    `${nome}: ${m.totalLidas} de ${m.total} palhetas lidas${parcial ? ' (parcial)' : ''} · ${m.totalOvos.toLocaleString('pt-BR')} ovos · IPO ${n1(m.ipo)}% · IDO ${n1(m.ido)} · IDV ${n1(m.idv ?? idvDe(m))}`;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...PRETO);
@@ -119,6 +119,8 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
     return r;
   });
 
+  const coresBairro = coresDosBairros(mesclarCiclos(A, B), (a) => a.bairro || a.microarea || '-');
+  const iBairro = cab.indexOf('Bairro');
   autoTable(doc, {
     startY: 49,
     margin: { left: M, right: M, bottom: 14 },
@@ -131,6 +133,16 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
       [iOvosA]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } },
       [iOvosB]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } },
       [iOvosAB]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } }
+    },
+    didParseCell: (d) => {
+      if (d.section === 'body' && d.column.index === iBairro) {
+        const a = linhas[d.row.index].arm;
+        const c = coresBairro.get(a.bairro || a.microarea || '-');
+        if (c) {
+          d.cell.styles.textColor = c;
+          d.cell.styles.fontStyle = 'bold';
+        }
+      }
     },
     didDrawCell: (d) => {
       if (d.section !== 'body') return;

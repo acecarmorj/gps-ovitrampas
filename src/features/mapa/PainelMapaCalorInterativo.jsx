@@ -17,7 +17,9 @@ import {
   nomePoligono,
   estimarOvosNoPonto,
   centroDoPoligono,
-  mesclarCiclos
+  mesclarCiclos,
+  metricasAmbas,
+  idvDe
 } from '../../lib/mapaPoligonos';
 import { getAllPolygons } from '../../lib/geoDetection';
 
@@ -70,7 +72,7 @@ export function PainelMapaCalorInterativo({
   const [verNevoeiro, setVerNevoeiro] = useState(true);
   const [verNumeros, setVerNumeros] = useState(true);
   const [zoomNevoeiro, setZoomNevoeiro] = useState(false); // nevoeiro liberado com zoom de cidade, mesmo no municipio
-  const [zoomPerto, setZoomPerto] = useState(false); // rotulos so aparecem com zoom (evita poluir o mapa)
+  const [zoomAtual, setZoomAtual] = useState(0);
   const [selecionada, setSelecionada] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
 
@@ -100,7 +102,7 @@ export function PainelMapaCalorInterativo({
     if (ciclo === CICLO_SEMANA_2) return porCiclo.B;
     return mesclarCiclos(porCiclo.A, porCiclo.B);
   }, [ciclo, porCiclo]);
-  const mAB = useMemo(() => calcularMetricasCiclo(doTerrAB), [doTerrAB]);
+  const mAB = useMemo(() => metricasAmbas(doTerrAB), [doTerrAB]);
   const doTerritorio = useMemo(() => {
     if (ciclo === CICLO_SEMANA_1) return doTerrA;
     if (ciclo === CICLO_SEMANA_2) return doTerrB;
@@ -108,6 +110,11 @@ export function PainelMapaCalorInterativo({
   }, [ciclo, doTerrA, doTerrB, doTerrAB]);
 
   const ehAmbas = ciclo === 'ambas';
+  // Rotulos (numero + ovos de A e B): locais pequenos (distritos) mostram com menos zoom; cidade e municipio, so de perto.
+  const limiteZoomRotulo = territorio !== 'todos' && doTerritorio.length <= 8 ? 13 : 16;
+  const zoomPerto = zoomAtual >= limiteZoomRotulo;
+  // Numeros: completo (n + ovos A e B) de perto; so o numero, pequeno, no zoom normal; nada com o mapa muito aberto.
+  const modoRotulo = !verNumeros ? 'nenhum' : zoomPerto ? 'completo' : zoomAtual >= 12 ? 'compacto' : 'nenhum';
 
   // Ovos de A e de B de cada armadilha (rotulo do mapa).
   const rotuloOvos = useMemo(() => {
@@ -122,7 +129,7 @@ export function PainelMapaCalorInterativo({
   const metricas = ciclo === CICLO_SEMANA_2 ? mB : mA;
   const parcialB = mB.totalLidas < mB.total;
 
-  const grupos = useMemo(() => agruparPorPoligono(doTerritorio), [doTerritorio]);
+  const grupos = useMemo(() => agruparPorPoligono(todasDoCiclo), [todasDoCiclo]);
 
   const linhas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -170,7 +177,7 @@ export function PainelMapaCalorInterativo({
     const map = mapaRef.current;
     if (!map) return undefined;
     const atualizar = () => {
-      setZoomPerto(map.getZoom() >= 16);
+      setZoomAtual(map.getZoom());
       setZoomNevoeiro(map.getZoom() >= 9);
     };
     atualizar();
@@ -253,7 +260,7 @@ export function PainelMapaCalorInterativo({
     if (verPoligonos) {
       // contexto: quarteiroes sem armadilha, so contorno cinza
       // Quarteiroes SEM armadilha: cor estimada pela mescla das armadilhas proximas (mais clarinho = estimado)
-      const lidasParaEstimar = doTerritorio.filter(temLeitura);
+      const lidasParaEstimar = todasDoCiclo.filter(temLeitura);
       getAllPolygons().forEach((p) => {
         if (p.territoryType === 'distrito' || comArmadilha.has(p.id)) return;
         const c = centroDoPoligono(p.coordinates);
@@ -293,7 +300,7 @@ export function PainelMapaCalorInterativo({
       });
     }
 
-    doTerritorio.forEach((a) => {
+    todasDoCiclo.forEach((a) => {
       const lat = Number(a.latitude);
       const lng = Number(a.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -318,31 +325,37 @@ export function PainelMapaCalorInterativo({
         const vA = rotuloOvos.get(String(a.numero));
         const txt = (v) => (v === null || v === undefined ? '-' : v);
         marcador.bindTooltip(
-          `<b>${a.numero}</b> A ${txt(vA?.a)} · B ${txt(vA?.b)}`,
-          verNumeros && zoomPerto
-            ? { permanent: true, direction: 'bottom', offset: [0, 5], className: 'rotulo-ovo' }
-            : { direction: 'top', className: 'rotulo-ovo' }
+          modoRotulo === 'compacto' ? `<b>${a.numero}</b>` : `<b>${a.numero}</b> A ${txt(vA?.a)} · B ${txt(vA?.b)}`,
+          modoRotulo === 'nenhum'
+            ? { direction: 'top', className: 'rotulo-ovo' }
+            : { permanent: true, direction: 'bottom', offset: [0, 5], className: modoRotulo === 'compacto' ? 'rotulo-ovo rotulo-num' : 'rotulo-ovo' }
         );
         marcador.on('click', () => setSelecionada(a.id ?? a.numero));
       }
     });
 
-  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos, verNumeros, zoomPerto, rotuloOvos, verNevoeiro, territorio, zoomNevoeiro, fundo]);
+  }, [grupos, todasDoCiclo, verPoligonos, verCalor, verPontos, modoRotulo, rotuloOvos, verNevoeiro, territorio, zoomNevoeiro, fundo]);
 
-  // Enquadra o mapa so quando o territorio muda (ou na primeira vez que ha pontos).
+  // Enquadra o mapa ao clicar num botao de local (e na primeira vez que ha pontos).
   // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
-  const ultimoEnquadramentoRef = useRef(null);
+  const [fitTick, setFitTick] = useState(0);
+  const ultimoFitTickRef = useRef(-1);
   useEffect(() => {
     const map = mapaRef.current;
     if (!map) return;
+    if (ultimoFitTickRef.current === fitTick) return;
     const pts = doTerritorio
       .map((a) => [Number(a.latitude), Number(a.longitude)])
       .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo));
     if (pts.length === 0) return;
-    if (ultimoEnquadramentoRef.current === territorio) return;
-    ultimoEnquadramentoRef.current = territorio;
+    ultimoFitTickRef.current = fitTick;
     map.fitBounds(L.latLngBounds(pts).pad(0.15), { maxZoom: 16 });
-  }, [territorio, doTerritorio]);
+  }, [fitTick, doTerritorio]);
+
+  const escolherLocal = (id) => {
+    setTerritorio(id);
+    setFitTick((t) => t + 1);
+  };
 
   const baixarPdf = async () => {
     try {
@@ -388,6 +401,7 @@ export function PainelMapaCalorInterativo({
     { t: 'Ovos', v: m.totalOvos },
     { t: 'IPO', v: `${m.ipo.toFixed(1).replace('.', ',')}%` },
     { t: 'IDO', v: m.ido.toFixed(1).replace('.', ',') },
+    { t: 'IDV', v: (m.idv ?? idvDe(m)).toFixed(1).replace('.', ',') },
     { t: 'Focos > 100', v: m.criticos }
   ];
   const linhasKpi = ehAmbas
@@ -397,7 +411,7 @@ export function PainelMapaCalorInterativo({
 
   return (
     <div className="flex flex-col gap-3 p-3 sm:p-4 max-w-[1400px] mx-auto w-full">
-      <style>{`.rotulo-ovo{background:rgba(255,255,255,.93);border:1px solid #111;border-radius:5px;padding:0 4px;font:600 10px/1.35 system-ui,sans-serif;color:#111;box-shadow:none}.rotulo-ovo:before{display:none}`}</style>
+      <style>{`.rotulo-ovo{background:rgba(255,255,255,.93);border:1px solid #111;border-radius:5px;padding:0 4px;font:600 10px/1.35 system-ui,sans-serif;color:#111;box-shadow:none}.rotulo-ovo:before{display:none}.rotulo-num{font-size:9px;padding:0 3px;border-radius:4px;border-color:#555}`}</style>
       <div className="flex flex-wrap items-center gap-2">
         {onVoltar && (
           <button onClick={onVoltar} className="p-2 rounded-lg border border-slate-200 bg-white" aria-label="Voltar">
@@ -420,15 +434,20 @@ export function PainelMapaCalorInterativo({
         >
           <Download size={13} /> {gerandoPdf ? 'Gerando...' : 'Baixar PDF (A, B e Ambas)'}
         </button>
-        <select
-          value={territorio}
-          onChange={(e) => setTerritorio(e.target.value)}
-          className="text-xs font-semibold border border-slate-200 rounded-lg px-2 py-1.5 bg-white"
-        >
-          {TERRITORIOS.map((t) => (
-            <option key={t.id} value={t.id}>{t.label}</option>
-          ))}
-        </select>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] font-bold text-slate-500 mr-1">Local</span>
+        {TERRITORIOS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => escolherLocal(t.id)}
+            className={chave(territorio === t.id)}
+          >
+            {t.label.replace('Distrito de ', '')}
+          </button>
+        ))}
       </div>
 
       {mostrarParcialB && (
@@ -441,7 +460,7 @@ export function PainelMapaCalorInterativo({
       {linhasKpi.map((linha) => (
         <div key={linha.rotulo || 'unico'} className="flex flex-col gap-1">
           {linha.rotulo && <div className="text-xs font-black text-black">{linha.rotulo}</div>}
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {linha.k.map((k) => (
               <div key={k.t} className="rounded-lg border border-slate-300 bg-white px-3 py-2">
                 <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{k.t}</div>
@@ -454,7 +473,7 @@ export function PainelMapaCalorInterativo({
 
       {ehAmbas && (
         <div className="text-[11px] text-slate-600">
-          Ambas soma os ovos de A e de B de cada armadilha; é positiva se foi positiva em A ou em B. O Ciclo B ainda é parcial, então Ambas muda conforme o laboratório lança as demais palhetas.
+          Ambas soma os ovos de A e de B de cada armadilha (coluna A + B); é positiva se foi positiva em A ou em B. A cor usa a média por palheta. O Ciclo B ainda é parcial, então Ambas muda conforme o laboratório lança as demais palhetas.
         </div>
       )}
 

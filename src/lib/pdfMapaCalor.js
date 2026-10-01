@@ -3,7 +3,8 @@
  * Mapa desenhado em vetor (sem imagem de satelite): nitido na impressora, sem depender de internet.
  * Secoes: Ciclo A, Ciclo B e Ambas (A + B, ovos somados por armadilha).
  */
-import { faixaDeOvos, FAIXAS_RISCO, temLeitura, agruparPorPoligono } from './mapaPoligonos';
+import { faixaDeOvos, FAIXAS_RISCO, temLeitura, agruparPorPoligono, coresDosBairros, idvDe } from './mapaPoligonos';
+import { adicionarPaginasEstrategia } from './pdfEstrategia';
 import { getAllPolygons } from './geoDetection';
 import { classificarTerritorio } from './pdfRelatorioEntomologico';
 import { mercN, invMercN, gerarFundoSatelite } from './fundoSatelite';
@@ -400,29 +401,26 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.line(M, 24, W - M, 24);
 
   // ---------- indicadores ----------
-  let kpis;
-  if (ciclo === 'Ambas') {
-    // Ambas = A e B juntos: ovos somados por armadilha; positiva se foi positiva em A ou em B
-    const lidasAB = armadilhas.filter(temLeitura);
-    const posAB = lidasAB.filter((a) => Number(a.ultimosOvos) > 0);
-    const ovosAB = lidasAB.reduce((s, a) => s + Number(a.ultimosOvos), 0);
-    kpis = [
-      ['Armadilhas lidas (A ou B)', `${lidasAB.length} de ${armadilhas.length}`],
-      ['Total de ovos (A + B)', String(ovosAB)],
-      ['IPO (A ou B)', `${fmt(lidasAB.length ? (posAB.length / lidasAB.length) * 100 : 0)}%`],
-      ['IDO (A + B)', fmt(posAB.length ? ovosAB / posAB.length : 0)],
-      ['Focos acima de 100 ovos', String(lidasAB.filter((a) => Number(a.ultimosOvos) > 100).length)]
-    ];
-  } else {
-    kpis = [
-      ['Palhetas lidas', `${metricas.totalLidas} de ${metricas.total}`],
-      ['Total de ovos', String(metricas.totalOvos)],
-      ['IPO (positividade)', `${fmt(metricas.ipo)}%`],
-      ['IDO (densidade)', fmt(metricas.ido)],
-      ['Focos acima de 100 ovos', String(metricas.criticos)]
-    ];
-  }
-  const larg = (W - 2 * M - 4 * 3) / 5;
+  const idvM = metricas.idv ?? idvDe(metricas);
+  const kpis =
+    ciclo === 'Ambas'
+      ? [
+          ['Armadilhas lidas (A ou B)', `${metricas.totalLidas} de ${metricas.total}`],
+          ['Total de ovos (A + B)', String(metricas.totalOvos)],
+          ['IPO (A ou B)', `${fmt(metricas.ipo)}%`],
+          ['IDO', fmt(metricas.ido)],
+          ['IDV (média por palheta)', fmt(idvM)],
+          ['Focos > 100 (média)', String(metricas.criticos)]
+        ]
+      : [
+          ['Palhetas lidas', `${metricas.totalLidas} de ${metricas.total}`],
+          ['Total de ovos', String(metricas.totalOvos)],
+          ['IPO (positividade)', `${fmt(metricas.ipo)}%`],
+          ['IDO', fmt(metricas.ido)],
+          ['IDV (ovos ÷ lidas)', fmt(idvM)],
+          ['Focos acima de 100', String(metricas.criticos)]
+        ];
+  const larg = (W - 2 * M - 5 * 3) / 6;
   kpis.forEach(([t, v], i) => {
     const x = M + i * (larg + 3);
     doc.setDrawColor(...LINHA);
@@ -500,7 +498,8 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(...CINZA);
-  doc.text('Uso interno. Ordenado da maior para a menor contagem.', M, 19);
+  doc.text('Uso interno. Ordenado da maior para a menor contagem. O nome do bairro tem a cor da faixa do seu pior foco.', M, 19);
+  const coresBairro = coresDosBairros(armadilhas, (a) => a.bairro || a.microarea || '-');
 
   const ordenadas = [...armadilhas].sort((a, b) => Number(b.ultimosOvos ?? -1) - Number(a.ultimosOvos ?? -1));
   autoTable(doc, {
@@ -518,6 +517,16 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
     styles: { fontSize: 8, cellPadding: 1.6, textColor: PRETO, lineColor: LINHA, lineWidth: 0.1 },
     headStyles: { fillColor: [255, 255, 255], textColor: PRETO, fontStyle: 'bold', lineColor: PRETO, lineWidth: { bottom: 0.4 } },
     columnStyles: { 4: { halign: 'right', fontStyle: 'bold' }, 5: { cellPadding: { left: 6, top: 1.6, bottom: 1.6, right: 1.6 } } },
+    didParseCell: (d) => {
+      if (d.section === 'body' && d.column.index === 1) {
+        const a = ordenadas[d.row.index];
+        const c = coresBairro.get(a.bairro || a.microarea || '-');
+        if (c) {
+          d.cell.styles.textColor = c;
+          d.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
     didDrawCell: (d) => {
       if (d.section === 'body' && d.column.index === 5) {
         const f = faixaDeOvos(ordenadas[d.row.index].ultimosOvos);
@@ -526,6 +535,32 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
       }
     }
   });
+  }
+
+  const secA = listaSecoes.find((x) => x.ciclo === 'A');
+  const secB = listaSecoes.find((x) => x.ciclo === 'B');
+  if (secA && secB && territorioLabel === 'Todo o município') {
+    adicionarPaginasEstrategia(doc, {
+      autoTable,
+      A: secA.armadilhas,
+      B: secB.armadilhas,
+      prefixo: 'OV',
+      orientacao: 'landscape',
+      cabecalho: (d, t, st) => {
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(12);
+        d.setTextColor(...PRETO);
+        d.text(t, M, 14);
+        if (st) {
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(8.5);
+          d.setTextColor(...CINZA);
+          d.text(st, M, 19);
+        }
+      },
+      yInicio: 24,
+      M
+    });
   }
 
   const total = doc.getNumberOfPages();

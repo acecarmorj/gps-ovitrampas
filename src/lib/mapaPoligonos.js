@@ -114,9 +114,11 @@ export function centroDoPoligono(coords = []) {
 }
 
 /**
- * "Ambas" = Ciclo A e Ciclo B juntos: os ovos das duas palhetas da armadilha sao SOMADOS.
- * Armadilha lida so em um dos ciclos conta com o que tem (o B esta parcial). ovosA/ovosB seguem
- * disponiveis para os rotulos e o campo ovosAmbas guarda o total.
+ * "Ambas" = Ciclo A e Ciclo B juntos.
+ *  - ovosAmbas = SOMA dos ovos das duas palhetas (total informativo);
+ *  - ultimosOvos = MEDIA por palheta (soma / palhetas lidas): e o valor usado para a COR/faixa, porque a escala
+ *    de risco (0, 1-20, 21-50, 51-100, >100) e por palheta. Assim 60 + 60 = media 60 (faixa 51 a 100), nao "critica".
+ * Armadilha lida so em um dos ciclos conta com o que tem (o B esta parcial).
  */
 export function mesclarCiclos(listaA = [], listaB = []) {
   const porNumero = new Map(listaB.map((b) => [String(b.numero), b]));
@@ -124,7 +126,69 @@ export function mesclarCiclos(listaA = [], listaB = []) {
     const y = porNumero.get(String(x.numero));
     const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
     const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
-    const soma = oA === null && oB === null ? null : (oA ?? 0) + (oB ?? 0);
-    return { ...x, ultimosOvos: soma, ovosA: oA, ovosB: oB, ovosAmbas: soma };
+    const n = (oA === null ? 0 : 1) + (oB === null ? 0 : 1);
+    const soma = n === 0 ? null : (oA ?? 0) + (oB ?? 0);
+    const media = n === 0 ? null : Math.round((soma / n) * 10) / 10;
+    return { ...x, ultimosOvos: media, ovosA: oA, ovosB: oB, ovosAmbas: soma, palhetasLidas: n };
   });
+}
+
+/** Indicadores de "Ambas" (lista vinda de mesclarCiclos): IPO por armadilha (positiva em A ou B), IDO/IDV por palheta. */
+export function metricasAmbas(lista = []) {
+  const lidas = lista.filter((a) => a.palhetasLidas > 0);
+  const pos = lidas.filter((a) => a.ovosAmbas > 0);
+  const ovos = lidas.reduce((s, a) => s + a.ovosAmbas, 0);
+  const palhetas = lidas.reduce((s, a) => s + a.palhetasLidas, 0);
+  const palPos = lidas.reduce((s, a) => s + (a.ovosA > 0 ? 1 : 0) + (a.ovosB > 0 ? 1 : 0), 0);
+  return {
+    total: lista.length,
+    totalLidas: lidas.length,
+    totalPositivas: pos.length,
+    totalOvos: ovos,
+    palhetasLidas: palhetas,
+    ipo: lidas.length ? (pos.length / lidas.length) * 100 : 0,
+    ido: palPos ? ovos / palPos : 0,
+    idv: palhetas ? ovos / palhetas : 0,
+    criticos: lidas.filter((a) => Number(a.ultimosOvos) > 100).length
+  };
+}
+
+/** IDV de um ciclo: ovos / armadilhas examinadas (positivas ou nao) - Nota Tecnica MS 3/2025, item 4.27. */
+export function idvDe(m) {
+  return m && m.totalLidas ? m.totalOvos / m.totalLidas : 0;
+}
+
+// Cor do TEXTO de cada faixa (mais escura que a do mapa para ler bem no papel; mesma familia das 5 cores).
+const COR_TEXTO_FAIXA = {
+  sem_leitura: [107, 114, 128],
+  negativa: [37, 99, 235],
+  baixa: [22, 163, 74],
+  media: [202, 138, 4],
+  alta: [234, 88, 12],
+  critica: [220, 38, 38]
+};
+
+export function corTextoDaFaixa(id) {
+  return COR_TEXTO_FAIXA[id] || COR_TEXTO_FAIXA.sem_leitura;
+}
+
+/**
+ * Cor do nome de cada bairro/local = faixa do PIOR FOCO (maior contagem) dentre as armadilhas lidas dele.
+ * Ex.: Progresso tem um foco de 147 ovos -> o nome "Progresso" sai em vermelho no relatorio.
+ * Devolve Map(nome -> [r, g, b]).
+ */
+export function coresDosBairros(lista = [], nomeFn) {
+  const pior = new Map();
+  lista.forEach((a) => {
+    const n = nomeFn(a);
+    if (!pior.has(n)) pior.set(n, null);
+    if (temLeitura(a)) {
+      const v = Number(a.ultimosOvos);
+      const p = pior.get(n);
+      if (p === null || v > p) pior.set(n, v);
+    }
+  });
+  const out = new Map();
+  pior.forEach((v, n) => out.set(n, corTextoDaFaixa(faixaDeOvos(v).id)));
+  return out;
 }

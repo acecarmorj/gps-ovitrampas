@@ -3178,3 +3178,20 @@ Antes o Claude mostrava Ambas = maior contagem e dizia "nunca somar" (por causa 
 - ATENCAO (limitacao): o Ciclo B esta PARCIAL (26 de 56); Ambas muda quando o laboratorio lancar as demais. A escala de risco (0, 1-20, 21-50, 51-100, >100) e por palheta; aplicada a soma de duas palhetas ela puxa a armadilha para faixa mais alta.
 - Mapa: distritos separados no seletor (Influencia, Corrego da Prata, Porto Velho, Ilha dos Pombos, Barra); nevoeiro tambem no municipio inteiro (alcance menor com o mapa aberto).
 GEMINI: ao auditar, NAO acuse a soma A+B como erro - e regra do Almir.
+
+SECAO 126: PEDIDO DE AUDITORIA AO GEMINI (SO LER, NAO EDITAR) - versao v32 (01/10)
+Ordem do Almir: "a auditoria so audita, nao edita". NAO edite arquivo, NAO commit, NAO deploy.
+CONTEXTO NOVO (para voce nao acusar como erro):
+ - "Ambas" = Ciclo A + B SOMADOS (regra do Almir). Cor/faixa do Ambas = MEDIA por palheta (soma / palhetas lidas); total somado e informativo.
+ - Relatorios seguem a Nota Tecnica MS 3/2025 (CGARB/DEDT/SVSA/MS, SEI 25000.004576/2025-33): IPO, IDO e IDV (item 4.27); troca da palheta em 5 dias (4.19); periodicidade (4.25); acoes em raio de 200 m com indicador em elevacao (4.29); medidas (4.30). A escala 0/1-20/21-50/51-100/>100 NAO consta da nota (e do programa municipal) - ja dito no relatorio.
+ - Nome do bairro colorido pela faixa do PIOR foco do bairro; bairro/Local agora sao botoes (nao menu).
+ARQUIVOS NOVOS/ALTERADOS: src/lib/pdfEstrategia.js (plano de acao + manual; NOVO), src/lib/mapaPoligonos.js (mesclarCiclos, metricasAmbas, idvDe, coresDosBairros), src/lib/pdfRelatorioSesRjLimpo.js, src/lib/pdfMapaCalor.js, src/lib/pdfRelatorioEntomologicoLimpo.js, src/features/mapa/PainelMapaCalorInterativo.jsx, src/features/admin/CentralRelatorios.jsx, src/features/admin/CadastroArmadilhas.jsx.
+PROCURE, nesta ordem:
+ 1. Conta errada: IPO = positivas*100/examinadas; IDO = ovos/positivas; IDV = ovos/examinadas (por ciclo). No Ambas: IPO por armadilha (positiva em A ou B), IDO = ovos/palhetas positivas, IDV = ovos/palhetas lidas. Confira com numeros reais (A: 1.017 ovos, 32 pos, IPO 57,1; B: 951 ovos, 26 lidas, 12 pos, IPO 46,2; Ambas: 1.968 ovos).
+ 2. pdfEstrategia.js: afirmacao que a Nota Tecnica NAO sustenta (alem dos prazos 48 h / 7 dias, que sao marcados como sugestao); tendencia A->B calculada so com armadilhas lidas nos dois ciclos; bairro mal classificado.
+ 3. Dado de morador em relatorio anonimo (SES-RJ usa P-NN e nao pode ter nome/rua).
+ 4. Botoes de local x camada na tela (Quarteiroes, Calor, Pontos, Nevoeiro, Numeros, Mapa, Satelite) em todos os locais; vazamento de camada; zoom/fit.
+ 5. Texto de portugues errado ou caractere que a fonte do PDF nao tem (setas, simbolos).
+REGRAS: cada achado = arquivo:linha + trecho copiado + exemplo concreto. Nao verificou = "NAO VERIFIQUEI". Nada de "testei/executei" sem comando e saida. Sem achado = "nada encontrado" + o que olhou.
+SAIDA: SECAO 127 no fim deste arquivo, do mais grave ao menos grave. O Claude confere cada item antes de mexer.
+==============================================================================
