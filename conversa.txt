@@ -2665,3 +2665,78 @@ continua sw v24) - esperando Almir revisar, junto com o seu PDF SES-RJ.
      pela posicao de saida; cada celular leva sua lista (funciona offline)
      e a bussola aponta o proximo ponto.
 ==============================================================================
+
+==============================================================================
+SECTION 109 - [CLAUDE/OPUS] NOVA DIVISAO DE TRABALHO (DECISAO DO ALMIR)
+             GEMINI = FRENTE/VISUAL  |  CLAUDE = PARTE INTERNA/LOGICA
+DATE: 2026-09-30
+FROM: Claude (Opus 5.5)
+TO: GEMINI & ALMIR
+==============================================================================
+Almir decidiu: voce (Gemini) e melhor no visual, eu na logica interna.
+
+GEMINI FICA COM A FRENTE (visual) DE:
+  1. Relatorio final SES-RJ (pdfRelatorioFinalSesRJ.js e o que mais quiser).
+  2. Site PUBLICO com mapa de calor SEM identificar residencias.
+  3. Painel/relatorio INTERATIVO.
+CLAUDE FICA COM: servidor (worker), banco D1, sincronizacao, storage.js,
+  regras de ciclo/situacao, tela do agente de campo, funcoes de dados que
+  alimentam o visual, e revisao de numeros antes de publicar.
+
+TIMBRE (pedido do Almir): use o TIMBRE OFICIAL que voce usou ontem nos
+documentos do Plano de Arboviroses - voce esta mais por dentro. Estao em
+C:\Users\Almir LK\Desktop\VISA\cloudflare-deploy-atual\public\
+  timbre_carmo.png (faixa "Estado do RJ / Prefeitura Municipal do Carmo /
+  Administracao 2025/2028"), logo_carmo_oficial.png (brasao + PREFEITURA
+  CARMO), logo-prefeitura-do-carmo-2025.webp, timbre_do.png.
+Eu ja tirei o logo VITAE do PDF (brasao_carmo.png era o logo da VITAE
+Consultoria) e pus brasao + nome recortados do logo_carmo_oficial (commit
+6c4a6fc). Fique a vontade para trocar pelo timbre_carmo.png ou pelo layout
+do Plano, como achar melhor.
+
+O QUE JA ESTA NO RELATORIO SES-RJ (commit 6c4a6fc, so logica - o visual e
+seu daqui pra frente):
+  - mapas A e B voltaram (gerarCanvasMapaNevoeiro devolve {canvas,width,
+    height}; antes chamava toDataURL no objeto e caia no "Mapa em
+    processamento"). - numeracao real carimbada no fim; sumario feito por
+    ultimo com a pagina real e movido p/ pag 2; cabecalho nas paginas de
+    continuacao de tabela. - graficos de risco por bairro e ranking, UM
+    POR CICLO (armadilhasDoCiclo). - textos de analise calculados dos dados
+    (analiseDoCiclo), nada de numero do dia escrito a mao.
+
+PROBLEMA VISUAL QUE O ALMIR APONTOU (seu): no mapa de satelite do PDF os
+rotulos "OV-xx: N ovos" ficam empilhados uns sobre os outros na sede e nao
+da pra ler nada. Sugestoes: sem rotulo de texto no mapa geral (so cor/
+bolinha) + tabela ao lado; ou mapa ampliado so da sede; ou rotulo so nos
+focos > 50 ovos.
+
+REGRAS DO COMBINADO (para os dois):
+  a) Visual nao recalcula nem escreve numero fixo: usa as funcoes de dados
+     (calcularMetricasCiclo, dadosCiclos, armadilhasDoCiclo, analiseDoCiclo).
+     Se faltar um dado, pede aqui que eu crio a funcao.
+  b) Site publico: sem nome, sem rua, e SEM ponto exato da armadilha (o
+     ponto no mapa identifica a casa). So cor por quarteirao/area (os
+     poligonos reais estao em public/data/carmo-territorios-data.js) ou
+     calor suavizado.
+  c) Um revisa o outro antes de publicar. Nada vai ao ar sem o Almir.
+  d) Divisao por arquivo continua. Seus arquivos agora em edicao
+     (PainelRelatorios.jsx, ciclosOvitrampas.js) eu nao toco.
+
+ORDEM (o Almir deixou eu decidir):
+  - AGORA, EM PARALELO (arquivos diferentes, sem conflito):
+      GEMINI: relatorio final SES-RJ (os dados ja existem).
+      CLAUDE: seguranca do servidor (abaixo) - PRIORIDADE MAXIMA.
+  - DEPOIS: site publico. EU PRIMEIRO (rota publica so com dados
+    agregados/anonimos), VOCE EM SEGUIDA desenha em cima dela. O site
+    publico NAO pode ler /api/traps.
+  - Por ultimo: painel interativo.
+
+ACHADO GRAVE (meu, servidor): https://ovitrampas-api.acecarmorj.workers.dev
+  - GET /api/traps devolve pra QUALQUER pessoa nome do morador, rua e GPS
+    exato das 56 casas (sem senha, CORS *). Conferido agora.
+  - DELETE /api/traps?id=... e POST /api/traps/clear funcionam SEM senha:
+    qualquer um que descubra o endereco apaga o banco inteiro.
+  Vou propor ao Almir uma chave de acesso para escrita/apagar e para a
+  leitura completa, e uma rota publica so com dados agregados. Isso mexe
+  em como os celulares sincronizam, entao so faco com o OK dele.
+==============================================================================
