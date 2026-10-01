@@ -3535,3 +3535,23 @@ PONTOS PARA A AUDITORIA CONFERIR: (a) assinatura cabe na pagina sem invadir o ro
 ==============================================================================
 
 SECAO 137b (mesmo dia) - Almir perguntou por que A e B tem o mesmo IPO (57,1%). Resposta/verificacao: coincidencia; ambos tem 32 positivas em 56 (IPO conta armadilhas com ovo, nao ovos). IDO difere (31,8 x 83,3). Positivas: 23 nos dois ciclos, 9 so no A, 9 so no B (41 em A ou B). Acrescentado no Resumo executivo (pdfRelatorioSesRjLimpo.js, variavel comparacaoCiclos, so aparece com A e B completos) o achado "Como comparar A e B". PDFs reemitidos com as 4 assinaturas + esse achado; verificado: 24 pag., 0 "parcial", SES com 56 P-NN e 0 OV-. AUDITAR: os numeros 23/9/9 vs. o banco (backups/d1_emissao_SES_20261001_1217.sql, ultima leitura por palheta).
+
+==============================================================================
+SECAO 138 - PEDIDO DE AUDITORIA (01/10/2026) - RESUMO FINAL DO DIA PARA A IA AUDITORA
+Escrito por Claude (Sonnet 5.5). A IA auditora so AUDITA: nao edita arquivos; reporta o que achar com arquivo e linha. Leia tambem as secoes 137 e 137b acima. Repositorio de trabalho: F:\Desktop\GPS OVITRAMPAS (a pasta em C:\ e outra copia). Ultimo commit: a7cb1be. Producao: https://gps-ovitrampas.pages.dev (cache do app v39).
+O QUE FOI FEITO NESTA RODADA:
+ 1 Relatorios oficiais emitidos (pasta emissoes/, fora do git; copias na Area de Trabalho do Almir): RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf (anonimo, codigos P-NN) e RELATORIO_RESULTADOS_INTERNO_CARMO_2026-10-01.pdf (interno, OV-NN). 24 paginas cada.
+ 2 Assinaturas (src/lib/pdfRelatorioSesRjLimpo.js, array "assinaturas", fim da Metodologia): Almir Lemgruber e Larissa Araujo (Responsavel Tecnico); Joice Gama Lopes e Paula Adriana de Miranda (Coordenacao). "Adriana" foi assumido a partir de "Acriana" digitado pelo Almir: CONFIRMAR COM ELE.
+ 3 Resumo executivo ganhou o achado "Como comparar A e B" (variavel comparacaoCiclos): A e B tem o mesmo IPO (57,1% = 32/56) por coincidencia; IDO difere (31,8 x 83,3); 23 positivas nos dois ciclos, 9 so no A, 9 so no B, 41 em A ou B. Texto so aparece com A e B completos.
+ 4 Nomes de arquivo baixados pelo botao agora sao distintos: RELATORIO_TECNICO_SES-RJ_CARMO_<data>.pdf e RELATORIO_RESULTADOS_INTERNO_CARMO_<data>.pdf (antes: relatorio-ses-rj-carmo-<data>.pdf e relatorio-resultados-carmo-<data>.pdf). O Almir disse que "o segundo PDF sobrescreveu o primeiro na hora de salvar"; nao reproduzi (os dois arquivos emitidos tem somas de verificacao diferentes); a mudanca de nomes e preventiva. Cache do service worker subiu de v38 para v39 (public/sw.js).
+ 5 Respondida a duvida do Almir sobre IPO igual: nao e erro de calculo (IPO = positivas/examinadas, ver indicadores() em pdfRelatorioSesRjLimpo.js linha ~44).
+TOTAIS OFICIAIS PARA CONFERIR (banco D1, ultima leitura por palheta; backup backups/d1_emissao_SES_20261001_1217.sql): 56 armadilhas, 113 leituras (todas tecnico "Almir"). Ciclo A 1.017 ovos, 32 positivas, IPO 57,1%, IDO 31,8, IDV 18,2. Ciclo B 2.665 ovos, 32 positivas, IPO 57,1%, IDO 83,3, IDV 47,6. Ambas 3.682 ovos, 41 positivas, IPO 73,2%, IDO 57,5, IDV 32,9. OV-51 palheta B = 106.
+PEDIDO DE AUDITORIA - CONFIRA E RESPONDA COM EVIDENCIA (arquivo:linha):
+ a) Os totais acima batem com o banco/backup? Atencao: ha leituras repetidas da mesma palheta (OV-51 B); vale a mais recente (maisRecente() em src/lib/ciclosOvitrampas.js).
+ b) Os numeros 23 / 9 / 9 / 41 (positivas nos dois, so A, so B, A ou B) batem com os dados?
+ c) O SES-RJ e realmente anonimo? Procure no codigo de pdfRelatorioSesRjLimpo.js e pdfEstrategia.js qualquer caminho que imprima nome, rua, numero do imovel ou observacoes de morador quando variante != 'resultados'/interno.
+ d) A assinatura cabe na pagina 24 sem invadir o rodape; cargos neutros; nenhum outro trecho cita so o Almir como responsavel (grep "Almir" em src/lib/pdf*.js - pdfRelatorioFinalSesRJ.js e pdfRelatorioConsolidado*.js sao geradores antigos, fora de uso no painel: confirme se algum botao ainda os chama).
+ e) Texto "Como comparar A e B": a redacao esta correta tecnicamente (IPO x IDO) e coerente com a Nota Tecnica MS 3/2025 item 4.27?
+ f) Qualquer erro de ortografia/acentuacao nos PDFs gerados.
+REGRAS: nao inventar trechos de codigo nem caminhos de arquivo (na auditoria anterior alguns citados nao existiam; o Claude confere cada item antes de mexer). Nao colar a chave da equipe em nenhum lugar.
+==============================================================================
