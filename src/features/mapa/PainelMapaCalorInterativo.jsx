@@ -16,7 +16,8 @@ import {
   agruparPorPoligono,
   nomePoligono,
   estimarOvosNoPonto,
-  centroDoPoligono
+  centroDoPoligono,
+  mesclarCiclos
 } from '../../lib/mapaPoligonos';
 import { getAllPolygons } from '../../lib/geoDetection';
 
@@ -33,10 +34,11 @@ const TILE_SATELITE = {
 const TERRITORIOS = [
   { id: 'todos', label: 'Todo o município' },
   { id: 'sede', label: 'Cidade (sede urbana)' },
-  { id: 'influencia', label: 'Influência' },
-  { id: 'corrego_da_prata', label: 'Córrego da Prata' },
-  { id: 'porto_velho', label: 'Porto Velho do Cunha' },
-  { id: 'ilhadospombos_barra', label: 'Ilha dos Pombos e Barra' }
+  { id: 'influencia', label: 'Distrito de Influência' },
+  { id: 'corrego_da_prata', label: 'Distrito de Córrego da Prata' },
+  { id: 'porto_velho', label: 'Distrito de Porto Velho do Cunha' },
+  { id: 'ilha_dos_pombos', label: 'Ilha dos Pombos' },
+  { id: 'barra_sao_francisco', label: 'Barra de São Francisco' }
 ];
 
 const RAIO_CALOR_METROS = 175;
@@ -44,7 +46,6 @@ const RAIO_CALOR_METROS = 175;
 function noTerritorio(arm, territorio) {
   if (territorio === 'todos') return true;
   const t = classificarTerritorio(arm).id;
-  if (territorio === 'ilhadospombos_barra') return t === 'ilha_dos_pombos' || t === 'barra_sao_francisco';
   return t === territorio;
 }
 
@@ -91,23 +92,24 @@ export function PainelMapaCalorInterativo({
   const mA = useMemo(() => calcularMetricasCiclo(doTerrA), [doTerrA]);
   const mB = useMemo(() => calcularMetricasCiclo(doTerrB), [doTerrB]);
 
-  // Na visao "Ambas" cada armadilha mostra A e B lado a lado; a cor do mapa e a da MAIOR contagem
-  // entre os dois ciclos (pior foco observado). Nada e somado.
+  // "Ambas" = Ciclo A e Ciclo B juntos: ovos das duas palhetas somados em cada armadilha.
+  const doTerrAB = useMemo(() => mesclarCiclos(doTerrA, doTerrB), [doTerrA, doTerrB]);
+  // O nevoeiro usa TODAS as armadilhas do ciclo (cidade e distritos), nao so as do local escolhido.
+  const todasDoCiclo = useMemo(() => {
+    if (ciclo === CICLO_SEMANA_1) return porCiclo.A;
+    if (ciclo === CICLO_SEMANA_2) return porCiclo.B;
+    return mesclarCiclos(porCiclo.A, porCiclo.B);
+  }, [ciclo, porCiclo]);
+  const mAB = useMemo(() => calcularMetricasCiclo(doTerrAB), [doTerrAB]);
   const doTerritorio = useMemo(() => {
     if (ciclo === CICLO_SEMANA_1) return doTerrA;
     if (ciclo === CICLO_SEMANA_2) return doTerrB;
-    return doTerrA.map((x) => {
-      const y = doTerrB.find((b) => String(b.numero) === String(x.numero));
-      const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
-      const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
-      const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1);
-      return { ...x, ultimosOvos: maior, ovosA: oA, ovosB: oB };
-    });
-  }, [ciclo, doTerrA, doTerrB]);
+    return doTerrAB;
+  }, [ciclo, doTerrA, doTerrB, doTerrAB]);
 
   const ehAmbas = ciclo === 'ambas';
 
-  // Ovos de A e de B de cada armadilha (rotulo do mapa): cada ciclo separado, nunca somados.
+  // Ovos de A e de B de cada armadilha (rotulo do mapa).
   const rotuloOvos = useMemo(() => {
     const m = new Map();
     doTerrA.forEach((x) => m.set(String(x.numero), { a: temLeitura(x) ? Number(x.ultimosOvos) : null, b: null }));
@@ -169,7 +171,7 @@ export function PainelMapaCalorInterativo({
     if (!map) return undefined;
     const atualizar = () => {
       setZoomPerto(map.getZoom() >= 16);
-      setZoomNevoeiro(map.getZoom() >= 13);
+      setZoomNevoeiro(map.getZoom() >= 9);
     };
     atualizar();
     map.on('zoomend', atualizar);
@@ -178,8 +180,8 @@ export function PainelMapaCalorInterativo({
   const nevoeiroLayerRef = useRef(null);
   const [visaoTick, setVisaoTick] = useState(0);
   const assinaturaDados = useMemo(
-    () => `${ciclo}|${territorio}|` + doTerritorio.map((a) => `${a.numero}:${a.ultimosOvos ?? '-'}`).join(','),
-    [ciclo, territorio, doTerritorio]
+    () => `${ciclo}|` + todasDoCiclo.map((a) => `${a.numero}:${a.ultimosOvos ?? '-'}`).join(','),
+    [ciclo, todasDoCiclo]
   );
   useEffect(() => {
     const map = mapaRef.current;
@@ -199,8 +201,8 @@ export function PainelMapaCalorInterativo({
     const map = mapaRef.current;
     if (!map) return;
     const anterior = nevoeiroLayerRef.current;
-    if (!verNevoeiro || (territorio === 'todos' && !zoomNevoeiro)) {
-      // municipio bem aberto: so os pontinhos; o nevoeiro aparece com zoom de cidade ou ao escolher um local
+    if (!verNevoeiro || !zoomNevoeiro) {
+      // mapa muito aberto: so os pontinhos; o nevoeiro aparece a partir do zoom de distrito/cidade
       if (anterior) map.removeLayer(anterior);
       nevoeiroLayerRef.current = null;
       return;
@@ -211,7 +213,7 @@ export function PainelMapaCalorInterativo({
     const wpx = 480;
     const hpx = Math.max(1, Math.round((wpx * tam.y) / tam.x));
     const limites = { latMin: b.getSouth(), latMax: b.getNorth(), lngMin: b.getWest(), lngMax: b.getEast() };
-    const url = gerarNevoeiroDaVisao(doTerritorio, limites, wpx, hpx);
+    const url = gerarNevoeiroDaVisao(todasDoCiclo, limites, wpx, hpx);
     if (anterior) map.removeLayer(anterior);
     nevoeiroLayerRef.current = url
       ? L.imageOverlay(url, [[limites.latMin, limites.lngMin], [limites.latMax, limites.lngMax]], {
@@ -221,7 +223,7 @@ export function PainelMapaCalorInterativo({
         }).addTo(map)
       : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verNevoeiro, assinaturaDados, visaoTick, territorio, zoomNevoeiro]);
+  }, [verNevoeiro, assinaturaDados, visaoTick, zoomNevoeiro]);
 
   // Desenha as camadas quando dados ou chaves mudam
   useEffect(() => {
@@ -305,7 +307,7 @@ export function PainelMapaCalorInterativo({
           interactive: false
         }).addTo(calor);
       }
-      if (verPontos || (verNevoeiro && territorio === 'todos' && !zoomNevoeiro)) {
+      if (verPontos || (verNevoeiro && !zoomNevoeiro)) {
         const marcador = L.circleMarker([lat, lng], {
           radius: 6,
           color: '#ffffff',
@@ -346,13 +348,14 @@ export function PainelMapaCalorInterativo({
     try {
       setGerandoPdf(true);
       const territorioLabel = TERRITORIOS.find((t) => t.id === territorio)?.label || 'Todo o município';
-      const ciclosParaGerar = ehAmbas ? ['A', 'B'] : [ciclo];
-      // um unico arquivo (os navegadores bloqueiam ou perdem o 2o download seguido)
+      // Sempre os tres no mesmo arquivo: Ciclo A, Ciclo B e Ambas
+      const AB = doTerrAB;
       await gerarPdfMapaCalor({
-        secoes: ciclosParaGerar.map((c) => {
-          const lista = c === 'A' ? doTerrA : doTerrB;
-          return { armadilhas: lista, grupos: agruparPorPoligono(lista), metricas: c === 'A' ? mA : mB, ciclo: c };
-        }),
+        secoes: [
+          { armadilhas: doTerrA, grupos: agruparPorPoligono(doTerrA), metricas: mA, ciclo: 'A' },
+          { armadilhas: doTerrB, grupos: agruparPorPoligono(doTerrB), metricas: mB, ciclo: 'B' },
+          { armadilhas: AB, grupos: agruparPorPoligono(AB), metricas: mAB, ciclo: 'Ambas' }
+        ],
         territorioLabel,
         fundo,
         estilo: 'nevoeiro', // todos os mapas dos PDFs em calor de nevoeiro (cidade e cada distrito)
@@ -388,7 +391,7 @@ export function PainelMapaCalorInterativo({
     { t: 'Focos > 100', v: m.criticos }
   ];
   const linhasKpi = ehAmbas
-    ? [{ rotulo: 'Ciclo A', k: kpisDe(mA) }, { rotulo: 'Ciclo B', k: kpisDe(mB) }]
+    ? [{ rotulo: 'Ciclo A', k: kpisDe(mA) }, { rotulo: 'Ciclo B', k: kpisDe(mB) }, { rotulo: 'Ambas (A + B)', k: kpisDe(mAB) }]
     : [{ rotulo: null, k: kpisDe(metricas) }];
   const mostrarParcialB = (ciclo === CICLO_SEMANA_2 || ehAmbas) && parcialB;
 
@@ -403,7 +406,7 @@ export function PainelMapaCalorInterativo({
         )}
         <div className="mr-auto">
           <h1 className="text-base sm:text-lg font-black text-black leading-tight">Mapa de calor por quarteirão</h1>
-          <p className="text-[11px] text-slate-500">Uso interno · um ciclo por vez, nunca somados</p>
+          <p className="text-[11px] text-slate-500">Uso interno · Ciclo A, Ciclo B e Ambas (A + B)</p>
         </div>
         <div className="flex gap-1">
           <button className={chave(ciclo === CICLO_SEMANA_1)} onClick={() => setCiclo(CICLO_SEMANA_1)}>Ciclo A</button>
@@ -415,7 +418,7 @@ export function PainelMapaCalorInterativo({
           disabled={gerandoPdf}
           className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white text-black disabled:opacity-50 flex items-center gap-1"
         >
-          <Download size={13} /> {gerandoPdf ? 'Gerando...' : 'Baixar PDF'}
+          <Download size={13} /> {gerandoPdf ? 'Gerando...' : 'Baixar PDF (A, B e Ambas)'}
         </button>
         <select
           value={territorio}
@@ -451,7 +454,7 @@ export function PainelMapaCalorInterativo({
 
       {ehAmbas && (
         <div className="text-[11px] text-slate-600">
-          Os ciclos nunca são somados. No mapa, cada quarteirão usa a cor da maior contagem entre A e B.
+          Ambas soma os ovos de A e de B de cada armadilha; é positiva se foi positiva em A ou em B. O Ciclo B ainda é parcial, então Ambas muda conforme o laboratório lança as demais palhetas.
         </div>
       )}
 
@@ -477,9 +480,9 @@ export function PainelMapaCalorInterativo({
 
       <div className="grid lg:grid-cols-5 gap-3">
         <div className="lg:col-span-3 rounded-xl overflow-hidden border border-slate-200 bg-white relative">
-          {verNevoeiro && territorio === 'todos' && !zoomNevoeiro && (
+          {verNevoeiro && !zoomNevoeiro && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[500] pointer-events-none bg-white/95 border border-black rounded-lg px-3 py-1 text-[11px] font-bold text-black text-center">
-              Aproxime o zoom ou escolha a cidade ou um distrito para ver o nevoeiro
+              Aproxime o zoom para ver o nevoeiro
             </div>
           )}
           <div ref={mapaDivRef} className="w-full" style={{ height: "clamp(380px, 70vh, 640px)" }} />
@@ -506,6 +509,7 @@ export function PainelMapaCalorInterativo({
                     <>
                       <th className="text-right px-2 py-1.5">Ovos A</th>
                       <th className="text-right px-2 py-1.5">Ovos B</th>
+                      <th className="text-right px-2 py-1.5">A + B</th>
                     </>
                   ) : (
                     <th className="text-right px-2 py-1.5">Ovos</th>
@@ -532,6 +536,7 @@ export function PainelMapaCalorInterativo({
                         <>
                           <td className="px-2 py-1.5 text-right font-bold">{a.ovosA ?? '-'}</td>
                           <td className="px-2 py-1.5 text-right font-bold">{a.ovosB ?? '-'}</td>
+                          <td className="px-2 py-1.5 text-right font-black">{a.ovosAmbas ?? '-'}</td>
                         </>
                       ) : (
                         <td className="px-2 py-1.5 text-right font-bold">{temLeitura(a) ? a.ultimosOvos : '-'}</td>

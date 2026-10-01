@@ -2,10 +2,10 @@
  * Relatorio tecnico SES-RJ (versao enxuta) - A4 retrato, preto no branco.
  * Cor SO nos graficos, mapas e faixas de risco (azul, verde, amarelo, laranja, vermelho).
  * Anonimo: codigos P-NN, bairro e quarteirao. Sem nome de morador nem rua.
- * Um grafico por pagina: Ciclo A, Ciclo B (parcial) e Ambas (A x B lado a lado, NUNCA somados).
+ * Um grafico por pagina: Ciclo A, Ciclo B (parcial) e Ambas (A e B juntos: ovos somados por armadilha).
  */
 import { adaptarArmadilhasParaCiclo, calcularMetricasCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from './ciclosOvitrampas';
-import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono } from './mapaPoligonos';
+import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, mesclarCiclos } from './mapaPoligonos';
 import { desenharMapaELegenda, fundoSateliteDoMapa, gerarNevoeiroDoMapa, limparCacheFundos } from './pdfMapaCalor';
 import { classificarTerritorio } from './pdfRelatorioEntomologico';
 import {
@@ -62,17 +62,8 @@ function agrupar(lista, chaveFn) {
   return m;
 }
 
-// Ambas: A e B lado a lado; a cor do mapa e a da maior contagem entre os dois (nada e somado).
-function mesclarAmbas(listaA, listaB) {
-  const porNumero = new Map(listaB.map((b) => [String(b.numero), b]));
-  return listaA.map((x) => {
-    const y = porNumero.get(String(x.numero));
-    const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
-    const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
-    const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1);
-    return { ...x, ultimosOvos: maior, ovosA: oA, ovosB: oB };
-  });
-}
+// Ambas = Ciclo A e Ciclo B juntos: ovos das duas palhetas somados em cada armadilha.
+const mesclarAmbas = mesclarCiclos;
 
 function texto(doc, t, x, y, { size = 9, bold = false, cor = PRETO, align = 'left', max } = {}) {
   doc.setFont('helvetica', bold ? 'bold' : 'normal');
@@ -208,7 +199,7 @@ function graficoAmbas(doc, bairros, listaA, listaB) {
   texto(doc, 'Barra cheia = Ciclo A (completo) · barra clara = Ciclo B (parcial).', M, y + 13, { size: 8, bold: true });
   texto(
     doc,
-    'O comprimento é o IPO do bairro (armadilhas positivas ÷ lidas). A cor é a faixa do pior foco do bairro no ciclo (maior contagem de ovos). O Ciclo B só inclui palhetas já lidas; os ciclos são comparados lado a lado e nunca somados.',
+    'O comprimento é o IPO do bairro (armadilhas positivas ÷ lidas). A cor é a faixa do pior foco do bairro no ciclo (maior contagem de ovos). O Ciclo B só inclui palhetas já lidas; este gráfico compara A e B lado a lado.',
     M,
     y + 19,
     { size: 8, cor: CINZA, max: LARG }
@@ -292,6 +283,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const mB = calcularMetricasCiclo(B);
   const iA = indicadores(A);
   const iB = indicadores(B);
+  const mAB = calcularMetricasCiclo(AB);
+  const iAB = indicadores(AB);
 
   const usarSat = opcoes.fundo === 'satelite';
   const interno = opcoes.variante === 'resultados';
@@ -329,7 +322,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   });
 
   // quadros A e B
-  const colW = (LARG - 6) / 2;
+  const colW = (LARG - 12) / 3;
   const quadro = (x, titulo, nota, ind, m) => {
     doc.setDrawColor(...PRETO);
     doc.setLineWidth(0.4);
@@ -350,7 +343,8 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     });
   };
   quadro(M, 'CICLO A', 'Completo', iA, mA);
-  quadro(M + colW + 6, 'CICLO B', `Parcial: ${iB.lidas} de ${iB.total} palhetas lidas`, iB, mB);
+  quadro(M + colW + 6, 'CICLO B', `Parcial: ${iB.lidas} de ${iB.total} lidas`, iB, mB);
+  quadro(M + 2 * (colW + 6), 'AMBAS (A + B)', 'Ovos de A e B somados', iAB, mAB);
 
   // achados
   const topA = [...A].filter(temLeitura).sort((a, b) => b.ultimosOvos - a.ultimosOvos).slice(0, 3);
@@ -365,7 +359,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
       ? `Bairros com mais ovos no Ciclo A: ${bairrosA.map((x) => `${x.b} (${nInt(x.ovos)})`).join(', ')}.`
       : null,
     `Ciclo B parcial: ${iB.lidas} de ${iB.total} palhetas lidas, ${nInt(iB.ovos)} ovos, IPO ${n1(iB.ipo)}% e IDO ${n1(iB.ido)}. As demais aguardam leitura laboratorial e os valores serão atualizados.`,
-    'Os ciclos são apresentados lado a lado e nunca somados. A comparação considera apenas palhetas já lidas.'
+    `Ambas (A e B juntos): ${nInt(iAB.ovos)} ovos somados, ${iAB.pos} armadilhas positivas em A ou em B (IPO ${n1(iAB.ipo)}%) e IDO ${n1(iAB.ido)}. Como o Ciclo B é parcial, Ambas será atualizado.`
   ].filter(Boolean);
   texto(doc, 'Principais achados', M, 134, { size: 11, bold: true });
   let ya = 141;
@@ -458,6 +452,49 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     body: ordemB.map((k) => linhaInd(k, bA.get(k) || [], bB.get(k) || []))
   });
 
+  // ---------- INDICADORES DE AMBAS (A ou B): sempre os tres: A, B e Ambas ----------
+  doc.addPage();
+  cabecalhoPagina(doc, timbres, 'Indicadores por território — Ambas', 'Ciclo A e Ciclo B juntos: ovos somados por armadilha; positiva se foi positiva em A ou em B. IPO = positivas ÷ lidas. IDO = ovos ÷ positivas.');
+  const linhaAmbas = (nome, lista) => {
+    const lidasL = lista.filter(temLeitura);
+    const posL = lidasL.filter((a) => Number(a.ultimosOvos) > 0);
+    const ovosL = lidasL.reduce((sm, a) => sm + Number(a.ultimosOvos), 0);
+    const idoL = posL.length ? ovosL / posL.length : null;
+    const linha = [
+      nome,
+      String(lista.length),
+      String(lidasL.length),
+      String(posL.length),
+      nInt(ovosL),
+      lidasL.length ? `${n1((posL.length / lidasL.length) * 100)}%` : '-',
+      idoL === null ? '-' : n1(idoL)
+    ];
+    linha.idos = { 6: idoL };
+    return linha;
+  };
+  const cabAmbas = [['Local', 'Armad.', 'Lidas (A ou B)', 'Pos.', 'Ovos (A + B)', 'IPO', 'IDO']];
+  const estiloAmbas = {
+    ...estiloTab,
+    columnStyles: { 0: { halign: 'left', cellWidth: 52, fontStyle: 'bold' }, }
+  };
+  texto(doc, 'Por região do município', M, 47, { size: 10, bold: true });
+  const abMacro = agrupar(AB, macroDe);
+  autoTable(doc, {
+    ...estiloAmbas,
+    startY: 50,
+    head: cabAmbas,
+    body: [...ORDEM_MACRO.filter((k) => abMacro.has(k)).map((k) => linhaAmbas(k, abMacro.get(k))), linhaAmbas('MUNICÍPIO', AB)]
+  });
+  const yAmb = doc.lastAutoTable.finalY + 10;
+  texto(doc, 'Por bairro / localidade', M, yAmb, { size: 10, bold: true });
+  const abBairro = agrupar(AB, bairroDe);
+  autoTable(doc, {
+    ...estiloAmbas,
+    startY: yAmb + 3,
+    head: cabAmbas,
+    body: ordemB.map((k) => linhaAmbas(k, abBairro.get(k) || []))
+  });
+
   // ---------- 3-5. GRAFICOS (1 por pagina) ----------
   doc.addPage();
   cabecalhoPagina(doc, timbres, 'Gráfico 1 — Ciclo A', 'Armadilhas por faixa de risco em cada bairro. Ciclo A completo: 56 de 56 palhetas lidas.');
@@ -468,7 +505,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   graficoEstratos(doc, ordemB, B);
 
   doc.addPage();
-  cabecalhoPagina(doc, timbres, 'Gráfico 3 — Ambas: Ciclo A e Ciclo B', 'Armadilhas por faixa de risco em cada bairro. Em cada armadilha vale a MAIOR contagem entre o Ciclo A e o Ciclo B; nada é somado.');
+  cabecalhoPagina(doc, timbres, 'Gráfico 3 — Ambas: Ciclo A e Ciclo B', 'Armadilhas por faixa de risco em cada bairro, com os ovos do Ciclo A e do Ciclo B somados em cada armadilha.');
   graficoEstratos(doc, ordemB, AB);
 
   doc.addPage();
@@ -478,7 +515,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   // ---------- MAPAS DE CALOR: cidade e distritos, por ciclo ----------
   await paginasMapasCiclo(doc, timbres, A, 'Ciclo A', 'Escala oficial de 5 cores: azul (0), verde, amarelo, laranja e vermelho (mais de 100 ovos).', usarSat);
   await paginasMapasCiclo(doc, timbres, B, 'Ciclo B (parcial)', `Somente palhetas já lidas (${iB.lidas} de ${iB.total}).`, usarSat);
-  await paginasMapasCiclo(doc, timbres, AB, 'Ambas', 'Em cada ponto vale a maior contagem observada entre o Ciclo A e o Ciclo B. Nada é somado.', usarSat);
+  await paginasMapasCiclo(doc, timbres, AB, 'Ambas', 'Ciclo A e Ciclo B juntos: em cada ponto valem os ovos das duas palhetas somados.', usarSat);
 
   // ---------- 9-10. INVENTARIO ANONIMO ----------
   doc.addPage();
@@ -530,7 +567,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     ['Indicadores', 'IPO (índice de positividade) = armadilhas com ovos ÷ armadilhas lidas × 100. IDO (índice de densidade) = total de ovos ÷ armadilhas positivas.'],
     ['Escala de risco', '0 ovos: negativa · 1 a 20: baixa · 21 a 50: média · 51 a 100: alta · mais de 100: crítica.'],
     ['Anonimização', 'As armadilhas são identificadas por códigos técnicos (P-01 a P-56). Os resultados são apresentados por bairro, microárea e quarteirão, sem nomes de moradores nem endereços.'],
-    ['Limitações', `O Ciclo B está parcial (${iB.lidas} de ${iB.total} palhetas lidas) e será atualizado. Os ciclos nunca são somados; a comparação usa apenas palhetas já lidas.`]
+    ['Limitações', `O Ciclo B está parcial (${iB.lidas} de ${iB.total} palhetas lidas) e será atualizado. O Ambas soma os ovos de A e de B das palhetas já lidas e será atualizado.`]
   ];
   let ym = 48;
   blocos.forEach(([t, c]) => {

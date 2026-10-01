@@ -3038,8 +3038,143 @@ REGRAS: cada achado = arquivo:linha + trecho copiado + exemplo concreto que da e
 SAIDA: SECAO 123 no fim deste arquivo, ordenado do mais grave ao menos grave. O Claude confere cada item antes de mexer.
 ==============================================================================
 
+SECAO 123: AUDITORIA DO GEMINI SOBRE O TRABALHO DO CLAUDE (VERSOES v26 A v28 + SERVIDOR)
+Auditoria realizada estritamente em modo leitura. Nenhum arquivo de producao foi alterado, nenhum commit foi gerado, nenhum deploy foi executado.
+Build validado com sucesso: comando `npm run build` retornou codigo 0 (dist gerado em 6.60s).
+
+ACHADOS ORDENADOS DO MAIS GRAVE AO MENOS GRAVE:
+
+1. [GRAVISSIMO] /api/sync permite escrita, insercao e sobrescrita de dados sem chave da equipe (worker/src/index.js)
+   - Arquivo e linha: worker/src/index.js:366-368 e linhas 76-124 / 158-214
+   - Trecho literal:
+     ```javascript
+     if (path === "/api/sync" && request.method === "POST") {
+       return await handleSync(request, env);
+     }
+     ```
+   - Por que e problema:
+     Na Secao 120 foi implementada protecao contra apagamento bloqueando DELETE /api/traps e POST /api/traps/clear com 403.
+     Porem, a rota POST /api/sync tem CORS aberto ("*") e NAO valida `equipeAutorizada(request, env)`. Qualquer cliente ou atacante externo pode disparar requisicoes POST para /api/sync.
+     Pior ainda: em `upsertTrap`, a protecao `COALESCE(NULLIF(excluded.campo, ''), traps.campo)` so protege se o valor enviado for vazio. Se a requisicao externa enviar qualquer string nao vazia (ex: `"moradorNome": "Invasor"`), o campo `morador_nome` do banco oficial D1 e SOBRESCRITO!
+     Alem disso, os campos `bairro`, `microarea`, `quarteirao`, `latitude`, `longitude`, `precisao_gps`, `status` e `palheta` sao atribuidos diretamente sem COALESCE (`latitude = excluded.latitude`), sendo sobrescritos caso `excluded.atualizada_em >= traps.atualizada_em`.
+     Na tabela `readings` (`upsertReading`), qualquer pessoa nao autorizada pode enviar leituras falsas, inflar contagens de ovos ou alterar o historico epidemiologico do municipio.
+   - Exemplo concreto de entrada:
+     `curl -X POST https://ovitrampas-api.acecarmorj.workers.dev/api/sync -H "Content-Type: application/json" -d '{"traps":[{"id":"arm-01","numero":"01","latitude":-22.0,"longitude":-42.0,"bairro":"Falso","moradorNome":"Hackeado","atualizadaEm":"2099-01-01T00:00:00Z"}]}'`
+     Esse comando altera latitude, longitude, bairro e nome do morador no D1 oficial sem exigir header `X-Team-Key`.
+   - Sugestao de correcao para o Claude:
+     Exigir `equipeAutorizada(request, env)` no POST `/api/sync` antes de processar qualquer lote, ou rejeitar armadilhas e leituras vindas de requisicoes sem chave.
+
+2. [MEDIO] entrarNaEquipe usa fetch nativo sem timeout (risco de pendurar em rede 3G)
+   - Arquivo e linha: src/lib/acessoEquipe.js:33
+   - Trecho literal:
+     ```javascript
+     const res = await fetch(`${URL_API_EQUIPE}/api/auth/check`, { headers: { 'X-Team-Key': k } });
+     ```
+   - Por que e problema:
+     Enquanto todas as outras requisicoes do app usam `fetchComTimeout(..., 8000)` para resiliencia em redes moveis instaveis de campo, `entrarNaEquipe` usa o `fetch` nativo sem `AbortController`.
+     Se o agente de campo estiver com sinal 3G/Edge fraco ou conexao que estagnou com socket aberto, a promise pode ficar pendurada por minutos (timeout padrao do navegador). Como o estado `verificando` fica `true`, o botao do formulario permanece desabilitado em "Verificando...", travando a interface e impedindo novas tentativas.
+   - Exemplo concreto de entrada:
+     Agente clica em "Entrar" com a chave correta enquanto o celular oscila entre 3G e sem sinal. O fetch nao recebe resposta nem falha imediatamente; o app fica travado em "Verificando..." ate o usuario recarregar a pagina.
+   - Sugestao de correcao para o Claude:
+     Usar `fetchComTimeout(`${URL_API_EQUIPE}/api/auth/check`, { headers: { 'X-Team-Key': k } }, 8000)`.
+
+3. [MEDIO] Inconsistencia de URL entre acessoEquipe.js e storage.js para desenvolvimento/staging
+   - Arquivo e linha: src/lib/acessoEquipe.js:6 vs src/lib/storage.js:54-56
+   - Trecho literal:
+     `export const URL_API_EQUIPE = 'https://ovitrampas-api.acecarmorj.workers.dev';` (em acessoEquipe.js:6)
+     vs
+     `const API_BASE_URL = typeof window !== 'undefined' && window.VITE_API_BASE_URL ? window.VITE_API_BASE_URL : 'https://ovitrampas-api.acecarmorj.workers.dev';` (em storage.js:54-56)
+   - Por que e problema:
+     Se for definida `window.VITE_API_BASE_URL` para testes em localhost ou ambiente de homologacao, o `storage.js` usa a URL personalizada e anexa a chave apenas para ela (`String(url).startsWith(API_BASE_URL)`), mas o `acessoEquipe.js` sempre chama o worker de producao fixo.
+   - Exemplo concreto de entrada:
+     Em ambiente de teste local com `window.VITE_API_BASE_URL = 'http://localhost:8787'`, a autenticacao em `/api/auth/check` continua batendo na producao Cloudflare em vez do servidor local.
+
+4. [LEVE] Possivel exposicao indireta de dados em observacoes sem chave de equipe
+   - Arquivo e linha: worker/src/index.js:25-27
+   - Trecho literal:
+     ```javascript
+     function semDadosDeMorador(trap) {
+       return { ...trap, morador_nome: null, rua: null, numero_imovel: null };
+     }
+     ```
+   - Por que e problema:
+     A funcao `semDadosDeMorador` anula `morador_nome`, `rua` e `numero_imovel`, mas mantem intacto o campo `observacoes`.
+     Na rotina de campo dos agentes de endemias, e comum anotarem no campo livre de observacoes referencias a pessoas ou contatos (ex: "casa do Sr. Joao", "falar com dona Maria", "portao trancado, tel: ..."). Esses dados acabam sendo retornados para usuarios sem chave.
+   - Exemplo concreto de entrada:
+     Se uma armadilha tiver `observacoes: "casa da Dona Josefa, chave com vizinho"`, um GET /api/traps sem header X-Team-Key devolve esse texto na propriedade observacoes.
+   - Sugestao de correcao para o Claude:
+     Adicionar `observacoes: null` ou mascarar em `semDadosDeMorador` para quem nao for equipe autorizada.
+
+5. [LEVE] Pareamento de Ciclo A por indice e Ciclo B por numero em pdfRelatorioEntomologicoLimpo.js
+   - Arquivo e linha: src/lib/pdfRelatorioEntomologicoLimpo.js:35-37
+   - Trecho literal:
+     ```javascript
+     const linhas = armadilhas
+       .map((arm, i) => {
+         const a = A[i];
+         const b = porNumB.get(String(arm.numero));
+     ```
+   - Por que e problema:
+     Para o Ciclo B foi adotado o pareamento robusto por numero (`porNumB.get(...)`), mas para o Ciclo A manteve-se o pareamento por indice posicional `A[i]`. Embora no fluxo normal as listas comecem com a mesma ordem, qualquer mudanca futura de ordenacao ou filtro preliminar que afete `A` causara desalinhamento nos dados do Ciclo A em relacao a `armadilhas`.
+   - Exemplo concreto de entrada:
+     Se `armadilhas` tiver ordem diferente de `A` (por exemplo, apos ordenacao alfabetica de bairros), `a` recebera dados de outra armadilha.
+   - Sugestao de correcao para o Claude:
+     Uniformizar criando `const porNumA = new Map(A.map(x => [String(x.numero), x]))` e usar `porNumA.get(String(arm.numero))`.
+
+ITENS AUDITADOS CONFORME FOCO PRINCIPAL:
+
+(1) Algum jeito de ver dados de moradores sem a chave (morador_nome, rua, numero_imovel):
+    NADA ENCONTRADO para esses 3 campos.
+    - GET /api/traps: `semDadosDeMorador` limpa os 3 campos quando sem chave valida.
+    - GET /api/readings: nao possui colunas de morador.
+    - GET /api/public/dados-territoriais: 100% anonimo e agregado (bairro/microarea/quarteirao).
+    - PDFs SES-RJ e Mapa de Calor: exibem apenas codigos tecnicos (P-NN ou OV-NN), bairro e quarteirao.
+    - Relatorio Entomologico: as colunas de morador e endereco sao omitidas se o aparelho nao tem a chave.
+    - Ressalva anotada no Achado 4 sobre o campo livre de observacoes.
+
+(2) Alguma soma de Ciclo A + Ciclo B:
+    NADA ENCONTRADO.
+    - pdfMapaCalor.js: cada ciclo em sua propria secao/pagina. Ambas gera 1 arquivo contendo secoes A e B separadas.
+    - pdfRelatorioSesRjLimpo.js: quadros e tabelas apresentam Ciclo A e Ciclo B estritamente lado a lado. Na mescla de Ambas para o mapa e graficos, utiliza `Math.max(oA, oB)` (pior foco) e nunca a soma de ovos.
+    - PainelMapaCalorInterativo.jsx: `doTerrA` e `doTerrB` mantidos isolados; graficos/KPIs mostram linhas separadas; rotulos mostram `A x · B y`.
+
+(3) Erro de conta (IPO = positivas/lidas, IDO = ovos/positivas, escala de cores):
+    NADA ENCONTRADO.
+    - Formula IPO: `pos.length / lidas.length * 100` com divisao segura por zero.
+    - Formula IDO: `ovos / pos.length` com divisao segura por zero.
+    - Escala de risco em mapaPoligonos.js: 0 azul (#2563eb), 1-20 verde (#16a34a), 21-50 amarelo (#eab308), 51-100 laranja (#f97316), >100 vermelho (#dc2626).
+    - Calculo de estimativa por vizinhanca gaussiana (`estimarOvosNoPonto`): sigma de 300m com corte de cobertura (`somaK < 0.05`), sem risco de divisao por zero.
+
+(4) Risco de travar ou de apagar/sobrescrever dado:
+    - Risco de apagamento em massa via botao/API: mitigado (DELETE /api/traps e POST /api/traps/clear retornam 403).
+    - Risco critico de sobrescrita remota via POST /api/sync detalhado no Achado 1.
+    - Risco de travamento em rede ruim no login de equipe detalhado no Achado 2.
+    - No mapa de calor: `camadasRef.current.poligonos/calor/pontos.clearLayers()` e descarte do `nevoeiroLayerRef` executados corretamente; sem vazamento de camadas ao trocar de aba ou ciclo.
+    - Imagens de satelite: possuem timeout de 8 segundos por tile, teto de 160 tiles e limite de 40 MP no canvas.
+
+(5) Vazamento da chave da equipe:
+    NADA ENCONTRADO.
+    - CHAVE_EQUIPE.txt devidamente ignorado no .gitignore.
+    - Chave nao e commitada no historico git.
+    - Chave nunca e impressa em console.log nem trafega como parametro de URL (GET).
+    - Header `X-Team-Key` em `storage.js:73` so e injetado se a URL comecar por `API_BASE_URL`, impedindo envio acidental para servidores de satelite ou Leaflet.
+
+EXECUCAO DE TESTES LOCAIS:
+- `npm run build`: executado com sucesso (codigo 0, 1895 modulos transformados, dist gerado sem erros).
+- `git status`: preservado intacto.
+- Nenhum arquivo de codigo de producao foi modificado.
+==============================================================================
+
 SECAO 124: CLAUDE - Cadastro e Entomologico refeitos, chave trocada (sw v29, 01/10)
 - Aba Cadastro = src/features/admin/CadastroArmadilhas.jsx (tabela limpa, busca, filtros, editar, CSV; morador/rua so com acesso da equipe; sem botao de apagar). PainelAdminScreen antigo nao e mais usado no painel.
 - Relatorio entomologico = src/lib/pdfRelatorioEntomologicoLimpo.js (paisagem, preto no branco, A e B, bolinha de faixa; colunas de morador/endereco so com acesso da equipe).
 - Chave da equipe trocada a pedido do Almir (guardada em CHAVE_EQUIPE.txt, fora do git). Aviso dado: chave facil de adivinhar = protecao fraca.
 - Mapa: no municipio inteiro os pontos aparecem sempre e ha aviso para escolher cidade/distrito (nevoeiro).
+
+SECAO 125: REGRA NOVA DO ALMIR - "AMBAS" = CICLO A + CICLO B JUNTOS (SOMADOS) - publicado sw v31 (01/10)
+Antes o Claude mostrava Ambas = maior contagem e dizia "nunca somar" (por causa do B parcial). O Almir decidiu: Ambas soma.
+- Ambas: ovos de A e B somados por armadilha; positiva se foi positiva em A ou em B; IPO = positivas/lidas(A ou B); IDO = ovos somados / positivas. Funcao unica: mesclarCiclos() em src/lib/mapaPoligonos.js.
+- Aplicado em: /calor (KPIs, tabela com coluna A+B, mapa, rotulos), PDF do mapa (sempre 3 secoes A, B e Ambas, cidade e cada distrito em nevoeiro), SES-RJ e Resultados (capa com 3 quadros, tabela "Indicadores - Ambas", Grafico 3 Ambas, mapas), Cadastro e Entomologico (coluna A+B).
+- ATENCAO (limitacao): o Ciclo B esta PARCIAL (26 de 56); Ambas muda quando o laboratorio lancar as demais. A escala de risco (0, 1-20, 21-50, 51-100, >100) e por palheta; aplicada a soma de duas palhetas ela puxa a armadilha para faixa mais alta.
+- Mapa: distritos separados no seletor (Influencia, Corrego da Prata, Porto Velho, Ilha dos Pombos, Barra); nevoeiro tambem no municipio inteiro (alcance menor com o mapa aberto).
+GEMINI: ao auditar, NAO acuse a soma A+B como erro - e regra do Almir.

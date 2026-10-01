@@ -69,7 +69,7 @@ export function nomePoligono(poly) {
   return `${poly.folder} · Q-${poly.name}`;
 }
 
-/** Rotulo de cada armadilha: ovos de A e de B lado a lado (cada ciclo separado, nunca somados). */
+/** Rotulo de cada armadilha: ovos de A e de B lado a lado. */
 export function montarRotulosOvos(listaA = [], listaB = []) {
   const m = new Map();
   listaA.forEach((x) => m.set(String(x.numero), { a: temLeitura(x) ? Number(x.ultimosOvos) : null, b: null }));
@@ -111,4 +111,20 @@ export function centroDoPoligono(coords = []) {
   const lat = coords.reduce((s, c) => s + c[0], 0) / coords.length;
   const lng = coords.reduce((s, c) => s + c[1], 0) / coords.length;
   return [lat, lng];
+}
+
+/**
+ * "Ambas" = Ciclo A e Ciclo B juntos: os ovos das duas palhetas da armadilha sao SOMADOS.
+ * Armadilha lida so em um dos ciclos conta com o que tem (o B esta parcial). ovosA/ovosB seguem
+ * disponiveis para os rotulos e o campo ovosAmbas guarda o total.
+ */
+export function mesclarCiclos(listaA = [], listaB = []) {
+  const porNumero = new Map(listaB.map((b) => [String(b.numero), b]));
+  return listaA.map((x) => {
+    const y = porNumero.get(String(x.numero));
+    const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
+    const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
+    const soma = oA === null && oB === null ? null : (oA ?? 0) + (oB ?? 0);
+    return { ...x, ultimosOvos: soma, ovosA: oA, ovosB: oB, ovosAmbas: soma };
+  });
 }

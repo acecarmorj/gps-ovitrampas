@@ -6,7 +6,7 @@ import {
   CICLO_SEMANA_1,
   CICLO_SEMANA_2
 } from '../../lib/ciclosOvitrampas';
-import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos } from '../../lib/mapaPoligonos';
+import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos, mesclarCiclos } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
 import { gerarRelatorioEntomologicoLimpo } from '../../lib/pdfRelatorioEntomologicoLimpo';
@@ -37,14 +37,16 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
     }
   };
 
-  const mapaPdf = (c) =>
-    executar(`mapa${c}`, () => {
-      const lista = c === 'A' ? ciclos.A : ciclos.B;
+  // Sempre os tres: Ciclo A, Ciclo B e Ambas, num unico arquivo
+  const mapaPdf = () =>
+    executar('mapa', () => {
+      const AB = mesclarCiclos(ciclos.A, ciclos.B);
       return gerarPdfMapaCalor({
-        armadilhas: lista,
-        grupos: agruparPorPoligono(lista),
-        metricas: c === 'A' ? ciclos.mA : ciclos.mB,
-        ciclo: c,
+        secoes: [
+          { armadilhas: ciclos.A, grupos: agruparPorPoligono(ciclos.A), metricas: ciclos.mA, ciclo: 'A' },
+          { armadilhas: ciclos.B, grupos: agruparPorPoligono(ciclos.B), metricas: ciclos.mB, ciclo: 'B' },
+          { armadilhas: AB, grupos: agruparPorPoligono(AB), metricas: calcularMetricasCiclo(AB), ciclo: 'Ambas' }
+        ],
         territorioLabel: 'Todo o município',
         fundo: fundoMapa,
         estilo: 'nevoeiro',
@@ -149,10 +151,7 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
       {bloco(
         'Mapa de calor por quarteirão',
         'Mapa do município com quarteirões coloridos, ampliação da sede, mapa de calor em nevoeiro e tabela das armadilhas.',
-        <>
-          {botao('mapaA', 'Ciclo A', () => mapaPdf('A'))}
-          {botao('mapaB', 'Ciclo B', () => mapaPdf('B'))}
-        </>,
+        botao('mapa', 'Baixar PDF (A, B e Ambas)', mapaPdf),
         'Uso interno.'
       )}
 

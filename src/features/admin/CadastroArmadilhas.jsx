@@ -42,6 +42,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
           arm,
           ovosA: a && temLeitura(a) ? Number(a.ultimosOvos) : null,
           ovosB: b && temLeitura(b) ? Number(b.ultimosOvos) : null,
+          ovosAB: (a && temLeitura(a)) || (b && temLeitura(b)) ? (a && temLeitura(a) ? Number(a.ultimosOvos) : 0) + (b && temLeitura(b) ? Number(b.ultimosOvos) : 0) : null,
           palhetaA: a?.dadosCiclos?.palhetaA || '-',
           palhetaB: b?.dadosCiclos?.palhetaB || '-'
         };
@@ -101,10 +102,10 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
   };
 
   const exportarCsv = () => {
-    const cab = ['OV', 'Bairro', 'Microárea', 'Quarteirão', 'Palheta A', 'Ovos A', 'Palheta B', 'Ovos B', 'Situação', 'Latitude', 'Longitude'];
+    const cab = ['OV', 'Bairro', 'Microárea', 'Quarteirão', 'Palheta A', 'Ovos A', 'Palheta B', 'Ovos B', 'Ovos A + B', 'Situação', 'Latitude', 'Longitude'];
     if (equipe) cab.splice(1, 0, 'Morador', 'Rua', 'Nº do imóvel');
     const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = filtradas.map(({ arm, ovosA, ovosB, palhetaA, palhetaB }) => {
+    const rows = filtradas.map(({ arm, ovosA, ovosB, ovosAB, palhetaA, palhetaB }) => {
       const r = [
         q(`OV-${arm.numero}`),
         q(arm.bairro),
@@ -114,6 +115,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
         ovosA ?? '',
         q(palhetaB),
         ovosB ?? '',
+        ovosAB ?? '',
         q(STATUS_TEXTO[arm.status] || arm.status),
         arm.latitude,
         arm.longitude
@@ -187,11 +189,12 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
               <th className="text-left px-2 py-2">Situação</th>
               <th className="text-right px-2 py-2">Ovos A</th>
               <th className="text-right px-2 py-2">Ovos B</th>
+              <th className="text-right px-2 py-2">A + B</th>
               <th className="px-2 py-2" />
             </tr>
           </thead>
           <tbody>
-            {filtradas.map(({ arm, ovosA, ovosB }) => (
+            {filtradas.map(({ arm, ovosA, ovosB, ovosAB }) => (
               <tr key={arm.id} className="border-t border-slate-200 hover:bg-slate-50">
                 <td className="px-2 py-1.5 font-black">OV-{arm.numero}</td>
                 <td className="px-2 py-1.5">
@@ -212,6 +215,9 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
                 <td className="px-2 py-1.5 text-right font-bold">
                   {ovosB === null ? '-' : (<><Ponto ovos={ovosB} />{ovosB}</>)}
                 </td>
+                <td className="px-2 py-1.5 text-right font-black">
+                  {ovosAB === null ? '-' : (<><Ponto ovos={ovosAB} />{ovosAB}</>)}
+                </td>
                 <td className="px-2 py-1.5 text-right">
                   <button
                     type="button"
@@ -226,7 +232,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
             ))}
             {filtradas.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-2 py-6 text-center text-slate-500">Nenhuma armadilha encontrada.</td>
+                <td colSpan={9} className="px-2 py-6 text-center text-slate-500">Nenhuma armadilha encontrada.</td>
               </tr>
             )}
           </tbody>

@@ -1,10 +1,11 @@
 /**
  * Relatorio entomologico detalhado (USO INTERNO) - A4 paisagem, preto no branco.
- * Uma linha por armadilha: morador, endereco, palheta e ovos de A e de B (cada ciclo separado, nunca somados).
+ * Uma linha por armadilha: morador, endereco, palheta e ovos de A, de B e de Ambas (A + B somados).
  * Nome/rua/numero do imovel so entram se o aparelho tem o "Acesso da equipe"; sem ele as colunas nem aparecem.
  * Cor so na bolinha da faixa de risco (5 cores).
  */
 import { adaptarArmadilhasParaCiclo, calcularMetricasCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from './ciclosOvitrampas';
+import { mesclarCiclos } from './mapaPoligonos';
 import { faixaDeOvos, temLeitura } from './mapaPoligonos';
 import { temAcessoEquipe } from './acessoEquipe';
 import { carregarTimbresOficiais, PROPORCAO_BRASAO_CARMO } from './timbresOficiais';
@@ -30,6 +31,7 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   const porNumB = new Map(B.map((b) => [String(b.numero), b]));
   const mA = calcularMetricasCiclo(A);
   const mB = calcularMetricasCiclo(B);
+  const mAB = calcularMetricasCiclo(mesclarCiclos(A, B));
 
   const linhas = armadilhas
     .map((arm, i) => {
@@ -78,23 +80,25 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   doc.setTextColor(...PRETO);
   doc.text(resumo('Ciclo A', mA, mA.totalLidas < mA.total), M, 30);
   doc.text(resumo('Ciclo B', mB, mB.totalLidas < mB.total), M, 35);
+  doc.text(resumo('Ambas (A + B)', mAB, false).replace('palhetas lidas', 'armadilhas lidas'), M, 40);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...CINZA);
   doc.text(
     equipe
-      ? 'Contém nome e endereço de moradores. Não enviar para fora da equipe. Os ciclos são mostrados lado a lado e nunca somados.'
-      : 'Sem o "Acesso da equipe" neste aparelho, nome e endereço dos moradores NÃO são incluídos. Os ciclos nunca são somados.',
+      ? 'Contém nome e endereço de moradores. Não enviar para fora da equipe. A coluna "A + B" soma os ovos dos dois ciclos.'
+      : 'Sem o "Acesso da equipe" neste aparelho, nome e endereço dos moradores NÃO são incluídos. A coluna "A + B" soma os ovos dos dois ciclos.',
     M,
-    40
+    45
   );
 
   // ---------- tabela ----------
   const cab = ['OV'];
   if (equipe) cab.push('Morador', 'Endereço');
-  cab.push('Bairro', 'Quarteirão', 'Palheta A', 'Ovos A', 'Palheta B', 'Ovos B', 'Situação');
+  cab.push('Bairro', 'Quarteirão', 'Palheta A', 'Ovos A', 'Palheta B', 'Ovos B', 'A + B', 'Situação');
   const iOvosA = cab.indexOf('Ovos A');
   const iOvosB = cab.indexOf('Ovos B');
+  const iOvosAB = cab.indexOf('A + B');
 
   const corpo = linhas.map(({ arm, palA, ovosA, palB, ovosB }) => {
     const r = [`OV-${arm.numero}`];
@@ -108,14 +112,15 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
       ovosA === null ? '-' : String(ovosA),
       palB,
       ovosB === null ? 'Aguardando' : String(ovosB),
+      ovosA === null && ovosB === null ? '-' : String((ovosA ?? 0) + (ovosB ?? 0)),
       STATUS_TEXTO[arm.status] || arm.status || '-'
     );
-    r.ovos = { [iOvosA]: ovosA, [iOvosB]: ovosB };
+    r.ovos = { [iOvosA]: ovosA, [iOvosB]: ovosB, [iOvosAB]: ovosA === null && ovosB === null ? null : (ovosA ?? 0) + (ovosB ?? 0) };
     return r;
   });
 
   autoTable(doc, {
-    startY: 44,
+    startY: 49,
     margin: { left: M, right: M, bottom: 14 },
     head: [cab],
     body: corpo,
@@ -124,12 +129,13 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
     columnStyles: {
       0: { fontStyle: 'bold' },
       [iOvosA]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } },
-      [iOvosB]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } }
+      [iOvosB]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } },
+      [iOvosAB]: { halign: 'right', fontStyle: 'bold', cellPadding: { left: 6, top: 1.5, bottom: 1.5, right: 1.5 } }
     },
     didDrawCell: (d) => {
       if (d.section !== 'body') return;
       const v = d.row.raw && d.row.raw.ovos ? d.row.raw.ovos[d.column.index] : undefined;
-      if (v === undefined) return;
+      if (v === undefined || v === null) return;
       d.doc.setFillColor(faixaDeOvos(v).cor);
       d.doc.circle(d.cell.x + 2.6, d.cell.y + d.cell.height / 2, 1.3, 'F');
     }

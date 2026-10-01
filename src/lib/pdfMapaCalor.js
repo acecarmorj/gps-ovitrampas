@@ -1,7 +1,7 @@
 /**
  * PDF do mapa de calor por quarteirao (A4 paisagem). Preto no branco; cor so no mapa e nas faixas de risco.
  * Mapa desenhado em vetor (sem imagem de satelite): nitido na impressora, sem depender de internet.
- * Um ciclo por vez; nunca soma A + B.
+ * Secoes: Ciclo A, Ciclo B e Ambas (A + B, ovos somados por armadilha).
  */
 import { faixaDeOvos, FAIXAS_RISCO, temLeitura, agruparPorPoligono } from './mapaPoligonos';
 import { getAllPolygons } from './geoDetection';
@@ -15,6 +15,8 @@ const M = 12;
 const PRETO = [17, 17, 17];
 const CINZA = [90, 90, 90];
 const LINHA = [200, 200, 200];
+
+const rotCiclo = (c) => (c === 'Ambas' ? 'Ambas (A e B)' : `Ciclo ${c}`);
 
 function fmt(n, casas = 1) {
   return Number(n).toFixed(casas).replace('.', ',');
@@ -176,7 +178,7 @@ export function gerarNevoeiroDaVisao(subset, limites, wpx, hpx) {
     spanX: (limites.lngMax - limites.lngMin) / 360,
     spanY: mercN(limites.latMin) - mercN(limites.latMax)
   };
-  const sigma = Math.max(150, larguraEmMetros(cx) / 60);
+  const sigma = Math.max(150, larguraEmMetros(cx) / 120); // mapa aberto: manchas pequenas, uma por cidade/distrito
   return renderizarNevoeiro(trs, cx, wpx, hpx, sigma);
 }
 
@@ -388,7 +390,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.setFontSize(9);
   doc.setTextColor(...CINZA);
   doc.text(
-    `Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · Ovitrampas · Ciclo ${ciclo} · ${territorioLabel}`,
+    `Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · Ovitrampas · ${rotCiclo(ciclo)} · ${territorioLabel}`,
     xTexto,
     18.5
   );
@@ -398,13 +400,28 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.line(M, 24, W - M, 24);
 
   // ---------- indicadores ----------
-  const kpis = [
-    ['Palhetas lidas', `${metricas.totalLidas} de ${metricas.total}`],
-    ['Total de ovos', String(metricas.totalOvos)],
-    ['IPO (positividade)', `${fmt(metricas.ipo)}%`],
-    ['IDO (densidade)', fmt(metricas.ido)],
-    ['Focos acima de 100 ovos', String(metricas.criticos)]
-  ];
+  let kpis;
+  if (ciclo === 'Ambas') {
+    // Ambas = A e B juntos: ovos somados por armadilha; positiva se foi positiva em A ou em B
+    const lidasAB = armadilhas.filter(temLeitura);
+    const posAB = lidasAB.filter((a) => Number(a.ultimosOvos) > 0);
+    const ovosAB = lidasAB.reduce((s, a) => s + Number(a.ultimosOvos), 0);
+    kpis = [
+      ['Armadilhas lidas (A ou B)', `${lidasAB.length} de ${armadilhas.length}`],
+      ['Total de ovos (A + B)', String(ovosAB)],
+      ['IPO (A ou B)', `${fmt(lidasAB.length ? (posAB.length / lidasAB.length) * 100 : 0)}%`],
+      ['IDO (A + B)', fmt(posAB.length ? ovosAB / posAB.length : 0)],
+      ['Focos acima de 100 ovos', String(lidasAB.filter((a) => Number(a.ultimosOvos) > 100).length)]
+    ];
+  } else {
+    kpis = [
+      ['Palhetas lidas', `${metricas.totalLidas} de ${metricas.total}`],
+      ['Total de ovos', String(metricas.totalOvos)],
+      ['IPO (positividade)', `${fmt(metricas.ipo)}%`],
+      ['IDO (densidade)', fmt(metricas.ido)],
+      ['Focos acima de 100 ovos', String(metricas.criticos)]
+    ];
+  }
   const larg = (W - 2 * M - 4 * 3) / 5;
   kpis.forEach(([t, v], i) => {
     const x = M + i * (larg + 3);
@@ -425,7 +442,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PRETO);
     doc.text(
-      `PARCIAL: ${metricas.totalLidas} de ${metricas.total} palhetas do Ciclo ${ciclo} já foram lidas. Os valores mudam conforme o laboratório lança as demais.`,
+      `PARCIAL: ${metricas.totalLidas} de ${metricas.total} palhetas do ${rotCiclo(ciclo)} já foram lidas. Os valores mudam conforme o laboratório lança as demais.`,
       M,
       47
     );
@@ -453,7 +470,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(...PRETO);
-      doc.text(`${nomeTerr} — Ciclo ${ciclo}`, M, 14);
+      doc.text(`${nomeTerr} — ${rotCiclo(ciclo)}`, M, 14);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(...CINZA);
@@ -479,7 +496,7 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(...PRETO);
-  doc.text(`Ovitrampas — Ciclo ${ciclo} — ${territorioLabel}`, M, 14);
+  doc.text(`Ovitrampas — ${rotCiclo(ciclo)} — ${territorioLabel}`, M, 14);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(...CINZA);
