@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { ArrowLeft, Search, Flame, Layers, MapPin } from 'lucide-react';
+import { ArrowLeft, Search, Flame, Layers, MapPin, Download } from 'lucide-react';
+import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { classificarTerritorio } from '../../lib/pdfRelatorioEntomologico';
 import {
   adaptarArmadilhasParaCiclo,
@@ -53,24 +54,43 @@ export function PainelMapaCalorInterativo({
   const [verCalor, setVerCalor] = useState(true);
   const [verPontos, setVerPontos] = useState(true);
   const [selecionada, setSelecionada] = useState(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const mapaDivRef = useRef(null);
   const mapaRef = useRef(null);
   const camadasRef = useRef({ poligonos: null, calor: null, pontos: null });
 
   // Cada ciclo e calculado sozinho. Nunca somamos A + B.
-  const adaptadas = useMemo(() => {
+  const porCiclo = useMemo(() => {
     const base = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
-    return adaptarArmadilhasParaCiclo(base, todasLeituras, ciclo);
-  }, [armadilhas, armadilhasBrutas, todasLeituras, ciclo]);
+    return {
+      A: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1),
+      B: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2)
+    };
+  }, [armadilhas, armadilhasBrutas, todasLeituras]);
 
-  const doTerritorio = useMemo(
-    () => adaptadas.filter((a) => noTerritorio(a, territorio)),
-    [adaptadas, territorio]
-  );
+  const doTerrA = useMemo(() => porCiclo.A.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
+  const doTerrB = useMemo(() => porCiclo.B.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
+  const mA = useMemo(() => calcularMetricasCiclo(doTerrA), [doTerrA]);
+  const mB = useMemo(() => calcularMetricasCiclo(doTerrB), [doTerrB]);
 
-  const metricas = useMemo(() => calcularMetricasCiclo(doTerritorio), [doTerritorio]);
-  const parcial = metricas.totalLidas < metricas.total;
+  // Na visao "Ambas" cada armadilha mostra A e B lado a lado; a cor do mapa e a da MAIOR contagem
+  // entre os dois ciclos (pior foco observado). Nada e somado.
+  const doTerritorio = useMemo(() => {
+    if (ciclo === CICLO_SEMANA_1) return doTerrA;
+    if (ciclo === CICLO_SEMANA_2) return doTerrB;
+    return doTerrA.map((x, i) => {
+      const y = doTerrB[i];
+      const oA = temLeitura(x) ? Number(x.ultimosOvos) : null;
+      const oB = y && temLeitura(y) ? Number(y.ultimosOvos) : null;
+      const maior = oA === null && oB === null ? null : Math.max(oA ?? -1, oB ?? -1);
+      return { ...x, ultimosOvos: maior, ovosA: oA, ovosB: oB };
+    });
+  }, [ciclo, doTerrA, doTerrB]);
+
+  const ehAmbas = ciclo === 'ambas';
+  const metricas = ciclo === CICLO_SEMANA_2 ? mB : mA;
+  const parcialB = mB.totalLidas < mB.total;
 
   const grupos = useMemo(() => agruparPorPoligono(doTerritorio), [doTerritorio]);
 
@@ -95,8 +115,11 @@ export function PainelMapaCalorInterativo({
       pontos: L.layerGroup().addTo(map)
     };
     mapaRef.current = map;
-    setTimeout(() => map.invalidateSize(), 150);
+    const tempo = setTimeout(() => {
+      if (mapaRef.current === map) map.invalidateSize();
+    }, 150);
     return () => {
+      clearTimeout(tempo);
       map.remove();
       mapaRef.current = null;
     };
@@ -169,11 +192,45 @@ export function PainelMapaCalorInterativo({
       }
     });
 
+  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos]);
+
+  // Enquadra o mapa so quando o territorio muda (ou na primeira vez que ha pontos).
+  // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
+  const ultimoEnquadramentoRef = useRef(null);
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return;
     const pts = doTerritorio
       .map((a) => [Number(a.latitude), Number(a.longitude)])
       .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo));
-    if (pts.length > 0) map.fitBounds(L.latLngBounds(pts).pad(0.15), { maxZoom: 16 });
-  }, [grupos, doTerritorio, verPoligonos, verCalor, verPontos]);
+    if (pts.length === 0) return;
+    if (ultimoEnquadramentoRef.current === territorio) return;
+    ultimoEnquadramentoRef.current = territorio;
+    map.fitBounds(L.latLngBounds(pts).pad(0.15), { maxZoom: 16 });
+  }, [territorio, doTerritorio]);
+
+  const baixarPdf = async () => {
+    try {
+      setGerandoPdf(true);
+      const territorioLabel = TERRITORIOS.find((t) => t.id === territorio)?.label || 'Todo o município';
+      const ciclosParaGerar = ehAmbas ? ['A', 'B'] : [ciclo];
+      for (const c of ciclosParaGerar) {
+        const lista = c === 'A' ? doTerrA : doTerrB;
+        await gerarPdfMapaCalor({
+          armadilhas: lista,
+          grupos: agruparPorPoligono(lista),
+          metricas: c === 'A' ? mA : mB,
+          ciclo: c,
+          territorioLabel
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Não foi possível gerar o PDF do mapa.');
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
 
   const irPara = (a) => {
     setSelecionada(a.id ?? a.numero);
@@ -186,17 +243,20 @@ export function PainelMapaCalorInterativo({
 
   const chave = (cond) =>
     `px-3 py-1.5 text-xs font-bold rounded-lg border transition ${
-      cond ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
+      cond ? 'bg-black text-white border-black' : 'bg-white text-slate-700 border-slate-300'
     }`;
 
-  const kpi = [
-    { t: 'Lidas', v: `${metricas.totalLidas} de ${metricas.total}` },
-    { t: 'Ovos', v: metricas.totalOvos },
-    { t: 'IPO', v: `${metricas.ipo.toFixed(1).replace('.', ',')}%` },
-    { t: 'IDO', v: metricas.ido.toFixed(1).replace('.', ',') },
-    { t: 'Críticos (>100)', v: metricas.criticos }
+  const kpisDe = (m) => [
+    { t: 'Lidas', v: `${m.totalLidas} de ${m.total}` },
+    { t: 'Ovos', v: m.totalOvos },
+    { t: 'IPO', v: `${m.ipo.toFixed(1).replace('.', ',')}%` },
+    { t: 'IDO', v: m.ido.toFixed(1).replace('.', ',') },
+    { t: 'Focos > 100', v: m.criticos }
   ];
-  const c = metricas.comparativo;
+  const linhasKpi = ehAmbas
+    ? [{ rotulo: 'Ciclo A', k: kpisDe(mA) }, { rotulo: 'Ciclo B', k: kpisDe(mB) }]
+    : [{ rotulo: null, k: kpisDe(metricas) }];
+  const mostrarParcialB = (ciclo === CICLO_SEMANA_2 || ehAmbas) && parcialB;
 
   return (
     <div className="flex flex-col gap-3 p-3 sm:p-4 max-w-[1400px] mx-auto w-full">
@@ -207,13 +267,21 @@ export function PainelMapaCalorInterativo({
           </button>
         )}
         <div className="mr-auto">
-          <h1 className="text-base sm:text-lg font-black text-slate-900 leading-tight">Mapa de calor por quarteirão</h1>
+          <h1 className="text-base sm:text-lg font-black text-black leading-tight">Mapa de calor por quarteirão</h1>
           <p className="text-[11px] text-slate-500">Uso interno · um ciclo por vez, nunca somados</p>
         </div>
         <div className="flex gap-1">
           <button className={chave(ciclo === CICLO_SEMANA_1)} onClick={() => setCiclo(CICLO_SEMANA_1)}>Ciclo A</button>
           <button className={chave(ciclo === CICLO_SEMANA_2)} onClick={() => setCiclo(CICLO_SEMANA_2)}>Ciclo B</button>
+          <button className={chave(ehAmbas)} onClick={() => setCiclo('ambas')}>Ambas</button>
         </div>
+        <button
+          onClick={baixarPdf}
+          disabled={gerandoPdf}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white text-black disabled:opacity-50 flex items-center gap-1"
+        >
+          <Download size={13} /> {gerandoPdf ? 'Gerando...' : ehAmbas ? 'Baixar PDF (A e B)' : 'Baixar PDF'}
+        </button>
         <select
           value={territorio}
           onChange={(e) => setTerritorio(e.target.value)}
@@ -225,26 +293,32 @@ export function PainelMapaCalorInterativo({
         </select>
       </div>
 
-      {parcial && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs font-semibold px-3 py-2">
-          Parcial: {metricas.totalLidas} de {metricas.total} palhetas do Ciclo {ciclo} já foram lidas. Os números mudam
-          conforme o laboratório lança as demais.
+      {mostrarParcialB && (
+        <div className="rounded-lg border border-black bg-white text-black text-xs font-semibold px-3 py-2">
+          Ciclo B parcial: {mB.totalLidas} de {mB.total} palhetas já foram lidas. Os números do B mudam conforme o
+          laboratório lança as demais.
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {kpi.map((k) => (
-          <div key={k.t} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{k.t}</div>
-            <div className="text-xl font-black text-slate-900 leading-tight">{k.v}</div>
+      {linhasKpi.map((linha) => (
+        <div key={linha.rotulo || 'unico'} className="flex flex-col gap-1">
+          {linha.rotulo && <div className="text-xs font-black text-black">{linha.rotulo}</div>}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {linha.k.map((k) => (
+              <div key={k.t} className="rounded-lg border border-slate-300 bg-white px-3 py-2">
+                <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{k.t}</div>
+                <div className="text-xl font-black text-black leading-tight">{k.v}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
-      <div className="text-[11px] text-slate-600 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-        Comparação (sem somar): <b>Ciclo A</b> {c.ovosA} ovos, {c.lidasA} lidas, IPO {c.ipoA.toFixed(1).replace('.', ',')}%
-        &nbsp;·&nbsp; <b>Ciclo B</b> {c.ovosB} ovos, {c.lidasB} lidas, IPO {c.ipoB.toFixed(1).replace('.', ',')}% (parcial se menos de {metricas.total}).
-      </div>
+      {ehAmbas && (
+        <div className="text-[11px] text-slate-600">
+          Os ciclos nunca são somados. No mapa, cada quarteirão usa a cor da maior contagem entre A e B.
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="font-bold text-slate-500 flex items-center gap-1"><Layers size={13} /> Camadas</span>
@@ -283,7 +357,14 @@ export function PainelMapaCalorInterativo({
                 <tr>
                   <th className="text-left px-2 py-1.5">OV</th>
                   <th className="text-left px-2 py-1.5">Local</th>
-                  <th className="text-right px-2 py-1.5">Ovos</th>
+                  {ehAmbas ? (
+                    <>
+                      <th className="text-right px-2 py-1.5">Ovos A</th>
+                      <th className="text-right px-2 py-1.5">Ovos B</th>
+                    </>
+                  ) : (
+                    <th className="text-right px-2 py-1.5">Ovos</th>
+                  )}
                   <th className="text-left px-2 py-1.5">Faixa</th>
                 </tr>
               </thead>
@@ -302,7 +383,14 @@ export function PainelMapaCalorInterativo({
                         {a.bairro || a.microarea || '-'}
                         {a.quarteirao && !/distrito/i.test(a.quarteirao) ? ` · ${a.quarteirao}` : ''}
                       </td>
-                      <td className="px-2 py-1.5 text-right font-bold">{temLeitura(a) ? a.ultimosOvos : '-'}</td>
+                      {ehAmbas ? (
+                        <>
+                          <td className="px-2 py-1.5 text-right font-bold">{a.ovosA ?? '-'}</td>
+                          <td className="px-2 py-1.5 text-right font-bold">{a.ovosB ?? '-'}</td>
+                        </>
+                      ) : (
+                        <td className="px-2 py-1.5 text-right font-bold">{temLeitura(a) ? a.ultimosOvos : '-'}</td>
+                      )}
                       <td className="px-2 py-1.5">
                         <span className="inline-flex items-center gap-1">
                           <i className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: f.cor }} />

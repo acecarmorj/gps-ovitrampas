@@ -25,7 +25,7 @@ export function InstalarArmadilhaScreen({
   // as armadilhas e as linhas de distância antes de escolher o ponto.
   const [painelAberto, setPainelAberto] = useState(true);
   const [mostrarBussolaFlutuante, setMostrarBussolaFlutuante] = useState(false);
-  const [mostrarRotulos, setMostrarRotulos] = useState(true);
+  const [mostrarRotulos, setMostrarRotulos] = useState(false);
 
   // Localização e endereço capturados automaticamente pelo GPS de Carmo
   const [localizacao, setLocalizacao] = useState({
@@ -234,6 +234,7 @@ export function InstalarArmadilhaScreen({
           controlTop={56}
           showLabels={mostrarRotulos}
           onToggleLabels={() => setMostrarRotulos(!mostrarRotulos)}
+          showDistances={false}
         />
       </div>
 

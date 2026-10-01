@@ -3,7 +3,6 @@ import {
   ChevronLeft, Volume2, VolumeX,
   Cloud, CloudOff, RefreshCw, Check, AlertTriangle
 } from 'lucide-react';
-import { SeletorCicloPalheta } from './SeletorCicloPalheta';
 
 const INFO_MODULOS = {
   campo: {
@@ -22,13 +21,13 @@ const INFO_MODULOS = {
     titulo: 'Painel do Administrador',
     subtitulo: 'Gestão Municipal & Indicadores'
   },
-  planejamento: {
-    titulo: 'Mapa de Planejamento das Ações',
-    subtitulo: 'Planejamento Geoespacial & Otimização de Rotas'
+  calor: {
+    titulo: 'Mapa de Calor & Tabela Interativa',
+    subtitulo: 'Vigilância Entomológica de Carmo-RJ'
   },
-  'cenario-ideal': {
-    titulo: 'Mapa de Planejamento das Ações',
-    subtitulo: 'Planejamento Geoespacial & Otimização de Rotas'
+  publico: {
+    titulo: 'Portal Público de Transparência',
+    subtitulo: 'Vigilância Sanitária • Município de Carmo-RJ'
   }
 };
 
@@ -105,17 +104,6 @@ export function Header({
           </div>
         </div>
       </div>
-
-      {/* SELETOR CENTRAL DE CICLOS (PALHETA A, PALHETA B, AMBAS) */}
-      {cicloAtivo && onMudarCiclo && abaAtual !== 'campo' && (
-        <div className="hidden md:flex items-center">
-          <SeletorCicloPalheta
-            cicloAtivo={cicloAtivo}
-            onMudarCiclo={onMudarCiclo}
-            tamanho="compacto"
-          />
-        </div>
-      )}
 
       {/* LADO DIREITO: TOTAL DE ARMADILHAS E CONTROLE DE SOM */}
       <div className="flex items-center gap-2">
