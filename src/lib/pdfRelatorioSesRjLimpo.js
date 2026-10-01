@@ -307,16 +307,10 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
   // ---------- 1. CAPA E RESUMO ----------
-  if (timbres.TIMBRE_BRASAO_CARMO) {
-    try {
-      doc.addImage(timbres.TIMBRE_BRASAO_CARMO, 'PNG', M, 12, 20 * PROPORCAO_BRASAO_CARMO, 20);
-    } catch (_) {
-      /* segue sem brasao */
-    }
-  }
+  // Capa: so um timbre. O logo da Prefeitura ja traz o brasao; o brasao avulso duplicava.
   if (timbres.TIMBRE_LOGO_PREFEITURA) {
     try {
-      doc.addImage(timbres.TIMBRE_LOGO_PREFEITURA, 'PNG', W - M - 16 * PROPORCAO_LOGO_PREFEITURA, 14, 16 * PROPORCAO_LOGO_PREFEITURA, 16);
+      doc.addImage(timbres.TIMBRE_LOGO_PREFEITURA, 'PNG', M, 12, 20 * PROPORCAO_LOGO_PREFEITURA, 20);
     } catch (_) {
       /* segue sem logo */
     }
