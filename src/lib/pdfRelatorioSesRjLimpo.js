@@ -717,5 +717,5 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   }
 
   limparCacheFundos();
-  doc.save(`${interno ? 'relatorio-resultados-carmo' : 'relatorio-ses-rj-carmo'}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`${interno ? 'RELATORIO_RESULTADOS_INTERNO_CARMO' : 'RELATORIO_TECNICO_SES-RJ_CARMO'}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
