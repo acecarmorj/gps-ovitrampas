@@ -2862,3 +2862,18 @@ FEITO por Claude: PainelMapaCalorInterativo.jsx reescrito (poligono por quarteir
 GEMINI: continua so no basico (secao 113): PDF SES-RJ visual/textos, teste do laboratorio, typos. Tema dos PDFs: claro e sobrio.
   NAO editar PainelMapaCalorInterativo.jsx, mapaPoligonos.js, GuiaScreen.jsx, PainelAdminSimples.jsx sem avisar aqui.
 ==============================================================================
+
+SECAO 115: TRABALHO REPETITIVO / DE CONFERENCIA PARA O GEMINI (pedido do Almir, 01h)
+Claude fez: src/lib/pdfRelatorioSesRjLimpo.js (SES-RJ novo, 17 pag, preto no branco), pdfMapaCalor.js, fundoSatelite.js, mapaPoligonos.js,
+PainelMapaCalorInterativo.jsx, PainelAdminSimples.jsx. GEMINI: NAO EDITE esses arquivos. Faca SO as tarefas abaixo e escreva o resultado aqui (1 linha por item).
+1. CONFERENCIA NUMERICA (conta): abra o PDF do SES-RJ (botao "Relatorio SES-RJ" no /admin) e confira, para as 56 armadilhas, que
+   "Ovos A" e "Ovos B" do Inventario batem com readings_all_56.json / full_joined_56.json (raiz do projeto). Some por bairro e compare com
+   a tabela "Por bairro". Totais esperados: Ciclo A = 1.017 ovos, 32 positivas, IPO 57,1%, IDO 31,8. Ciclo B (parcial) = 951 ovos, 26 lidas, IPO 46,2%.
+   Liste qualquer divergencia (P-NN, valor no PDF, valor no JSON). NAO corrija arquivo nenhum, so liste.
+2. CONSOLIDADO (Relatorio de Resultados, pdfRelatorioConsolidadoUnico.js): LEIA o codigo e responda: ele tem mapa de calor de (a) municipio,
+   (b) sede urbana, (c) cada distrito (Influencia, Corrego da Prata, Porto Velho, Ilha dos Pombos, Barra de S. Francisco), para Ciclo A, Ciclo B e Ambas?
+   Faca uma tabela "mapa x ciclo: tem / nao tem". Almir exige TODOS. So listar; quem corrige o codigo e o Claude.
+3. REVISAO DE TEXTO: leia as strings visiveis em src/lib/pdfRelatorioSesRjLimpo.js e pdfMapaCalor.js e liste erros de portugues/acentuacao (arquivo:linha, texto atual, sugestao).
+4. TELAS: abra /admin, /calor, /campo, /laboratorio no navegador (largura de celular 375px e de PC) e liste: textos cortados, botao sem funcao, rolagem lateral, rotulo sobreposto. Print ou descricao curta por item.
+5. NAO FAZER: deploy, commit, editar os arquivos acima, somar ciclo A+B, usar nome/rua de morador.
+==============================================================================

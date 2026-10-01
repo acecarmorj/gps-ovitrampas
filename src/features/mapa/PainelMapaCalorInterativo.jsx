@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { ArrowLeft, Search, Flame, Layers, MapPin, Download } from 'lucide-react';
-import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
+import { gerarPdfMapaCalor, gerarNevoeiroDoMapa } from '../../lib/pdfMapaCalor';
 import { classificarTerritorio } from '../../lib/pdfRelatorioEntomologico';
 import {
   adaptarArmadilhasParaCiclo,
@@ -20,6 +20,11 @@ import { getAllPolygons } from '../../lib/geoDetection';
 
 const TILE_CLARO = {
   url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+  attribution: 'Tiles &copy; Esri'
+};
+
+const TILE_SATELITE = {
+  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   attribution: 'Tiles &copy; Esri'
 };
 
@@ -45,14 +50,21 @@ export function PainelMapaCalorInterativo({
   armadilhas = [],
   armadilhasBrutas = [],
   todasLeituras = [],
-  onVoltar
+  onVoltar,
+  fundoMapa: fundoProp,
+  onMudarFundoMapa
 }) {
+  const [fundoInterno, setFundoInterno] = useState('satelite');
+  const fundo = fundoProp ?? fundoInterno; // 'vetorial' (mapa claro) | 'satelite'
+  const mudarFundo = onMudarFundoMapa || setFundoInterno;
+  const tileRef = useRef(null);
   const [ciclo, setCiclo] = useState(CICLO_SEMANA_1);
   const [territorio, setTerritorio] = useState('todos');
   const [busca, setBusca] = useState('');
   const [verPoligonos, setVerPoligonos] = useState(true);
   const [verCalor, setVerCalor] = useState(true);
   const [verPontos, setVerPontos] = useState(true);
+  const [verNevoeiro, setVerNevoeiro] = useState(false);
   const [selecionada, setSelecionada] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
 
@@ -108,12 +120,12 @@ export function PainelMapaCalorInterativo({
   useEffect(() => {
     if (!mapaDivRef.current || mapaRef.current) return;
     const map = L.map(mapaDivRef.current, { center: [-21.9339, -42.6089], zoom: 13, zoomControl: true });
-    L.tileLayer(TILE_CLARO.url, { maxZoom: 19, attribution: TILE_CLARO.attribution }).addTo(map);
     camadasRef.current = {
       poligonos: L.layerGroup().addTo(map),
       calor: L.layerGroup().addTo(map),
       pontos: L.layerGroup().addTo(map)
     };
+    map.createPane('nevoeiro').style.zIndex = 350; // acima do fundo, abaixo de quarteiroes e pontos
     mapaRef.current = map;
     const tempo = setTimeout(() => {
       if (mapaRef.current === map) map.invalidateSize();
@@ -124,6 +136,37 @@ export function PainelMapaCalorInterativo({
       mapaRef.current = null;
     };
   }, []);
+
+  // Fundo do mapa: claro ou satelite (tambem vale para os PDFs)
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return;
+    if (tileRef.current) map.removeLayer(tileRef.current);
+    const t = fundo === 'satelite' ? TILE_SATELITE : TILE_CLARO;
+    tileRef.current = L.tileLayer(t.url, { maxZoom: 19, attribution: t.attribution }).addTo(map);
+    tileRef.current.bringToBack();
+  }, [fundo]);
+
+  // Camada de nevoeiro (superficie de calor interpolada). Recalcula so quando os numeros mudam de fato.
+  const nevoeiroLayerRef = useRef(null);
+  const assinaturaDados = useMemo(
+    () => `${ciclo}|${territorio}|` + doTerritorio.map((a) => `${a.numero}:${a.ultimosOvos ?? '-'}`).join(','),
+    [ciclo, territorio, doTerritorio]
+  );
+  useEffect(() => {
+    const map = mapaRef.current;
+    if (!map) return;
+    if (nevoeiroLayerRef.current) {
+      map.removeLayer(nevoeiroLayerRef.current);
+      nevoeiroLayerRef.current = null;
+    }
+    if (!verNevoeiro) return;
+    const r = gerarNevoeiroDoMapa(doTerritorio, 800, 600, 0.35, true);
+    if (!r) return;
+    const { latMin, latMax, lngMin, lngMax } = r.caixa;
+    nevoeiroLayerRef.current = L.imageOverlay(r.url, [[latMin, lngMin], [latMax, lngMax]], { opacity: 0.88, interactive: false, pane: 'nevoeiro' }).addTo(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verNevoeiro, assinaturaDados]);
 
   // Desenha as camadas quando dados ou chaves mudam
   useEffect(() => {
@@ -221,7 +264,8 @@ export function PainelMapaCalorInterativo({
           grupos: agruparPorPoligono(lista),
           metricas: c === 'A' ? mA : mB,
           ciclo: c,
-          territorioLabel
+          territorioLabel,
+          fundo
         });
       }
     } catch (e) {
@@ -325,6 +369,10 @@ export function PainelMapaCalorInterativo({
         <button className={chave(verPoligonos)} onClick={() => setVerPoligonos((v) => !v)}>Quarteirões</button>
         <button className={chave(verCalor)} onClick={() => setVerCalor((v) => !v)}><Flame size={12} className="inline -mt-0.5" /> Calor</button>
         <button className={chave(verPontos)} onClick={() => setVerPontos((v) => !v)}><MapPin size={12} className="inline -mt-0.5" /> Pontos</button>
+        <button className={chave(verNevoeiro)} onClick={() => setVerNevoeiro((v) => !v)}>Nevoeiro</button>
+        <span className="mx-1 h-4 w-px bg-slate-300" />
+        <button className={chave(fundo === 'vetorial')} onClick={() => mudarFundo('vetorial')}>Mapa</button>
+        <button className={chave(fundo === 'satelite')} onClick={() => mudarFundo('satelite')}>Satélite</button>
         <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
           {FAIXAS_RISCO.map((f) => (
             <span key={f.id} className="flex items-center gap-1 text-[11px] text-slate-600">
