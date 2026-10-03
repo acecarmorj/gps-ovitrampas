@@ -22,6 +22,7 @@ export function InstalarArmadilhaScreen({
   // Tela unica do agente de campo: instalar, trocar palheta e recolher.
   // A decisao de qual acao mostrar fica em PainelAcaoCampo.
   const [sucessoMsg, setSucessoMsg] = useState(null);
+  const [numeroArmadilhaSelecionada, setNumeroArmadilhaSelecionada] = useState(null);
   // No celular o painel cobre quase todo o mapa; recolher deixa o agente ver
   // as armadilhas e as linhas de distância antes de escolher o ponto.
   const [painelAberto, setPainelAberto] = useState(true);
@@ -229,8 +230,12 @@ export function InstalarArmadilhaScreen({
           quarteirao={localizacao.quarteirao}
           armadilhas={armadilhas}
           onSelectArmadilha={(arm) => {
-            if (onSelecionarArmadilha) onSelecionarArmadilha(arm);
-            else if (onVerMapaGeral) onVerMapaGeral();
+            if (arm?.numero) {
+              setNumeroArmadilhaSelecionada(arm.numero);
+              setPainelAberto(true);
+            } else if (onSelecionarArmadilha) {
+              onSelecionarArmadilha(arm);
+            }
           }}
           controlTop={56}
           showLabels={mostrarRotulos}
@@ -450,7 +455,11 @@ export function InstalarArmadilhaScreen({
             localizacao={localizacao}
             vizinhasProximas={vizinhasProximas}
             gpsErrorMsg={gpsErrorMsg}
-            onConcluido={handleConcluido}
+            numeroPredefinido={numeroArmadilhaSelecionada}
+            onConcluido={(msg) => {
+              setNumeroArmadilhaSelecionada(null);
+              handleConcluido(msg);
+            }}
           />
 
         </div>

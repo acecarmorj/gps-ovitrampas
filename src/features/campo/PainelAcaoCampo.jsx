@@ -7,7 +7,12 @@ import {
   recolherArmadilhaEPalheta,
   normalizarNumeroArmadilha
 } from '../../lib/storage';
-import { decidirAcaoCampo, sugerirProximaPalheta, calcularSituacaoArmadilha } from '../../lib/situacaoOvitrampa';
+import {
+  decidirAcaoCampo,
+  sugerirProximaPalheta,
+  calcularSituacaoArmadilha,
+  identificarCicloArmadilha
+} from '../../lib/situacaoOvitrampa';
 import { calculateNavigationGuidance } from '../../lib/geoBearing';
 import { playSuccessSound } from '../../lib/soundAlert';
 import { temAcessoEquipe } from '../../lib/acessoEquipe';
@@ -58,14 +63,21 @@ export function PainelAcaoCampo({
   localizacao,
   vizinhasProximas = [],
   gpsErrorMsg,
+  numeroPredefinido = null,
   onConcluido
 }) {
-  const [numeroDigitado, setNumeroDigitado] = useState('');
+  const [numeroDigitado, setNumeroDigitado] = useState(numeroPredefinido ? String(numeroPredefinido) : '');
   const [acaoManual, setAcaoManual] = useState(null);
   const [nomeMorador, setNomeMorador] = useState('');
   const [palheta, setPalheta] = useState('');
   const [ocorrencia, setOcorrencia] = useState('Normal');
   const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (numeroPredefinido) {
+      setNumeroDigitado(String(numeroPredefinido));
+    }
+  }, [numeroPredefinido]);
 
   const numero = pad2(normalizarNumeroArmadilha(numeroDigitado) || '');
 
@@ -91,7 +103,10 @@ export function PainelAcaoCampo({
   const temAlvo = Boolean(numero) || Boolean(armadilha);
   const decisao = decidirAcaoCampo(armadilha);
   // Sem numero e sem armadilha perto, nao ha o que decidir ainda.
-  const acao = !temAlvo ? null : acaoManual || (decisao.acao === 'nenhuma' ? null : decisao.acao);
+  // Para armadilha recolhida ou analisada, acao fica null para nao abrir formulario de troca/recolha indevido
+  const acao = !temAlvo
+    ? null
+    : acaoManual || (decisao.acao === 'recolhida' || decisao.acao === 'analisada' || decisao.acao === 'nenhuma' ? null : decisao.acao);
 
   // Ao trocar de armadilha, volta para a decisao automatica e refaz a
   // sugestao de palheta.
@@ -119,6 +134,10 @@ export function PainelAcaoCampo({
 
   const instalar = async () => {
     if (!numero) return alert('Digite o número da OV.');
+    if (armadilha) {
+      alert(`⚠️ AÇÃO NÃO PERMITIDA:\nA tela de colocar/instalar é apenas para armadilhas novas.\nA OV-${numero} já está cadastrada e instalada.`);
+      return;
+    }
     if (!nomeMorador.trim()) return alert('Informe o nome do morador.');
     // Nunca grava com a posicao padrao de antes do primeiro fix de GPS.
     if (localizacao.accuracy == null) {
@@ -127,12 +146,6 @@ export function PainelAcaoCampo({
           ? `Não é possível instalar sem o GPS.\n\n${gpsErrorMsg}`
           : 'Aguardando o primeiro sinal de GPS. Espere parar de "Buscando Satélites..." antes de salvar.'
       );
-    }
-    if (armadilha) {
-      const ok = window.confirm(
-        `⚠️ JÁ EXISTE UMA OV-${numero} CADASTRADA.\n\nSalvar vai criar dois registros com o mesmo número e a leitura do laboratório pode ir pra armadilha errada. Deseja salvar assim mesmo?`
-      );
-      if (!ok) return;
     }
     const guia = calculateNavigationGuidance(localizacao, armadilhas);
     if (guia.status === 'afastar') {
@@ -173,6 +186,10 @@ export function PainelAcaoCampo({
 
   const trocar = async () => {
     if (!armadilha) return;
+    if (decisao?.bloqueado) {
+      alert(`⚠️ TROCA BLOQUEADA (REGRA DE 5 A 7 DIAS):\n\n${decisao.motivo}`);
+      return;
+    }
     const nova = palheta.trim();
     if (!nova) return alert('Informe o código da palheta nova.');
     if (faltaMorador && !nomeMorador.trim()) return alert('Informe o nome do morador (obrigatório).');
@@ -194,6 +211,10 @@ export function PainelAcaoCampo({
 
   const recolher = async () => {
     if (!armadilha) return;
+    if (decisao?.bloqueado) {
+      alert(`⚠️ RETIRADA BLOQUEADA (REGRA DE 5 A 7 DIAS):\n\n${decisao.motivo}`);
+      return;
+    }
     if (faltaMorador && !nomeMorador.trim()) return alert('Informe o nome do morador (obrigatório).');
     setSalvando(true);
     try {
@@ -213,31 +234,44 @@ export function PainelAcaoCampo({
   // Nome do morador e SEMPRE obrigatorio. Em armadilha ja cadastrada sem nome, o agente completa ao trocar/recolher.
   const faltaMorador = Boolean(armadilha) && acao !== 'instalar' && temAcessoEquipe() && !String(armadilha.moradorNome || '').trim();
   const precisaMorador = acao === 'instalar' || faltaMorador;
-  const bloqueado = salvando || (precisaMorador && !nomeMorador.trim());
+  const bloqueadoPorRegra = Boolean(decisao?.bloqueado);
+  const bloqueado = salvando || (precisaMorador && !nomeMorador.trim()) || bloqueadoPorRegra;
 
   const executar = { instalar, trocar, recolher }[acao];
 
   const rotuloBotao = () => {
     if (acao === 'instalar') return `INSTALAR OV-${numero || '?'}`;
-    if (acao === 'recolher') return `RECOLHER OV-${armadilha?.numero}`;
+    if (acao === 'recolher') {
+      if (decisao?.bloqueado) {
+        return `RETIRADA BLOQUEADA (${decisao.diasFaltam} ${decisao.diasFaltam === 1 ? 'DIA' : 'DIAS'} RESTANTES)`;
+      }
+      return `RECOLHER OV-${armadilha?.numero} E PALHETA ${armadilha?.palheta || 'B'}`;
+    }
     if (acao === 'trocar') {
-      if (!acaoManual && decisao.rotulo === 'reinstalar') return `REINSTALAR COM ${palheta || '?'}`;
-      if (!acaoManual && decisao.rotulo === 'nova') return `COLOCAR PALHETA ${palheta || '?'}`;
+      if (decisao?.bloqueado) {
+        return `TROCA BLOQUEADA (${decisao.diasFaltam} ${decisao.diasFaltam === 1 ? 'DIA' : 'DIAS'} RESTANTES)`;
+      }
       return `TROCAR ${armadilha?.palheta || '?'} → ${palheta || '?'}`;
     }
     return '';
   };
 
-  // Acoes que o agente pode escolher na mao. Instalar so faz sentido para
-  // numero sem cadastro; trocar para armadilha existente; recolher so para a
-  // que ainda esta em campo.
-  const acoesPossiveis = armadilha
-    ? armadilha.status === 'instalada' || !armadilha.status
-      ? ['trocar', 'recolher']
-      : ['trocar']
-    : numero
-    ? ['instalar']
-    : [];
+  // Acoes que o agente pode escolher na mao.
+  // Regra Estrita de Ovitrampas:
+  // - Para armadilha nova (!armadilha): SOMENTE 'instalar'.
+  // - Para armadilha já colocada: NUNCA 'instalar'!
+  //   - Ciclo 1 (Palheta A): SOMENTE 'trocar' (Palheta A -> Palheta B).
+  //   - Ciclo 2 (Palheta B): SOMENTE 'recolher' (Armadilha e Palheta B).
+  const acoesPossiveis = useMemo(() => {
+    if (!armadilha) {
+      return numero ? ['instalar'] : [];
+    }
+    if (armadilha.status === 'recolhida' || armadilha.status === 'analisada') {
+      return [];
+    }
+    const cicloInfo = identificarCicloArmadilha(armadilha);
+    return cicloInfo.ciclo === 'A' ? ['trocar'] : ['recolher'];
+  }, [armadilha, numero]);
   const sit = armadilha ? calcularSituacaoArmadilha(armadilha) : null;
 
   const renderAssistenteEspacamento = () => {
@@ -393,7 +427,7 @@ export function PainelAcaoCampo({
 
       {/* 2. O QUE O SISTEMA ENTENDEU */}
       {temAlvo && (
-        <div className="rounded-2xl border border-slate-300 bg-slate-50 px-3.5 py-3 space-y-1">
+        <div className="rounded-2xl border border-slate-300 bg-slate-50 px-3.5 py-3 space-y-1.5">
           {armadilha ? (
             <>
               <div className="flex items-center justify-between gap-2">
@@ -401,8 +435,8 @@ export function PainelAcaoCampo({
                   OV-{armadilha.numero}
                   {autoPorGps && <span className="ml-1.5 text-[11px] font-bold text-black">(pelo GPS)</span>}
                 </p>
-                <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-white border border-slate-300 text-slate-800">
-                  Palheta {armadilha.palheta || '-'}
+                <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-white border border-slate-300 text-slate-800">
+                  Palheta Atual: {armadilha.palheta || '-'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 flex items-center gap-1">
@@ -411,20 +445,124 @@ export function PainelAcaoCampo({
                   {armadilha.moradorNome || 'Morador'} · {armadilha.bairro} · {armadilha.quarteirao}
                 </span>
               </p>
-              {sit && <p className="text-xs font-bold text-slate-800">{sit.titulo}</p>}
+              {sit && (
+                <div className="flex items-center justify-between text-xs font-bold pt-1 border-t border-slate-200">
+                  <span className="text-slate-800">{sit.titulo}</span>
+                  <span className="text-slate-500 font-medium">Ciclo: 5 a 7 dias</span>
+                </div>
+              )}
             </>
           ) : (
-            <p className="text-sm font-black text-slate-900">OV-{numero}: número sem cadastro</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black text-slate-900">OV-{numero}: Armadilha Nova</p>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-black text-white">
+                Ponto Novo
+              </span>
+            </div>
           )}
         </div>
       )}
 
-      {/* 3. NADA A FAZER (dentro do ciclo) */}
-      {temAlvo && !acao && (
-        <div className="rounded-2xl bg-blue-50 border border-blue-300 px-3.5 py-3 flex items-center gap-2.5">
-          <Clock className="w-5 h-5 text-blue-700 shrink-0" />
-          <p className="text-sm font-bold text-blue-900">Nada a fazer agora. {decisao.motivo}.</p>
-        </div>
+      {/* 3. STATUS DA REGRA DE 5 A 7 DIAS */}
+      {temAlvo && armadilha && (
+        <>
+          {armadilha.status === 'recolhida' && (
+            <div className="rounded-2xl bg-indigo-50 border-2 border-indigo-400 p-3.5 space-y-1 text-indigo-950">
+              <div className="flex items-center gap-2">
+                <PackageOpen className="w-5 h-5 text-indigo-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-indigo-800">
+                    Armadilha Já Recolhida
+                  </p>
+                  <p className="text-sm font-black text-indigo-950">
+                    Palheta {armadilha.palhetaRecolhida || armadilha.palheta} recolhida
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-indigo-900 font-medium">
+                Esta armadilha já concluiu o período de campo e aguarda contagem de ovos no laboratório.
+              </p>
+            </div>
+          )}
+
+          {armadilha.status === 'analisada' && (
+            <div className="rounded-2xl bg-slate-100 border-2 border-slate-400 p-3.5 space-y-1 text-slate-950">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    Leitura Concluída no Laboratório
+                  </p>
+                  <p className="text-sm font-black text-slate-950">
+                    Resultado: {armadilha.ultimosOvos} ovos
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {armadilha.status !== 'recolhida' && armadilha.status !== 'analisada' && (
+            <>
+              {decisao.bloqueado && (
+                <div className="rounded-2xl bg-amber-50 border-2 border-amber-400 p-3.5 space-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-5 h-5 text-amber-700 shrink-0" />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-amber-900">
+                        {decisao.acao === 'trocar' ? 'Troca da Palheta Bloqueada' : 'Retirada da Armadilha Bloqueada'}
+                      </p>
+                      <p className="text-sm font-black text-amber-950">
+                        {decisao.diasCorridos} {decisao.diasCorridos === 1 ? 'dia' : 'dias'} em campo · Regra: 5 a 7 dias
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-900 font-semibold leading-relaxed">
+                    {decisao.motivo}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-amber-200/80 text-[11px]">
+                    <div className="bg-white/80 p-2 rounded-xl border border-amber-200">
+                      <span className="text-amber-800 font-bold block text-[10px] uppercase">Liberado a partir de:</span>
+                      <span className="font-black text-amber-950 text-xs">{decisao.dataMinFmt}</span>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-xl border border-amber-200">
+                      <span className="text-amber-800 font-bold block text-[10px] uppercase">Prazo limite (7 dias):</span>
+                      <span className="font-black text-amber-950 text-xs">{decisao.dataMaxFmt}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!decisao.bloqueado && (
+                <div className={`rounded-2xl border-2 p-3.5 space-y-1.5 ${
+                  decisao.rotulo?.includes('atrasada')
+                    ? 'bg-rose-50 border-rose-400 text-rose-950'
+                    : 'bg-emerald-50 border-emerald-500 text-emerald-950'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {decisao.rotulo?.includes('atrasada') ? (
+                      <Clock className="w-5 h-5 text-rose-600 shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-black uppercase tracking-wider ${
+                        decisao.rotulo?.includes('atrasada') ? 'text-rose-800' : 'text-emerald-800'
+                      }`}>
+                        {decisao.rotulo?.includes('atrasada') ? 'Prazo Máximo Excedido (> 7 dias)' : 'Período Oficial Atingido (5 a 7 dias)'}
+                      </p>
+                      <p className="text-sm font-black">
+                        {decisao.diasCorridos} dias em campo · {decisao.acao === 'trocar' ? 'Pronta para troca (A → B)' : 'Pronta para retirada'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs font-medium leading-relaxed">
+                    {decisao.motivo}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* 4. FORMULARIO DA ACAO */}

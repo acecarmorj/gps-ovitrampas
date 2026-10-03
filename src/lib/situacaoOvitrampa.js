@@ -147,26 +147,33 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  // 3. Está em campo: ciclo padrão de DIAS_CICLO_PADRAO dias de exposição.
-  const diasCorridos = diasDesde(armadilha.instaladaEm);
+  // 3. Está em campo: ciclo de 5 a 7 dias de exposição.
+  const cicloInfo = identificarCicloArmadilha(armadilha);
+  const isPalhetaA = cicloInfo.ciclo === 'A';
+  const nomeAcaoCurta = isPalhetaA ? 'Troca' : 'Recolher';
+  const verboAcao = isPalhetaA ? 'Trocar palheta' : 'Recolher armadilha';
+
+  const diasCorridos = Math.max(0, diasDesde(armadilha.instaladaEm));
   const diasRestantes = DIAS_CICLO_PADRAO - diasCorridos;
   const dataPrevista = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_PADRAO);
+  const dataLimite = calcularDataPrevistaRecolhimento(armadilha.instaladaEm, DIAS_CICLO_MAXIMO);
+
   const dataPrevistaFormatada = dataPrevista.toLocaleDateString('pt-BR');
+  const dataLimiteFormatada = dataLimite.toLocaleDateString('pt-BR');
   const diaSemanaRaw = dataPrevista.toLocaleDateString('pt-BR', { weekday: 'long' });
   const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
-  // Passou do ciclo sem recolher. Antes so virava "atrasada" depois de
-  // DIAS_CICLO_MAXIMO; entre o fim do ciclo e esse teto caia no "em campo"
-  // e mostrava "Faltam -1 dias".
-  if (diasRestantes < 0) {
-    const diasAtraso = -diasRestantes;
+  // Atrasada: passou de DIAS_CICLO_MAXIMO (7 dias)
+  if (diasCorridos > DIAS_CICLO_MAXIMO) {
+    const diasAtraso = diasCorridos - DIAS_CICLO_MAXIMO;
     return {
       fase: 'atrasada',
-      titulo: `Recolher: ${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso`,
-      descricao: `Ciclo de ${DIAS_CICLO_PADRAO} dias concluído em ${diaSemana}, ${dataPrevistaFormatada}. Recolher o quanto antes e enviar ao laboratório.`,
+      titulo: `${nomeAcaoCurta}: ${diasAtraso} ${diasAtraso === 1 ? 'dia' : 'dias'} de atraso (>7d)`,
+      descricao: `Ciclo máximo de 7 dias encerrado em ${dataLimiteFormatada}. ${verboAcao} com urgência e enviar ao laboratório.`,
       diasCorridos,
       diasRestantes,
       dataPrevistaFormatada,
+      dataLimiteFormatada,
       diaSemana,
       corTexto: 'text-rose-400',
       corBg: 'bg-rose-500/20',
@@ -175,14 +182,16 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
-  if (diasRestantes === 0) {
+  // Janela oficial ideal: entre 5 e 7 dias
+  if (diasCorridos >= DIAS_CICLO_PADRAO && diasCorridos <= DIAS_CICLO_MAXIMO) {
     return {
       fase: 'hoje',
-      titulo: `Recolher Hoje (${diaSemana})`,
-      descricao: `A armadilha completou ${DIAS_CICLO_PADRAO} dias em campo hoje (${diaSemana}, ${dataPrevistaFormatada}). Recolher e enviar ao laboratório.`,
+      titulo: `${nomeAcaoCurta} (${diasCorridos}d - 5 a 7 dias)`,
+      descricao: `A armadilha completou ${diasCorridos} dias em campo (${diaSemana}, ${dataPrevistaFormatada}). Período oficial para ${verboAcao}.`,
       diasCorridos,
       diasRestantes: 0,
       dataPrevistaFormatada,
+      dataLimiteFormatada,
       diaSemana,
       corTexto: 'text-amber-400',
       corBg: 'bg-amber-500/20',
@@ -191,14 +200,16 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
+  // Véspera: 4 dias completos (falta 1 dia para o 5º dia)
   if (diasRestantes === 1) {
     return {
       fase: 'vespera',
-      titulo: `Coleta Amanhã (${diaSemana})`,
-      descricao: `Armadilha em campo há ${diasCorridos} ${diasCorridos === 1 ? 'dia' : 'dias'}. Coleta agendada para amanhã, ${diaSemana} (${dataPrevistaFormatada}).`,
+      titulo: `${nomeAcaoCurta} Amanhã (${diaSemana})`,
+      descricao: `Armadilha em campo há ${diasCorridos} dias. Período de ${verboAcao} liberado a partir de amanhã (${dataPrevistaFormatada}).`,
       diasCorridos,
       diasRestantes: 1,
       dataPrevistaFormatada,
+      dataLimiteFormatada,
       diaSemana,
       corTexto: 'text-amber-300',
       corBg: 'bg-amber-500/15',
@@ -207,19 +218,42 @@ export function calcularSituacaoArmadilha(armadilha) {
     };
   }
 
+  // Em campo antes do 4º dia (diasCorridos < 4)
   return {
     fase: 'em_campo',
     titulo: `Em Campo: Faltam ${diasRestantes} dias`,
-    descricao: `Armadilha instalada (Dia ${diasCorridos} de ${DIAS_CICLO_PADRAO}). Coleta agendada para ${diaSemana}, ${dataPrevistaFormatada}.`,
+    descricao: `${isPalhetaA ? 'Palheta A instalada' : 'Palheta B instalada'} (Dia ${diasCorridos} de 5). ${verboAcao} liberado em ${diaSemana}, ${dataPrevistaFormatada}.`,
     diasCorridos,
     diasRestantes,
     dataPrevistaFormatada,
+    dataLimiteFormatada,
     diaSemana,
     corTexto: 'text-blue-400',
     corBg: 'bg-blue-500/20',
     corBorda: 'border-blue-500/40',
     pinCor: '#3b82f6'
   };
+}
+
+/**
+ * Identifica se a armadilha está no Ciclo 1 (Palheta A) ou Ciclo 2 (Palheta B).
+ */
+export function identificarCicloArmadilha(armadilha) {
+  if (!armadilha) return { ciclo: 'A', fase: 'nova' };
+
+  // 1. Checa histórico de trocas de palheta
+  const trocas = Array.isArray(armadilha.historicoPalhetas)
+    ? armadilha.historicoPalhetas.filter((h) => h.novaPalheta || h.palhetaAnterior)
+    : [];
+
+  const palhetaStr = String(armadilha.palheta || '').trim().toUpperCase();
+
+  // Se o código da palheta termina com 'B' ou tem troca registrada
+  if (palhetaStr.endsWith('B') || trocas.length > 0) {
+    return { ciclo: 'B', fase: 'segundo_ciclo' };
+  }
+
+  return { ciclo: 'A', fase: 'primeiro_ciclo' };
 }
 
 /**
@@ -256,26 +290,174 @@ export function sugerirProximaPalheta(armadilha) {
 
 /**
  * O que o agente de campo tem que fazer nesta armadilha agora.
- * - sem registro: instalar
- * - recolhida ou ja lida no laboratorio: esta sem palheta ativa, colocar nova
- * - em campo com o ciclo vencido (hoje ou atrasada): trocar a palheta
- * - em campo dentro do ciclo: nada a fazer ainda
- * Recolher de vez (encerrar o ponto) nunca e sugerido sozinho: e decisao do
- * agente, pela escolha manual.
+ * Regras estritas oficiais:
+ * - Sem cadastro (!armadilha): tela de INSTALAR.
+ * - Com cadastro (armadilha existente):
+ *   - Ciclo 1 (Palheta A): tela de TROCAR PALHETA (Palheta A -> Palheta B).
+ *     - diasCorridos < 5: BLOQUEADO (aguardar 5 a 7 dias).
+ *     - 5 a 7 dias: LIBERADO para trocar.
+ *     - > 7 dias: LIBERADO em atraso.
+ *   - Ciclo 2 (Palheta B): tela de RETIRAR ARMADILHA E PALHETA B.
+ *     - diasCorridos < 5: BLOQUEADO (aguardar 5 a 7 dias).
+ *     - 5 a 7 dias: LIBERADO para retirar.
+ *     - > 7 dias: LIBERADO em atraso.
  */
 export function decidirAcaoCampo(armadilha) {
+  // 1. Sem cadastro: instalar nova
   if (!armadilha) {
-    return { acao: 'instalar', motivo: 'Número sem cadastro: instalar armadilha nova neste ponto.' };
+    return {
+      acao: 'instalar',
+      bloqueado: false,
+      podeExecutar: true,
+      motivo: 'Número sem cadastro: instalar armadilha nova neste ponto.',
+      rotulo: 'instalar'
+    };
   }
+
+  // 2. Já recolhida do campo
   if (armadilha.status === 'recolhida') {
-    return { acao: 'trocar', rotulo: 'reinstalar', motivo: 'Armadilha recolhida: reinstalar com palheta nova.' };
+    return {
+      acao: 'recolhida',
+      bloqueado: true,
+      podeExecutar: false,
+      motivo: 'Armadilha e palheta já recolhidas. Aguardando contagem no laboratório.',
+      rotulo: 'recolhida'
+    };
   }
+
+  // 3. Já analisada no laboratório
   if (armadilha.status === 'analisada') {
-    return { acao: 'trocar', rotulo: 'nova', motivo: 'Palheta já lida no laboratório: colocar palheta nova.' };
+    return {
+      acao: 'analisada',
+      bloqueado: true,
+      podeExecutar: false,
+      motivo: 'Palheta já analisada no laboratório.',
+      rotulo: 'analisada'
+    };
   }
+
+  // 4. Armadilha em campo
+  const cicloInfo = identificarCicloArmadilha(armadilha);
+  const diasCorridos = Math.max(0, diasDesde(armadilha.instaladaEm));
+  const dataInstalacao = armadilha.instaladaEm ? parseData(armadilha.instaladaEm) : new Date();
+
+  const dataMinima = new Date(dataInstalacao);
+  dataMinima.setDate(dataMinima.getDate() + DIAS_CICLO_PADRAO);
+
+  const dataMaxima = new Date(dataInstalacao);
+  dataMaxima.setDate(dataMaxima.getDate() + DIAS_CICLO_MAXIMO);
+
+  const dataMinFmt = dataMinima.toLocaleDateString('pt-BR');
+  const diaSemanaMin = dataMinima.toLocaleDateString('pt-BR', { weekday: 'short' });
+  const semCapMin = diaSemanaMin.replace('.', '').charAt(0).toUpperCase() + diaSemanaMin.replace('.', '').slice(1);
+
+  const dataMaxFmt = dataMaxima.toLocaleDateString('pt-BR');
+  const diaSemanaMax = dataMaxima.toLocaleDateString('pt-BR', { weekday: 'short' });
+  const semCapMax = diaSemanaMax.replace('.', '').charAt(0).toUpperCase() + diaSemanaMax.replace('.', '').slice(1);
+
+  const diasFaltam = Math.max(0, DIAS_CICLO_PADRAO - diasCorridos);
+  const antesPrazo = diasCorridos < DIAS_CICLO_PADRAO;
+  const atrasada = diasCorridos > DIAS_CICLO_MAXIMO;
+
   const sit = calcularSituacaoArmadilha(armadilha);
-  if (sit.fase === 'hoje' || sit.fase === 'atrasada') {
-    return { acao: 'trocar', rotulo: 'trocar', motivo: sit.titulo, situacao: sit };
+
+  if (cicloInfo.ciclo === 'A') {
+    // -----------------------------------------------------------------------
+    // FASE 1: PALHETA A -> TELA É SEMPRE DE TROCAR PALHETA (Palheta A -> B)
+    // -----------------------------------------------------------------------
+    if (antesPrazo) {
+      return {
+        acao: 'trocar',
+        bloqueado: true,
+        podeExecutar: false,
+        ciclo: 'A',
+        diasCorridos,
+        diasFaltam,
+        dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+        dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+        motivo: `Armadilha em campo há ${diasCorridos} ${diasCorridos === 1 ? 'dia' : 'dias'}. A troca da palheta só é permitida entre 5 e 7 dias. Faltam ${diasFaltam} ${diasFaltam === 1 ? 'dia' : 'dias'} (liberação em ${dataMinFmt}).`,
+        rotulo: 'aguardar_troca',
+        situacao: sit
+      };
+    }
+
+    if (atrasada) {
+      return {
+        acao: 'trocar',
+        bloqueado: false,
+        podeExecutar: true,
+        ciclo: 'A',
+        diasCorridos,
+        diasFaltam: 0,
+        dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+        dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+        motivo: `Troca atrasada (${diasCorridos} dias em campo). Prazo máximo de 7 dias venceu em ${dataMaxFmt}. Troque a palheta o quanto antes.`,
+        rotulo: 'trocar_atrasada',
+        situacao: sit
+      };
+    }
+
+    return {
+      acao: 'trocar',
+      bloqueado: false,
+      podeExecutar: true,
+      ciclo: 'A',
+      diasCorridos,
+      diasFaltam: 0,
+      dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+      dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+      motivo: `Período oficial de troca atingido (${diasCorridos} dias em campo). Troque a Palheta A pela Palheta B.`,
+      rotulo: 'trocar_ideal',
+      situacao: sit
+    };
+  } else {
+    // -----------------------------------------------------------------------
+    // FASE 2: PALHETA B -> TELA É SEMPRE DE RETIRAR ARMADILHA E PALHETA B
+    // -----------------------------------------------------------------------
+    if (antesPrazo) {
+      return {
+        acao: 'recolher',
+        bloqueado: true,
+        podeExecutar: false,
+        ciclo: 'B',
+        diasCorridos,
+        diasFaltam,
+        dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+        dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+        motivo: `Palheta B em campo há ${diasCorridos} ${diasCorridos === 1 ? 'dia' : 'dias'}. A retirada só é permitida entre 5 e 7 dias. Faltam ${diasFaltam} ${diasFaltam === 1 ? 'dia' : 'dias'} (liberação em ${dataMinFmt}).`,
+        rotulo: 'aguardar_recolhimento',
+        situacao: sit
+      };
+    }
+
+    if (atrasada) {
+      return {
+        acao: 'recolher',
+        bloqueado: false,
+        podeExecutar: true,
+        ciclo: 'B',
+        diasCorridos,
+        diasFaltam: 0,
+        dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+        dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+        motivo: `Retirada atrasada (${diasCorridos} dias em campo). Prazo máximo de 7 dias venceu em ${dataMaxFmt}. Recolha a armadilha imediatamente para o laboratório.`,
+        rotulo: 'recolher_atrasada',
+        situacao: sit
+      };
+    }
+
+    return {
+      acao: 'recolher',
+      bloqueado: false,
+      podeExecutar: true,
+      ciclo: 'B',
+      diasCorridos,
+      diasFaltam: 0,
+      dataMinFmt: `${dataMinFmt} (${semCapMin})`,
+      dataMaxFmt: `${dataMaxFmt} (${semCapMax})`,
+      motivo: `Período oficial de retirada atingido (${diasCorridos} dias em campo). Recolher armadilha e Palheta B para o laboratório.`,
+      rotulo: 'recolher_ideal',
+      situacao: sit
+    };
   }
-  return { acao: 'nenhuma', motivo: sit.titulo, situacao: sit };
 }
