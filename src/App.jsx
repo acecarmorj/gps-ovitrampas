@@ -222,6 +222,7 @@ export function App() {
         {chaveModulo === 'campo' && (
           <InstalarArmadilhaScreen
             armadilhas={armadilhas}
+            outrosAgentes={outrosAgentes}
             onArmadilhaCadastrada={() => recarregarDados()}
             onVerMapaGeral={() => navigate('/mapa')}
             onPosicaoAtualizada={(pos) => setUserPos(pos)}

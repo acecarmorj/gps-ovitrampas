@@ -390,7 +390,7 @@ export function MapaGrandeOvitrampa({
 
     // 6.1. Linhas retas entre as armadilhas cadastradas (conforme desenho do usuário)
     if (effectiveShowDistances && armadilhas && armadilhas.length >= 2) {
-      const edges = buildTrapDistanceNetwork(armadilhas, 3, 900);
+      const edges = buildTrapDistanceNetwork(armadilhas, 3, 50000);
 
       edges.forEach((edge) => {
         const polyline = L.polyline(
@@ -407,12 +407,16 @@ export function MapaGrandeOvitrampa({
         );
         polyline.addTo(distanceLayer);
 
-        // Pílula com a metragem exata no ponto médio da reta
+        // Pílula com a metragem exata no ponto médio da reta (mostra km e m se for grande)
+        const textoDist = edge.distancia >= 1000
+          ? `${(edge.distancia / 1000).toFixed(1).replace('.', ',')} km (${edge.distancia} m)`
+          : `${edge.distancia} m`;
+
         const badgeIcon = L.divIcon({
           className: '',
-          html: `<div class="distance-pill ${edge.badgeClass}">${edge.distancia} m</div>`,
-          iconSize: [60, 20],
-          iconAnchor: [30, 10]
+          html: `<div class="distance-pill ${edge.badgeClass}">${textoDist}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
         });
 
         const badge = L.marker(edge.midpoint, {
@@ -457,11 +461,15 @@ export function MapaGrandeOvitrampa({
           (Number(userPos.longitude) + Number(targetTrap.longitude)) / 2
         ];
 
+        const textoDistAgente = dist >= 1000
+          ? `${(dist / 1000).toFixed(1).replace('.', ',')} km (${dist} m)`
+          : `${dist} m`;
+
         const agentBadgeIcon = L.divIcon({
           className: '',
-          html: `<div class="distance-pill distance-pill-ideal" style="box-shadow:0 3px 10px rgba(0,0,0,0.25);">Você ➔ ARM-${targetTrap.numero}: ${dist}m</div>`,
-          iconSize: [140, 22],
-          iconAnchor: [70, 11]
+          html: `<div class="distance-pill distance-pill-ideal" style="box-shadow:0 3px 10px rgba(0,0,0,0.25);">Você ➔ OV-${targetTrap.numero}: ${textoDistAgente}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
         });
 
         const agentBadge = L.marker(agentMidpoint, {

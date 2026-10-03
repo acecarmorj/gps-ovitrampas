@@ -94,7 +94,7 @@ export function findNearbyTraps(targetPoint, allTraps = [], limit = 3, excludeId
  * Constrói a malha de arestas de distância entre as armadilhas cadastradas.
  * Conecta cada armadilha aos seus vizinhos mais próximos (sem arestas duplicadas A-B e B-A).
  */
-export function buildTrapDistanceNetwork(armadilhas = [], maxNeighbors = 3, maxDistance = 900) {
+export function buildTrapDistanceNetwork(armadilhas = [], maxNeighbors = 3, maxDistance = 50000) {
   const validTraps = armadilhas.filter((a) => a.latitude != null && a.longitude != null);
   if (validTraps.length < 2) return [];
 

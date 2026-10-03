@@ -13,6 +13,7 @@ import { Compass } from 'lucide-react';
 
 export function InstalarArmadilhaScreen({
   armadilhas = [],
+  outrosAgentes = [],
   onArmadilhaCadastrada,
   onVerMapaGeral,
   onSelecionarArmadilha,
@@ -235,6 +236,7 @@ export function InstalarArmadilhaScreen({
           showLabels={mostrarRotulos}
           onToggleLabels={() => setMostrarRotulos(!mostrarRotulos)}
           showDistances={true}
+          outrosAgentes={outrosAgentes}
         />
       </div>
 

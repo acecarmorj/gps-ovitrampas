@@ -36,6 +36,23 @@ function pad2(n) {
   return /^\d$/.test(n) ? n.padStart(2, '0') : n;
 }
 
+function formatarDistancia(metros) {
+  if (metros == null || !Number.isFinite(metros)) return '-';
+  if (metros >= 1000) {
+    const km = (metros / 1000).toFixed(1).replace('.', ',');
+    return `${km} km (${metros} m)`;
+  }
+  return `${metros} m`;
+}
+
+function formatarDistanciaCurta(metros) {
+  if (metros == null || !Number.isFinite(metros)) return '-';
+  if (metros >= 1000) {
+    return `${(metros / 1000).toFixed(1).replace('.', ',')} km`;
+  }
+  return `${metros} m`;
+}
+
 export function PainelAcaoCampo({
   armadilhas = [],
   localizacao,
@@ -56,6 +73,14 @@ export function PainelAcaoCampo({
   // do raio do GPS.
   const maisProxima = vizinhasProximas[0];
   const autoPorGps = !numero && maisProxima && maisProxima.distancia <= RAIO_AUTO_METROS;
+
+  const orientacaoGuia = useMemo(() => {
+    return calculateNavigationGuidance(localizacao, armadilhas);
+  }, [
+    Math.round((localizacao?.latitude || 0) * 50000),
+    Math.round((localizacao?.longitude || 0) * 50000),
+    armadilhas
+  ]);
   const armadilha = useMemo(() => {
     if (numero) {
       return armadilhas.find((a) => normalizarNumeroArmadilha(a.numero) === numero) || null;
@@ -215,6 +240,101 @@ export function PainelAcaoCampo({
     : [];
   const sit = armadilha ? calcularSituacaoArmadilha(armadilha) : null;
 
+  const renderAssistenteEspacamento = () => {
+    if (!vizinhasProximas || vizinhasProximas.length === 0) return null;
+    return (
+      <div className="bg-white border-2 border-slate-300 rounded-2xl p-3.5 space-y-2.5">
+        {/* Destaque em fonte grande da mais próxima */}
+        {maisProxima && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-slate-200">
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Armadilha mais próxima</span>
+              <span className="text-base sm:text-lg font-black text-black">
+                Mais próxima: OV-{maisProxima.armadilha.numero} a {formatarDistancia(maisProxima.distancia)}
+              </span>
+            </div>
+            <div className="text-xs sm:text-sm font-black shrink-0">
+              {maisProxima.distancia < 280 && (
+                <span className="text-red-600 bg-red-50 border border-red-300 px-2.5 py-1 rounded-lg inline-block">
+                  Perto demais - afaste-se
+                </span>
+              )}
+              {maisProxima.distancia >= 280 && maisProxima.distancia <= 420 && (
+                <span className="text-black bg-slate-100 border border-black px-2.5 py-1 rounded-lg inline-block">
+                  Distância boa ✓
+                </span>
+              )}
+              {maisProxima.distancia > 420 && (
+                <span className="text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg inline-block">
+                  Longe - pode aproximar
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Instrução Tática de Campo em Tempo Real (Padrão 300m a 400m) */}
+        {orientacaoGuia && orientacaoGuia.status !== 'sem_gps' && (
+          <div className={`p-2.5 rounded-xl border text-xs leading-snug ${
+            orientacaoGuia.status === 'afastar'
+              ? 'bg-red-50 border-red-300 text-red-900'
+              : orientacaoGuia.status === 'ideal'
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold'
+              : 'bg-slate-50 border-slate-300 text-slate-800'
+          }`}>
+            <div className="font-black uppercase text-[10px] tracking-wider mb-1">
+              {orientacaoGuia.status === 'afastar' && '⚠️ Perto demais (< 300 m) - Afaste-se'}
+              {orientacaoGuia.status === 'ideal' && '🎯 Ponto Ideal de Espaçamento (300 a 400 m)'}
+              {orientacaoGuia.status === 'amplo' && '📍 Espaçamento Amplo (> 400 m)'}
+              {orientacaoGuia.status === 'primeira' && '🏁 Primeira Armadilha da Cidade'}
+            </div>
+            <p>{orientacaoGuia.orientacao}</p>
+            <p className="mt-1 font-extrabold">{orientacaoGuia.acao}</p>
+          </div>
+        )}
+
+        {/* Vizinhas no entorno */}
+        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+          <span>Vizinhas no entorno:</span>
+          <span className="text-[10px] text-slate-500 font-semibold">Meta: 300 m a 400 m entre armadilhas</span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {vizinhasProximas.slice(0, 3).map((v) => {
+            const d = v.distancia;
+            const isIdeal = d >= 280 && d <= 420;
+            const isPerto = d < 280;
+            return (
+              <span
+                key={v.armadilha.id}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${
+                  isPerto
+                    ? 'bg-red-50 text-red-700 border-red-300'
+                    : isIdeal
+                    ? 'bg-white text-black border-black'
+                    : 'bg-white text-slate-600 border-slate-300'
+                }`}
+              >
+                <span className="font-black">OV-{v.armadilha.numero}:</span>
+                <span>{formatarDistancia(d)}</span>
+                {isPerto && <span className="text-[10px] text-red-600 font-semibold">(Perto demais)</span>}
+                {isIdeal && <span className="text-[10px] font-bold">✓ (Distância boa)</span>}
+                {d > 420 && <span className="text-[10px] text-slate-500 font-semibold">(Longe)</span>}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Legenda simples */}
+        <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-bold text-slate-900">Meta: 300 m a 400 m entre armadilhas</span>
+          <span className="text-red-600 font-bold">&lt; 280 m: Perto demais - afaste-se</span>
+          <span className="text-black font-bold">280 a 420 m: Distância boa ✓</span>
+          <span className="text-slate-600 font-bold">&gt; 420 m: Longe - pode aproximar</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-3">
       {/* 1. QUAL ARMADILHA */}
@@ -236,7 +356,7 @@ export function PainelAcaoCampo({
           <div className="mt-2 space-y-1.5">
             {maisProxima && (
               <div className="text-xs font-bold text-slate-800 flex items-center justify-between px-1">
-                <span>Mais próxima: <b>OV-{maisProxima.armadilha.numero}</b> a <b>{maisProxima.distancia} m</b></span>
+                <span>Mais próxima: <b>OV-{maisProxima.armadilha.numero}</b> a <b>{formatarDistancia(maisProxima.distancia)}</b></span>
                 {maisProxima.distancia < 280 && (
                   <span className="text-red-600 font-black text-[11px]">Perto demais</span>
                 )}
@@ -260,13 +380,16 @@ export function PainelAcaoCampo({
  : 'bg-white text-slate-800 border-slate-300'
  }`}
                 >
-                  OV-{v.armadilha.numero} · {v.distancia} m
+                  OV-{v.armadilha.numero} · {formatarDistanciaCurta(v.distancia)}
                 </button>
               ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Assistente de espaçamento visível antes de digitar qualquer número */}
+      {!temAlvo && renderAssistenteEspacamento()}
 
       {/* 2. O QUE O SISTEMA ENTENDEU */}
       {temAlvo && (
@@ -307,78 +430,7 @@ export function PainelAcaoCampo({
       {/* 4. FORMULARIO DA ACAO */}
       {acao === 'instalar' && (
         <div className="space-y-2.5">
-          {/* Assistente de Espaçamento de Campo (Distância entre Armadilhas) */}
-          {vizinhasProximas && vizinhasProximas.length > 0 && (
-            <div className="bg-white border-2 border-slate-300 rounded-2xl p-3.5 space-y-2.5">
-              {/* Destaque em fonte grande da mais próxima */}
-              {maisProxima && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2 border-b border-slate-200">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Armadilha mais próxima</span>
-                    <span className="text-base sm:text-lg font-black text-black">
-                      Mais próxima: OV-{maisProxima.armadilha.numero} a {maisProxima.distancia} m
-                    </span>
-                  </div>
-                  <div className="text-xs sm:text-sm font-black shrink-0">
-                    {maisProxima.distancia < 280 && (
-                      <span className="text-red-600 bg-red-50 border border-red-300 px-2.5 py-1 rounded-lg inline-block">
-                        Perto demais - afaste-se
-                      </span>
-                    )}
-                    {maisProxima.distancia >= 280 && maisProxima.distancia <= 420 && (
-                      <span className="text-black bg-slate-100 border border-black px-2.5 py-1 rounded-lg inline-block">
-                        Distância boa ✓
-                      </span>
-                    )}
-                    {maisProxima.distancia > 420 && (
-                      <span className="text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg inline-block">
-                        Longe - pode aproximar
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Vizinhas no entorno */}
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                <span>Vizinhas no entorno:</span>
-                <span className="text-[10px] text-slate-500 font-semibold">Meta: 300 m a 400 m entre armadilhas</span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {vizinhasProximas.slice(0, 3).map((v) => {
-                  const d = v.distancia;
-                  const isIdeal = d >= 280 && d <= 420;
-                  const isPerto = d < 280;
-                  return (
-                    <span
-                      key={v.armadilha.id}
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 ${
-                        isPerto
-                          ? 'bg-red-50 text-red-700 border-red-300'
-                          : isIdeal
-                          ? 'bg-white text-black border-black'
-                          : 'bg-white text-slate-600 border-slate-300'
-                      }`}
-                    >
-                      <span className="font-black">OV-{v.armadilha.numero}:</span>
-                      <span>{d} m</span>
-                      {isPerto && <span className="text-[10px] text-red-600 font-semibold">(Perto demais)</span>}
-                      {isIdeal && <span className="text-[10px] font-bold">✓ (Distância boa)</span>}
-                      {d > 420 && <span className="text-[10px] text-slate-500 font-semibold">(Longe)</span>}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* Legenda simples */}
-              <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="font-bold text-slate-900">Meta: 300 m a 400 m entre armadilhas</span>
-                <span className="text-red-600 font-bold">&lt; 280 m: Perto demais - afaste-se</span>
-                <span className="text-black font-bold">280 a 420 m: Distância boa ✓</span>
-                <span className="text-slate-600 font-bold">&gt; 420 m: Longe - pode aproximar</span>
-              </div>
-            </div>
-          )}
+          {renderAssistenteEspacamento()}
 
           <p className="text-[11px] text-slate-600 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
