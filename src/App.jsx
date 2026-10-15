@@ -17,7 +17,8 @@ import {
   onSyncStatusChange,
   getStatusSincronizacao,
   tentarSincronizarEmSegundoPlano,
-  sincronizarDadosDoServidor
+  sincronizarDadosDoServidor,
+  sincronizarLeiturasDoServidor
 } from './lib/storage';
 import {
   CICLO_AMBAS,
@@ -34,7 +35,7 @@ import { AvisoAcessoEquipe } from './components/AcessoEquipe';
 
 export function App() {
   const { path, navigate } = useAppPath();
-  const [armadilhas, setArmadilhas] = useState([]);
+  const [armadilhas, setArmadilhas] = useState(() => getArmadilhas());
   const [leituras, setLeituras] = useState(() => getLeituras());
   const [cicloAtivo, setCicloAtivo] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -42,7 +43,12 @@ export function App() {
     }
     return CICLO_AMBAS;
   });
-  const [campanhaAtiva, setCampanhaAtivaState] = useState(() => getCampanhaAtiva());
+  const [campanhaAtiva, setCampanhaAtivaState] = useState(() => {
+    if (typeof window !== 'undefined' && (window.location.pathname.includes('/demo') || window.location.pathname.includes('/apresentacao'))) {
+      return CICLO_ID_ANTERIOR;
+    }
+    return getCampanhaAtiva();
+  });
 
   const handleMudarCiclo = (novoCiclo) => {
     setCicloAtivo(novoCiclo);
@@ -100,6 +106,11 @@ export function App() {
 
   useEffect(() => {
     recarregarDados();
+
+    // Sincroniza em segundo plano com o servidor Cloudflare D1
+    sincronizarDadosDoServidor().then(() => recarregarDados()).catch(() => {});
+    sincronizarLeiturasDoServidor().then(() => recarregarDados()).catch(() => {});
+
     const unsubscribe = onStorageUpdate(() => {
       recarregarDados();
     });

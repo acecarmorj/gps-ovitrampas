@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ShieldCheck, MapPin, Globe, FileText, AlertTriangle, ExternalLink } from 'lucide-react';
 import { PainelAdminSimples } from '../admin/PainelAdminSimples';
 import { PainelAcompanhamentoScreen } from '../acompanhamento/PainelAcompanhamentoScreen';
 import { PortalPublicoScreen } from '../publico/PortalPublicoScreen';
 import { SeletorCampanha } from '../../components/SeletorCampanha';
+import { CICLO_ID_ANTERIOR, adaptarArmadilhasParaCiclo } from '../../lib/ciclosOvitrampas';
 
 /**
  * Painel de Demonstração e Apresentação para Grupos (100% Somente Leitura)
@@ -14,18 +15,32 @@ import { SeletorCampanha } from '../../components/SeletorCampanha';
  */
 export function PainelDemoScreen(props) {
   const [visao, setVisao] = useState('admin'); // 'admin' | 'acompanhamento' | 'publico'
+  const [campanhaDemo, setCampanhaDemo] = useState(CICLO_ID_ANTERIOR);
 
   const {
     armadilhasDemo = [],
     armadilhasBrutasDemo = [],
     todasLeituras = [],
-    cicloAtivo,
+    cicloAtivo = 'ambas',
     onMudarCiclo,
-    campanhaAtiva,
-    onMudarCampanha,
     userPos,
     outrosAgentes = []
   } = props;
+
+  // Garante que na demonstração os dados exibidos utilizem o ciclo selecionado (padrão Ano Passado com dados)
+  const armadilhasDemoAdaptadas = useMemo(() => {
+    const base = armadilhasBrutasDemo && armadilhasBrutasDemo.length > 0 ? armadilhasBrutasDemo : armadilhasDemo;
+    const adaptadas = adaptarArmadilhasParaCiclo(base, todasLeituras, cicloAtivo, campanhaDemo);
+    return adaptadas.map((a) => ({
+      ...a,
+      moradorNome: 'XXX',
+      morador_nome: 'XXX',
+      responsavel: 'XXX',
+      rua: 'Rua XXXXXXXXX',
+      numeroImovel: 'XXX',
+      numero_imovel: 'XXX'
+    }));
+  }, [armadilhasBrutasDemo, armadilhasDemo, todasLeituras, cicloAtivo, campanhaDemo]);
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-100 text-slate-900 font-sans select-none overflow-hidden">
@@ -94,13 +109,13 @@ export function PainelDemoScreen(props) {
       <main className="flex-1 min-h-0 relative w-full h-full overflow-hidden">
         {visao === 'admin' && (
           <PainelAdminSimples
-            armadilhas={armadilhasDemo}
+            armadilhas={armadilhasDemoAdaptadas}
             armadilhasBrutas={armadilhasBrutasDemo}
             todasLeituras={todasLeituras}
             cicloAtivo={cicloAtivo}
             onMudarCiclo={onMudarCiclo}
-            campanhaAtiva={campanhaAtiva}
-            onMudarCampanha={onMudarCampanha}
+            campanhaAtiva={campanhaDemo}
+            onMudarCampanha={setCampanhaDemo}
             userPos={userPos}
             outrosAgentes={outrosAgentes}
             onAtualizarArmadilhas={() => {}}
@@ -111,13 +126,13 @@ export function PainelDemoScreen(props) {
         {visao === 'acompanhamento' && (
           <div className="w-full h-full relative">
             <PainelAcompanhamentoScreen
-              armadilhas={armadilhasDemo}
+              armadilhas={armadilhasDemoAdaptadas}
               armadilhasBrutas={armadilhasBrutasDemo}
               todasLeituras={todasLeituras}
               cicloAtivo={cicloAtivo}
               onMudarCiclo={onMudarCiclo}
-              campanhaAtiva={campanhaAtiva}
-              onMudarCampanha={onMudarCampanha}
+              campanhaAtiva={campanhaDemo}
+              onMudarCampanha={setCampanhaDemo}
               userPos={userPos}
               outrosAgentes={outrosAgentes}
               onExcluirArmadilha={() => {}}
@@ -130,10 +145,10 @@ export function PainelDemoScreen(props) {
         {visao === 'publico' && (
           <div className="w-full h-full relative">
             <PortalPublicoScreen
-              armadilhas={armadilhasDemo}
+              armadilhas={armadilhasDemoAdaptadas}
               todasLeituras={todasLeituras}
-              campanhaAtiva={campanhaAtiva}
-              onMudarCampanha={onMudarCampanha}
+              campanhaAtiva={campanhaDemo}
+              onMudarCampanha={setCampanhaDemo}
               onVoltar={() => setVisao('admin')}
             />
           </div>

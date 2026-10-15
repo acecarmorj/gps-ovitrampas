@@ -7,6 +7,8 @@
  */
 
 import { getChaveEquipe, getAgente } from './acessoEquipe';
+import trapsOficiaisJson from './trapsOficiaisCarmo.json';
+import readingsOficiaisJson from './readingsOficiaisCarmo.json';
 
 const DB_NAME = 'gps_ovitrampas_db';
 const DB_VERSION = 2;
@@ -268,12 +270,16 @@ export function compressImage(file, maxDimension = 1200, quality = 0.8) {
 // ---------------------------------------------------------------------------
 
 export function getArmadilhas() {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return trapsOficiaisJson || [];
   try {
     const raw = localStorage.getItem(TRAPS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    return trapsOficiaisJson || [];
   } catch (e) {
-    return [];
+    return trapsOficiaisJson || [];
   }
 }
 
@@ -628,9 +634,16 @@ export function getLeituras() {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(LAB_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    if (Array.isArray(readingsOficiaisJson) && readingsOficiaisJson.length > 0) {
+      return readingsOficiaisJson.map(mapD1ReadingToLocal);
+    }
     return [];
+  } catch (e) {
+    return (readingsOficiaisJson || []).map(mapD1ReadingToLocal);
   }
 }
 

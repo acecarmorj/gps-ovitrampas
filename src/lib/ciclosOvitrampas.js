@@ -10,7 +10,7 @@
  *   * Ambas (Consolidado): Visualização combinada e comparativa (A + B)
  */
 
-import { normalizarNumeroArmadilha } from './storage';
+import { normalizarNumeroArmadilha } from './storage.js';
 
 // Constantes das semanas / palhetas dentro do ciclo
 export const CICLO_SEMANA_1 = 'A';
