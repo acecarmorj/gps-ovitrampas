@@ -14,6 +14,7 @@ import {
   PROPORCAO_BRASAO_CARMO,
   PROPORCAO_LOGO_PREFEITURA
 } from './timbresOficiais';
+import { aplicarMarcaDaguaDemo } from './pdfWatermarkDemo';
 
 const W = 210;
 const M = 15;
@@ -711,5 +712,14 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   }
 
   limparCacheFundos();
-  doc.save(`${interno ? 'RELATORIO_RESULTADOS_INTERNO_CARMO' : 'RELATORIO_TECNICO_SES-RJ_CARMO'}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  const isDemo = Boolean(opcoes.isDemo);
+  if (isDemo) {
+    aplicarMarcaDaguaDemo(doc, {
+      texto: 'VERSÃO DEMONSTRAÇÃO',
+      subtexto: 'USO DIDÁTICO / APRESENTAÇÃO · DADOS ANONIMIZADOS'
+    });
+    doc.save(`${interno ? 'RELATORIO_RESULTADOS_INTERNO_CARMO' : 'RELATORIO_TECNICO_SES-RJ_CARMO'}_DEMO_${new Date().toISOString().slice(0, 10)}.pdf`);
+  } else {
+    doc.save(`${interno ? 'RELATORIO_RESULTADOS_INTERNO_CARMO' : 'RELATORIO_TECNICO_SES-RJ_CARMO'}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
 }

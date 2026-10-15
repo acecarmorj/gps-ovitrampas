@@ -10,6 +10,8 @@ import { faixaDeOvos, temLeitura } from './mapaPoligonos';
 import { temAcessoEquipe } from './acessoEquipe';
 import { carregarTimbresOficiais, PROPORCAO_BRASAO_CARMO } from './timbresOficiais';
 
+import { aplicarMarcaDaguaDemo } from './pdfWatermarkDemo';
+
 const W = 297;
 const H = 210;
 const M = 12;
@@ -20,11 +22,12 @@ const STATUS_TEXTO = { instalada: 'Em campo', recolhida: 'Recolhida', analisada:
 
 const n1 = (n) => Number(n).toFixed(1).replace('.', ',');
 
-export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeituras = []) {
+export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeituras = [], opcoes = {}) {
+  const isDemo = Boolean(opcoes.isDemo);
   const [{ jsPDF }, autoTableMod] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
-  const equipe = temAcessoEquipe();
+  const equipe = temAcessoEquipe() || isDemo;
 
   const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1);
   const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2);
@@ -104,7 +107,11 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   const corpo = linhas.map(({ arm, palA, ovosA, palB, ovosB }) => {
     const r = [`OV-${arm.numero}`];
     if (equipe) {
-      r.push(arm.moradorNome || '-', [arm.rua, arm.numeroImovel].filter(Boolean).join(', ') || '-');
+      if (isDemo) {
+        r.push('XXX', 'Rua XXXXXXXXX, nº XXX');
+      } else {
+        r.push(arm.moradorNome || '-', [arm.rua, arm.numeroImovel].filter(Boolean).join(', ') || '-');
+      }
     }
     r.push(
       arm.bairro || arm.microarea || '-',
@@ -169,5 +176,13 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
     doc.text(`Página ${i} de ${total}`, W - M, H - 6, { align: 'right' });
   }
 
-  doc.save(`relatorio-entomologico-carmo-${new Date().toISOString().slice(0, 10)}.pdf`);
+  if (isDemo) {
+    aplicarMarcaDaguaDemo(doc, {
+      texto: 'VERSÃO DEMONSTRAÇÃO',
+      subtexto: 'USO DIDÁTICO / APRESENTAÇÃO · DADOS PESSOAIS ANONIMIZADOS COM XXX'
+    });
+    doc.save(`relatorio-entomologico-carmo-DEMO-${new Date().toISOString().slice(0, 10)}.pdf`);
+  } else {
+    doc.save(`relatorio-entomologico-carmo-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
 }

@@ -17,7 +17,9 @@ export function InstalarArmadilhaScreen({
   onArmadilhaCadastrada,
   onVerMapaGeral,
   onSelecionarArmadilha,
-  onPosicaoAtualizada
+  onPosicaoAtualizada,
+  campanhaAtiva,
+  onMudarCampanha
 }) {
   // Tela unica do agente de campo: instalar, trocar palheta e recolher.
   // A decisao de qual acao mostrar fica em PainelAcaoCampo.
@@ -455,6 +457,7 @@ export function InstalarArmadilhaScreen({
             localizacao={localizacao}
             vizinhasProximas={vizinhasProximas}
             gpsErrorMsg={gpsErrorMsg}
+            campanhaAtiva={campanhaAtiva}
             numeroPredefinido={numeroArmadilhaSelecionada}
             onConcluido={(msg) => {
               setNumeroArmadilhaSelecionada(null);

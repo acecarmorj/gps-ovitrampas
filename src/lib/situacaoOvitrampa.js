@@ -265,6 +265,14 @@ export function identificarCicloArmadilha(armadilha) {
  */
 export function sugerirProximaPalheta(armadilha) {
   const numero = armadilha?.numero || '';
+  if (!numero) return '01A';
+
+  // Se a armadilha concluiu o ciclo anterior (status analisada ou recolhida),
+  // o novo ciclo começa com a Palheta A!
+  if (armadilha.status === 'analisada' || armadilha.status === 'recolhida') {
+    return `${numero}A`;
+  }
+
   const numInt = parseInt(numero, 10);
   const atual = String(armadilha?.palheta || '').trim().toUpperCase();
   const regex = Number.isNaN(numInt)

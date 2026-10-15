@@ -64,6 +64,7 @@ export function PainelAcaoCampo({
   vizinhasProximas = [],
   gpsErrorMsg,
   numeroPredefinido = null,
+  campanhaAtiva,
   onConcluido
 }) {
   const [numeroDigitado, setNumeroDigitado] = useState(numeroPredefinido ? String(numeroPredefinido) : '');
@@ -199,7 +200,8 @@ export function PainelAcaoCampo({
       const saiu = armadilha.palheta || '-';
       await trocarPalhetaArmadilha(armadilha.id, {
         novaPalheta: nova,
-        observacao: ocorrencia !== 'Normal' ? `Palheta ${saiu} retirada: ${ocorrencia}` : ''
+        observacao: ocorrencia !== 'Normal' ? `Palheta ${saiu} retirada: ${ocorrencia}` : '',
+        cicloId: campanhaAtiva
       });
       concluir(`OV-${armadilha.numero}: saiu ${saiu}, entrou ${nova}. Leve a ${saiu} para o laboratório.`);
     } catch (err) {
@@ -221,7 +223,8 @@ export function PainelAcaoCampo({
       if (faltaMorador) await atualizarArmadilha(armadilha.id, { moradorNome: nomeMorador.trim() });
       const saiu = armadilha.palheta || '-';
       await recolherArmadilhaEPalheta(armadilha.id, {
-        condicoes: ocorrencia === 'Normal' ? 'Armadilha e palheta recolhidas intactas' : ocorrencia
+        condicoes: ocorrencia === 'Normal' ? 'Armadilha e palheta recolhidas intactas' : ocorrencia,
+        cicloId: campanhaAtiva
       });
       concluir(`OV-${armadilha.numero} recolhida. Leve a palheta ${saiu} para o laboratório.`);
     } catch (err) {

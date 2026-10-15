@@ -1,7 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Download, Pencil, X } from 'lucide-react';
-import { atualizarArmadilha } from '../../lib/storage';
-import { adaptarArmadilhasParaCiclo, CICLO_SEMANA_1, CICLO_SEMANA_2 } from '../../lib/ciclosOvitrampas';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Search, Download, Pencil, X, Sparkles, RefreshCw } from 'lucide-react';
+import { atualizarArmadilha, iniciarNovoCicloCampo } from '../../lib/storage';
+import {
+  adaptarArmadilhasParaCiclo,
+  CICLO_SEMANA_1,
+  CICLO_SEMANA_2,
+  CICLO_ID_ATUAL,
+  CICLO_ID_ANTERIOR,
+  getCampanhaAtiva
+} from '../../lib/ciclosOvitrampas';
 import { faixaDeOvos, temLeitura } from '../../lib/mapaPoligonos';
 import { temAcessoEquipe } from '../../lib/acessoEquipe';
 
@@ -19,20 +26,45 @@ function Ponto({ ovos }) {
   return <i className="inline-block w-2.5 h-2.5 rounded-full mr-1 align-middle" style={{ background: f.cor }} />;
 }
 
-export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], todasLeituras = [], onAtualizarArmadilhas }) {
-  const base = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
-  const equipe = temAcessoEquipe();
+export function CadastroArmadilhas({
+  armadilhasBrutas = [],
+  armadilhas = [],
+  todasLeituras = [],
+  campanhaAtiva,
+  onMudarCampanha,
+  onAtualizarArmadilhas,
+  isDemo = false
+}) {
+  const baseBruta = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
+  const base = useMemo(() => {
+    if (!isDemo) return baseBruta;
+    return baseBruta.map((a) => ({
+      ...a,
+      moradorNome: 'XXX',
+      morador_nome: 'XXX',
+      rua: 'Rua XXXXXXXXX',
+      numeroImovel: 'XXX',
+      numero_imovel: 'XXX'
+    }));
+  }, [baseBruta, isDemo]);
+
+  const equipe = !isDemo && temAcessoEquipe();
   const [busca, setBusca] = useState('');
   const [bairro, setBairro] = useState('todos');
   const [situacao, setSituacao] = useState('todas');
+  const [campanhaTabela, setCampanhaTabela] = useState(() => campanhaAtiva || getCampanhaAtiva());
   const [emEdicao, setEmEdicao] = useState(null);
   const [form, setForm] = useState({});
   const [salvando, setSalvando] = useState(false);
   const [aviso, setAviso] = useState('');
 
+  useEffect(() => {
+    if (campanhaAtiva) setCampanhaTabela(campanhaAtiva);
+  }, [campanhaAtiva]);
+
   const linhas = useMemo(() => {
-    const A = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1);
-    const B = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2);
+    const A = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1, campanhaTabela);
+    const B = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2, campanhaTabela);
     const porNumeroA = new Map(A.map((a) => [String(a.numero), a]));
     const porNumeroB = new Map(B.map((b) => [String(b.numero), b]));
     return base
@@ -52,7 +84,7 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
         };
       })
       .sort((x, y) => Number(x.arm.numero) - Number(y.arm.numero));
-  }, [base, todasLeituras]);
+  }, [base, todasLeituras, campanhaTabela]);
 
   const bairros = useMemo(
     () => ['todos', ...Array.from(new Set(base.map((a) => (a.bairro || a.microarea || '').trim()).filter(Boolean))).sort()],
@@ -144,19 +176,80 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
     <div className="max-w-6xl mx-auto w-full p-3 sm:p-5 flex flex-col gap-3 text-black">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-lg font-black leading-tight">Cadastro das armadilhas</h1>
+          <h1 className="text-lg font-black leading-tight">
+            {isDemo ? 'Armadilhas (Somente Leitura)' : 'Cadastro das armadilhas'}
+          </h1>
           <p className="text-xs text-slate-600">
-            {filtradas.length} de {linhas.length} armadilhas ·{' '}
-            {equipe ? 'acesso da equipe ativo (nomes e endereços visíveis)' : 'nomes e endereços de moradores só com o "Acesso da equipe"'}
+            {isDemo
+              ? `${filtradas.length} de ${linhas.length} armadilhas · Modo Demonstração (endereços anonimizados com XXX e edição bloqueada)`
+              : `${filtradas.length} de ${linhas.length} armadilhas · ${
+                  equipe ? 'acesso da equipe ativo (nomes e endereços visíveis)' : 'nomes e endereços de moradores só com o "Acesso da equipe"'
+                }`}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={exportarCsv}
-          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white flex items-center gap-1.5"
-        >
-          <Download size={13} /> Exportar CSV
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Seletor de Ciclo */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-300">
+            <button
+              type="button"
+              onClick={() => {
+                setCampanhaTabela(CICLO_ID_ATUAL);
+                onMudarCampanha?.(CICLO_ID_ATUAL);
+              }}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                campanhaTabela === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+              }`}
+            >
+              Novo Ciclo (2026/2027)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCampanhaTabela(CICLO_ID_ANTERIOR);
+                onMudarCampanha?.(CICLO_ID_ANTERIOR);
+              }}
+              className={`px-3 py-1 text-xs font-bold rounded-md transition ${
+                campanhaTabela === CICLO_ID_ANTERIOR ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+              }`}
+            >
+              Ano Passado (Set/2026)
+            </button>
+          </div>
+
+          {!isDemo && equipe && campanhaTabela === CICLO_ID_ATUAL && (
+            <button
+              type="button"
+              onClick={async () => {
+                const conf = window.confirm(
+                  'Deseja preparar as 56 armadilhas para o NOVO CICLO em campo?\n\n' +
+                  '• Todas as leituras e ovos do ciclo anterior (ano passado) serão mantidas 100% preservadas e intactas no sistema.\n' +
+                  '• As armadilhas em campo serão ajustadas para o status "Em campo" com suas Palhetas A iniciais (01A ... 56A).\n\n' +
+                  'Deseja prosseguir?'
+                );
+                if (!conf) return;
+                try {
+                  await iniciarNovoCicloCampo({ cicloId: '2026_NOVO' });
+                  onAtualizarArmadilhas?.();
+                  alert('Novo ciclo iniciado com sucesso! Armadilhas preparadas em campo com Palheta A.');
+                } catch (err) {
+                  alert('Erro ao iniciar novo ciclo em campo.');
+                }
+              }}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs"
+              title="Prepara as armadilhas para o novo ciclo em campo sem apagar o histórico anterior"
+            >
+              <Sparkles size={13} /> Iniciar Novo Ciclo em Campo
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={exportarCsv}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white flex items-center gap-1.5"
+          >
+            <Download size={13} /> Exportar CSV
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -223,14 +316,20 @@ export function CadastroArmadilhas({ armadilhasBrutas = [], armadilhas = [], tod
                   {ovosAB === null ? '-' : (<><Ponto ovos={mediaAB} />{ovosAB}<span className="ml-1 font-normal text-[10px] text-slate-500">(méd. {Number(mediaAB).toFixed(0)})</span></>)}
                 </td>
                 <td className="px-2 py-1.5 text-right">
-                  <button
-                    type="button"
-                    onClick={() => abrirEdicao(arm)}
-                    className="p-1.5 rounded-lg border border-slate-300 hover:bg-slate-100"
-                    aria-label={`Editar OV-${arm.numero}`}
-                  >
-                    <Pencil size={13} />
-                  </button>
+                  {!isDemo ? (
+                    <button
+                      type="button"
+                      onClick={() => abrirEdicao(arm)}
+                      className="p-1.5 rounded-lg border border-slate-300 hover:bg-slate-100"
+                      aria-label={`Editar OV-${arm.numero}`}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-bold px-1 py-0.5 border border-slate-200 rounded">
+                      Demo
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

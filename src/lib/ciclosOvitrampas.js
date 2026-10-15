@@ -1,53 +1,178 @@
 /**
  * Gerenciador dos Ciclos Epidemiológicos de Carmo - RJ:
- * - Ciclo A (Semana 1): Palhetas A (01A ... 56A)
- * - Ciclo B (Semana 2): Palhetas B (01B ... 56B)
- * - Ambas (Consolidado): Visualização combinada e comparativa (A + B)
+ * - Ciclos / Campanhas Anuais:
+ *   * Ciclo Anterior (Ano Passado): '2025_2026' (Preservado intacto - Setembro/2026)
+ *   * Ciclo Atual (Novo Ciclo): '2026_NOVO' (Novo monitoramento em campo)
+ *   * Todos / Consolidado Histórico: 'todos'
+ * - Fases do Ciclo:
+ *   * Ciclo A (Semana 1): Palhetas A (01A ... 56A)
+ *   * Ciclo B (Semana 2): Palhetas B (01B ... 56B)
+ *   * Ambas (Consolidado): Visualização combinada e comparativa (A + B)
  */
 
 import { normalizarNumeroArmadilha } from './storage';
 
+// Constantes das semanas / palhetas dentro do ciclo
 export const CICLO_SEMANA_1 = 'A';
 export const CICLO_SEMANA_2 = 'B';
 export const CICLO_AMBAS = 'ambas';
 
+// Constantes dos Ciclos Anuais / Campanhas
+export const CICLO_ID_ANTERIOR = '2025_2026';
+export const CICLO_ID_ATUAL = '2026_NOVO';
+export const CICLO_ID_TODOS = 'todos';
+
+export const CAMPANHAS_OFICIAIS = [
+  {
+    id: CICLO_ID_ATUAL,
+    rotulo: 'Ciclo Atual (2026/2027)',
+    rotuloCurto: 'Novo Ciclo',
+    badge: '2026/2027',
+    ano: '2026/2027',
+    descricao: 'Novo ciclo epidemiológico em andamento',
+    ativo: true,
+    dataCorte: '2026-10-10'
+  },
+  {
+    id: CICLO_ID_ANTERIOR,
+    rotulo: 'Ciclo Anterior (Ano Passado)',
+    rotuloCurto: 'Ano Passado',
+    badge: '2025/2026',
+    ano: '2025/2026',
+    descricao: 'Ciclo consolidado de Setembro/2026 (Preservado)',
+    ativo: false,
+    dataCorte: '2026-09-01'
+  }
+];
+
+const STORAGE_KEY_CAMPANHA_ATIVA = 'ovitrampa_campanha_ativa';
+
 /**
- * Classifica uma palheta ou leitura no Ciclo A ou Ciclo B
+ * Retorna o ID da campanha ativa no sistema
+ */
+export function getCampanhaAtiva() {
+  if (typeof window !== 'undefined') {
+    const salva = localStorage.getItem(STORAGE_KEY_CAMPANHA_ATIVA);
+    if (salva) return salva;
+  }
+  return CICLO_ID_ATUAL; // Padrão: Novo ciclo para operação de campo e laboratório
+}
+
+/**
+ * Define e persiste a campanha ativa no sistema
+ */
+export function setCampanhaAtiva(campanhaId) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY_CAMPANHA_ATIVA, campanhaId);
+    window.dispatchEvent(new CustomEvent('ovitrampa_campanha_alterada', { detail: campanhaId }));
+  }
+}
+
+/**
+ * Retorna a lista de ciclos/campanhas disponíveis
+ */
+export function getCiclosDisponiveis(todasLeituras = []) {
+  const mapa = new Map();
+  CAMPANHAS_OFICIAIS.forEach((c) => mapa.set(c.id, { ...c }));
+
+  if (Array.isArray(todasLeituras)) {
+    todasLeituras.forEach((l) => {
+      const cid = l.cicloId || l.campanhaId;
+      if (cid && !mapa.has(cid)) {
+        mapa.set(cid, {
+          id: cid,
+          rotulo: `Ciclo ${cid}`,
+          rotuloCurto: cid,
+          badge: cid,
+          ano: cid,
+          descricao: `Ciclo personalizado ${cid}`,
+          ativo: false
+        });
+      }
+    });
+  }
+
+  return Array.from(mapa.values());
+}
+
+/**
+ * Determina se uma leitura pertence ao Ciclo Anterior ou ao Novo Ciclo
+ */
+export function classificarCampanhaLeitura(leitura) {
+  if (!leitura) return CICLO_ID_ANTERIOR;
+
+  // 1. Identificador explícito gravado na leitura
+  if (leitura.cicloId) return String(leitura.cicloId);
+  if (leitura.campanhaId) return String(leitura.campanhaId);
+
+  // 2. Classificação temporal de corte (Semana de Setembro/2026 vs Novo Ciclo)
+  const dataIso = leitura.lidaEm || leitura.lida_em;
+  if (dataIso) {
+    try {
+      const d = new Date(dataIso);
+      // Leituras a partir de 10/10/2026 pertencem ao Novo Ciclo
+      if (d >= new Date('2026-10-10T00:00:00Z')) {
+        return CICLO_ID_ATUAL;
+      }
+    } catch (_) {}
+  }
+
+  // Fallback padrão: dados legados pertencem ao ciclo anterior (ano passado)
+  return CICLO_ID_ANTERIOR;
+}
+
+/**
+ * Classifica uma palheta ou leitura no Ciclo A (Semana 1) ou Ciclo B (Semana 2)
  */
 export function classificarCiclo(nomePalheta, dataLeitura) {
   const p = String(nomePalheta || '').trim().toUpperCase();
   if (p.endsWith('B') || p.includes('B')) return CICLO_SEMANA_2;
   if (p.endsWith('A') || p.includes('A')) return CICLO_SEMANA_1;
 
-  // Fallback por data (Semana 1 foi analisada até 26/09/2026; Semana 2 a partir de 27/09/2026)
+  // Fallback por data
   if (dataLeitura) {
     try {
       const d = new Date(dataLeitura);
-      if (d >= new Date('2026-09-27T00:00:00Z')) return CICLO_SEMANA_2;
+      // Para o ciclo anterior (Set/2026), corte da semana 2 foi em 27/09/2026
+      if (d < new Date('2026-10-10T00:00:00Z') && d >= new Date('2026-09-27T00:00:00Z')) {
+        return CICLO_SEMANA_2;
+      }
     } catch (_) {}
   }
   return CICLO_SEMANA_1;
 }
 
 /**
- * Mapeia todas as leituras existentes pelo número da armadilha e separa por ciclo
+ * Mapeia todas as leituras existentes pelo número da armadilha e separa por ciclo semanal,
+ * com suporte a filtro estrito por Campanha/AnoCiclo ('2025_2026', '2026_NOVO' ou 'todos').
  */
-export function agruparLeiturasPorArmadilha(todasLeituras = []) {
+export function agruparLeiturasPorArmadilha(todasLeituras = [], anoCiclo = null) {
   const mapa = new Map();
 
   todasLeituras.forEach((leit) => {
     const num = normalizarNumeroArmadilha(leit.numeroArmadilha || leit.numero_armadilha);
     if (!num) return;
 
+    // Filtro estrito de ciclo anual/campanha (evita misturar palheta 01A do ano passado com 01A do novo ciclo)
+    if (anoCiclo && anoCiclo !== CICLO_ID_TODOS) {
+      const campLeit = classificarCampanhaLeitura(leit);
+      if (campLeit !== anoCiclo) {
+        return; // Pula leitura que não pertence ao ciclo selecionado
+      }
+    }
+
     if (!mapa.has(num)) {
       mapa.set(num, {
         leiturasA: [],
-        leiturasB: []
+        leiturasB: [],
+        todasLeituras: []
       });
     }
 
-    const ciclo = classificarCiclo(leit.numeroPalheta || leit.numero_palheta, leit.lidaEm || leit.lida_em);
-    if (ciclo === CICLO_SEMANA_2) {
+    mapa.get(num).todasLeituras.push(leit);
+
+    const cicloSemana = classificarCiclo(leit.numeroPalheta || leit.numero_palheta, leit.lidaEm || leit.lida_em);
+    if (cicloSemana === CICLO_SEMANA_2) {
       mapa.get(num).leiturasB.push(leit);
     } else {
       mapa.get(num).leiturasA.push(leit);
@@ -58,29 +183,32 @@ export function agruparLeiturasPorArmadilha(todasLeituras = []) {
 }
 
 /**
- * Resolve os dados detalhados dos dois ciclos para uma armadilha
+ * Se a mesma palheta foi lida mais de uma vez (recontagem), vale a leitura MAIS RECENTE.
  */
-// Se a mesma palheta foi lida mais de uma vez (recontagem), vale a leitura MAIS RECENTE.
 function maisRecente(lista = []) {
   if (lista.length === 0) return null;
   return lista.reduce((m, l) => (String(l.lidaEm || l.lida_em || '') >= String(m.lidaEm || m.lida_em || '') ? l : m), lista[0]);
 }
 
-export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
+/**
+ * Resolve os dados detalhados dos ciclos para uma armadilha,
+ * respeitando o isolamento do ano/campanha.
+ */
+export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map(), anoCiclo = null) {
   const num = normalizarNumeroArmadilha(armadilha.numero);
-  const agrupado = mapaLeituras.get(num) || { leiturasA: [], leiturasB: [] };
-  // Armadilha ja adaptada a um ciclo (tem cicloAtivo): palheta, status e
-  // ultimosOvos sao sinteticos ('26A + 26B', 'analisada', ovos de A ou A+B).
-  // Os fallbacks abaixo leriam esses campos como dado real - era assim que
-  // o Ciclo B saia com os ovos do A. Nesse caso so valem as leituras.
+  const agrupado = mapaLeituras.get(num) || { leiturasA: [], leiturasB: [], todasLeituras: [] };
   const bruta = !armadilha.cicloAtivo;
 
-  // Palheta A: busca da leitura ou do histórico da armadilha
+  // Palheta A: busca da leitura no store da campanha ativa
   let leituraA = maisRecente(agrupado.leiturasA);
   let ovosA = leituraA != null ? Number(leituraA.ovos ?? leituraA.qtdOvos ?? 0) : null;
 
-  // Se não encontrou no store de leituras, checa se a própria armadilha tem registro de Palheta A
-  if (ovosA === null && bruta) {
+  // IMPORTANTE: Fallbacks do objeto armadilha (dados de setembro gravados direto no cadastro)
+  // pertencem EXCLUSIVAMENTE ao Ciclo Anterior (2025_2026).
+  // Eles NUNCA devem poluir o Novo Ciclo (2026_NOVO).
+  const ehCicloAnteriorOuLegado = !anoCiclo || anoCiclo === CICLO_ID_ANTERIOR || anoCiclo === CICLO_ID_TODOS;
+
+  if (ovosA === null && bruta && ehCicloAnteriorOuLegado) {
     // 1. Checa histórico de palhetas
     if (Array.isArray(armadilha.historicoPalhetas)) {
       const itemA = armadilha.historicoPalhetas.find((h) => {
@@ -105,8 +233,8 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
   let leituraB = maisRecente(agrupado.leiturasB);
   let ovosB = leituraB != null ? Number(leituraB.ovos ?? leituraB.qtdOvos ?? 0) : null;
 
-  // Se a armadilha está atualmente com palheta B e foi analisada no laboratório
-  if (ovosB === null && bruta && (armadilha.palheta || '').toUpperCase().endsWith('B')) {
+  // Se a armadilha está atualmente com palheta B e foi analisada no laboratório (apenas no ciclo anterior)
+  if (ovosB === null && bruta && ehCicloAnteriorOuLegado && (armadilha.palheta || '').toUpperCase().endsWith('B')) {
     if (armadilha.status === 'analisada' && armadilha.ultimosOvos != null) {
       ovosB = Number(armadilha.ultimosOvos);
     }
@@ -121,7 +249,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
     : null;
 
   const palhetaA = leituraA?.numeroPalheta || `${num}A`;
-  const palhetaB = leituraB?.numeroPalheta || (armadilha.palheta && armadilha.palheta.toUpperCase().endsWith('B') ? armadilha.palheta : `${num}B`);
+  const palhetaB = leituraB?.numeroPalheta || `${num}B`;
 
   return {
     numero: num,
@@ -137,19 +265,22 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map()) {
     temLeituraAmbas: temLeituraA || temLeituraB,
     positivaA: temLeituraA ? ovosA > 0 : null,
     positivaB: temLeituraB ? ovosB > 0 : null,
-    positivaAmbas: (ovosTotal != null && ovosTotal > 0)
+    positivaAmbas: (ovosTotal != null && ovosTotal > 0),
+    campanha: anoCiclo || CICLO_ID_ATUAL
   };
 }
 
 /**
  * Transforma a lista de armadilhas para exibir no mapa, gráficos e tabelas
- * conforme o ciclo selecionado ('A', 'B' ou 'ambas').
+ * conforme o ciclo selecionado ('A', 'B' ou 'ambas') E o ano/campanha selecionado ('2025_2026', '2026_NOVO', 'todos').
  */
-export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], ciclo = 'ambas') {
-  const mapaLeituras = agruparLeiturasPorArmadilha(todasLeituras);
+export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], ciclo = 'ambas', anoCiclo = null) {
+  const campanha = anoCiclo || (typeof window !== 'undefined' ? getCampanhaAtiva() : CICLO_ID_ATUAL);
+  const mapaLeituras = agruparLeiturasPorArmadilha(todasLeituras, campanha);
+  const ehNovoCiclo = campanha === CICLO_ID_ATUAL;
 
   return armadilhas.map((arm) => {
-    const dados = resolverLeiturasArmadilha(arm, mapaLeituras);
+    const dados = resolverLeiturasArmadilha(arm, mapaLeituras, campanha);
 
     if (ciclo === CICLO_SEMANA_1) {
       // MODO CICLO A (Semana 1)
@@ -157,6 +288,7 @@ export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], 
       return {
         ...arm,
         cicloAtivo: CICLO_SEMANA_1,
+        campanhaAtiva: campanha,
         cicloLabel: 'Palheta A (1ª Semana)',
         palheta: dados.palhetaA,
         ultimosOvos: dados.ovosA,
@@ -170,13 +302,14 @@ export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], 
       const lida = dados.temLeituraB;
       const statusB = lida
         ? 'analisada'
-        : arm.status === 'recolhida'
+        : (!ehNovoCiclo && arm.status === 'recolhida')
         ? 'recolhida'
         : 'instalada';
 
       return {
         ...arm,
         cicloAtivo: CICLO_SEMANA_2,
+        campanhaAtiva: campanha,
         cicloLabel: 'Palheta B (2ª Semana)',
         palheta: dados.palhetaB,
         ultimosOvos: dados.ovosB,
@@ -189,13 +322,14 @@ export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], 
     const algumaLida = dados.temLeituraAmbas;
     const statusConsolidado = algumaLida
       ? 'analisada'
-      : arm.status === 'recolhida'
+      : (!ehNovoCiclo && arm.status === 'recolhida')
       ? 'recolhida'
       : 'instalada';
 
     return {
       ...arm,
       cicloAtivo: CICLO_AMBAS,
+      campanhaAtiva: campanha,
       cicloLabel: 'Ambas (Consolidado A + B)',
       palheta: `${dados.palhetaA} + ${dados.palhetaB}`,
       ultimosOvos: dados.ovosTotal,

@@ -3,6 +3,7 @@ import {
   ChevronLeft, Volume2, VolumeX,
   Cloud, CloudOff, RefreshCw, Check, AlertTriangle
 } from 'lucide-react';
+import { SeletorCampanha } from './SeletorCampanha';
 
 const INFO_MODULOS = {
   campo: {
@@ -40,7 +41,9 @@ export function Header({
   syncInfo = { isOnline: true, syncInProgress: false, totalPendentes: 0 },
   onForcarSync,
   cicloAtivo,
-  onMudarCiclo
+  onMudarCiclo,
+  campanhaAtiva,
+  onMudarCampanha
 }) {
   const modulo = INFO_MODULOS[abaAtual] || { titulo: 'GPS Ovitrampas', subtitulo: 'Carmo - RJ' };
 
@@ -105,10 +108,18 @@ export function Header({
         </div>
       </div>
 
-      {/* LADO DIREITO: TOTAL DE ARMADILHAS E CONTROLE DE SOM */}
+      {/* LADO DIREITO: SELETOR DE CAMPANHA, TOTAL DE ARMADILHAS E SOM */}
       <div className="flex items-center gap-2">
+        {onMudarCampanha && (
+          <SeletorCampanha
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={onMudarCampanha}
+            tamanho="compacto"
+          />
+        )}
+
         {totalArmadilhas > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
+          <div className="hidden md:flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600">
             <span>Armadilhas:</span>
             <span className="text-black font-extrabold">{totalArmadilhas}</span>
           </div>

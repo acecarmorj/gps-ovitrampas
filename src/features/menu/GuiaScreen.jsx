@@ -72,6 +72,15 @@ export function GuiaScreen({
       titulo: 'Painel do Administrador',
       descricao: 'Mapa de calor por quarteirão (Ciclo A e B), tabela, IPO/IDO e relatórios oficiais em PDF.'
     },
+    {
+      rota: '/demo',
+      tag: 'Apresentação para Grupos',
+      tagCor: 'bg-amber-100 text-amber-900 border-amber-300',
+      icone: ShieldCheck,
+      iconeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+      titulo: 'Modo Demonstração (Somente Leitura)',
+      descricao: 'Ambiente seguro para apresentação e treinamento: endereços anonimizados (XXX), relatórios com marca d\'água no fundo e edição bloqueada.'
+    }
   ];
 
   return (

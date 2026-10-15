@@ -7,7 +7,10 @@ import {
   adaptarArmadilhasParaCiclo,
   calcularMetricasCiclo,
   CICLO_SEMANA_1,
-  CICLO_SEMANA_2
+  CICLO_SEMANA_2,
+  CICLO_ID_ATUAL,
+  CICLO_ID_ANTERIOR,
+  getCampanhaAtiva
 } from '../../lib/ciclosOvitrampas';
 import {
   FAIXAS_RISCO,
@@ -55,6 +58,8 @@ export function PainelMapaCalorInterativo({
   armadilhas = [],
   armadilhasBrutas = [],
   todasLeituras = [],
+  campanhaAtiva,
+  onMudarCampanha,
   onVoltar,
   fundoMapa: fundoProp,
   onMudarFundoMapa
@@ -63,6 +68,12 @@ export function PainelMapaCalorInterativo({
   const fundo = fundoProp ?? fundoInterno; // 'vetorial' (mapa claro) | 'satelite'
   const mudarFundo = onMudarFundoMapa || setFundoInterno;
   const tileRef = useRef(null);
+  const [campanhaMapa, setCampanhaMapa] = useState(() => campanhaAtiva || getCampanhaAtiva());
+
+  useEffect(() => {
+    if (campanhaAtiva) setCampanhaMapa(campanhaAtiva);
+  }, [campanhaAtiva]);
+
   const [ciclo, setCiclo] = useState(CICLO_SEMANA_1);
   const [territorio, setTerritorio] = useState('sede');
   const [busca, setBusca] = useState('');
@@ -84,10 +95,10 @@ export function PainelMapaCalorInterativo({
   const porCiclo = useMemo(() => {
     const base = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
     return {
-      A: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1),
-      B: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2)
+      A: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1, campanhaMapa),
+      B: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2, campanhaMapa)
     };
-  }, [armadilhas, armadilhasBrutas, todasLeituras]);
+  }, [armadilhas, armadilhasBrutas, todasLeituras, campanhaMapa]);
 
   const doTerrA = useMemo(() => porCiclo.A.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
   const doTerrB = useMemo(() => porCiclo.B.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
@@ -422,6 +433,33 @@ export function PainelMapaCalorInterativo({
           <h1 className="text-base sm:text-lg font-black text-black leading-tight">Mapa de calor por quarteirão</h1>
           <p className="text-[11px] text-slate-500">Uso interno · Ciclo A, Ciclo B e Ambas (A + B)</p>
         </div>
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-300">
+          <button
+            type="button"
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+              campanhaMapa === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+            }`}
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_ATUAL);
+              onMudarCampanha?.(CICLO_ID_ATUAL);
+            }}
+          >
+            Novo Ciclo
+          </button>
+          <button
+            type="button"
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+              campanhaMapa === CICLO_ID_ANTERIOR ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+            }`}
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_ANTERIOR);
+              onMudarCampanha?.(CICLO_ID_ANTERIOR);
+            }}
+          >
+            Ano Passado
+          </button>
+        </div>
+
         <div className="flex gap-1">
           <button className={chave(ciclo === CICLO_SEMANA_1)} onClick={() => setCiclo(CICLO_SEMANA_1)}>Ciclo A</button>
           <button className={chave(ciclo === CICLO_SEMANA_2)} onClick={() => setCiclo(CICLO_SEMANA_2)}>Ciclo B</button>

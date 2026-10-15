@@ -1,29 +1,45 @@
-import React, { useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Download, Calendar } from 'lucide-react';
 import {
   adaptarArmadilhasParaCiclo,
   calcularMetricasCiclo,
   CICLO_SEMANA_1,
-  CICLO_SEMANA_2
+  CICLO_SEMANA_2,
+  CICLO_ID_ATUAL,
+  CICLO_ID_ANTERIOR
 } from '../../lib/ciclosOvitrampas';
 import { FAIXAS_RISCO, faixaDeOvos, temLeitura, agruparPorPoligono, montarRotulosOvos, mesclarCiclos, metricasAmbas, idvDe } from '../../lib/mapaPoligonos';
 import { gerarPdfMapaCalor } from '../../lib/pdfMapaCalor';
 import { gerarRelatorioSesRjLimpo } from '../../lib/pdfRelatorioSesRjLimpo';
 import { gerarRelatorioEntomologicoLimpo } from '../../lib/pdfRelatorioEntomologicoLimpo';
+import { gerarPdfTabelaContaOvos } from '../../lib/pdfRelatorioContaOvos';
 import { temAcessoEquipe } from '../../lib/acessoEquipe';
 
 /**
  * Central de relatorios: preto no branco; cor so nas faixas de risco (azul, verde, amarelo, laranja, vermelho).
  */
-export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], todasLeituras = [], fundoMapa, onMudarFundoMapa }) {
+export function CentralRelatorios({
+  armadilhas = [],
+  armadilhasBrutas = [],
+  todasLeituras = [],
+  campanhaAtiva,
+  fundoMapa,
+  onMudarFundoMapa,
+  isDemo = false
+}) {
   const base = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
   const [ocupado, setOcupado] = useState(null);
+  const [campanhaRelatorio, setCampanhaRelatorio] = useState(() => campanhaAtiva || CICLO_ID_ANTERIOR);
+
+  useEffect(() => {
+    if (campanhaAtiva) setCampanhaRelatorio(campanhaAtiva);
+  }, [campanhaAtiva]);
 
   const ciclos = useMemo(() => {
-    const A = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1);
-    const B = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2);
+    const A = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1, campanhaRelatorio);
+    const B = adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2, campanhaRelatorio);
     return { A, B, mA: calcularMetricasCiclo(A), mB: calcularMetricasCiclo(B) };
-  }, [base, todasLeituras]);
+  }, [base, todasLeituras, campanhaRelatorio]);
 
   const executar = async (chave, fn) => {
     try {
@@ -50,7 +66,8 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
         territorioLabel: 'Todo o município',
         fundo: fundoMapa,
         estilo: 'nevoeiro',
-        rotulos: montarRotulosOvos(ciclos.A, ciclos.B)
+        rotulos: montarRotulosOvos(ciclos.A, ciclos.B),
+        isDemo
       });
     });
 
@@ -135,45 +152,99 @@ export function CentralRelatorios({ armadilhas = [], armadilhasBrutas = [], toda
         </div>
       </div>
 
+      {/* SELEÇÃO DO CICLO DOS RELATÓRIOS */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-300 rounded-xl p-3.5">
+        <div>
+          <span className="text-xs font-black text-black block">Ciclo dos Dados para Emissão de Relatórios:</span>
+          <span className="text-[11px] text-slate-600">
+            {campanhaRelatorio === CICLO_ID_ATUAL
+              ? 'Novo Ciclo (2026/2027) — Monitoramento epidemiológico em andamento'
+              : 'Ciclo Anterior (Ano Passado) — Dados oficiais consolidados de Setembro/2026 (Preservados)'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-300 shrink-0">
+          <button
+            type="button"
+            onClick={() => setCampanhaRelatorio(CICLO_ID_ATUAL)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              campanhaRelatorio === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            Novo Ciclo (2026/2027)
+          </button>
+          <button
+            type="button"
+            onClick={() => setCampanhaRelatorio(CICLO_ID_ANTERIOR)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              campanhaRelatorio === CICLO_ID_ANTERIOR ? 'bg-black text-white' : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            Ano Passado (Set/2026)
+          </button>
+        </div>
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         {linhaCiclo('Ciclo A', ciclos.mA, ciclos.A)}
         {linhaCiclo('Ciclo B', ciclos.mB, ciclos.B)}
       </div>
 
+      {isDemo && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-center gap-2.5 text-amber-900 text-xs">
+          <span className="text-base">⚠️</span>
+          <div>
+            <span className="font-bold">Modo Demonstração Ativo:</span> Todos os relatórios gerados nesta tela receberão automaticamente a <b>marca d'água "VERSÃO DEMONSTRAÇÃO"</b> e terão todos os endereços e nomes de moradores anonimizados com <b>XXX</b>.
+          </div>
+        </div>
+      )}
+
       {bloco(
         'Relatório técnico SES-RJ',
         'Documento oficial para a Secretaria de Estado de Saúde: indicadores, gráficos de Ciclo A, B e Ambas, mapas de calor da cidade e dos distritos e inventário anônimo.',
         botao('ses', 'Baixar PDF', () =>
-          executar('ses', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa }))
+          executar('ses', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, isDemo }))
         ),
-        'Anônimo: sem nomes de moradores nem endereços.'
+        isDemo ? 'Versão Demonstração: Marca d\'água de fundo e dados anonimizados.' : 'Anônimo: sem nomes de moradores nem endereços.'
       )}
 
       {bloco(
         'Mapa de calor por quarteirão',
         'Mapa do município com quarteirões coloridos, ampliação da sede, mapa de calor em nevoeiro e tabela das armadilhas.',
         botao('mapa', 'Baixar PDF (A, B e Ambas)', mapaPdf),
-        'Uso interno.'
+        isDemo ? 'Versão Demonstração: Marca d\'água no fundo da página.' : 'Uso interno.'
       )}
 
       {bloco(
         'Relatório de resultados (consolidado)',
         'Mesmo conteúdo do relatório SES-RJ (indicadores, gráficos de Ciclo A, B e Ambas e mapas de calor da cidade e dos distritos), com as armadilhas identificadas por OV-NN.',
         botao('consolidado', 'Baixar PDF', () =>
-          executar('consolidado', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, variante: 'resultados' }))
+          executar('consolidado', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, variante: 'resultados', isDemo }))
         ),
-        'Uso interno.'
+        isDemo ? 'Versão Demonstração: Marca d\'água no fundo da página.' : 'Uso interno.'
       )}
 
       {bloco(
         'Relatório entomológico detalhado',
         'Uma linha por armadilha: morador e endereço (com o acesso da equipe), palheta e ovos de A e de B, situação.',
         botao('entomologico', 'Baixar PDF', () =>
-          executar('entomologico', () => gerarRelatorioEntomologicoLimpo(base, todasLeituras))
+          executar('entomologico', () => gerarRelatorioEntomologicoLimpo(base, todasLeituras, { isDemo }))
         ),
-        temAcessoEquipe()
-          ? 'Uso interno: contém nome e endereço de moradores. Não enviar para fora.'
-          : 'Uso interno. Sem o "Acesso da equipe" (tela inicial), nomes e endereços saem em branco.'
+        isDemo
+          ? 'Versão Demonstração: Nomes e endereços anonimizados com XXX e marca d\'água no fundo.'
+          : temAcessoEquipe()
+            ? 'Uso interno: contém nome e endereço de moradores. Não enviar para fora.'
+            : 'Uso interno. Sem o "Acesso da equipe" (tela inicial), nomes e endereços saem em branco.'
+      )}
+
+      {bloco(
+        'Tabela de Coordenadas para Conta Ovos - 56 Armadilhas',
+        'Tabela oficial em A4 paisagem com todas as 56 ovitrampas de Carmo-RJ (sede e distritos): dados cadastrais, endereço, bairro, quarteirão e coordenadas completas prontas para cópia/colagem no sistema Conta Ovos (Fiocruz/MS).',
+        botao('conta-ovos', 'Baixar PDF', () =>
+          executar('conta-ovos', () => gerarPdfTabelaContaOvos(base, { isDemo }))
+        ),
+        isDemo
+          ? 'Versão Demonstração: Endereços e moradores substituídos por XXX com marca d\'água no fundo.'
+          : 'Padrão oficial WGS-84 / SIRGAS 2000 com timbres da Prefeitura e Vigilância Ambiental.'
       )}
     </div>
   );

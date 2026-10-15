@@ -461,7 +461,7 @@ export async function atualizarArmadilha(id, dadosAtualizados) {
  * Realiza o recolhimento/retirada da armadilha e palheta no campo,
  * preparando o material recolhido para contagem no laboratório.
  */
-export async function recolherArmadilhaEPalheta(id, { dataRecolhimento, condicoes, observacao } = {}) {
+export async function recolherArmadilhaEPalheta(id, { dataRecolhimento, condicoes, observacao, cicloId } = {}) {
   if (!id) return null;
   const todas = getArmadilhas();
   const arm = todas.find((a) => a.id === id);
@@ -469,13 +469,15 @@ export async function recolherArmadilhaEPalheta(id, { dataRecolhimento, condicoe
 
   const dataRecolhimentoIso = dataRecolhimento ? new Date(dataRecolhimento).toISOString() : new Date().toISOString();
   const palhetaRecolhida = arm.palheta || 'P-01';
+  const cicloResolvido = cicloId || (typeof window !== 'undefined' ? localStorage.getItem('ovitrampa_campanha_ativa') : null) || '2026_NOVO';
 
   const itemHistorico = {
     tipo: 'recolhimento',
     palhetaRecolhida,
     recolhidaEm: dataRecolhimentoIso,
     condicoes: condicoes || 'Armadilha e palheta recolhidas intactas',
-    observacao: observacao || ''
+    observacao: observacao || '',
+    cicloId: cicloResolvido
   };
 
   const historicoAtualizado = [itemHistorico, ...(arm.historicoPalhetas || [])];
@@ -499,7 +501,7 @@ export async function recolherArmadilhaEPalheta(id, { dataRecolhimento, condicoe
  * Inicia um novo ciclo de campo oficial (DIAS_CICLO_PADRAO, hoje 5 dias -
  * ver src/lib/situacaoOvitrampa.js).
  */
-export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao } = {}) {
+export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, observacao, cicloId } = {}) {
   if (!id) return null;
   const todas = getArmadilhas();
   const arm = todas.find((a) => a.id === id);
@@ -507,13 +509,15 @@ export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, obser
 
   const dataInicioCiclo = dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString();
   const palhetaAtual = String(novaPalheta || '').trim() || `PL-${arm.numero}`;
+  const cicloResolvido = cicloId || (typeof window !== 'undefined' ? localStorage.getItem('ovitrampa_campanha_ativa') : null) || '2026_NOVO';
 
   const itemHistorico = {
     palhetaAnterior: arm.palheta || 'P-01',
     trocadaEm: dataInicioCiclo,
     novaPalheta: palhetaAtual,
     ovosCicloAnterior: arm.ultimosOvos != null ? arm.ultimosOvos : null,
-    observacao: observacao || ''
+    observacao: observacao || '',
+    cicloId: cicloResolvido
   };
 
   const historicoAtualizado = [itemHistorico, ...(arm.historicoPalhetas || [])];
@@ -527,6 +531,81 @@ export async function trocarPalhetaArmadilha(id, { novaPalheta, dataTroca, obser
     historicoPalhetas: historicoAtualizado,
     observacoes: observacao ? `${arm.observacoes ? arm.observacoes + ' | ' : ''}${observacao}` : arm.observacoes
   });
+}
+
+/**
+ * Inicia com segurança o Novo Ciclo em uma armadilha específica,
+ * configurando-a com Palheta A para a nova campanha sem apagar o histórico anterior.
+ */
+export async function iniciarNovoCicloArmadilha(id, { novaPalheta, dataInicio, cicloId = '2026_NOVO' } = {}) {
+  if (!id) return null;
+  const todas = getArmadilhas();
+  const arm = todas.find((a) => a.id === id);
+  if (!arm) return null;
+
+  const dataInicioIso = dataInicio ? new Date(dataInicio).toISOString() : new Date().toISOString();
+  const palhetaInicial = novaPalheta || `${normalizarNumeroArmadilha(arm.numero)}A`;
+
+  const itemHistorico = {
+    tipo: 'inicio_novo_ciclo',
+    palhetaAnterior: arm.palheta || 'P-01',
+    novaPalheta: palhetaInicial,
+    iniciadoEm: dataInicioIso,
+    ovosCicloAnterior: arm.ultimosOvos != null ? arm.ultimosOvos : null,
+    cicloId,
+    observacao: `Novo ciclo ${cicloId} iniciado com palheta ${palhetaInicial}`
+  };
+
+  const historicoAtualizado = [itemHistorico, ...(arm.historicoPalhetas || [])];
+
+  return atualizarArmadilha(id, {
+    palheta: palhetaInicial,
+    ultimaPalheta: arm.palheta || 'P-01',
+    status: 'instalada',
+    ultimosOvos: null,
+    instaladaEm: dataInicioIso,
+    historicoPalhetas: historicoAtualizado
+  });
+}
+
+/**
+ * Prepara o banco oficial para a abertura de um Novo Ciclo de Campo (ex: 2026_NOVO):
+ * - Preserva todo o histórico e leituras anteriores intactos.
+ * - Coloca as armadilhas no status 'instalada' com sua Palheta A correspondente.
+ */
+export async function iniciarNovoCicloCampo({ cicloId = '2026_NOVO', dataInicio } = {}) {
+  const todas = getArmadilhas();
+  const dataInicioIso = dataInicio ? new Date(dataInicio).toISOString() : new Date().toISOString();
+
+  const atualizadas = todas.map((arm) => {
+    const num = normalizarNumeroArmadilha(arm.numero);
+    const palhetaInicial = `${num}A`;
+    const itemHistorico = {
+      tipo: 'inicio_novo_ciclo',
+      palhetaAnterior: arm.palheta || 'P-01',
+      novaPalheta: palhetaInicial,
+      iniciadoEm: dataInicioIso,
+      ovosCicloAnterior: arm.ultimosOvos != null ? arm.ultimosOvos : null,
+      cicloId,
+      observacao: `Novo ciclo ${cicloId} iniciado em campo`
+    };
+
+    return {
+      ...arm,
+      palheta: palhetaInicial,
+      ultimaPalheta: arm.palheta || 'P-01',
+      status: 'instalada',
+      ultimosOvos: null,
+      instaladaEm: dataInicioIso,
+      historicoPalhetas: [itemHistorico, ...(arm.historicoPalhetas || [])],
+      atualizadaEm: new Date().toISOString(),
+      syncStatus: 'pendente'
+    };
+  });
+
+  await salvarArmadilhas(atualizadas);
+  tentarSincronizarEmSegundoPlano();
+  return atualizadas;
 }
 
 export async function excluirArmadilha(id) {
@@ -587,13 +666,15 @@ export async function registrarLeituraLaboratorio({
   ovos,
   tecnicoNome,
   fotoPalhetaDataUrl,
-  laudoAuditoria = null
+  laudoAuditoria = null,
+  cicloId
 }) {
   if (!getChaveEquipe() || !getAgente()) {
     throw new Error('Digite seu nome e a senha da equipe antes de lançar palhetas.');
   }
   const leituraId = 'leit-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
   const qtdOvos = Math.max(0, parseInt(ovos, 10) || 0);
+  const cicloResolvido = cicloId || (typeof window !== 'undefined' ? localStorage.getItem('ovitrampa_campanha_ativa') : null) || '2026_NOVO';
 
   const novaLeitura = {
     id: leituraId,
@@ -602,6 +683,8 @@ export async function registrarLeituraLaboratorio({
     numeroPalheta: String(numeroPalheta).trim() || 'P-01',
     ovos: qtdOvos,
     positiva: qtdOvos > 0,
+    cicloId: cicloResolvido,
+    campanhaId: cicloResolvido,
     tecnicoNome: getAgente() || tecnicoNome || 'Laboratório Carmo',
     // Como a contagem foi feita (app, IA, correções à mão). Antes os campos
     // da IA chegavam aqui e eram descartados - nenhuma leitura guardava de
@@ -863,6 +946,8 @@ function mapD1ReadingToLocal(row) {
     fotoPalheta: row.foto_palheta || null,
     lidaEm: row.lida_em,
     laudoAuditoria: laudo,
+    cicloId: row.ciclo_id || row.cicloId || (row.lida_em && new Date(row.lida_em) >= new Date('2026-10-10T00:00:00Z') ? '2026_NOVO' : '2025_2026'),
+    campanhaId: row.ciclo_id || row.cicloId || (row.lida_em && new Date(row.lida_em) >= new Date('2026-10-10T00:00:00Z') ? '2026_NOVO' : '2025_2026'),
     syncStatus: 'sincronizado'
   };
 }

@@ -9,17 +9,26 @@ import {
   getLeituras,
   compressImage
 } from '../../lib/storage';
+import {
+  CICLO_ID_ATUAL,
+  CICLO_ID_ANTERIOR,
+  classificarCampanhaLeitura,
+  getCampanhaAtiva
+} from '../../lib/ciclosOvitrampas';
 import { playSuccessSound } from '../../lib/soundAlert';
 import { AssistenteContadorOvos } from './AssistenteContadorOvos';
 import { IdentificadorEspecies } from './IdentificadorEspecies';
 import { ModalConfigChaveGemini } from './ModalConfigChaveGemini';
 import { FotosSalvasScreen } from './FotosSalvasScreen';
 import { faixaDeOvos } from '../../lib/mapaPoligonos';
+import { Calendar } from 'lucide-react';
 
 export function LaboratorioScreen({
   armadilhas = [],
   armadilhaPreSelecionada = null,
-  onLeituraConcluida
+  onLeituraConcluida,
+  campanhaAtiva,
+  onMudarCampanha
 }) {
   const fileInputRef = useRef(null);
 
@@ -34,6 +43,12 @@ export function LaboratorioScreen({
   const [fotoPalheta, setFotoPalheta] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState(null);
+  const [cicloLeitura, setCicloLeitura] = useState(() => campanhaAtiva || getCampanhaAtiva());
+  const [filtroCicloHistorico, setFiltroCicloHistorico] = useState('todos');
+
+  useEffect(() => {
+    if (campanhaAtiva) setCicloLeitura(campanhaAtiva);
+  }, [campanhaAtiva]);
 
   // Assistente de IA de Ovos
   const [mostrarAssistente, setMostrarAssistente] = useState(false);
@@ -120,6 +135,7 @@ export function LaboratorioScreen({
         numeroArmadilha: numeroArmadilha.trim(),
         numeroPalheta: numeroPalheta.trim() || 'P-01',
         ovos: qtdOvos,
+        cicloId: cicloLeitura,
         tecnicoNome: getAgente() || 'Laboratório Carmo',
         fotoPalhetaDataUrl: fotoPalheta,
         laudoAuditoria
@@ -241,6 +257,52 @@ export function LaboratorioScreen({
             {/* FORMULÁRIO RÁPIDO DE PALHETAS */}
             <form onSubmit={handleSalvar} className="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm space-y-3.5">
               
+              {/* SELEÇÃO DO CICLO EPIDEMIOLÓGICO */}
+              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-700" />
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block leading-tight">
+                      Ciclo da Leitura
+                    </span>
+                    <span className="text-xs font-black text-slate-900">
+                      {cicloLeitura === CICLO_ID_ATUAL ? 'Novo Ciclo (2026/2027)' : 'Ciclo Anterior (Ano Passado)'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCicloLeitura(CICLO_ID_ATUAL);
+                      onMudarCampanha?.(CICLO_ID_ATUAL);
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                      cicloLeitura === CICLO_ID_ATUAL
+                        ? 'bg-black text-white shadow-xs'
+                        : 'text-slate-600 hover:text-black'
+                    }`}
+                  >
+                    Novo Ciclo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCicloLeitura(CICLO_ID_ANTERIOR);
+                      onMudarCampanha?.(CICLO_ID_ANTERIOR);
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${
+                      cicloLeitura === CICLO_ID_ANTERIOR
+                        ? 'bg-black text-white shadow-xs'
+                        : 'text-slate-600 hover:text-black'
+                    }`}
+                  >
+                    Ano Passado
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[11px] font-black uppercase tracking-wider text-slate-600 mb-1">
@@ -448,39 +510,93 @@ export function LaboratorioScreen({
 
             {/* HISTÓRICO RECENTE CLEAN */}
             <div className="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs space-y-2.5">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                <History className="w-4 h-4 text-slate-400" />
-                <h2 className="text-xs font-black uppercase tracking-wider text-slate-700">
-                  Últimas Leituras ({historicoLeituras.length})
-                </h2>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-slate-400" />
+                  <h2 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                    Últimas Leituras ({historicoLeituras.filter((l) => filtroCicloHistorico === 'todos' || classificarCampanhaLeitura(l) === filtroCicloHistorico).length})
+                  </h2>
+                </div>
+
+                {/* Filtro por ciclo */}
+                <div className="flex items-center gap-1 text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroCicloHistorico('todos')}
+                    className={`px-2 py-0.5 rounded-lg border transition-all ${
+                      filtroCicloHistorico === 'todos'
+                        ? 'bg-black text-white border-black shadow-xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    Todas ({historicoLeituras.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroCicloHistorico(CICLO_ID_ATUAL)}
+                    className={`px-2 py-0.5 rounded-lg border transition-all ${
+                      filtroCicloHistorico === CICLO_ID_ATUAL
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    Novo ({historicoLeituras.filter((l) => classificarCampanhaLeitura(l) === CICLO_ID_ATUAL).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroCicloHistorico(CICLO_ID_ANTERIOR)}
+                    className={`px-2 py-0.5 rounded-lg border transition-all ${
+                      filtroCicloHistorico === CICLO_ID_ANTERIOR
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    Ano Passado ({historicoLeituras.filter((l) => classificarCampanhaLeitura(l) === CICLO_ID_ANTERIOR).length})
+                  </button>
+                </div>
               </div>
 
-              {historicoLeituras.length === 0 ? (
-                <p className="text-center text-xs text-slate-400 py-3">Nenhuma leitura registrada.</p>
+              {historicoLeituras.filter((l) => filtroCicloHistorico === 'todos' || classificarCampanhaLeitura(l) === filtroCicloHistorico).length === 0 ? (
+                <p className="text-center text-xs text-slate-400 py-3">Nenhuma leitura encontrada para este ciclo.</p>
               ) : (
-                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                  {historicoLeituras.map((leit) => (
-                    <div
-                      key={leit.id}
-                      className="bg-slate-50 border border-slate-200/80 px-3 py-2 rounded-xl flex items-center justify-between gap-2"
-                    >
-                      <div>
-                        <span className="font-black text-slate-900 text-xs">OV-{leit.numeroArmadilha}</span>
-                        <span className="text-[10px] text-slate-500 ml-2">({leit.numeroPalheta})</span>
-                        {leit.laudoAuditoria?.ia && (
-                          <span className="text-[9px] font-extrabold text-slate-700 bg-white border border-slate-300 px-1.5 py-0.2 rounded-full ml-1.5">
-                            IA {leit.laudoAuditoria.ia.concordancia}% acordo
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  {historicoLeituras
+                    .filter((l) => filtroCicloHistorico === 'todos' || classificarCampanhaLeitura(l) === filtroCicloHistorico)
+                    .map((leit) => {
+                      const camp = classificarCampanhaLeitura(leit);
+                      const ehNovo = camp === CICLO_ID_ATUAL;
+                      return (
+                        <div
+                          key={leit.id}
+                          className="bg-slate-50 border border-slate-200/80 px-3 py-2 rounded-xl flex items-center justify-between gap-2"
+                        >
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-black text-slate-900 text-xs">OV-{leit.numeroArmadilha}</span>
+                            <span className="text-[10px] text-slate-500">({leit.numeroPalheta})</span>
+                            <span
+                              className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border ${
+                                ehNovo
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                  : 'bg-amber-50 text-amber-800 border-amber-300'
+                              }`}
+                            >
+                              {ehNovo ? 'Novo Ciclo' : 'Ano Passado'}
+                            </span>
+                            {leit.laudoAuditoria?.ia && (
+                              <span className="text-[9px] font-extrabold text-slate-700 bg-white border border-slate-300 px-1.5 py-0.2 rounded-full">
+                                IA {leit.laudoAuditoria.ia.concordancia}%
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className="text-xs font-black px-2 py-0.5 rounded-full bg-white text-black border border-slate-300 inline-flex items-center gap-1.5 shrink-0"
+                          >
+                            <i className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: faixaDeOvos(leit.ovos).cor }} />
+                            {leit.ovos} ovos
                           </span>
-                        )}
-                      </div>
-                      <span
-                        className="text-xs font-black px-2 py-0.5 rounded-full bg-white text-black border border-slate-300 inline-flex items-center gap-1.5"
-                      >
-                        <i className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: faixaDeOvos(leit.ovos).cor }} />
-                        {leit.ovos} ovos
-                      </span>
-                    </div>
-                  ))}
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

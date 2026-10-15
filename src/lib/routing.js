@@ -42,6 +42,11 @@ export function normalizePath(pathname) {
     return '/publico';
   }
 
+  // Modo Demonstração / Apresentação (Somente Leitura e Anonimizado)
+  if (clean === '/demo' || clean === '/demonstracao' || clean === '/apresentacao') {
+    return '/demo';
+  }
+
   // Rota desconhecida volta ao Guia
   return '/guia';
 }

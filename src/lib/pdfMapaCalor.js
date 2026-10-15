@@ -9,6 +9,7 @@ import { getAllPolygons } from './geoDetection';
 import { classificarTerritorio } from './pdfRelatorioEntomologico';
 import { mercN, invMercN, gerarFundoSatelite } from './fundoSatelite';
 import { carregarTimbresOficiais, PROPORCAO_BRASAO_CARMO } from './timbresOficiais';
+import { aplicarMarcaDaguaDemo } from './pdfWatermarkDemo';
 
 const W = 297;
 const H = 210;
@@ -360,7 +361,7 @@ export function desenharMapaELegenda(doc, subset, gruposSub, my, mh, opts = {}) 
   doc.text(texto, lx, ly);
 }
 
-export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial', secoes, estilo = 'nevoeiro', rotulos = null }) {
+export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas, ciclo, territorioLabel, fundo = 'vetorial', secoes, estilo = 'nevoeiro', rotulos = null, isDemo = false }) {
   const [{ jsPDF }, autoTableMod] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
@@ -632,5 +633,13 @@ export async function gerarPdfMapaCalor({ armadilhas = [], grupos = [], metricas
   }
 
   limparCacheFundos();
-  doc.save(`mapa-calor-ciclo-${listaSecoes.map((x) => x.ciclo).join('-')}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  if (isDemo) {
+    aplicarMarcaDaguaDemo(doc, {
+      texto: 'VERSÃO DEMONSTRAÇÃO',
+      subtexto: 'USO DIDÁTICO / APRESENTAÇÃO · DADOS ANONIMIZADOS'
+    });
+    doc.save(`mapa-calor-ciclo-${listaSecoes.map((x) => x.ciclo).join('-')}-DEMO-${new Date().toISOString().slice(0, 10)}.pdf`);
+  } else {
+    doc.save(`mapa-calor-ciclo-${listaSecoes.map((x) => x.ciclo).join('-')}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
 }

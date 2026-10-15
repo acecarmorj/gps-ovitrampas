@@ -8,6 +8,7 @@ import { LaboratorioScreen } from './features/laboratorio/LaboratorioScreen';
 import { PainelAdminSimples as PainelAdminScreen } from './features/admin/PainelAdminSimples';
 import { PainelMapaCalorInterativo } from './features/mapa/PainelMapaCalorInterativo';
 import { PortalPublicoScreen } from './features/publico/PortalPublicoScreen';
+import { PainelDemoScreen } from './features/demo/PainelDemoScreen';
 import {
   getArmadilhas,
   getLeituras,
@@ -18,7 +19,14 @@ import {
   tentarSincronizarEmSegundoPlano,
   sincronizarDadosDoServidor
 } from './lib/storage';
-import { CICLO_AMBAS, adaptarArmadilhasParaCiclo } from './lib/ciclosOvitrampas';
+import {
+  CICLO_AMBAS,
+  CICLO_ID_ATUAL,
+  CICLO_ID_ANTERIOR,
+  getCampanhaAtiva,
+  setCampanhaAtiva,
+  adaptarArmadilhasParaCiclo
+} from './lib/ciclosOvitrampas';
 import { setMuted } from './lib/soundAlert';
 import { iniciarMonitoramentoOutrosAgentes } from './lib/agentLiveTracking';
 import { GpsGatekeeperModal } from './components/GpsGatekeeperModal';
@@ -34,6 +42,7 @@ export function App() {
     }
     return CICLO_AMBAS;
   });
+  const [campanhaAtiva, setCampanhaAtivaState] = useState(() => getCampanhaAtiva());
 
   const handleMudarCiclo = (novoCiclo) => {
     setCicloAtivo(novoCiclo);
@@ -41,6 +50,19 @@ export function App() {
       localStorage.setItem('ovitrampa_ciclo_ativo', novoCiclo);
     } catch (_) {}
   };
+
+  const handleMudarCampanha = (novaCampanha) => {
+    setCampanhaAtivaState(novaCampanha);
+    setCampanhaAtiva(novaCampanha);
+  };
+
+  useEffect(() => {
+    const handleCampanha = (e) => {
+      if (e.detail) setCampanhaAtivaState(e.detail);
+    };
+    window.addEventListener('ovitrampa_campanha_alterada', handleCampanha);
+    return () => window.removeEventListener('ovitrampa_campanha_alterada', handleCampanha);
+  }, []);
 
   const [quotaAviso, setQuotaAviso] = useState(false);
 
@@ -84,10 +106,36 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // Armadilhas adaptadas conforme o ciclo selecionado (Palheta A, Palheta B, ou Ambas A + B)
+  // Armadilhas adaptadas conforme o ciclo semanal (Palheta A, Palheta B, ou Ambas A + B)
+  // E conforme a campanha selecionada (Novo Ciclo 2026/2027 vs Ciclo Anterior 2025/2026)
   const armadilhasAdaptadas = useMemo(() => {
-    return adaptarArmadilhasParaCiclo(armadilhas, leituras, cicloAtivo);
-  }, [armadilhas, leituras, cicloAtivo]);
+    return adaptarArmadilhasParaCiclo(armadilhas, leituras, cicloAtivo, campanhaAtiva);
+  }, [armadilhas, leituras, cicloAtivo, campanhaAtiva]);
+
+  // Versão 100% anonimizada para demonstrações públicas e apresentações em grupo (Modo Demo)
+  const armadilhasDemo = useMemo(() => {
+    return armadilhasAdaptadas.map((a) => ({
+      ...a,
+      moradorNome: 'XXX',
+      morador_nome: 'XXX',
+      responsavel: 'XXX',
+      rua: 'Rua XXXXXXXXX',
+      numeroImovel: 'XXX',
+      numero_imovel: 'XXX'
+    }));
+  }, [armadilhasAdaptadas]);
+
+  const armadilhasBrutasDemo = useMemo(() => {
+    return armadilhas.map((a) => ({
+      ...a,
+      moradorNome: 'XXX',
+      morador_nome: 'XXX',
+      responsavel: 'XXX',
+      rua: 'Rua XXXXXXXXX',
+      numeroImovel: 'XXX',
+      numero_imovel: 'XXX'
+    }));
+  }, [armadilhas]);
 
   // Monitoramento em tempo real de múltiplos agentes em campo (Carmo-RJ).
   // userPos muda de objeto a cada tick de GPS (varias vezes por segundo); se o
@@ -148,8 +196,11 @@ export function App() {
     navigate('/laboratorio');
   };
 
+  const isDemo = path === '/demo' || (typeof window !== 'undefined' && (window.location.search.includes('demo=1') || window.location.search.includes('demo=true')));
+
   // Mapeia caminho atual para a chave de aba do Header
   const getChaveModulo = () => {
+    if (isDemo || path === '/demo') return 'demo';
     if (path === '/campo') return 'campo';
     if (path === '/mapa') return 'mapa';
     if (path === '/laboratorio') return 'laboratorio';
@@ -176,8 +227,8 @@ export function App() {
         <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
       )}
       
-      {/* O Guia e o Portal Público possuem cabeçalhos próprios. Nas telas internas, exibe o Header do agente */}
-      {chaveModulo !== 'guia' && chaveModulo !== 'publico' && (
+      {/* O Guia, o Portal Público e o Modo Demonstração possuem cabeçalhos próprios. Nas telas internas, exibe o Header do agente */}
+      {chaveModulo !== 'guia' && chaveModulo !== 'publico' && chaveModulo !== 'demo' && (
         <Header
           abaAtual={chaveModulo}
           onMudarAba={(destino) => {
@@ -195,6 +246,8 @@ export function App() {
           onForcarSync={handleForcarSync}
           cicloAtivo={cicloAtivo}
           onMudarCiclo={handleMudarCiclo}
+          campanhaAtiva={campanhaAtiva}
+          onMudarCampanha={handleMudarCampanha}
         />
       )}
 
@@ -216,6 +269,8 @@ export function App() {
             onForcarSync={handleForcarSync}
             isMuted={isMuted}
             onToggleMute={handleToggleMute}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
           />
         )}
 
@@ -230,6 +285,8 @@ export function App() {
               setArmadilhaSelecionadaMapa(arm);
               navigate('/mapa');
             }}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
           />
         )}
 
@@ -240,6 +297,8 @@ export function App() {
             todasLeituras={leituras}
             cicloAtivo={cicloAtivo}
             onMudarCiclo={handleMudarCiclo}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
             userPos={userPos}
             outrosAgentes={outrosAgentes}
             onExcluirArmadilha={() => recarregarDados()}
@@ -253,6 +312,22 @@ export function App() {
             armadilhas={armadilhas}
             armadilhaPreSelecionada={armadilhaParaLab}
             onLeituraConcluida={() => recarregarDados()}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
+          />
+        )}
+
+        {chaveModulo === 'demo' && (
+          <PainelDemoScreen
+            armadilhasDemo={armadilhasDemo}
+            armadilhasBrutasDemo={armadilhasBrutasDemo}
+            todasLeituras={leituras}
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={handleMudarCiclo}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
+            userPos={userPos}
+            outrosAgentes={outrosAgentes}
           />
         )}
 
@@ -263,6 +338,8 @@ export function App() {
             todasLeituras={leituras}
             cicloAtivo={cicloAtivo}
             onMudarCiclo={handleMudarCiclo}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
             userPos={userPos}
             outrosAgentes={outrosAgentes}
             onAtualizarArmadilhas={() => recarregarDados()}
@@ -274,6 +351,10 @@ export function App() {
             armadilhas={armadilhasAdaptadas}
             armadilhasBrutas={armadilhas}
             todasLeituras={leituras}
+            cicloAtivo={cicloAtivo}
+            onMudarCiclo={handleMudarCiclo}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
             userPos={userPos}
             onVoltar={() => navigate('/guia')}
             onAbrirLab={() => navigate('/laboratorio')}
@@ -284,6 +365,8 @@ export function App() {
           <PortalPublicoScreen
             armadilhas={armadilhasAdaptadas}
             todasLeituras={leituras}
+            campanhaAtiva={campanhaAtiva}
+            onMudarCampanha={handleMudarCampanha}
             onVoltar={() => navigate('/guia')}
           />
         )}

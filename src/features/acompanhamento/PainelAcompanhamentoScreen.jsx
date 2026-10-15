@@ -21,11 +21,14 @@ export function PainelAcompanhamentoScreen({
   todasLeituras = [],
   cicloAtivo = 'ambas',
   onMudarCiclo,
+  campanhaAtiva,
+  onMudarCampanha,
   userPos,
   outrosAgentes = [],
   onExcluirArmadilha,
   onIrParaLaboratorio,
-  armadilhaInicial = null
+  armadilhaInicial = null,
+  isDemo = false
 }) {
   // Modo Campo (Troca Rápida por Proximidade GPS)
   // Em telas de celular (< 768px), inicia ativo por padrão para que o agente tenha a tela limpa e rápida
@@ -241,6 +244,9 @@ export function PainelAcompanhamentoScreen({
               <SeletorCicloPalheta
                 cicloAtivo={cicloAtivo}
                 onMudarCiclo={onMudarCiclo}
+                campanhaAtiva={campanhaAtiva}
+                onMudarCampanha={onMudarCampanha}
+                mostrarCampanha={true}
                 tamanho="compacto"
               />
             </div>
@@ -378,6 +384,9 @@ export function PainelAcompanhamentoScreen({
             <SeletorCicloPalheta
               cicloAtivo={cicloAtivo}
               onMudarCiclo={onMudarCiclo}
+              campanhaAtiva={campanhaAtiva}
+              onMudarCampanha={onMudarCampanha}
+              mostrarCampanha={true}
               tamanho="compacto"
             />
           )}
@@ -665,33 +674,39 @@ export function PainelAcompanhamentoScreen({
             </div>
 
             {/* BOTÕES DE AÇÃO: 1. RECOLHER ARMADILHA & PALHETA (DESTAQUE) / 2. TROCAR PALHETA */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setArmadilhaParaTroca(armadilhaAlvoProximidade);
-                  setTipoAcaoModal('recolher');
-                  setModalTrocaPalhetaAberto(true);
-                }}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <PackageCheck className="w-5 h-5" />
-                <span>RECOLHER ARMADILHA & PALHETA (RETIRADA)</span>
-              </button>
+            {isDemo ? (
+              <div className="bg-amber-100 border border-amber-300 rounded-2xl p-3 text-center text-amber-950 text-xs font-black">
+                👁️ MODO DEMONSTRAÇÃO · Ações de campo bloqueadas para proteção dos dados reais
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArmadilhaParaTroca(armadilhaAlvoProximidade);
+                    setTipoAcaoModal('recolher');
+                    setModalTrocaPalhetaAberto(true);
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <PackageCheck className="w-5 h-5" />
+                  <span>RECOLHER ARMADILHA & PALHETA (RETIRADA)</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setArmadilhaParaTroca(armadilhaAlvoProximidade);
-                  setTipoAcaoModal('trocar');
-                  setModalTrocaPalhetaAberto(true);
-                }}
-                className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 active:scale-[0.98] py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              >
-                <RotateCw className="w-3.5 h-3.5 text-blue-600" />
-                <span>Trocar apenas Palheta (Novo Ciclo {DIAS_CICLO_PADRAO} dias)</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setArmadilhaParaTroca(armadilhaAlvoProximidade);
+                    setTipoAcaoModal('trocar');
+                    setModalTrocaPalhetaAberto(true);
+                  }}
+                  className="w-full bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 active:scale-[0.98] py-2 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RotateCw className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Trocar apenas Palheta (Novo Ciclo {DIAS_CICLO_PADRAO} dias)</span>
+                </button>
+              </div>
+            )}
 
             {/* ATALHOS RÁPIDOS DE NAVEGAÇÃO, BUSCA MANUAL E LABORATÓRIO */}
             <div className="grid grid-cols-4 gap-1.5 text-xs">
@@ -1170,7 +1185,8 @@ export function PainelAcompanhamentoScreen({
                 const atualizada = await recolherArmadilhaEPalheta(armadilhaParaTroca.id, {
                   dataRecolhimento: dataRecolhimento ? new Date(dataRecolhimento).toISOString() : new Date().toISOString(),
                   condicoes,
-                  observacao
+                  observacao,
+                  cicloId: campanhaAtiva
                 });
 
                 if (atualizada) {
@@ -1261,7 +1277,8 @@ export function PainelAcompanhamentoScreen({
                 const atualizada = await trocarPalhetaArmadilha(armadilhaParaTroca.id, {
                   novaPalheta,
                   dataTroca: dataTroca ? new Date(dataTroca).toISOString() : new Date().toISOString(),
-                  observacao
+                  observacao,
+                  cicloId: campanhaAtiva
                 });
 
                 if (atualizada) {
