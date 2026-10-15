@@ -29,28 +29,31 @@ function prepararArmadilhas(lista, isDemo = false) {
     const numero = String(num).padStart(2, '0');
     const palheta = itemDinamico.palheta || itemDinamico.ultimaPalheta || itemDinamico.ultima_palheta || baseOficial.palheta || `${numero}A`;
     
-    let morador = (itemDinamico.moradorNome || itemDinamico.morador_nome || itemDinamico.responsavel || baseOficial.morador_nome || '').trim() || '-';
-    let rua = (itemDinamico.rua || baseOficial.rua || '').trim();
-    let numIm = String(itemDinamico.numeroImovel || itemDinamico.numero_imovel || baseOficial.numero_imovel || '').trim();
-
-    if (isDemo) {
-      morador = 'XXX';
-      rua = 'Rua XXXXXXXXX';
-      numIm = 'XXX';
-    }
+    // Prioriza o cadastro oficial auditado de campo para garantir precisão cadastral
+    let morador = isDemo
+      ? 'XXX'
+      : (baseOficial.morador_nome || baseOficial.moradorNome || itemDinamico.moradorNome || itemDinamico.morador_nome || '').trim() || '-';
+    let rua = isDemo
+      ? 'Rua XXXXXXXXX'
+      : (baseOficial.rua || itemDinamico.rua || '').trim();
+    let numIm = isDemo
+      ? 'XXX'
+      : String(baseOficial.numero_imovel || baseOficial.numeroImovel || itemDinamico.numeroImovel || itemDinamico.numero_imovel || '').trim();
 
     let endereco = '-';
-    if (rua && numIm) {
+    if (isDemo) {
+      endereco = 'Rua XXXXXXXXX, nº XXX';
+    } else if (rua && numIm) {
       endereco = `${rua}, ${numIm}`;
     } else if (rua) {
       endereco = rua;
     }
 
-    const bairro = (itemDinamico.bairro || itemDinamico.microarea || baseOficial.bairro || baseOficial.microarea || '').trim() || '-';
-    const quarteirao = (itemDinamico.quarteirao || baseOficial.quarteirao || '').trim() || '-';
+    const bairro = (baseOficial.bairro || baseOficial.microarea || itemDinamico.bairro || itemDinamico.microarea || '').trim() || '-';
+    const quarteirao = (baseOficial.quarteirao || itemDinamico.quarteirao || '').trim() || '-';
 
-    const latRaw = itemDinamico.latitude !== undefined && itemDinamico.latitude !== null ? itemDinamico.latitude : baseOficial.latitude;
-    const lngRaw = itemDinamico.longitude !== undefined && itemDinamico.longitude !== null ? itemDinamico.longitude : baseOficial.longitude;
+    const latRaw = baseOficial.latitude !== undefined && baseOficial.latitude !== null ? baseOficial.latitude : itemDinamico.latitude;
+    const lngRaw = baseOficial.longitude !== undefined && baseOficial.longitude !== null ? baseOficial.longitude : itemDinamico.longitude;
 
     const lat = Number(latRaw || 0);
     const lng = Number(lngRaw || 0);

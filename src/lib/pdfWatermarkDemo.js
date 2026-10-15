@@ -23,9 +23,9 @@ export function aplicarMarcaDaguaDemo(doc, options = {}) {
     }
 
     // Cor cinza-ardósia suave para efeito marca d'água / sombra no fundo
-    doc.setTextColor(148, 163, 184);
+    doc.setTextColor(180, 195, 210);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(ehPaisagem ? 50 : 38);
+    doc.setFontSize(ehPaisagem ? 48 : 36);
 
     const angulo = ehPaisagem ? 26 : 38;
     const meioX = pW / 2;
@@ -35,16 +35,16 @@ export function aplicarMarcaDaguaDemo(doc, options = {}) {
     doc.text(textoPrincipal, meioX, meioY - 2, { align: 'center', angle: angulo });
 
     // Subtítulo explicativo
-    doc.setFontSize(ehPaisagem ? 12 : 9.5);
+    doc.setFontSize(ehPaisagem ? 11 : 9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
+    doc.setTextColor(140, 155, 175);
     doc.text(textoSecundario, meioX, meioY + (ehPaisagem ? 14 : 12), { align: 'center', angle: angulo });
 
-    // Tarja discreta superior e inferior indicando modo demo
-    doc.setFontSize(7.5);
+    // Tarja discreta superior indicando modo demo
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(180, 83, 9); // tom âmbar suave
-    doc.text('⚠️ DOCUMENTO EM MODO DEMONSTRAÇÃO (SOMENTE LEITURA — DADOS PESSOAIS SUBSTITUÍDOS POR XXX)', meioX, 5, { align: 'center' });
+    doc.text('[MODO DEMONSTRAÇÃO] SOMENTE LEITURA — DADOS PESSOAIS SUBSTITUÍDOS POR XXX', meioX, 5, { align: 'center' });
 
     doc.restoreGraphicsState();
   }

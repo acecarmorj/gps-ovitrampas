@@ -16,7 +16,10 @@
     "ultima_palheta": "01A",
     "ultima_leitura_em": "2026-09-25T12:14:41.286Z",
     "numeroImovel": "123",
-    "moradorNome": "Maria de Fátima"
+    "moradorNome": "Maria de Fátima",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "01A",
+    "ultimaLeituraEm": "2026-09-25T12:14:41.286Z"
   },
   {
     "id": "arm-1789561937247-gzcx",
@@ -35,7 +38,10 @@
     "ultima_palheta": "02A",
     "ultima_leitura_em": "2026-09-25T12:17:10.958Z",
     "numeroImovel": "158",
-    "moradorNome": "Glória"
+    "moradorNome": "Glória",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "02A",
+    "ultimaLeituraEm": "2026-09-25T12:17:10.958Z"
   },
   {
     "id": "arm-1789562877903-w5qs",
@@ -54,7 +60,10 @@
     "ultima_palheta": "03A",
     "ultima_leitura_em": "2026-09-25T12:23:49.334Z",
     "numeroImovel": "30",
-    "moradorNome": "Samy Soares"
+    "moradorNome": "Samy Soares",
+    "ultimosOvos": 5,
+    "ultimaPalheta": "03A",
+    "ultimaLeituraEm": "2026-09-25T12:23:49.334Z"
   },
   {
     "id": "arm-1789563555407-8ndn",
@@ -73,7 +82,10 @@
     "ultima_palheta": "04A",
     "ultima_leitura_em": "2026-09-25T12:29:43.323Z",
     "numeroImovel": "99",
-    "moradorNome": "PA"
+    "moradorNome": "PA",
+    "ultimosOvos": 16,
+    "ultimaPalheta": "04A",
+    "ultimaLeituraEm": "2026-09-25T12:29:43.323Z"
   },
   {
     "id": "arm-1789564207632-4c49",
@@ -92,7 +104,10 @@
     "ultima_palheta": "05A",
     "ultima_leitura_em": "2026-09-25T12:34:29.743Z",
     "numeroImovel": "63",
-    "moradorNome": "Manoel Ezidio"
+    "moradorNome": "Manoel Ezidio",
+    "ultimosOvos": 6,
+    "ultimaPalheta": "05A",
+    "ultimaLeituraEm": "2026-09-25T12:34:29.743Z"
   },
   {
     "id": "arm-1789564774129-hoej",
@@ -111,7 +126,10 @@
     "ultima_palheta": "06A",
     "ultima_leitura_em": "2026-09-25T12:37:20.560Z",
     "numeroImovel": "30",
-    "moradorNome": "Cleyde"
+    "moradorNome": "Cleyde",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "06A",
+    "ultimaLeituraEm": "2026-09-25T12:37:20.560Z"
   },
   {
     "id": "arm-1789565248182-pxpc",
@@ -130,7 +148,10 @@
     "ultima_palheta": "07A",
     "ultima_leitura_em": "2026-09-25T12:41:52.130Z",
     "numeroImovel": "58",
-    "moradorNome": "Lidiane"
+    "moradorNome": "Lidiane",
+    "ultimosOvos": 10,
+    "ultimaPalheta": "07A",
+    "ultimaLeituraEm": "2026-09-25T12:41:52.130Z"
   },
   {
     "id": "arm-1789565947179-8ffe",
@@ -149,7 +170,10 @@
     "ultima_palheta": "08A",
     "ultima_leitura_em": "2026-09-25T12:57:09.558Z",
     "numeroImovel": "161",
-    "moradorNome": "ESF Botafogo"
+    "moradorNome": "ESF Botafogo",
+    "ultimosOvos": 64,
+    "ultimaPalheta": "08A",
+    "ultimaLeituraEm": "2026-09-25T12:57:09.558Z"
   },
   {
     "id": "arm-1789566623464-vl0c",
@@ -168,7 +192,10 @@
     "ultima_palheta": "09A",
     "ultima_leitura_em": "2026-09-25T13:03:15.192Z",
     "numeroImovel": "124",
-    "moradorNome": "Marli"
+    "moradorNome": "Marli",
+    "ultimosOvos": 15,
+    "ultimaPalheta": "09A",
+    "ultimaLeituraEm": "2026-09-25T13:03:15.192Z"
   },
   {
     "id": "arm-1789567342828-u911",
@@ -187,7 +214,10 @@
     "ultima_palheta": "10A",
     "ultima_leitura_em": "2026-09-25T13:05:27.843Z",
     "numeroImovel": "42",
-    "moradorNome": "Clea Suely"
+    "moradorNome": "Clea Suely",
+    "ultimosOvos": 41,
+    "ultimaPalheta": "10A",
+    "ultimaLeituraEm": "2026-09-25T13:05:27.843Z"
   },
   {
     "id": "arm-1789568139987-a2jn",
@@ -206,7 +236,10 @@
     "ultima_palheta": "11A",
     "ultima_leitura_em": "2026-09-25T13:34:12.173Z",
     "numeroImovel": "82",
-    "moradorNome": "Asilo São Vicente"
+    "moradorNome": "Asilo São Vicente",
+    "ultimosOvos": 24,
+    "ultimaPalheta": "11A",
+    "ultimaLeituraEm": "2026-09-25T13:34:12.173Z"
   },
   {
     "id": "arm-1789568755975-0cfo",
@@ -225,7 +258,10 @@
     "ultima_palheta": "12A",
     "ultima_leitura_em": "2026-09-25T13:41:16.899Z",
     "numeroImovel": "70",
-    "moradorNome": "José Carlos enfermeiro"
+    "moradorNome": "José Carlos enfermeiro",
+    "ultimosOvos": 64,
+    "ultimaPalheta": "12A",
+    "ultimaLeituraEm": "2026-09-25T13:41:16.899Z"
   },
   {
     "id": "arm-1789577379305-fc9z",
@@ -244,7 +280,10 @@
     "ultima_palheta": "13A",
     "ultima_leitura_em": "2026-09-25T13:47:56.494Z",
     "numeroImovel": "618",
-    "moradorNome": "Lucia Glória"
+    "moradorNome": "Lucia Glória",
+    "ultimosOvos": 48,
+    "ultimaPalheta": "13A",
+    "ultimaLeituraEm": "2026-09-25T13:47:56.494Z"
   },
   {
     "id": "arm-1789577970728-do7m",
@@ -263,7 +302,10 @@
     "ultima_palheta": "14A",
     "ultima_leitura_em": "2026-09-25T13:51:10.624Z",
     "numeroImovel": "34",
-    "moradorNome": "Chico Cesario"
+    "moradorNome": "Chico Cesario",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "14A",
+    "ultimaLeituraEm": "2026-09-25T13:51:10.624Z"
   },
   {
     "id": "arm-1789578853243-y1i8",
@@ -282,7 +324,10 @@
     "ultima_palheta": "15A",
     "ultima_leitura_em": "2026-09-25T13:55:34.517Z",
     "numeroImovel": "290",
-    "moradorNome": "Maria das Dores Meneguiti"
+    "moradorNome": "Maria das Dores Meneguiti",
+    "ultimosOvos": 78,
+    "ultimaPalheta": "15A",
+    "ultimaLeituraEm": "2026-09-25T13:55:34.517Z"
   },
   {
     "id": "arm-1789579761774-upz5",
@@ -301,7 +346,10 @@
     "ultima_palheta": "16A",
     "ultima_leitura_em": "2026-09-25T13:57:51.768Z",
     "numeroImovel": "347",
-    "moradorNome": "Selma Araújo"
+    "moradorNome": "Selma Araújo",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "16A",
+    "ultimaLeituraEm": "2026-09-25T13:57:51.768Z"
   },
   {
     "id": "arm-1789580518068-8y8t",
@@ -320,7 +368,10 @@
     "ultima_palheta": "17A",
     "ultima_leitura_em": "2026-09-25T14:01:16.994Z",
     "numeroImovel": "407",
-    "moradorNome": "Gilmar Lutero"
+    "moradorNome": "Gilmar Lutero",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "17A",
+    "ultimaLeituraEm": "2026-09-25T14:01:16.994Z"
   },
   {
     "id": "arm-1789567706600-zzcl",
@@ -339,7 +390,10 @@
     "ultima_palheta": "18A",
     "ultima_leitura_em": "2026-09-25T14:07:36.270Z",
     "numeroImovel": "85",
-    "moradorNome": "Cirillo"
+    "moradorNome": "Cirillo",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "18A",
+    "ultimaLeituraEm": "2026-09-25T14:07:36.270Z"
   },
   {
     "id": "arm-1789567857833-7cec",
@@ -358,7 +412,10 @@
     "ultima_palheta": "19A",
     "ultima_leitura_em": "2026-09-25T14:09:30.423Z",
     "numeroImovel": "49",
-    "moradorNome": "Clube"
+    "moradorNome": "Clube",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "19A",
+    "ultimaLeituraEm": "2026-09-25T14:09:30.423Z"
   },
   {
     "id": "arm-1789567983536-p42n",
@@ -377,7 +434,10 @@
     "ultima_palheta": "20A",
     "ultima_leitura_em": "2026-09-25T14:11:41.291Z",
     "numeroImovel": "465",
-    "moradorNome": "Roseli Ribeiro"
+    "moradorNome": "Roseli Ribeiro",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "20A",
+    "ultimaLeituraEm": "2026-09-25T14:11:41.291Z"
   },
   {
     "id": "arm-1789568061794-knwe",
@@ -396,7 +456,10 @@
     "ultima_palheta": "21A",
     "ultima_leitura_em": "2026-09-25T14:18:06.882Z",
     "numeroImovel": "753",
-    "moradorNome": "Paula Miranda"
+    "moradorNome": "Paula Miranda",
+    "ultimosOvos": 100,
+    "ultimaPalheta": "21A",
+    "ultimaLeituraEm": "2026-09-25T14:18:06.882Z"
   },
   {
     "id": "arm-1789575715858-0msp",
@@ -415,7 +478,10 @@
     "ultima_palheta": "22A",
     "ultima_leitura_em": "2026-09-25T14:19:51.649Z",
     "numeroImovel": "726",
-    "moradorNome": "Fátima Regina"
+    "moradorNome": "Fátima Regina",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "22A",
+    "ultimaLeituraEm": "2026-09-25T14:19:51.649Z"
   },
   {
     "id": "arm-1789568231030-smdm",
@@ -434,7 +500,10 @@
     "ultima_palheta": "23A",
     "ultima_leitura_em": "2026-09-25T12:09:00.249Z",
     "numeroImovel": "51",
-    "moradorNome": "Pousada Valle do sol"
+    "moradorNome": "Pousada Valle do sol",
+    "ultimosOvos": 147,
+    "ultimaPalheta": "23A",
+    "ultimaLeituraEm": "2026-09-25T12:09:00.249Z"
   },
   {
     "id": "arm-1789568310168-va5i",
@@ -453,7 +522,10 @@
     "ultima_palheta": "24A",
     "ultima_leitura_em": "2026-09-25T14:21:36.746Z",
     "numeroImovel": "04",
-    "moradorNome": "Marienio Oliveira"
+    "moradorNome": "Marienio Oliveira",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "24A",
+    "ultimaLeituraEm": "2026-09-25T14:21:36.746Z"
   },
   {
     "id": "arm-1789568683927-f22l",
@@ -472,7 +544,10 @@
     "ultima_palheta": "25A",
     "ultima_leitura_em": "2026-09-25T14:24:36.269Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Edson Levindo"
+    "moradorNome": "Edson Levindo",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "25A",
+    "ultimaLeituraEm": "2026-09-25T14:24:36.269Z"
   },
   {
     "id": "arm-1789575430572-q218",
@@ -491,7 +566,10 @@
     "ultima_palheta": "26A",
     "ultima_leitura_em": "2026-09-25T16:26:30.427Z",
     "numeroImovel": "396",
-    "moradorNome": "Maxwell Neves"
+    "moradorNome": "Maxwell Neves",
+    "ultimosOvos": 5,
+    "ultimaPalheta": "26A",
+    "ultimaLeituraEm": "2026-09-25T16:26:30.427Z"
   },
   {
     "id": "arm-1789577359108-cl2d",
@@ -510,7 +588,10 @@
     "ultima_palheta": "27A",
     "ultima_leitura_em": "2026-09-25T16:27:28.773Z",
     "numeroImovel": "40",
-    "moradorNome": "Pretinho"
+    "moradorNome": "Pretinho",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "27A",
+    "ultimaLeituraEm": "2026-09-25T16:27:28.773Z"
   },
   {
     "id": "arm-1789578298866-zsqb",
@@ -529,7 +610,10 @@
     "ultima_palheta": "28A",
     "ultima_leitura_em": "2026-09-25T16:34:15.744Z",
     "numeroImovel": "235",
-    "moradorNome": "Vicente"
+    "moradorNome": "Vicente",
+    "ultimosOvos": 86,
+    "ultimaPalheta": "28A",
+    "ultimaLeituraEm": "2026-09-25T16:34:15.744Z"
   },
   {
     "id": "arm-1789578871641-x5lo",
@@ -548,7 +632,10 @@
     "ultima_palheta": "29A",
     "ultima_leitura_em": "2026-09-25T16:34:38.119Z",
     "numeroImovel": "S/N",
-    "moradorNome": "ESF Val paraíso"
+    "moradorNome": "ESF Val paraíso",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "29A",
+    "ultimaLeituraEm": "2026-09-25T16:34:38.119Z"
   },
   {
     "id": "arm-1789579285624-b2ie",
@@ -567,7 +654,10 @@
     "ultima_palheta": "30A",
     "ultima_leitura_em": "2026-09-25T16:36:18.596Z",
     "numeroImovel": "797",
-    "moradorNome": "Janine"
+    "moradorNome": "Janine",
+    "ultimosOvos": 21,
+    "ultimaPalheta": "30A",
+    "ultimaLeituraEm": "2026-09-25T16:36:18.596Z"
   },
   {
     "id": "arm-1789579965238-d44c",
@@ -586,7 +676,10 @@
     "ultima_palheta": "31A",
     "ultima_leitura_em": "2026-09-25T16:38:05.220Z",
     "numeroImovel": "98",
-    "moradorNome": "Rosimeri"
+    "moradorNome": "Rosimeri",
+    "ultimosOvos": 51,
+    "ultimaPalheta": "31A",
+    "ultimaLeituraEm": "2026-09-25T16:38:05.220Z"
   },
   {
     "id": "arm-1789580583652-fak6",
@@ -605,7 +698,10 @@
     "ultima_palheta": "32A",
     "ultima_leitura_em": "2026-09-25T16:38:53.108Z",
     "numeroImovel": "365",
-    "moradorNome": "Regina Azevedo"
+    "moradorNome": "Regina Azevedo",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "32A",
+    "ultimaLeituraEm": "2026-09-25T16:38:53.108Z"
   },
   {
     "id": "arm-1789581470771-xcnu",
@@ -624,7 +720,10 @@
     "ultima_palheta": "33A",
     "ultima_leitura_em": "2026-09-25T16:40:39.589Z",
     "numeroImovel": "10",
-    "moradorNome": "Fernando Sassa"
+    "moradorNome": "Fernando Sassa",
+    "ultimosOvos": 22,
+    "ultimaPalheta": "33A",
+    "ultimaLeituraEm": "2026-09-25T16:40:39.589Z"
   },
   {
     "id": "arm-1789581932254-btj4",
@@ -643,7 +742,10 @@
     "ultima_palheta": "34A",
     "ultima_leitura_em": "2026-09-25T16:42:15.184Z",
     "numeroImovel": "98",
-    "moradorNome": "Delvania"
+    "moradorNome": "Delvania",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "34A",
+    "ultimaLeituraEm": "2026-09-25T16:42:15.184Z"
   },
   {
     "id": "arm-1789582843622-ovb2",
@@ -662,7 +764,10 @@
     "ultima_palheta": "35A",
     "ultima_leitura_em": "2026-09-25T14:04:53.918Z",
     "numeroImovel": "200",
-    "moradorNome": "Almir Lemgruber"
+    "moradorNome": "Almir Lemgruber",
+    "ultimosOvos": 4,
+    "ultimaPalheta": "35A",
+    "ultimaLeituraEm": "2026-09-25T14:04:53.918Z"
   },
   {
     "id": "arm-1789649655962-wbig",
@@ -681,7 +786,10 @@
     "ultima_palheta": "36A",
     "ultima_leitura_em": "2026-09-25T16:47:13.668Z",
     "numeroImovel": "116",
-    "moradorNome": "Silvana de Oliveira"
+    "moradorNome": "Silvana de Oliveira",
+    "ultimosOvos": 53,
+    "ultimaPalheta": "36A",
+    "ultimaLeituraEm": "2026-09-25T16:47:13.668Z"
   },
   {
     "id": "arm-1789649907101-86z4",
@@ -700,7 +808,10 @@
     "ultima_palheta": "37A",
     "ultima_leitura_em": "2026-09-25T16:48:18.064Z",
     "numeroImovel": "160",
-    "moradorNome": "Aline Reiff"
+    "moradorNome": "Aline Reiff",
+    "ultimosOvos": 2,
+    "ultimaPalheta": "37A",
+    "ultimaLeituraEm": "2026-09-25T16:48:18.064Z"
   },
   {
     "id": "arm-1789651010207-bjvg",
@@ -719,7 +830,10 @@
     "ultima_palheta": "38A",
     "ultima_leitura_em": "2026-09-25T16:49:26.641Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Independente"
+    "moradorNome": "Independente",
+    "ultimosOvos": 25,
+    "ultimaPalheta": "38A",
+    "ultimaLeituraEm": "2026-09-25T16:49:26.641Z"
   },
   {
     "id": "arm-1789652488204-4qs0",
@@ -738,7 +852,10 @@
     "ultima_palheta": "39A",
     "ultima_leitura_em": "2026-09-25T16:50:20.922Z",
     "numeroImovel": "375",
-    "moradorNome": "Jorge Alfredo de Onofre"
+    "moradorNome": "Jorge Alfredo de Onofre",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "39A",
+    "ultimaLeituraEm": "2026-09-25T16:50:20.922Z"
   },
   {
     "id": "arm-1789653356097-3ftk",
@@ -757,7 +874,10 @@
     "ultima_palheta": "40A",
     "ultima_leitura_em": "2026-09-25T16:51:56.729Z",
     "numeroImovel": "34",
-    "moradorNome": "Meira Lúcia Ferreira Pinheiro"
+    "moradorNome": "Meira Lúcia Ferreira Pinheiro",
+    "ultimosOvos": 20,
+    "ultimaPalheta": "40A",
+    "ultimaLeituraEm": "2026-09-25T16:51:56.729Z"
   },
   {
     "id": "arm-1789654076912-66mo",
@@ -776,7 +896,10 @@
     "ultima_palheta": "41A",
     "ultima_leitura_em": "2026-09-25T16:53:20.801Z",
     "numeroImovel": "130",
-    "moradorNome": "Dayse Regina Lopes"
+    "moradorNome": "Dayse Regina Lopes",
+    "ultimosOvos": 40,
+    "ultimaPalheta": "41A",
+    "ultimaLeituraEm": "2026-09-25T16:53:20.801Z"
   },
   {
     "id": "arm-1789655238325-xmp9",
@@ -795,7 +918,10 @@
     "ultima_palheta": "42A",
     "ultima_leitura_em": "2026-09-25T16:53:59.221Z",
     "numeroImovel": "39",
-    "moradorNome": "Maria das Graças Corrêa Cunha"
+    "moradorNome": "Maria das Graças Corrêa Cunha",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "42A",
+    "ultimaLeituraEm": "2026-09-25T16:53:59.221Z"
   },
   {
     "id": "arm-1789655953076-xua5",
@@ -814,7 +940,10 @@
     "ultima_palheta": "43A",
     "ultima_leitura_em": "2026-09-25T16:55:13.403Z",
     "numeroImovel": "144",
-    "moradorNome": "Carmem Cunha"
+    "moradorNome": "Carmem Cunha",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "43A",
+    "ultimaLeituraEm": "2026-09-25T16:55:13.403Z"
   },
   {
     "id": "arm-1789656430052-2ws0",
@@ -833,7 +962,10 @@
     "ultima_palheta": "44A",
     "ultima_leitura_em": "2026-09-25T16:56:44.319Z",
     "numeroImovel": "312",
-    "moradorNome": "ESF Porto Velho"
+    "moradorNome": "ESF Porto Velho",
+    "ultimosOvos": 2,
+    "ultimaPalheta": "44A",
+    "ultimaLeituraEm": "2026-09-25T16:56:44.319Z"
   },
   {
     "id": "arm-1789656911576-qlln",
@@ -852,7 +984,10 @@
     "ultima_palheta": "45A",
     "ultima_leitura_em": "2026-09-25T16:58:59.164Z",
     "numeroImovel": "601",
-    "moradorNome": "Lindomar Noronha"
+    "moradorNome": "Lindomar Noronha",
+    "ultimosOvos": 35,
+    "ultimaPalheta": "45A",
+    "ultimaLeituraEm": "2026-09-25T16:58:59.164Z"
   },
   {
     "id": "arm-1789657544974-g3v5",
@@ -871,7 +1006,10 @@
     "ultima_palheta": "46A",
     "ultima_leitura_em": "2026-09-25T17:00:18.156Z",
     "numeroImovel": "145",
-    "moradorNome": "Olívia"
+    "moradorNome": "Olívia",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "46A",
+    "ultimaLeituraEm": "2026-09-25T17:00:18.156Z"
   },
   {
     "id": "arm-1789659487219-s0p7",
@@ -890,7 +1028,10 @@
     "ultima_palheta": "47A",
     "ultima_leitura_em": "2026-09-25T17:01:16.803Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Joselia Correa de Carvalho"
+    "moradorNome": "Joselia Correa de Carvalho",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "47A",
+    "ultimaLeituraEm": "2026-09-25T17:01:16.803Z"
   },
   {
     "id": "arm-1789660058814-w64h",
@@ -909,7 +1050,10 @@
     "ultima_palheta": "48A",
     "ultima_leitura_em": "2026-09-25T17:02:29.957Z",
     "numeroImovel": "48",
-    "moradorNome": "ESF Córrego da Prata"
+    "moradorNome": "ESF Córrego da Prata",
+    "ultimosOvos": 7,
+    "ultimaPalheta": "48A",
+    "ultimaLeituraEm": "2026-09-25T17:02:29.957Z"
   },
   {
     "id": "arm-1789660517578-qbax",
@@ -928,7 +1072,10 @@
     "ultima_palheta": "PL-49",
     "ultima_leitura_em": "2026-09-25T17:03:03.104Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Rosilene Souza Ferreira"
+    "moradorNome": "Rosilene Souza Ferreira",
+    "ultimosOvos": 2,
+    "ultimaPalheta": "PL-49",
+    "ultimaLeituraEm": "2026-09-25T17:03:03.104Z"
   },
   {
     "id": "arm-1789648785158-n77z",
@@ -947,7 +1094,10 @@
     "ultima_palheta": "50A",
     "ultima_leitura_em": "2026-09-25T17:04:12.183Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Franciane Miguel"
+    "moradorNome": "Franciane Miguel",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "50A",
+    "ultimaLeituraEm": "2026-09-25T17:04:12.183Z"
   },
   {
     "id": "arm-1789651701198-4nf0",
@@ -966,7 +1116,10 @@
     "ultima_palheta": "51A",
     "ultima_leitura_em": "2026-09-25T17:06:19.214Z",
     "numeroImovel": "182",
-    "moradorNome": "Léo Jorge"
+    "moradorNome": "Léo Jorge",
+    "ultimosOvos": 3,
+    "ultimaPalheta": "51A",
+    "ultimaLeituraEm": "2026-09-25T17:06:19.214Z"
   },
   {
     "id": "arm-1789647987554-zjii",
@@ -985,7 +1138,10 @@
     "ultima_palheta": "52A",
     "ultima_leitura_em": "2026-09-25T17:06:53.796Z",
     "numeroImovel": "100",
-    "moradorNome": "ESF Influência"
+    "moradorNome": "ESF Influência",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "52A",
+    "ultimaLeituraEm": "2026-09-25T17:06:53.796Z"
   },
   {
     "id": "arm-1789653322932-pzmw",
@@ -1004,7 +1160,10 @@
     "ultima_palheta": "53A",
     "ultima_leitura_em": "2026-09-25T17:07:35.634Z",
     "numeroImovel": "390",
-    "moradorNome": "Colégio Light"
+    "moradorNome": "Colégio Light",
+    "ultimosOvos": 0,
+    "ultimaPalheta": "53A",
+    "ultimaLeituraEm": "2026-09-25T17:07:35.634Z"
   },
   {
     "id": "arm-1789663844322-9ghv",
@@ -1023,7 +1182,10 @@
     "ultima_palheta": "54A",
     "ultima_leitura_em": "2026-09-25T17:08:45.228Z",
     "numeroImovel": "389",
-    "moradorNome": "Sebastião Ferreira"
+    "moradorNome": "Sebastião Ferreira",
+    "ultimosOvos": 13,
+    "ultimaPalheta": "54A",
+    "ultimaLeituraEm": "2026-09-25T17:08:45.228Z"
   },
   {
     "id": "arm-1789664588078-jet3",
@@ -1042,7 +1204,10 @@
     "ultima_palheta": "55A",
     "ultima_leitura_em": "2026-09-25T17:12:02.949Z",
     "numeroImovel": "S/N",
-    "moradorNome": "Solange"
+    "moradorNome": "Solange",
+    "ultimosOvos": 5,
+    "ultimaPalheta": "55A",
+    "ultimaLeituraEm": "2026-09-25T17:12:02.949Z"
   },
   {
     "id": "arm-1789665779499-29i4",
@@ -1061,6 +1226,9 @@
     "ultima_palheta": "56A",
     "ultima_leitura_em": "2026-09-25T17:12:52.375Z",
     "numeroImovel": "10",
-    "moradorNome": "Escola da Barra"
+    "moradorNome": "Escola da Barra",
+    "ultimosOvos": 3,
+    "ultimaPalheta": "56A",
+    "ultimaLeituraEm": "2026-09-25T17:12:52.375Z"
   }
 ]

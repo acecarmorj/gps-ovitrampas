@@ -202,7 +202,7 @@ export function CentralRelatorios({
         'Relatório técnico SES-RJ',
         'Documento oficial para a Secretaria de Estado de Saúde: indicadores, gráficos de Ciclo A, B e Ambas, mapas de calor da cidade e dos distritos e inventário anônimo.',
         botao('ses', 'Baixar PDF', () =>
-          executar('ses', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, isDemo }))
+          executar('ses', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, isDemo, campanha: campanhaRelatorio }))
         ),
         isDemo ? 'Versão Demonstração: Marca d\'água de fundo e dados anonimizados.' : 'Anônimo: sem nomes de moradores nem endereços.'
       )}
@@ -218,7 +218,7 @@ export function CentralRelatorios({
         'Relatório de resultados (consolidado)',
         'Mesmo conteúdo do relatório SES-RJ (indicadores, gráficos de Ciclo A, B e Ambas e mapas de calor da cidade e dos distritos), com as armadilhas identificadas por OV-NN.',
         botao('consolidado', 'Baixar PDF', () =>
-          executar('consolidado', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, variante: 'resultados', isDemo }))
+          executar('consolidado', () => gerarRelatorioSesRjLimpo(base, todasLeituras, { fundo: fundoMapa, variante: 'resultados', isDemo, campanha: campanhaRelatorio }))
         ),
         isDemo ? 'Versão Demonstração: Marca d\'água no fundo da página.' : 'Uso interno.'
       )}
@@ -227,7 +227,7 @@ export function CentralRelatorios({
         'Relatório entomológico detalhado',
         'Uma linha por armadilha: morador e endereço (com o acesso da equipe), palheta e ovos de A e de B, situação.',
         botao('entomologico', 'Baixar PDF', () =>
-          executar('entomologico', () => gerarRelatorioEntomologicoLimpo(base, todasLeituras, { isDemo }))
+          executar('entomologico', () => gerarRelatorioEntomologicoLimpo(base, todasLeituras, { isDemo, campanha: campanhaRelatorio }))
         ),
         isDemo
           ? 'Versão Demonstração: Nomes e endereços anonimizados com XXX e marca d\'água no fundo.'
@@ -240,7 +240,7 @@ export function CentralRelatorios({
         'Tabela de Coordenadas para Conta Ovos - 56 Armadilhas',
         'Tabela oficial em A4 paisagem com todas as 56 ovitrampas de Carmo-RJ (sede e distritos): dados cadastrais, endereço, bairro, quarteirão e coordenadas completas prontas para cópia/colagem no sistema Conta Ovos (Fiocruz/MS).',
         botao('conta-ovos', 'Baixar PDF', () =>
-          executar('conta-ovos', () => gerarPdfTabelaContaOvos(base, { isDemo }))
+          executar('conta-ovos', () => gerarPdfTabelaContaOvos(base, { isDemo, campanha: campanhaRelatorio }))
         ),
         isDemo
           ? 'Versão Demonstração: Endereços e moradores substituídos por XXX com marca d\'água no fundo.'

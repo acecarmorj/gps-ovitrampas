@@ -617,10 +617,12 @@ export async function gerarRelatorioPdfEntomologico(armadilhas = [], opcoes = {}
       return {
         ...arm,
         ultimosOvos: arm.ultimosOvos !== undefined && arm.ultimosOvos !== null ? arm.ultimosOvos : 0,
-        moradorNome: arm.moradorNome || 'Marienio oliveira',
+        moradorNome: arm.moradorNome || 'Marienio Oliveira',
+        rua: arm.rua || 'Rua José Cassane',
+        numeroImovel: arm.numeroImovel || '04',
         bairro: arm.bairro || 'Progresso',
         microarea: arm.microarea || 'Progresso',
-        quarteirao: arm.quarteirao || 'Q-11'
+        quarteirao: 'Q-01'
       };
     }
     return arm;

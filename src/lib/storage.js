@@ -6,7 +6,7 @@
  * - Background Sync: Fila de envio automático assim que o aparelho detectar internet.
  */
 
-import { getChaveEquipe, getAgente } from './acessoEquipe';
+import { getChaveEquipe, getAgente } from './acessoEquipe.js';
 import trapsOficiaisJson from './trapsOficiaisCarmo.json';
 import readingsOficiaisJson from './readingsOficiaisCarmo.json';
 
@@ -269,13 +269,109 @@ export function compressImage(file, maxDimension = 1200, quality = 0.8) {
 // GESTÃO DE ARMADILHAS E PERSISTÊNCIA INQUEBRÁVEL
 // ---------------------------------------------------------------------------
 
+export const VERSAO_AUDITORIA_CADASTRO = '2026-10-15_AUDITORIA_OFICIAL_56_V2';
+const VERSAO_AUDITORIA_KEY = 'gps_ovitrampas_auditoria_cadastral_ver';
+
+// Mapa das 56 armadilhas oficiais auditadas de Carmo-RJ (15/10/2026)
+const mapaOficialPorNumero = new Map();
+if (Array.isArray(trapsOficiaisJson)) {
+  trapsOficiaisJson.forEach((t) => {
+    const num = normalizarNumeroArmadilha(t.numero);
+    if (num) {
+      mapaOficialPorNumero.set(num.padStart(2, '0'), t);
+      mapaOficialPorNumero.set(String(parseInt(num, 10)), t);
+    }
+  });
+}
+
+/**
+ * Reconcilia registros locais ou recebidos da rede com a base oficial auditada de 15/10/2026.
+ * Preserva o status operacional de campo (palheta, leituras, ovos, status),
+ * mas assegura que as atualizações cadastrais auditadas (morador, logradouro, número predial, bairro, quarteirão e GPS)
+ * entrem no programa e tenham precedência estrita para as 56 armadilhas oficiais.
+ */
+export function reconciliarArmadilhaComBaseOficial(trap) {
+  if (!trap) return trap;
+  const numNorm = normalizarNumeroArmadilha(trap.numero);
+  const baseOficial = mapaOficialPorNumero.get(numNorm.padStart(2, '0')) || mapaOficialPorNumero.get(String(parseInt(numNorm, 10))) || null;
+
+  if (!baseOficial) return trap;
+
+  // A base oficial auditada em campo (RELATORIO_AUDITORIA_ENDERECOS_CAMPO.md / trapsOficiaisCarmo.json)
+  // é a autoridade máxima para as 56 armadilhas de Carmo-RJ.
+  const morador = baseOficial.morador_nome || baseOficial.moradorNome || (trap.moradorNome && trap.moradorNome.trim()) || (trap.morador_nome && trap.morador_nome.trim()) || '';
+  const rua = baseOficial.rua || (trap.rua && trap.rua.trim()) || '';
+  const numeroImovel = (baseOficial.numero_imovel && String(baseOficial.numero_imovel).trim()) || (baseOficial.numeroImovel && String(baseOficial.numeroImovel).trim()) || (trap.numeroImovel && String(trap.numeroImovel).trim()) || (trap.numero_imovel && String(trap.numero_imovel).trim()) || '';
+  const quarteirao = baseOficial.quarteirao || ((trap.quarteirao || '').trim() && !/distrito/i.test((trap.quarteirao || '').trim()) ? trap.quarteirao.trim() : 'Q-01');
+  const bairro = baseOficial.bairro || (trap.bairro && trap.bairro.trim()) || 'Carmo';
+  const microarea = baseOficial.microarea || baseOficial.bairro || (trap.microarea && trap.microarea.trim()) || bairro;
+
+  const lat = Number.isFinite(Number(baseOficial.latitude)) && Number(baseOficial.latitude) !== 0 ? Number(baseOficial.latitude) : Number(trap.latitude);
+  const lng = Number.isFinite(Number(baseOficial.longitude)) && Number(baseOficial.longitude) !== 0 ? Number(baseOficial.longitude) : Number(trap.longitude);
+
+  const ultOvos = trap.ultimosOvos !== undefined ? trap.ultimosOvos : (trap.ultimos_ovos !== undefined ? trap.ultimos_ovos : baseOficial.ultimos_ovos);
+  const ultPalheta = trap.ultimaPalheta || trap.ultima_palheta || baseOficial.ultima_palheta || trap.palheta;
+  const ultLeitura = trap.ultimaLeituraEm || trap.ultima_leitura_em || baseOficial.ultima_leitura_em || null;
+
+  return {
+    ...trap,
+    id: trap.id || baseOficial.id,
+    numero: numNorm,
+    palheta: trap.palheta || baseOficial.palheta || `${numNorm}A`,
+    moradorNome: morador,
+    morador_nome: morador,
+    rua,
+    numeroImovel,
+    numero_imovel: numeroImovel,
+    bairro,
+    microarea,
+    quarteirao,
+    latitude: lat,
+    longitude: lng,
+    status: trap.status || baseOficial.status || 'instalada',
+    ultimosOvos: ultOvos,
+    ultimos_ovos: ultOvos,
+    ultimaPalheta: ultPalheta,
+    ultima_palheta: ultPalheta,
+    ultimaLeituraEm: ultLeitura,
+    ultima_leitura_em: ultLeitura
+  };
+}
+
+export function reconciliarArmadilhasComBaseOficial(lista) {
+  if (!Array.isArray(lista) || lista.length === 0) return trapsOficiaisJson || [];
+  return lista.map(reconciliarArmadilhaComBaseOficial);
+}
+
 export function getArmadilhas() {
   if (typeof window === 'undefined') return trapsOficiaisJson || [];
   try {
+    const versaoAudit = localStorage.getItem(VERSAO_AUDITORIA_KEY);
     const raw = localStorage.getItem(TRAPS_STORAGE_KEY);
+
+    // Se ainda não aplicou a auditoria de 15/10/2026 no localStorage do navegador:
+    if (versaoAudit !== VERSAO_AUDITORIA_CADASTRO) {
+      let lista = trapsOficiaisJson || [];
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            lista = reconciliarArmadilhasComBaseOficial(parsed);
+          }
+        } catch (_) {}
+      }
+      try {
+        localStorage.setItem(TRAPS_STORAGE_KEY, JSON.stringify(lista));
+        localStorage.setItem(VERSAO_AUDITORIA_KEY, VERSAO_AUDITORIA_CADASTRO);
+      } catch (_) {}
+      return lista;
+    }
+
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return reconciliarArmadilhasComBaseOficial(parsed);
+      }
     }
     return trapsOficiaisJson || [];
   } catch (e) {
@@ -328,7 +424,7 @@ export async function carregarArmadilhasDoIndexedDB() {
         const map = new Map();
         localList.forEach((a) => map.set(a.id, a));
         idbList.forEach((a) => map.set(a.id, a));
-        const final = Array.from(map.values()).sort(
+        const final = reconciliarArmadilhasComBaseOficial(Array.from(map.values())).sort(
           (a, b) => new Date(b.instaladaEm).getTime() - new Date(a.instaladaEm).getTime()
         );
         salvarArmadilhas(final);
@@ -891,33 +987,56 @@ export async function tentarSincronizarEmSegundoPlano() {
 }
 
 function mapD1TrapToLocal(row) {
+  const numNorm = normalizarNumeroArmadilha(row.numero);
+  const baseOficial = mapaOficialPorNumero.get(numNorm.padStart(2, '0')) || mapaOficialPorNumero.get(String(parseInt(numNorm, 10))) || null;
+
+  // A base oficial auditada de 15/10/2026 é a autoridade cadastral das 56 armadilhas oficiais de Carmo-RJ
+  const morador = (baseOficial && (baseOficial.morador_nome || baseOficial.moradorNome)) || (row.morador_nome && row.morador_nome.trim()) || '';
+  const rua = (baseOficial && baseOficial.rua) || (row.rua && row.rua.trim()) || '';
+  const numeroImovel = (baseOficial && (baseOficial.numero_imovel || baseOficial.numeroImovel)) || (row.numero_imovel && String(row.numero_imovel).trim()) || '';
+
+  // Quarteirão: nunca aceita o placeholder obsoleto 'Q-Distrito' se a base oficial tiver o quarteirão real auditado (ex: Q-10, Q-01, Q-05)
+  const quarteiraoBruto = (row.quarteirao || '').trim();
+  const quarteirao = (baseOficial && baseOficial.quarteirao)
+    ? baseOficial.quarteirao
+    : ((quarteiraoBruto && !/distrito/i.test(quarteiraoBruto)) ? quarteiraoBruto : 'Q-01');
+
+  const bairro = (baseOficial && baseOficial.bairro) || (row.bairro && row.bairro.trim()) || 'Carmo';
+  const microarea = (baseOficial && (baseOficial.microarea || baseOficial.bairro)) || (row.microarea && row.microarea.trim()) || bairro;
+
+  const lat = baseOficial && Number.isFinite(Number(baseOficial.latitude)) && Number(baseOficial.latitude) !== 0 ? Number(baseOficial.latitude) : Number(row.latitude);
+  const lng = baseOficial && Number.isFinite(Number(baseOficial.longitude)) && Number(baseOficial.longitude) !== 0 ? Number(baseOficial.longitude) : Number(row.longitude);
+
+  const ultOvos = row.ultimos_ovos != null ? Number(row.ultimos_ovos) : (baseOficial ? baseOficial.ultimosOvos : undefined);
+
   return {
     id: row.id,
-    // Normaliza registros legados que foram gravados com o prefixo junto ("OV-02")
-    numero: normalizarNumeroArmadilha(row.numero),
-    palheta: row.palheta || 'P-01',
-    moradorNome: row.morador_nome || '',
-    rua: row.rua || '',
-    numeroImovel: row.numero_imovel || '',
-    bairro: row.bairro || 'Carmo',
-    microarea: row.microarea || '',
-    quarteirao: row.quarteirao || '',
-    latitude: Number(row.latitude),
-    longitude: Number(row.longitude),
-    // Mesma regra do cadastro (linha ~345): nunca inventa precisao. Antes
-    // devolvia 10m fabricado para registro sem fix real, indistinguivel de
-    // um fix bom de verdade.
+    numero: numNorm,
+    palheta: row.palheta || (baseOficial ? baseOficial.palheta : 'P-01'),
+    moradorNome: morador,
+    morador_nome: morador,
+    rua,
+    numeroImovel,
+    numero_imovel: numeroImovel,
+    bairro,
+    microarea,
+    quarteirao,
+    latitude: lat,
+    longitude: lng,
     precisaoGps: row.precisao_gps != null ? Number(row.precisao_gps) : null,
     temFoto: Boolean(row.tem_foto),
-    status: row.status || 'instalada',
-    instaladaEm: row.instalada_em,
+    status: row.status || (baseOficial ? baseOficial.status : 'instalada'),
+    instaladaEm: row.instalada_em || (baseOficial ? baseOficial.instaladaEm : undefined),
     atualizadaEm: row.atualizada_em || row.instalada_em,
-    ultimosOvos: row.ultimos_ovos != null ? Number(row.ultimos_ovos) : undefined,
-    ultimaPalheta: row.ultima_palheta || undefined,
-    ultimaLeituraEm: row.ultima_leitura_em || undefined,
+    ultimosOvos: ultOvos,
+    ultimos_ovos: ultOvos,
+    ultimaPalheta: row.ultima_palheta || (baseOficial ? baseOficial.ultimaPalheta : undefined),
+    ultima_palheta: row.ultima_palheta || (baseOficial ? baseOficial.ultimaPalheta : undefined),
+    ultimaLeituraEm: row.ultima_leitura_em || (baseOficial ? baseOficial.ultimaLeituraEm : undefined),
+    ultima_leitura_em: row.ultima_leitura_em || (baseOficial ? baseOficial.ultimaLeituraEm : undefined),
     observacoes: row.observacoes || '',
     historicoPalhetas: (() => {
-      if (!row.historico_palhetas) return [];
+      if (!row.historico_palhetas) return (baseOficial ? (baseOficial.historicoPalhetas || []) : []);
       try {
         const parsed = JSON.parse(row.historico_palhetas);
         return Array.isArray(parsed) ? parsed : [];
@@ -1061,7 +1180,7 @@ export async function sincronizarDadosDoServidor() {
       }
     });
 
-    const final = Array.from(map.values()).sort(
+    const final = reconciliarArmadilhasComBaseOficial(Array.from(map.values())).sort(
       (a, b) => new Date(b.instaladaEm).getTime() - new Date(a.instaladaEm).getTime()
     );
 

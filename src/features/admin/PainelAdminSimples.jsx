@@ -84,6 +84,7 @@ export function PainelAdminSimples(props) {
             armadilhas={props.armadilhas}
             armadilhasBrutas={props.armadilhasBrutas}
             todasLeituras={props.todasLeituras}
+            campanhaAtiva={props.campanhaAtiva}
             fundoMapa={fundoMapa}
             onMudarFundoMapa={setFundoMapa}
             isDemo={isDemo}

@@ -11,6 +11,7 @@ import { temAcessoEquipe } from './acessoEquipe';
 import { carregarTimbresOficiais, PROPORCAO_BRASAO_CARMO } from './timbresOficiais';
 
 import { aplicarMarcaDaguaDemo } from './pdfWatermarkDemo';
+import trapsOficiaisJson from './trapsOficiaisCarmo.json';
 
 const W = 297;
 const H = 210;
@@ -29,27 +30,35 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
   const equipe = temAcessoEquipe() || isDemo;
 
-  const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1);
-  const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2);
+  const campanha = opcoes.campanha || opcoes.anoCiclo;
+  const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1, campanha);
+  const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2, campanha);
   const porNumA = new Map(A.map((a) => [String(a.numero), a]));
   const porNumB = new Map(B.map((b) => [String(b.numero), b]));
   const mA = calcularMetricasCiclo(A);
   const mB = calcularMetricasCiclo(B);
   const mAB = metricasAmbas(mesclarCiclos(A, B));
 
-  const linhas = armadilhas
-    .map((arm) => {
-      const a = porNumA.get(String(arm.numero));
-      const b = porNumB.get(String(arm.numero));
-      return {
-        arm,
-        palA: a?.dadosCiclos?.palhetaA || '-',
-        ovosA: a && temLeitura(a) ? Number(a.ultimosOvos) : null,
-        palB: b?.dadosCiclos?.palhetaB || '-',
-        ovosB: b && temLeitura(b) ? Number(b.ultimosOvos) : null
-      };
-    })
-    .sort((x, y) => Number(x.arm.numero) - Number(y.arm.numero));
+  const mapaOficial = new Map(trapsOficiaisJson.map((t) => [Number(t.numero), t]));
+  const mapaArm = new Map(armadilhas.map((a) => [Number(a.numero), a]));
+
+  const linhas = Array.from({ length: 56 }, (_, i) => {
+    const num = i + 1;
+    const a = porNumA.get(String(num));
+    const b = porNumB.get(String(num));
+    const arm = mapaArm.get(num) || mapaOficial.get(num) || { numero: num };
+    const of = mapaOficial.get(num) || {};
+
+    return {
+      arm,
+      of,
+      num,
+      palA: a?.dadosCiclos?.palhetaA || a?.palheta || `${String(num).padStart(2, '0')}A`,
+      ovosA: a && temLeitura(a) ? Number(a.ultimosOvos) : null,
+      palB: b?.dadosCiclos?.palhetaB || b?.palheta || `${String(num).padStart(2, '0')}B`,
+      ovosB: b && temLeitura(b) ? Number(b.ultimosOvos) : null
+    };
+  }).sort((x, y) => x.num - y.num);
 
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
 
@@ -70,7 +79,9 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...CINZA);
-  doc.text('Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · Ovitrampas · USO INTERNO', xTexto, 18.5);
+  const ehNovoCiclo = campanha === '2026_NOVO';
+  const rotuloCiclo = ehNovoCiclo ? 'Novo Ciclo (2026/2027)' : 'Ciclo Consolidado (Setembro/2026)';
+  doc.text(`Prefeitura Municipal de Carmo/RJ · Vigilância Entomológica · Ovitrampas · ${rotuloCiclo} · ${isDemo ? 'VERSÃO DEMONSTRAÇÃO' : 'USO INTERNO'}`, xTexto, 18.5);
   doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, W - M, 13, { align: 'right' });
   doc.setDrawColor(...PRETO);
   doc.setLineWidth(0.4);
@@ -104,18 +115,24 @@ export async function gerarRelatorioEntomologicoLimpo(armadilhas = [], todasLeit
   const iOvosB = cab.indexOf('Ovos B');
   const iOvosAB = cab.indexOf('A + B');
 
-  const corpo = linhas.map(({ arm, palA, ovosA, palB, ovosB }) => {
-    const r = [`OV-${arm.numero}`];
+  const corpo = linhas.map(({ arm, of, num, palA, ovosA, palB, ovosB }) => {
+    const r = [`OV-${String(num).padStart(2, '0')}`];
     if (equipe) {
       if (isDemo) {
         r.push('XXX', 'Rua XXXXXXXXX, nº XXX');
       } else {
-        r.push(arm.moradorNome || '-', [arm.rua, arm.numeroImovel].filter(Boolean).join(', ') || '-');
+        const morador = of.morador_nome || of.moradorNome || arm.moradorNome || arm.morador_nome || '-';
+        const rua = of.rua || arm.rua || '';
+        const numIm = of.numero_imovel || of.numeroImovel || arm.numeroImovel || arm.numero_imovel || '';
+        const end = [rua, numIm].filter(Boolean).join(', ') || '-';
+        r.push(morador, end);
       }
     }
+    const bairro = of.bairro || of.microarea || arm.bairro || arm.microarea || '-';
+    const quarteirao = of.quarteirao || (arm.quarteirao && !/distrito/i.test(arm.quarteirao) ? arm.quarteirao : '-');
     r.push(
-      arm.bairro || arm.microarea || '-',
-      arm.quarteirao && !/distrito/i.test(arm.quarteirao) ? arm.quarteirao : '-',
+      bairro,
+      quarteirao,
       palA,
       ovosA === null ? '-' : String(ovosA),
       palB,

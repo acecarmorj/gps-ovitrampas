@@ -296,13 +296,13 @@ export function CadastroArmadilhas({
                 <td className="px-2 py-1.5 font-black">OV-{arm.numero}</td>
                 <td className="px-2 py-1.5">
                   {(arm.bairro || arm.microarea || '-')}
-                  {arm.quarteirao && !/distrito/i.test(arm.quarteirao) ? ` · ${arm.quarteirao}` : ''}
+                  {arm.quarteirao ? ` · ${arm.quarteirao}` : ''}
                 </td>
-                {equipe && <td className="px-2 py-1.5">{arm.moradorNome || '-'}</td>}
+                {equipe && <td className="px-2 py-1.5">{arm.moradorNome || arm.morador_nome || '-'}</td>}
                 {equipe && (
                   <td className="px-2 py-1.5">
                     {arm.rua || '-'}
-                    {arm.numeroImovel ? `, ${arm.numeroImovel}` : ''}
+                    {(arm.numeroImovel || arm.numero_imovel) ? `, ${arm.numeroImovel || arm.numero_imovel}` : ''}
                   </td>
                 )}
                 <td className="px-2 py-1.5">{STATUS_TEXTO[arm.status] || arm.status || '-'}</td>

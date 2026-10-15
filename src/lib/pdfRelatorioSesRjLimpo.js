@@ -15,6 +15,7 @@ import {
   PROPORCAO_LOGO_PREFEITURA
 } from './timbresOficiais';
 import { aplicarMarcaDaguaDemo } from './pdfWatermarkDemo';
+import trapsOficiaisJson from './trapsOficiaisCarmo.json';
 
 const W = 210;
 const M = 15;
@@ -289,8 +290,9 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const timbres = await carregarTimbresOficiais().catch(() => ({}));
 
-  const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1);
-  const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2);
+  const campanha = opcoes.campanha || opcoes.anoCiclo;
+  const A = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_1, campanha);
+  const B = adaptarArmadilhasParaCiclo(armadilhas, todasLeituras, CICLO_SEMANA_2, campanha);
   const AB = mesclarAmbas(A, B);
   const mA = calcularMetricasCiclo(A);
   const mB = calcularMetricasCiclo(B);
@@ -305,6 +307,10 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   const interno = opcoes.variante === 'resultados';
   PREFIXO_CODIGO = interno ? 'OV' : 'P';
   const hoje = new Date().toLocaleDateString('pt-BR');
+  const ehNovoCiclo = campanha === '2026_NOVO';
+  const rotuloCiclo = ehNovoCiclo
+    ? 'Novo Ciclo (2026/2027)'
+    : 'Ciclo Consolidado (Setembro de 2026)';
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
   // ---------- 1. CAPA E RESUMO ----------
@@ -324,13 +330,13 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   doc.line(M, 36, W - M, 36);
 
   texto(doc, interno ? 'Relatório de Resultados do Monitoramento' : 'Relatório Técnico de Monitoramento Vetorial', M, 105, { size: 22, bold: true, max: LARG });
-  texto(doc, 'Ovitrampas — Aedes aegypti — Ciclo A × Ciclo B', M, 124, { size: 13 });
+  texto(doc, `Ovitrampas — Aedes aegypti — Ciclo A × Ciclo B (${rotuloCiclo})`, M, 124, { size: 12.5 });
   texto(doc, interno ? `Uso interno · Coordenação de Vigilância em Saúde · Emitido em ${hoje}` : `Destinatário: Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ) · Emitido em ${hoje}`, M, 133, {
     size: 9.5,
     cor: CINZA,
     max: LARG
   });
-  texto(doc, 'Vigilância entomológica com ovitrampas conforme a Nota Técnica MS nº 3/2025 · 56 ovitrampas · exposição de 5 dias · Setembro de 2026', M, 141, { size: 9, cor: CINZA, max: LARG });
+  texto(doc, `Vigilância entomológica com ovitrampas conforme a Nota Técnica MS nº 3/2025 · 56 ovitrampas · exposição de 5 dias · ${rotuloCiclo}`, M, 141, { size: 9, cor: CINZA, max: LARG });
   doc.setDrawColor(...PRETO);
   doc.setLineWidth(0.5);
   doc.line(M, 98, W - M, 98);
@@ -582,6 +588,7 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
   doc.addPage();
   secoesPag.anexoC = doc.getNumberOfPages();
   cabecalhoPagina(doc, timbres, 'Anexo C · Inventário das 56 ovitrampas', 'Identificação anônima por código técnico, bairro e quarteirão. Sem nomes de moradores e sem endereços.');
+  const mapaOficial = new Map(trapsOficiaisJson.map((t) => [Number(t.numero), t]));
   const ordenadas = [...A].sort((a, b) => Number(a.numero) - Number(b.numero));
   const porNum = new Map(B.map((b) => [String(b.numero), b]));
   const valor = (a) => (temLeitura(a) ? String(a.ultimosOvos) : 'Aguardando');
@@ -591,10 +598,13 @@ export async function gerarRelatorioSesRjLimpo(armadilhas = [], todasLeituras = 
     head: [['Código', 'Bairro', 'Quarteirão', 'Ovos A', 'Faixa A', 'Ovos B', 'Faixa B']],
     body: ordenadas.map((a) => {
       const b = porNum.get(String(a.numero));
+      const of = mapaOficial.get(Number(a.numero)) || {};
+      const bairro = of.bairro || of.microarea || bairroDe(a);
+      const quart = of.quarteirao || (a.quarteirao && !/distrito/i.test(a.quarteirao) ? a.quarteirao : '-');
       return [
         codigoP(a),
-        bairroDe(a),
-        a.quarteirao && !/distrito/i.test(a.quarteirao) ? a.quarteirao : '-',
+        bairro,
+        quart,
         valor(a),
         faixaDeOvos(a.ultimosOvos).label,
         b ? valor(b) : 'Aguardando',
