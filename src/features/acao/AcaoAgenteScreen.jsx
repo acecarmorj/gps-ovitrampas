@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Navigation, CheckCircle2, Circle, Flame, ArrowLeft, ArrowRight,
-  Calendar, MapPin, Share2, FileText, Check, ShieldAlert, Sparkles,
-  Phone, Users, Plus, Minus, RotateCcw
+  Calendar, MapPin, Share2, FileText, Check, ChevronDown, ChevronUp,
+  ShieldCheck, AlertTriangle
 } from 'lucide-react';
+import { MapaVistoriaAcao } from './MapaVistoriaAcao';
 
 const ALVOS_POR_DIA = {
   segunda: {
@@ -17,17 +18,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-01',
         endereco: 'Rua Manoel José de Moraes, 51',
         ovos: 342,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico de Emergência',
         lat: -21.9312450,
         lng: -42.6078120,
-        regraSemTrena: 'Vistoriar a pousada + cerca de 6 a 8 casas vizinhas para a direita, 6 a 8 para a esquerda, casas em frente e fundos (R. José Cassane).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Vistoria completa na pousada e imóveis confrontantes do Q-01 e R. José Cassane. Perímetro Ampliado (200m): Varredura nos quarteirões adjacentes do Progresso.',
         itensChecklist: [
           'Ralos externos e grelhas de quintal',
-          'Piscina / reservatórios de água',
+          'Piscina desativada e reservatórios',
           'Pratos de plantas e bebedouros de animais',
           'Calhas do telhado e caixas d\'água',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -37,17 +37,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-10',
         endereco: 'Rua Oscar de Souza Curty, 45',
         ovos: 242,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico de Emergência',
         lat: -21.9351200,
         lng: -42.6094500,
-        regraSemTrena: 'Vistoriar a casa-foco + todas as residências vizinhas entre a R. Maestro Tom Jobim e Cel. Ferreira (foco em quintais murados).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Quarteirão Q-10 entre R. Maestro Tom Jobim e Cel. Ferreira. Perímetro Ampliado (200m): Imóveis comerciais e residenciais confrontantes no Centro.',
         itensChecklist: [
           'Baldes e recipientes de água de chuva',
           'Ralos e calhas de fundos',
           'Vasos de plantas e garrafas viradas',
           'Vistoria da tampa da caixa d\'água',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -57,17 +56,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-10',
         endereco: 'Rua Oscar de Souza Curty, 112',
         ovos: 158,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.9358900,
         lng: -42.6091200,
-        regraSemTrena: 'Vistoriar a casa-foco + 4 casas de cada lado no mesmo quarteirão Q-10 (comércio e residências).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Extensão da face sul do Q-10. Perímetro Ampliado (200m): Varredura e eliminação de criadouros em comércios e residências adjacentes.',
         itensChecklist: [
           'Tambores de água e tanques de lavar',
           'Bebedouros de animais e calhas',
           'Descarte de lixo e recipientes plásticos',
           'Eliminação mecânica imediata na visita',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       }
     ]
@@ -83,17 +81,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-06',
         endereco: 'Rua Ernesto Wermelinger, 88',
         ovos: 173,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico de Emergência',
         lat: -21.9284500,
         lng: -42.6101200,
-        regraSemTrena: 'Vistoriar a casa-foco + extensão do quarteirão Q-06 (R. Celso Carrilho Faria e Jorge Ramos do Valle).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Quarteirão Q-06 (R. Celso Carrilho Faria e Jorge Ramos do Valle). Perímetro Ampliado (200m): Quarteirões circunvizinhos do Jardim Centenário.',
         itensChecklist: [
           'Tonéis de captação de chuva sem tela',
           'Pratos de vasos e baldes esquecidos',
           'Ralos pluviais e calhas com folhas',
           'Vistoria de caixa d\'água destampada',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -103,17 +100,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-04',
         endereco: 'Rua Roberto Simões, 55',
         ovos: 192,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.9372100,
         lng: -42.6045300,
-        regraSemTrena: 'Vistoriar a casa-foco + vizinhos da R. Roberto Simões e Emanuel de Moraes (quintais em declive).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): R. Roberto Simões e Emanuel de Moraes (declive acentuado). Perímetro Ampliado (200m): Residências da encosta e fundos de vale.',
         itensChecklist: [
           'Caixas d\'água no nível do solo',
           'Potes de animais em quintais com declive',
           'Lonas e plásticos retendo água',
           'Eliminação física dos criadouros',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -123,24 +119,23 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-13',
         endereco: 'Rua Senador Dantas, 240',
         ovos: 121,
-        nivel: 'Nível de Alerta (P2 • Apoio Caminhonete)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta (Apoio Caminhonete)',
         lat: -21.9389100,
         lng: -42.6031200,
-        regraSemTrena: 'Vistoriar a residência do Almir + vizinhos da parte alta da Senador Dantas (terrenos baldios e calhas altas).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Parte alta da R. Senador Dantas. Perímetro Ampliado (200m): Terrenos baldios, calhas elevadas e quintais de encosta.',
         itensChecklist: [
           'Terrenos baldios vizinhos com entulho',
           'Calhas altas de telhado obstruídas',
           'Baldes e tonéis de horta',
           'Recolhimento de materiais com a caminhonete',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       }
     ]
   },
   quarta: {
-    diaNome: 'Quarta-Feira (Mutirão)',
-    territorio: '2º Distrito (Influência) • 7 Agentes Juntos',
+    diaNome: 'Quarta-Feira',
+    territorio: 'Influência (2º Dist.) • Mutirão Integrado',
     alvos: [
       {
         id: 'OV-36',
@@ -149,17 +144,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-05',
         endereco: 'Rua Manoel Cirilo, 140',
         ovos: 222,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico (Mutirão 7 Agentes)',
         lat: -21.9056157,
         lng: -42.6393661,
-        regraSemTrena: 'Mutirão em Conjunto: toda a extensão da Rua Manoel Cirilo (Q-05 inteiro com a força-tarefa da Sede).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Toda a extensão habitada da Rua Manoel Cirilo (Q-05). Perímetro Ampliado (200m): Eixo central de Influência e quintais rurais confrontantes.',
         itensChecklist: [
           'Pneus velhos e implementos agrícolas',
           'Tonéis de 200L para captação de água',
           'Bebedouros de animais e galinheiros',
           'Caixas d\'água sem tampa no solo',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -169,11 +163,10 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-06',
         endereco: 'Rodovia BR-116, KM 12',
         ovos: 210,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico (Mutirão 7 Agentes)',
         lat: -21.9062300,
         lng: -42.6385100,
-        regraSemTrena: 'Mutirão na Rodovia: todas as borracharias, oficinas mecânicas, carcaças de veículos e galpões ao longo da BR-116.',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Borracharias, oficinas mecânicas e galpões da BR-116. Perímetro Ampliado (200m): Faixa marginal da rodovia e imóveis adjacentes.',
         itensChecklist: [
           'Pilhas de pneus de caminhão e trator',
           'Carcaças de veículos abertas à chuva',
@@ -189,24 +182,23 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-11',
         endereco: 'Rua Maria da Silva Machareth, 182',
         ovos: 109,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.9071500,
         lng: -42.6402100,
-        regraSemTrena: 'Mutirão na Machareth: casas vizinhas, tonéis de captação de chuva e caixas d\'água baixas.',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Residências da Rua Maria da Silva Machareth. Perímetro Ampliado (200m): Tonéis e caixas d\'água baixas nos quarteirões adjacentes.',
         itensChecklist: [
           'Tambores de captação de água de chuva',
           'Caixas d\'água baixas em quintais úmidos',
           'Plantas em água e bebedouros de aves',
           'Eliminação mecânica imediata de criadouros',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       }
     ]
   },
   quinta: {
     diaNome: 'Quinta-Feira',
-    territorio: 'Porto Velho do Cunha e Ilha dos Pombos',
+    territorio: 'Porto Velho e Ilha dos Pombos',
     alvos: [
       {
         id: 'OV-45',
@@ -215,17 +207,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-01',
         endereco: 'Rua Major Fajardo, 601',
         ovos: 241,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico de Emergência',
         lat: -21.8791200,
         lng: -42.5482300,
-        regraSemTrena: 'Imóvel-Foco + Beira-Rio: Rua Major Fajardo (altura nº 550 ao 650) e faixa ribeirinha.',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Rua Major Fajardo (altura nº 550 ao 650). Perímetro Ampliado (200m): Faixa ribeirinha do Rio Paraíba e residências do entorno.',
         itensChecklist: [
           'Caçambas e carretas com água de chuva',
           'Recipientes plásticos descartados',
           'Quintais que descem até o rio',
           'Caixas d\'água rurais sem vedação',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -235,17 +226,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-10',
         endereco: 'Rua Major Fajardo, 312',
         ovos: 102,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.8784500,
         lng: -42.5491100,
-        regraSemTrena: 'Imóvel-Foco + Entorno da ESF: Rua Major Fajardo (nº 280 ao 350 ao redor do Posto de Saúde).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Entorno imediato da Unidade de Saúde (ESF Porto Velho). Perímetro Ampliado (200m): Residências do eixo principal da Major Fajardo.',
         itensChecklist: [
           'Calhas prediais e canaletas pluviais',
           'Caixas d\'água no nível do chão',
           'Garrafas retornáveis de bebidas',
           'Vistoria minuciosa do posto e vizinhos',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -255,24 +245,23 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-01',
         endereco: 'Rua Beira Rio, 130',
         ovos: 203,
-        nivel: 'Nível Crítico de Emergência (P1)',
-        corBadge: 'bg-red-600 text-white',
+        nivel: 'Nível Crítico de Emergência',
         lat: -21.8456100,
         lng: -42.5891200,
-        regraSemTrena: 'Orla Ribeirinha Completa: toda a extensão da Rua Beira Rio (canoas, embarcações e lonas plásticas).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Orla ribeirinha habitada de Ilha dos Pombos. Perímetro Ampliado (200m): Embarcações atracadas, lonas plásticas e depósitos ribeirinhos.',
         itensChecklist: [
           'Canoas e botes acumulando água',
           'Lonas plásticas estendidas em barrancos',
           'Recipientes e caixas de pesca',
           'Tanques de água para peixe e plantas',
-          'Ribeirinhos orientados com crachá da Saúde'
+          'Ribeirinhos orientados'
         ]
       }
     ]
   },
   sexta: {
     diaNome: 'Sexta-Feira',
-    territorio: 'Barra, Córrego da Prata e Revisão da Sede',
+    territorio: 'Barra, Prata e Revisão da Sede',
     alvos: [
       {
         id: 'OV-55',
@@ -281,11 +270,10 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-01',
         endereco: 'Rua Antônio R. Serafim, S/N',
         ovos: 125,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.8214500,
         lng: -42.5123400,
-        regraSemTrena: 'Quintais Rurais: Rua Antônio R. Serafim e Sebastião Ferreira Costa (bebedouros de animais rurais e tonéis).',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Residências rurais da Rua Antônio R. Serafim. Perímetro Ampliado (200m): Tonéis de captação e bebedouros de animais nas propriedades rurais.',
         itensChecklist: [
           'Bebedouros de gado, cavalos e porcos',
           'Tambores de armazenamento de água',
@@ -301,17 +289,16 @@ const ALVOS_POR_DIA = {
         quarteirao: 'Q-01',
         endereco: 'Rua Benfica, 48 (ESF)',
         ovos: 121,
-        nivel: 'Nível de Alerta (P2)',
-        corBadge: 'bg-amber-600 text-white',
+        nivel: 'Nível de Alerta',
         lat: -21.9891200,
         lng: -42.6789100,
-        regraSemTrena: 'Entorno da ESF Prata: Rua Benfica e caixas d\'água no nível do solo ao redor do posto de saúde.',
+        delimitacaoBloqueio: 'Núcleo Focal (100m): Entorno da Unidade de Saúde (ESF Prata) e Rua Benfica. Perímetro Ampliado (200m): Quarteirões residenciais do distrito.',
         itensChecklist: [
           'Caixas d\'água baixas em quintais',
           'Calhas do posto de saúde e vizinhos',
           'Garrafas e descartáveis na beira da via',
           'Eliminação mecânica imediata',
-          'Moradores orientados com crachá da Saúde'
+          'Moradores orientados'
         ]
       },
       {
@@ -322,10 +309,9 @@ const ALVOS_POR_DIA = {
         endereco: 'Retorno a Imóveis Fechados',
         ovos: 0,
         nivel: 'Varredura e Retorno a Fechados',
-        corBadge: 'bg-blue-600 text-white',
         lat: -21.9333333,
         lng: -42.6083333,
-        regraSemTrena: 'Retorno a todos os imóveis que estavam fechados no início da semana para garantir 100% de cobertura.',
+        delimitacaoBloqueio: 'Varredura Integrada: Retorno programado aos imóveis que estavam fechados durante as vistorias de segunda e terça para garantir 100% de cobertura.',
         itensChecklist: [
           'Visita aos imóveis fechados de Segunda',
           'Visita aos imóveis fechados de Terça',
@@ -338,17 +324,10 @@ const ALVOS_POR_DIA = {
   }
 };
 
-export function AcaoAgenteScreen({ onVoltar }) {
+export function AcaoAgenteScreen({ userPos, onVoltar }) {
   const [diaAtivo, setDiaAtivo] = useState('segunda');
   const [indiceAlvo, setIndiceAlvo] = useState(0);
-  const [casasVistoriadas, setCasasVistoriadas] = useState(() => {
-    try {
-      const s = localStorage.getItem('ovitrampa_casas_vistoriadas');
-      return s ? JSON.parse(s) : {};
-    } catch (_) {
-      return {};
-    }
-  });
+  const [painelAberto, setPainelAberto] = useState(true);
 
   const [checklist, setChecklist] = useState(() => {
     try {
@@ -371,7 +350,6 @@ export function AcaoAgenteScreen({ onVoltar }) {
   const dadosDia = ALVOS_POR_DIA[diaAtivo];
   const alvoAtual = dadosDia.alvos[indiceAlvo] || dadosDia.alvos[0];
 
-  // Alterna checkbox
   const toggleCheck = (idx) => {
     const key = `${alvoAtual.id}_${idx}`;
     setChecklist((prev) => {
@@ -383,20 +361,6 @@ export function AcaoAgenteScreen({ onVoltar }) {
     });
   };
 
-  // Ajusta contador de casas
-  const ajustarCasas = (delta) => {
-    setCasasVistoriadas((prev) => {
-      const atual = prev[alvoAtual.id] || 0;
-      const novo = Math.max(0, atual + delta);
-      const next = { ...prev, [alvoAtual.id]: novo };
-      try {
-        localStorage.setItem('ovitrampa_casas_vistoriadas', JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-  };
-
-  // Concluir alvo e passar para o próximo
   const handleConcluirAlvo = () => {
     setConcluidos((prev) => {
       const next = { ...prev, [alvoAtual.id]: true };
@@ -411,233 +375,279 @@ export function AcaoAgenteScreen({ onVoltar }) {
     }
   };
 
-  // Abrir GPS no Google Maps
   const handleAbrirGps = () => {
     const url = `https://www.google.com/maps/search/?api=1&query=${alvoAtual.lat},${alvoAtual.lng}`;
     window.open(url, '_blank');
   };
 
-  // Compartilhar status no WhatsApp
   const handleCompartilharWhatsApp = () => {
     const totalChecks = alvoAtual.itensChecklist.filter((_, idx) => checklist[`${alvoAtual.id}_${idx}`]).length;
-    const casas = casasVistoriadas[alvoAtual.id] || 0;
     const texto = [
-      `🚨 *RELATÓRIO DE CAMPO • ${alvoAtual.id}*`,
-      `📍 *Local:* ${alvoAtual.morador} (${alvoAtual.bairro})`,
-      `🏠 *Endereço:* ${alvoAtual.endereco}`,
-      `🪤 *Carga:* ${alvoAtual.ovos} ovos`,
-      `📋 *Criadouros Verificados:* ${totalChecks}/${alvoAtual.itensChecklist.length}`,
-      `🏘️ *Casas Vizinhas Vistoriadas:* ${casas} imóveis`,
+      `🚨 *VISTORIA DE CAMPO • GPS OVITRAMPAS CARMO-RJ*`,
+      `📍 *Ponto:* ${alvoAtual.id} • ${alvoAtual.morador}`,
+      `🏠 *Endereço:* ${alvoAtual.endereco} (${alvoAtual.bairro} • Quarteirão ${alvoAtual.quarteirao})`,
+      `🪤 *Carga Entomológica:* ${alvoAtual.ovos} ovos (${alvoAtual.nivel})`,
+      `🔴 *Raio 100m:* Núcleo Focal Prioritário`,
+      `🟠 *Raio 200m:* Bloqueio Perifocal (Diretrizes Ministério da Saúde)`,
+      `📋 *Checklist:* ${totalChecks}/${alvoAtual.itensChecklist.length} itens inspecionados`,
       `✅ *Status:* ${concluidos[alvoAtual.id] ? 'Concluído' : 'Em andamento'}`,
       '',
-      '📲 Registro pelo App GPS Ovitrampas Carmo/RJ'
+      '📲 Vigilância Ambiental • Prefeitura Municipal de Carmo/RJ'
     ].join('\n');
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
   const isAlvoConcluido = !!concluidos[alvoAtual.id];
-  const numCasas = casasVistoriadas[alvoAtual.id] || 0;
 
   return (
-    <div className="w-full min-h-[100dvh] bg-slate-900 text-slate-100 flex flex-col justify-between font-sans select-none pb-8">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-900 font-sans select-none">
       
-      {/* 1. TOPO OFICIAL COM BOTÃO VOLTAR & IDENTIFICAÇÃO DO AGENTE */}
-      <header className="bg-slate-950/90 border-b border-slate-800 px-4 py-3 sticky top-0 z-30 backdrop-blur-md">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-2">
+      {/* 1. MAPA INTERATIVO EM TELA CHEIA (LEAFLET + ARCGIS) COM OS RAIOS DE 100M E 200M */}
+      <div className="absolute inset-0 w-full h-full z-0">
+        <MapaVistoriaAcao alvo={alvoAtual} userPos={userPos} />
+      </div>
+
+      {/* 2. BARRA SUPERIOR FLUTUANTE (SELETOR DE DIAS E ALVOS) */}
+      <div className="absolute top-2 left-0 right-0 z-20 px-3 max-w-lg mx-auto pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl p-2 pointer-events-auto space-y-2">
           
-          <div className="flex items-center gap-2">
-            {onVoltar && (
+          {/* Topo do Header: Voltar + Título + Ações */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {onVoltar && (
+                <button
+                  type="button"
+                  onClick={onVoltar}
+                  className="p-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all"
+                  title="Voltar ao Início"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              )}
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[10px] font-black tracking-wider uppercase text-emerald-700">
+                    App do Agente de Campo
+                  </span>
+                </div>
+                <h1 className="text-xs font-black text-slate-900 leading-tight">
+                  Vistoria & Bloqueio Pós-Ovitrampas
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={onVoltar}
-                className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl border border-slate-700 text-xs font-bold transition-all"
-                title="Voltar ao Menu"
+                onClick={handleCompartilharWhatsApp}
+                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                title="Compartilhar no WhatsApp"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <Share2 className="w-4 h-4" />
               </button>
-            )}
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-[10px] font-black tracking-wider uppercase text-emerald-400">
-                  Modo Focado do Agente
-                </span>
-              </div>
-              <h1 className="text-sm font-black text-white leading-tight">
-                Vigilância Ambiental • Carmo/RJ
-              </h1>
+              <a
+                href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+                download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all"
+                title="Baixar Ficha em Papel (PDF)"
+              >
+                <FileText className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleCompartilharWhatsApp}
-              className="p-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-              title="Enviar status no WhatsApp da equipe"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-            <a
-              href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-              download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-              className="p-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl border border-slate-700 text-xs font-bold transition-all"
-              title="Baixar Ficha em Papel (PDF)"
-            >
-              <FileText className="w-4 h-4" />
-            </a>
+          {/* Abas dos Dias da Semana (Seg a Sex) */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-xs">
+            {Object.keys(ALVOS_POR_DIA).map((chave) => {
+              const d = ALVOS_POR_DIA[chave];
+              const ativo = diaAtivo === chave;
+              return (
+                <button
+                  key={chave}
+                  type="button"
+                  onClick={() => {
+                    setDiaAtivo(chave);
+                    setIndiceAlvo(0);
+                  }}
+                  className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all border text-center ${
+                    ativo
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {d.diaNome.split('-')[0]}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Seletor Rápido de Alvo do Dia */}
+          <div className="flex items-center justify-between text-[11px] pt-0.5 border-t border-slate-100 font-bold">
+            <span className="text-slate-600 truncate">
+              {dadosDia.territorio}
+            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              {dadosDia.alvos.map((a, idx) => (
+                <button
+                  key={a.id}
+                  onClick={() => setIndiceAlvo(idx)}
+                  className={`w-6 h-5 rounded-lg text-[10px] font-black flex items-center justify-center border transition-all ${
+                    indiceAlvo === idx
+                      ? 'bg-blue-600 text-white border-blue-600 scale-105'
+                      : concluidos[a.id]
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-white text-slate-500 border-slate-200'
+                  }`}
+                >
+                  {concluidos[a.id] ? '✓' : idx + 1}
+                </button>
+              ))}
+            </div>
           </div>
 
         </div>
-      </header>
-
-      {/* 2. SELETOR DE DIA DA SEMANA (SEGUNDA A SEXTA) */}
-      <div className="max-w-md mx-auto w-full px-4 pt-3 pb-1">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {Object.keys(ALVOS_POR_DIA).map((chave) => {
-            const d = ALVOS_POR_DIA[chave];
-            const ativo = diaAtivo === chave;
-            return (
-              <button
-                key={chave}
-                type="button"
-                onClick={() => {
-                  setDiaAtivo(chave);
-                  setIndiceAlvo(0);
-                }}
-                className={`px-3 py-1.5 rounded-xl font-black whitespace-nowrap transition-all border ${
-                  ativo
-                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-                }`}
-              >
-                {d.diaNome.split('-')[0]}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* 3. NAVEGAÇÃO DE PONTOS DO DIA (1 de 3) */}
-      <div className="max-w-md mx-auto w-full px-4 py-2 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-blue-400" />
-          <span className="font-bold text-slate-300">{dadosDia.diaNome}:</span>
-          <span>{dadosDia.territorio}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {dadosDia.alvos.map((a, idx) => (
-            <button
-              key={a.id}
-              onClick={() => setIndiceAlvo(idx)}
-              className={`w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center border transition-all ${
-                indiceAlvo === idx
-                  ? 'bg-blue-600 text-white border-blue-400 scale-105'
-                  : concluidos[a.id]
-                  ? 'bg-emerald-950 text-emerald-400 border-emerald-700'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
-              }`}
-            >
-              {concluidos[a.id] ? '✓' : idx + 1}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. CARD PRINCIPAL: TELA DO CELULAR DO AGENTE (EXATAMENTE COMO NO WIREFRAME) */}
-      <main className="max-w-md mx-auto w-full px-4 flex-1 flex flex-col justify-between space-y-3">
+      {/* 3. PAINEL DESLIZANTE INFERIOR (BOTTOM SHEET RETRÁTIL - ESTILO /CAMPO) */}
+      <div className="absolute left-0 right-0 bottom-0 z-30 p-2.5 sm:p-4 max-w-md mx-auto w-full pointer-events-none">
         
-        <div className="bg-slate-800/90 border border-slate-700 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-4">
-          
-          {/* IDENTIFICAÇÃO DO PONTO */}
-          <div>
+        {/* Barra Recolhida: O Agente pode tocar para expandir */}
+        {!painelAberto && (
+          <button
+            type="button"
+            onClick={() => setPainelAberto(true)}
+            className="w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/25 border border-white/80 px-4 py-3 pointer-events-auto text-left flex items-center gap-3 active:scale-[0.99] transition-transform"
+          >
+            <div className="w-9 h-9 rounded-2xl bg-slate-900 flex items-center justify-center shrink-0 shadow-md">
+              <ChevronUp className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-900">{alvoAtual.id} • {alvoAtual.morador}</span>
+                {alvoAtual.ovos > 0 && (
+                  <span className="text-[10px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded-md">
+                    {alvoAtual.ovos} ovos
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 truncate mt-0.5">
+                {alvoAtual.endereco} • <strong>{alvoAtual.quarteirao}</strong>
+              </p>
+            </div>
+            <span className="text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-xl shrink-0">
+              Ver Ficha
+            </span>
+          </button>
+        )}
+
+        {/* Ficha Completa do Imóvel Expandida */}
+        <div
+          className={`bg-white/98 sm:bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-slate-900/25 border border-slate-300 p-3.5 sm:p-4 space-y-3 pointer-events-auto text-slate-900 max-h-[78dvh] overflow-y-auto ${
+            painelAberto ? '' : 'hidden'
+          }`}
+        >
+          {/* Botão de recolher para ver o mapa ampliado */}
+          <button
+            type="button"
+            onClick={() => setPainelAberto(false)}
+            className="w-full flex items-center justify-center gap-1.5 -mt-1 pb-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 active:scale-95 transition-all"
+          >
+            <ChevronDown className="w-4 h-4" />
+            <span>Ocultar e ver mapa ampliado</span>
+          </button>
+
+          {/* CABEÇALHO DO IMÓVEL-FOCO */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-black bg-blue-950 text-blue-300 border border-blue-800 px-2.5 py-0.5 rounded-lg">
+              <span className="text-xs font-black bg-slate-900 text-white px-2.5 py-1 rounded-xl">
                 {alvoAtual.id}
               </span>
-              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${alvoAtual.corBadge}`}>
+              <span className="text-[11px] font-bold text-red-700 bg-red-100 border border-red-200 px-2 py-0.5 rounded-full">
                 {alvoAtual.nivel}
               </span>
             </div>
 
-            <h2 className="text-lg font-black text-white mt-1.5 leading-tight">
+            <h2 className="text-base font-black text-slate-900 leading-tight">
               {alvoAtual.morador}
             </h2>
-            
-            <div className="text-xs text-slate-300 font-medium flex items-center gap-1.5 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0" />
-              <span>{alvoAtual.bairro} • Quarteirão <strong>{alvoAtual.quarteirao}</strong></span>
+
+            <div className="text-xs text-slate-600 font-bold flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0" />
+              <span>Bairro {alvoAtual.bairro} • Quarteirão <strong>{alvoAtual.quarteirao}</strong></span>
             </div>
 
-            <div className="text-xs text-slate-400 mt-0.5 pl-5">
+            <div className="text-xs text-slate-500 font-medium pl-4">
               {alvoAtual.endereco}
             </div>
 
             {alvoAtual.ovos > 0 && (
-              <div className="mt-2.5 bg-red-950/60 border border-red-800 text-red-200 px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-2">
-                <Flame className="w-4 h-4 text-red-500 animate-bounce" />
-                <span>🚨 {alvoAtual.ovos} OVOS DETECTADOS NESTA ARMADILHA</span>
+              <div className="mt-1 bg-red-100 border border-red-200 text-red-950 px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-2">
+                <Flame className="w-4 h-4 text-red-600 animate-pulse shrink-0" />
+                <span>🚨 {alvoAtual.ovos} OVOS (Epicentro Crítico de Infestação)</span>
               </div>
             )}
           </div>
 
-          {/* BOTÃO PRINCIPAL: ABRIR ROTA NO GOOGLE MAPS */}
+          {/* BOTÃO AZUL: ABRIR ROTA NO GOOGLE MAPS */}
           <div>
             <button
               type="button"
               onClick={handleAbrirGps}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-black text-sm py-3 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-lg shadow-blue-900/30 transition-all border border-blue-400"
+              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black text-sm py-3 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-md shadow-blue-600/20 transition-all border border-blue-700"
             >
-              <Navigation className="w-5 h-5 text-white animate-pulse" />
+              <Navigation className="w-4 h-4 text-white" />
               <span>🗺️ ABRIR ROTA NO GOOGLE MAPS</span>
             </button>
-            <p className="text-[11px] text-center text-slate-400 mt-1">
+            <p className="text-[11px] text-center text-slate-500 mt-1 font-medium">
               ➔ Toca aqui e o GPS do celular guia até o portão!
             </p>
           </div>
 
-          <hr className="border-slate-700/80" />
-
-          {/* O QUE FAZER AO CHEGAR (SEM TRENA!) */}
-          <div className="bg-amber-950/40 border border-amber-800/80 rounded-2xl p-3 text-xs space-y-1">
-            <div className="font-black text-amber-300 flex items-center gap-1.5">
-              <span>🎯</span>
-              <span>O QUE FAZER AO CHEGAR (SEM TRENA!):</span>
+          {/* DELIMITAÇÃO OPERACIONAL DO BLOQUEIO (MINISTÉRIO DA SAÚDE / SES-RJ) */}
+          <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-3 text-xs space-y-1.5">
+            <div className="font-black text-amber-950 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>Delimitação Operacional de Bloqueio (MS / SES-RJ):</span>
             </div>
-            <p className="text-amber-100 font-medium leading-relaxed italic">
-              "{alvoAtual.regraSemTrena}"
+            <p className="text-amber-900 font-medium leading-relaxed">
+              {alvoAtual.delimitacaoBloqueio}
             </p>
+            <div className="pt-1 border-t border-amber-200/80 text-[10px] text-amber-800 space-y-0.5">
+              <div>• <b>Raio 100m (Núcleo Focal):</b> Varredura em 100% dos depósitos lindeiros e confrontantes.</div>
+              <div>• <b>Raio 200m (Perímetro MS):</b> Contenção perifocal em até 9 quarteirões em áreas de alta carga.</div>
+            </div>
           </div>
 
           {/* CHECKLIST NA TELA (TOCA COM O DEDO PARA MARCAR) */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                 <span>📋</span> Checklist de Eliminação:
               </span>
-              <span className="text-[11px] text-slate-400">
-                Toque com o dedo para marcar
+              <span className="text-[11px] text-slate-500 font-medium">
+                Toca com o dedo para marcar
               </span>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {alvoAtual.itensChecklist.map((item, idx) => {
                 const checked = !!checklist[`${alvoAtual.id}_${idx}`];
                 return (
                   <div
                     key={idx}
                     onClick={() => toggleCheck(idx)}
-                    className={`p-2.5 rounded-xl border text-xs font-semibold cursor-pointer flex items-center gap-2.5 transition-all ${
+                    className={`p-2.5 rounded-xl border text-xs font-bold cursor-pointer flex items-center gap-2.5 transition-all ${
                       checked
-                        ? 'bg-emerald-950/80 border-emerald-600 text-emerald-200 line-through'
-                        : 'bg-slate-900/70 border-slate-700 text-slate-200 hover:bg-slate-700/50'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 line-through'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     {checked ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <Circle className="w-4 h-4 text-slate-500 shrink-0" />
+                      <Circle className="w-4 h-4 text-slate-300 shrink-0" />
                     )}
                     <span>{item}</span>
                   </div>
@@ -646,95 +656,56 @@ export function AcaoAgenteScreen({ onVoltar }) {
             </div>
           </div>
 
-          {/* CONTADOR DE CASAS VIZINHAS VISTORIADAS */}
-          <div className="bg-slate-900/80 border border-slate-700 rounded-2xl p-3 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-black text-white">
-                Casas Vizinhas Vistoriadas:
-              </div>
-              <div className="text-[11px] text-slate-400">
-                Meta: 6 a 8 casas de cada lado
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
+          {/* BOTÃO VERDE PRINCIPAL: CONCLUIR E PASSAR PARA A PRÓXIMA CASA */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleConcluirAlvo}
+              className={`w-full font-black text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all ${
+                isAlvoConcluido
+                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white shadow-emerald-600/30'
+              }`}
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>
+                {isAlvoConcluido
+                  ? '✅ IMÓVEL CONCLUÍDO • PRÓXIMO PONTO'
+                  : '✅ CONCLUIR E PASSAR PARA A PRÓXIMA CASA'}
+              </span>
+            </button>
+
+            {/* Navegação entre alvos */}
+            <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-bold mt-2">
               <button
                 type="button"
-                onClick={() => ajustarCasas(-1)}
-                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black flex items-center justify-center border border-slate-600"
+                disabled={indiceAlvo === 0}
+                onClick={() => setIndiceAlvo(indiceAlvo - 1)}
+                className="flex items-center gap-1 disabled:opacity-30 hover:text-slate-900"
               >
-                <Minus className="w-4 h-4" />
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Ponto Anterior</span>
               </button>
-              
-              <span className="w-10 text-center font-black text-base text-emerald-400">
-                {numCasas}
+
+              <span className="text-slate-700">
+                Alvo {indiceAlvo + 1} de {dadosDia.alvos.length}
               </span>
 
               <button
                 type="button"
-                onClick={() => ajustarCasas(1)}
-                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black flex items-center justify-center border border-slate-600"
+                disabled={indiceAlvo === dadosDia.alvos.length - 1}
+                onClick={() => setIndiceAlvo(indiceAlvo + 1)}
+                className="flex items-center gap-1 disabled:opacity-30 hover:text-slate-900"
               >
-                <Plus className="w-4 h-4" />
+                <span>Próximo Ponto</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
         </div>
 
-        {/* BOTÃO PRINCIPAL DE CONCLUSÃO DO ALVO */}
-        <div className="space-y-2 pt-1">
-          <button
-            type="button"
-            onClick={handleConcluirAlvo}
-            className={`w-full font-black text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl transition-all ${
-              isAlvoConcluido
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
-                : 'bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white shadow-emerald-900/40'
-            }`}
-          >
-            <Check className="w-5 h-5 stroke-[3]" />
-            <span>
-              {isAlvoConcluido
-                ? '✅ ALVO CONCLUÍDO • PASSAR PARA O PRÓXIMO'
-                : '✅ CONCLUIR E PASSAR PARA A PRÓXIMA CASA'}
-            </span>
-          </button>
-
-          {/* Navegação entre alvos */}
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-            <button
-              type="button"
-              disabled={indiceAlvo === 0}
-              onClick={() => setIndiceAlvo(indiceAlvo - 1)}
-              className="flex items-center gap-1 disabled:opacity-30 hover:text-white"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Alvo Anterior</span>
-            </button>
-
-            <span className="font-bold text-slate-300">
-              Ponto {indiceAlvo + 1} de {dadosDia.alvos.length}
-            </span>
-
-            <button
-              type="button"
-              disabled={indiceAlvo === dadosDia.alvos.length - 1}
-              onClick={() => setIndiceAlvo(indiceAlvo + 1)}
-              className="flex items-center gap-1 disabled:opacity-30 hover:text-white"
-            >
-              <span>Próximo Alvo</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-      </main>
-
-      {/* RODAPÉ DISCRETO */}
-      <footer className="text-center pt-3 text-[11px] text-slate-500">
-        Prefeitura Municipal de Carmo • SMS • Vigilância Ambiental
-      </footer>
+      </div>
 
     </div>
   );

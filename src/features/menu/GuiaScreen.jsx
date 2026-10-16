@@ -65,24 +65,13 @@ export function GuiaScreen({
   const MODULOS = [
     {
       rota: '/acao',
-      tag: '📱 Modo Celular do Agente • Ação Focada',
+      tag: '📱 App do Agente • Vistoria & Bloqueio',
       tagCor: 'bg-emerald-100 text-emerald-950 border-emerald-400',
       icone: Navigation,
       iconeBg: 'bg-emerald-600 text-white border-emerald-500',
-      titulo: 'App do Agente (Tela da Larissa)',
-      descricao: 'Tela ultra simples para o celular: rota GPS direta até o portão, regra sem trena, checklists de criadouros e botão de concluir.',
+      titulo: 'App de Vistoria do Agente',
+      descricao: 'Mapa interativo com raio de 100m (núcleo focal) e 200m (perímetro oficial MS), rota GPS direta ao portão, checklist tátil e conclusão ágil.',
       destaque: true
-    },
-    {
-      rota: '/plano',
-      tag: 'Operação Segunda-Feira • 10 Agentes',
-      tagCor: 'bg-red-100 text-red-900 border-red-300',
-      icone: Flame,
-      iconeBg: 'bg-red-50 text-red-700 border-red-300',
-      titulo: 'Plano Semanal de Bloqueio',
-      descricao: 'Direcionamento tático dos 10 agentes pelo mapa de calor, raio de ação calibrado (100m/80m), rotas GPS para os imóveis e PDF para impressão.',
-      destaque: true,
-      temWhatsAppPlano: true
     },
     {
       rota: '/campo',

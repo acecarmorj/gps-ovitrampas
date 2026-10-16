@@ -153,18 +153,18 @@ def gerar_pdf_plano_completo(pdf_saida, copia_desktop=None):
         ]))
         return t
 
-    # 1. Definição Técnica dos Raios de Ação
-    story.append(header_faixa("1. FUNDAMENTAÇÃO DO RAIO DE AÇÃO DE BLOQUEIO (CALIBRADO POR CARGA DE OVOS)"))
+    # 1. Definição Técnica dos Raios Oficiais (100m e 200m - MS / SES-RJ)
+    story.append(header_faixa("1. DIRETRIZ NORMATIVA: FUNDAMENTAÇÃO DOS RAIOS DE BLOQUEIO (MS / SES-RJ)"))
     story.append(Spacer(1, 2))
 
     raio_explicativo = [
-        Paragraph("<b>• Comportamento Biológico da Fêmea (Aedes aegypti):</b> O Ministério da Saúde e a Fiocruz estabelecem que a fêmea do mosquito raramente voa além de 50 a 100 metros quando há oferta de alimento (moradores) e criadouros próximos. Portanto, a contagem de ovos na palheta reflete diretamente o nível de infestação do quarteirão.", st_body),
+        Paragraph("<b>• Embasamento Técnico e Normativo (Diretrizes Nacionais do Ministério da Saúde / Fiocruz):</b><br/>"
+                  "<b>1. Raio de 100 Metros (Núcleo Focal Prioritário de Eliminação):</b> Estudos entomológicos da Fiocruz e do Ministério da Saúde comprovam que a fêmea do <i>Aedes aegypti</i> possui raio de dispersão biológica primária de 50 a 100 metros quando há oferta de alimento e água no local. Portanto, quando uma ovitrampa registra alta densidade de ovos, <b>o foco gerador dos criadouros está situado no próprio imóvel ou nos imóveis confrontantes do quarteirão</b>. Ação: Varredura obrigatória em 100% dos imóveis e depósitos no raio de 100m.<br/>"
+                  "<b>2. Raio de 200 Metros (Perímetro Ampliado de Bloqueio Perifocal - Diretriz MS / SES-RJ):</b> Conforme preconizado pelo Ministério da Saúde para resposta a focos e controle de epidemias, em áreas de alerta ou emergência vetorial a delimitação de bloqueio deve abranger de 150m a 200m (área equivalente ao quarteirão-sede + os 8 quarteirões adjacentes, totalizando até 9 quarteirões). O objetivo é conter a oviposição fracionada ('skip oviposition') e impedir o transbordamento do vetor para áreas adjacentes.", st_body),
         Spacer(1, 1.5),
-        Paragraph("<b>• Escala de Raios de Ação Adotada neste Plano:</b><br/>"
-                  "<b>- Raio de 100 Metros (Nível Crítico Máximo · >150 ovos):</b> Bloqueio total do quarteirão da armadilha + quarteirões confrontantes e vizinhos imediatos em 360º.<br/>"
-                  "<b>- Raio de 80 Metros (Nível de Alerta Alto · 100 a 149 ovos):</b> Vistoria de todas as residências do quarteirão da ovitrampa e face frontal da rua.<br/>"
-                  "<b>- Raio de 50 Metros (Nível Médio · 50 a 99 ovos):</b> Inspeção intensiva no imóvel sede e nas 6 a 8 casas vizinhas mais próximas.<br/>"
-                  "<b>- Raio de 30 Metros (Nível de Vigilância · <50 ovos ou negativas):</b> Ação preventiva no imóvel parceiro e nos 2 vizinhos laterais.", st_body)
+        Paragraph("<b>• Estratificação Operacional em Campo:</b><br/>"
+                  "<b>- Prioridade 1 (Raio 100m):</b> Eliminação mecânica imediata de 100% dos criadouros móveis e vedação de caixas d'água no quarteirão da ovitrampa.<br/>"
+                  "<b>- Prioridade 2 (Raio 200m):</b> Varredura nos quarteirões vizinhos confrontantes, inspeção perifocal e conscientização dos moradores.", st_body)
     ]
     t_box_raio = Table([[raio_explicativo]], colWidths=[printable_w])
     t_box_raio.setStyle(TableStyle([

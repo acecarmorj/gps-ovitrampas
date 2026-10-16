@@ -220,7 +220,7 @@ export function App() {
     if (path === '/admin') return 'admin';
     if (path === '/calor' || path === '/mapa-calor' || path === '/planejamento' || path === '/cenario-ideal') return 'calor';
     if (path === '/publico' || path === '/transparencia') return 'publico';
-    if (path === '/plano' || path === '/plano-de-acao' || path === '/acao' || path === '/bloqueio') return 'plano';
+    if (path === '/plano' || path === '/plano-de-acao' || path === '/acao' || path === '/bloqueio' || path === '/larissa' || path === '/vistoria') return 'acao';
     return 'guia';
   };
 
@@ -385,17 +385,10 @@ export function App() {
           />
         )}
 
-        {chaveModulo === 'plano' && (
-          <PlanoAcaoAgentesScreen
-            onVoltar={() => navigate('/guia')}
-            onAbrirMapa={() => navigate('/mapa')}
-            onAbrirAcaoFoco={() => navigate('/acao')}
-          />
-        )}
-
-        {chaveModulo === 'acao' && (
+        {(chaveModulo === 'acao' || chaveModulo === 'plano') && (
           <AcaoAgenteScreen
-            onVoltar={() => navigate('/plano')}
+            userPos={userPos}
+            onVoltar={() => navigate('/guia')}
           />
         )}
       </main>

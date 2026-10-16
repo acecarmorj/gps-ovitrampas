@@ -92,10 +92,10 @@ def gerar_guia_prancheta():
                   "• <b>1 Agente Dedicada em Influência:</b> Permanece no 2º Distrito diariamente (não consome vaga de carro). Demais duplas a pé na Sede.", st_box_text)
     ]
     box_regra_ouro = [
-        Paragraph("<b>🎯 REGRA DE OURO DO AGENTE EM CAMPO (SEM TRENA!):</b>", ParagraphStyle('R', parent=st_box_title, textColor=colors.HexColor('#B91C1C'))),
-        Paragraph("• <b>1. Como chegar:</b> Toque em <i>'Abrir Rota no Google Maps'</i> no celular para o GPS guiar até o portão da armadilha.<br/>"
-                  "• <b>2. Na Pousada (Raio 100m):</b> Vistoriar a pousada + 6 a 8 casas vizinhas à direita, 6 a 8 à esquerda, casas em frente e fundos.<br/>"
-                  "• <b>3. Demais Pontos (Raio 80m/50m):</b> Vistoriar a casa da armadilha + vizinhos imediatos da rua. <b>Eliminar na hora!</b>", st_box_text)
+        Paragraph("<b>🎯 DELIMITAÇÃO OPERACIONAL DE BLOQUEIO (MS / SES-RJ):</b>", ParagraphStyle('R', parent=st_box_title, textColor=colors.HexColor('#B91C1C'))),
+        Paragraph("• <b>1. Rota GPS:</b> Toque em <i>'Abrir Rota no Google Maps'</i> no celular para o GPS guiar até o portão do foco.<br/>"
+                  "• <b>2. Núcleo Focal (Raio 100m):</b> Vistoriar o imóvel da armadilha e imóveis confrontantes do quarteirão. Eliminação imediata de criadouros!<br/>"
+                  "• <b>3. Perímetro Oficial (Raio 200m - Diretriz MS):</b> Extensão aos quarteirões vizinhos em áreas críticas para contenção de dispersão.", st_box_text)
     ]
 
     t_box = Table([[box_viaturas, box_regra_ouro]], colWidths=[printable_w * 0.52, printable_w * 0.48])

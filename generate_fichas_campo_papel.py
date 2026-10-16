@@ -395,9 +395,9 @@ def gerar_fichas_campo():
         story.append(t_campos)
         story.append(Spacer(1, 3))
 
-        # 3. REGRA DE CAMPO PRÁTICA (COMO FAZER SEM TRENA)
+        # 3. DELIMITAÇÃO OPERACIONAL DE BLOQUEIO FOCAL E PERIFOCAL (MS / SES-RJ)
         regra_box = Paragraph(
-            "<b>🎯 REGRA DE OURO PARA O AGENTE (SEM TRENA):</b> Chegando ao endereço da armadilha, vistorie o imóvel sede e caminhe na rua vistoriando os vizinhos (cerca de 6 a 8 casas para cada lado, casas da frente e fundos). Marque abaixo os criadouros inspecionados e eliminados na hora!",
+            "<b>🎯 DELIMITAÇÃO OPERACIONAL DE BLOQUEIO (MS / SES-RJ):</b> No endereço do foco, vistorie o imóvel sede e execute a busca ativa no <b>Núcleo Focal Prioritário de 100m</b> (quarteirão do foco e confrontantes). Em áreas críticas, amplie para o <b>Perímetro de Bloqueio Perifocal de 200m (Diretriz Ministério da Saúde)</b>. Marque abaixo os depósitos inspecionados e eliminados na hora!",
             ParagraphStyle('R', parent=st_sub, fontSize=6.5, leading=8, alignment=TA_LEFT, textColor=colors.HexColor('#991B1B'))
         )
         t_regra = Table([[regra_box]], colWidths=[printable_w])
