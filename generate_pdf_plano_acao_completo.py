@@ -24,6 +24,17 @@ from reportlab.platypus import (
     PageBreak,
     HRFlowable
 )
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
+
+def make_qr_code(url, size=42):
+    qr = QrCodeWidget(url)
+    bounds = qr.getBounds()
+    w = bounds[2] - bounds[0]
+    h = bounds[3] - bounds[1]
+    d = Drawing(size, size, transform=[size / w, 0, 0, size / h, -bounds[0] * size / w, -bounds[1] * size / h])
+    d.add(qr)
+    return d
 
 
 class NumberedCanvas(canvas.Canvas):
@@ -413,19 +424,38 @@ def gerar_pdf_plano_completo(pdf_saida, copia_desktop=None):
     story.append(t_chk)
     story.append(Spacer(1, 8))
 
-    # Assinaturas
+    # Assinaturas e QR Code Oficial do Sistema
+    qr_drawing = make_qr_code("https://gps-ovitrampas-demo.pages.dev/plano", 40)
+    qr_col = [
+        qr_drawing,
+        Paragraph("<font size='5'><b>App GPS Celular</b><br/>Escaneie o código</font>", ParagraphStyle('QRT', fontName='Helvetica', fontSize=5, leading=6, alignment=1, textColor=colors.HexColor('#0F2942')))
+    ]
+    t_qr = Table([[qr_col]], colWidths=[48])
+    t_qr.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    w_side = (printable_w - 52) / 2
     ass_data = [
         [
-            Paragraph("____________________________________________<br/><b>Almir Lemgruber</b><br/>Responsável Técnico pelo Monitoramento<br/>Vigilância Ambiental de Carmo/RJ", ParagraphStyle('A1', fontName='Helvetica', fontSize=7, leading=9, alignment=1)),
-            Paragraph("____________________________________________<br/><b>Coordenação de Vigilância em Saúde</b><br/>Secretaria Municipal de Saúde<br/>Prefeitura Municipal de Carmo/RJ", ParagraphStyle('A2', fontName='Helvetica', fontSize=7, leading=9, alignment=1))
+            Paragraph("____________________________________________<br/><b>Almir Lemgruber</b><br/>Responsável Técnico pelo Monitoramento<br/>Vigilância Ambiental de Carmo/RJ", ParagraphStyle('A1', fontName='Helvetica', fontSize=6.8, leading=8.5, alignment=1)),
+            t_qr,
+            Paragraph("____________________________________________<br/><b>Coordenação de Vigilância em Saúde</b><br/>Secretaria Municipal de Saúde<br/>Prefeitura Municipal de Carmo/RJ", ParagraphStyle('A2', fontName='Helvetica', fontSize=6.8, leading=8.5, alignment=1))
         ]
     ]
-    t_ass = Table(ass_data, colWidths=[printable_w / 2, printable_w / 2])
+    t_ass = Table(ass_data, colWidths=[w_side, 52, w_side])
     t_ass.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     story.append(KeepTogether([t_ass]))
 

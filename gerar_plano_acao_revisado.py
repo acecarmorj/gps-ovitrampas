@@ -31,6 +31,17 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
+
+def make_qr_code(url, size=55):
+    qr = QrCodeWidget(url)
+    bounds = qr.getBounds()
+    w = bounds[2] - bounds[0]
+    h = bounds[3] - bounds[1]
+    d = Drawing(size, size, transform=[size / w, 0, 0, size / h, -bounds[0] * size / w, -bounds[1] * size / h])
+    d.add(qr)
+    return d
 
 
 ROOT = Path(__file__).resolve().parent
@@ -588,6 +599,34 @@ def build_pdf(by_ov, map_a, map_b):
     ct = Table(control, colWidths=[40*mm, width-40*mm])
     ct.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), NAVY), ("GRID", (0, 0), (-1, -1), 0.5, GRID), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, PALE]), ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
     story.append(ct)
+
+    # Bloco de Acesso Digital via QR Code
+    qr_drawing = make_qr_code("https://gps-ovitrampas-demo.pages.dev/plano", 52)
+    qr_card = [
+        [
+            qr_drawing,
+            [
+                P("<b>ACESSO DIRETO PELO SMARTPHONE (GPS & ROTAS DE CAMPO)</b>", styles["h2"]),
+                P("Aponte a câmera do celular para o QR Code ao lado para abrir a aplicação oficial <b>GPS Ovitrampas Carmo-RJ</b> no navegador:<br/>"
+                  "• <b>Navegação GPS Direta:</b> Traçado de rotas até o portão de cada imóvel.<br/>"
+                  "• <b>Checklists Interativos:</b> Registro de eliminação de criadouros em tempo real.<br/>"
+                  "• <b>Mapas Térmicos & Fichas:</b> Visualização interativa e download de fichas para prancheta.<br/>"
+                  "• <b>Endereço web:</b> https://gps-ovitrampas-demo.pages.dev/plano", styles["body"])
+            ]
+        ]
+    ]
+    t_qr_card = Table(qr_card, colWidths=[60, width - 60])
+    t_qr_card.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("BOX", (0, 0), (-1, -1), 0.5, GRID),
+        ("BACKGROUND", (0, 0), (-1, -1), PALE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story += [Spacer(1, 7), t_qr_card]
 
     doc.build(story, canvasmaker=NumberedCanvas)
     return OUT_PATH

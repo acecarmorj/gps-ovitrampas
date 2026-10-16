@@ -14,6 +14,17 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.graphics.barcode.qr import QrCodeWidget
+from reportlab.graphics.shapes import Drawing
+
+def make_qr_code(url, size=38):
+    qr = QrCodeWidget(url)
+    bounds = qr.getBounds()
+    w = bounds[2] - bounds[0]
+    h = bounds[3] - bounds[1]
+    d = Drawing(size, size, transform=[size / w, 0, 0, size / h, -bounds[0] * size / w, -bounds[1] * size / h])
+    d.add(qr)
+    return d
 
 def gerar_guia_prancheta():
     pdf_filename = "GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
@@ -224,16 +235,19 @@ def gerar_guia_prancheta():
     story.append(t_passos)
     story.append(Spacer(1, 4))
 
-    # 5. ASSINATURA INSTITUCIONAL
+    # 5. ASSINATURA INSTITUCIONAL COM QR CODE
+    qr_drawing = make_qr_code("https://gps-ovitrampas-demo.pages.dev/plano", 36)
     sign_data = [
         [
             Paragraph("____________________________________________________________<br/><b>Coordenação de Vigilância em Saúde e Controle de Zoonoses</b><br/>Secretaria Municipal de Saúde • Prefeitura Municipal de Carmo/RJ", ParagraphStyle('Sign', parent=st_box_text, alignment=TA_CENTER)),
-            Paragraph("<b>Link Celular:</b> gps-ovitrampas-demo.pages.dev/plano<br/><b>Conformidade:</b> Diretrizes MS / NT 03/2025-SVSA<br/><b>Data de Aplicação:</b> Segunda-Feira • Outubro/2026", ParagraphStyle('Info', parent=st_box_text, alignment=TA_RIGHT))
+            qr_drawing,
+            Paragraph("<b>Acesse no Celular (GPS):</b><br/>gps-ovitrampas-demo.pages.dev/plano<br/><b>Aponte a câmera para o QR Code</b>", ParagraphStyle('Info', parent=st_box_text, fontSize=5.3, leading=6.8, alignment=TA_LEFT))
         ]
     ]
-    t_sign = Table(sign_data, colWidths=[printable_w * 0.65, printable_w * 0.35])
+    t_sign = Table(sign_data, colWidths=[printable_w * 0.58, 40, printable_w * 0.42 - 40])
     t_sign.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
         ('TOPPADDING', (0, 0), (-1, -1), 1),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),
