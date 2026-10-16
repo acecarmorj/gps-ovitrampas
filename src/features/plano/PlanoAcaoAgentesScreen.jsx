@@ -94,7 +94,7 @@ const CRONOGRAMA_DIARIO = {
     alvos: [
       {
         id: 'OV-23',
-        equipe: 'Equipe Alpha (2 ACEs)',
+        equipe: 'Equipe Alpha (2 ACEs • Apoio da Caminhonete)',
         bairro: 'Progresso',
         quarteirao: 'Q-01',
         morador: 'Pousada Valle do Sol',
@@ -102,6 +102,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 342,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Pousada + Quarteirão Completo: Vistoriar a pousada e cerca de 6 a 8 casas vizinhas para a direita, 6 a 8 para a esquerda, casas de frente e fundos (na José Cassane).',
         lat: -21.9333333,
         lng: -42.6083333,
         acoes: 'Todo o Q-01 e início da Rua José Cassane. Inspecionar ralos externos, piscinas desativadas, reservatórios de chuva e bebedouros de animais.',
@@ -109,7 +110,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-10',
-        equipe: 'Equipe Alpha (2 ACEs)',
+        equipe: 'Equipe Alpha (2 ACEs a pé)',
         bairro: 'Centro',
         quarteirao: 'Q-13',
         morador: 'Morador Local',
@@ -117,6 +118,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 242,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Imóvel-Foco + Quarteirão Comercial: Vistoriar entre a Oscar Curty e Celso C. Faria (foco em calhas prediais, marquises e lajes com água empoçada).',
         lat: -21.9333333,
         lng: -42.6083333,
         acoes: 'Trecho entre Rua Oscar Curty e encontro com Celso C. Faria. Foco em calhas prediais, marquises comerciais e lajes com água empoçada.',
@@ -132,6 +134,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 100,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Imóvel-Foco + Vizinhos da Rua: Vistoriar a casa da Paula Miranda e cerca de 4 casas para cada lado (nº 700 ao 800).',
         lat: -21.9333333,
         lng: -42.6083333,
         acoes: 'Rua Silvio Geraldo França (nº 700 a 800). Varrer fundos de vale, entulhos de obras e tambores no nível do solo.',
@@ -147,6 +150,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 557,
         raio: 'Inspeção Prévia',
         raioCor: 'bg-purple-600',
+        raioPratico: 'Reconhecimento prévio dos criadouros nas margens da BR-116 e quintais rurais para preparar o grande mutirão de quarta-feira.',
         lat: -21.9056157,
         lng: -42.6393661,
         acoes: 'Reconhecimento prévio dos criadouros nas margens da BR-116 e articulação com moradores para o grande mutirão de quarta-feira.',
@@ -161,7 +165,7 @@ const CRONOGRAMA_DIARIO = {
     alvos: [
       {
         id: 'OV-05',
-        equipe: 'Equipe Beta (2 ACEs)',
+        equipe: 'Equipe Beta (2 ACEs a pé)',
         bairro: 'Jardim Centenário',
         quarteirao: 'Q-17',
         morador: 'Morador Local',
@@ -169,6 +173,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 173,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Imóvel-Foco + Quarteirão Completo: Vistoriar a residência e cerca de 6 a 8 vizinhos no encontro com a Celso Carrilho Faria.',
         lat: -21.9351048,
         lng: -42.6097103,
         acoes: 'Rua Ernesto Wermelinger e encontro com Celso Carrilho Faria. Vistoria minuciosa em tambores de lavanderia, bromélias e pratos de vasos.',
@@ -184,6 +189,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 192,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Imóvel-Foco + Vizinhos da Rua: Vistoriar a residência e vizinhos da Rua Roberto Simões e Emanuel de Moraes (quintais inclinados).',
         lat: -21.9372100,
         lng: -42.6045300,
         acoes: 'Rua Roberto Simões e Rua Emanuel de Moraes. Foco em caixas d\'água destampadas, tonéis de água de chuva e quintais acidentados.',
@@ -191,7 +197,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-35',
-        equipe: 'Equipe Gama (2 ACEs)',
+        equipe: 'Equipe Gama (2 ACEs • Apoio da Caminhonete)',
         bairro: 'Caixa d\'Água',
         quarteirao: 'Q-13',
         morador: 'Almir Lemgruber',
@@ -199,6 +205,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 121,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Imóvel-Foco + Vizinhos Altos: Vistoriar a residência do Almir Lemgruber e vizinhos da parte alta da Senador Dantas (terrenos baldios e calhas).',
         lat: -21.9389100,
         lng: -42.6031200,
         acoes: 'Rua Senador Dantas (trecho superior). Terrenos baldios com descarte clandestino de inservíveis e calhas de telhado obstruídas por folhas.',
@@ -213,7 +220,7 @@ const CRONOGRAMA_DIARIO = {
     alvos: [
       {
         id: 'OV-36',
-        equipe: 'Agente Fixa + Equipe Delta (4 ACEs em Conjunto)',
+        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
         bairro: 'Influência (2º Distrito)',
         quarteirao: 'Q-05',
         morador: 'Morador Local',
@@ -221,6 +228,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 222,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Mutirão em Conjunto: Extensão completa da Rua Manoel Cirilo (Q-05 inteiro com a força-tarefa). Pneus agrícolas e tonéis de horta.',
         lat: -21.9056157,
         lng: -42.6393661,
         acoes: 'Extensão completa da Rua Manoel Cirilo (Q-05). Agente fixa + reforço de 3 agentes da equipe Delta. Pneus velhos e tonéis de uso agrícola.',
@@ -228,7 +236,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-38',
-        equipe: 'Agente Fixa + Equipe Delta (4 ACEs em Conjunto)',
+        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
         bairro: 'Influência (2º Distrito)',
         quarteirao: 'Q-06',
         morador: 'Independente',
@@ -236,6 +244,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 210,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Mutirão na Rodovia: Margens da BR-116 (todas as borracharias, oficinas mecânicas, carcaças de veículos e galpões).',
         lat: -21.9062300,
         lng: -42.6385100,
         acoes: 'Margens da Rodovia BR-116. Vistoria intensiva em borracharias, oficinas mecânicas, carcaças de veículos e galpões de implementos.',
@@ -243,7 +252,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-51',
-        equipe: 'Agente Fixa + Equipe Delta (4 ACEs em Conjunto)',
+        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
         bairro: 'Influência (2º Distrito)',
         quarteirao: 'Q-11',
         morador: 'Morador Local',
@@ -251,6 +260,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 109,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Mutirão na Machareth: Rua Maria da Silva Machareth (casas vizinhas, tonéis de captação de água de chuva e caixas d\'água baixas).',
         lat: -21.9071500,
         lng: -42.6402100,
         acoes: 'Rua Maria da Silva Machareth. Tambores de captação de água de chuva, caixas d\'água baixas e recipientes sombreados em quintais úmidos.',
@@ -265,7 +275,7 @@ const CRONOGRAMA_DIARIO = {
     alvos: [
       {
         id: 'OV-45',
-        equipe: 'Equipe Delta (3 ACEs - Viatura)',
+        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
         bairro: 'Porto Velho do Cunha (5º Dist.)',
         quarteirao: 'Q-01',
         morador: 'Morador Local',
@@ -273,6 +283,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 241,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Imóvel-Foco + Trecho Beira-Rio: Rua Major Fajardo (altura nº 550 ao 650) e faixa ribeirinha (caçambas, carretas e recipientes plásticos).',
         lat: -21.8791200,
         lng: -42.5482300,
         acoes: 'Rua Major Fajardo (altura do nº 550 ao 650). Caçambas, carretas com água parada, recipientes plásticos e quintais na beira do rio.',
@@ -280,7 +291,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-44',
-        equipe: 'Equipe Delta (3 ACEs - Viatura)',
+        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
         bairro: 'Porto Velho do Cunha (5º Dist.)',
         quarteirao: 'Q-10',
         morador: 'Morador Local',
@@ -288,6 +299,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 102,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Imóvel-Foco + Entorno da ESF: Rua Major Fajardo (nº 280 ao 350 ao redor do Posto de Saúde, calhas e caixas d\'água).',
         lat: -21.8784500,
         lng: -42.5491100,
         acoes: 'Rua Major Fajardo (nº 280 ao 350 - entorno da ESF Porto Velho). Calhas prediais, caixas d\'água sem tampa e garrafas retornáveis.',
@@ -295,7 +307,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-41',
-        equipe: 'Equipe Delta (3 ACEs - Viatura)',
+        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
         bairro: 'Ilha dos Pombos',
         quarteirao: 'Q-01',
         morador: 'Morador Local',
@@ -303,6 +315,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 203,
         raio: '100 Metros',
         raioCor: 'bg-red-600',
+        raioPratico: 'Orla Ribeirinha Completa: Toda a extensão da Rua Beira Rio (canoas, embarcações e lonas plásticas de pesca com água de chuva).',
         lat: -21.8456100,
         lng: -42.5891200,
         acoes: 'Ao longo da orla do rio na Rua Beira Rio. Canoas e embarcações com acúmulo de água de chuva, lonas plásticas e recipientes de pesca.',
@@ -317,7 +330,7 @@ const CRONOGRAMA_DIARIO = {
     alvos: [
       {
         id: 'OV-55',
-        equipe: 'Equipe Delta (3 ACEs - Viatura)',
+        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
         bairro: 'Barra de São Francisco',
         quarteirao: 'Q-01',
         morador: 'Morador Local',
@@ -325,6 +338,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 125,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Quintais Rurais: Rua Antônio R. Serafim e Sebastião F. Costa (bebedouros de animais rurais, tonéis e recipientes em quintais amplos).',
         lat: -21.8214500,
         lng: -42.5123400,
         acoes: 'Rua Antônio R. Serafim e Sebastião Ferreira Costa. Bebedouros de animais de porte rural, tambores e recipientes em quintais amplos.',
@@ -332,7 +346,7 @@ const CRONOGRAMA_DIARIO = {
       },
       {
         id: 'OV-48',
-        equipe: 'Equipe Delta (3 ACEs - Viatura)',
+        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
         bairro: 'Córrego da Prata',
         quarteirao: 'Q-01',
         morador: 'Morador Local',
@@ -340,6 +354,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 121,
         raio: '80 Metros',
         raioCor: 'bg-amber-600',
+        raioPratico: 'Entorno do Posto de Saúde: Rua Benfica e caixas d\'água no nível do solo na ESF Prata.',
         lat: -21.9891200,
         lng: -42.6789100,
         acoes: 'Rua Benfica e entorno do posto de saúde. Calhas de telhado, recipientes descartáveis e caixas d\'água no nível do solo.',
@@ -355,6 +370,7 @@ const CRONOGRAMA_DIARIO = {
         ovos: 0,
         raio: 'Varredura',
         raioCor: 'bg-blue-600',
+        raioPratico: 'Retorno a todos os imóveis que estavam fechados ou com recusa inicial durante a semana para atingir 100% de cobertura.',
         lat: -21.9333333,
         lng: -42.6083333,
         acoes: 'Retorno aos imóveis que estavam fechados ou desocupados no início da semana. Tabulação dos focos eliminados com a Coordenação.',
@@ -491,6 +507,26 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
             </button>
 
             <a
+              href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+              download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+              className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all border border-indigo-700"
+              title="Baixar Ficha de Campo para Prancheta em Papel (5 Páginas A4 - 1 dia por folha)"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Ficha Papel (5 Págs)</span>
+            </a>
+
+            <a
+              href="/GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
+              download="GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
+              className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all border border-blue-700"
+              title="Baixar Guia Rápido de Bolso/Prancheta (1 Página A4 com todos os alvos e raios)"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Prancheta (1 Pág)</span>
+            </a>
+
+            <a
               href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
               download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
               className="bg-red-700 hover:bg-red-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
@@ -534,6 +570,43 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
           </div>
         </div>
 
+        {/* BANNER: TRABALHO EM PAPEL / PRANCHETA */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-3xl p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-indigo-950">
+                  Prefere trabalhar no papel ou acabou a bateria do celular?
+                </h3>
+                <p className="text-xs text-indigo-900 mt-0.5 leading-relaxed">
+                  Geramos uma <strong>Ficha de Campo Oficial Idêntica ao Aplicativo</strong> em PDF (1 página por dia, Segunda a Sexta). Os agentes levam na prancheta com caneta e marcam os mesmos quadrinhos de criadouros e alvos.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+              <a
+                href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+                download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
+                className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Baixar Ficha Papel (5 Págs)</span>
+              </a>
+              <a
+                href="/GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
+                download="GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
+                className="flex-1 sm:flex-none bg-white hover:bg-indigo-50 active:scale-95 text-indigo-700 font-extrabold text-xs py-2.5 px-4 rounded-2xl border border-indigo-300 flex items-center justify-center gap-2 shadow-xs transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Guia 1 Pág (Bolso)</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* 2. DISTRIBUIÇÃO DOS 10 AGENTES */}
         <section className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -570,6 +643,64 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* LOGÍSTICA DE VIATURAS DO MUNICÍPIO */}
+        <section className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Navigation className="w-5 h-5 text-indigo-600" />
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-slate-900">
+                  Logística das 2 Viaturas Municipais
+                </h2>
+                <p className="text-xs text-slate-500">
+                  1 Carro de Passeio (5 Lugares) + 1 Caminhonete de Apoio (2 Lugares) para 10 Agentes
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
+              Frota Dedicada
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {/* Viatura 1: Carro 5 Lugares */}
+            <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-blue-950 flex items-center gap-1.5">
+                  🚗 Carro de Passeio (5 Lugares)
+                </span>
+                <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                  Deslocamento de Pessoal
+                </span>
+              </div>
+              <p className="text-blue-900 leading-relaxed">
+                <strong>Equipe Delta (3 ACEs nos Distritos):</strong> Transporta a equipe volante para Porto Velho do Cunha, Ilha dos Pombos, Barra de São Francisco e Córrego da Prata.
+              </p>
+              <div className="bg-white/80 p-2 rounded-xl border border-blue-100 text-blue-950 text-[11px]">
+                ⚡ <strong>Quarta-feira (Mutirão):</strong> Transporta 4 agentes urbanos da sede até Influência (2º Distrito) para somar forças com a Agente Fixa local.
+              </div>
+            </div>
+
+            {/* Viatura 2: Caminhonete 2 Lugares */}
+            <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-amber-950 flex items-center gap-1.5">
+                  🛻 Caminhonete (2 Lugares)
+                </span>
+                <span className="text-[10px] font-black bg-amber-600 text-white px-2 py-0.5 rounded-full">
+                  Apoio Pesado & Terreno Difícil
+                </span>
+              </div>
+              <p className="text-amber-900 leading-relaxed">
+                <strong>Apoio Tático & Encostas Íngremes:</strong> Conduzida pelo motorista/supervisor. Transporta escadas de vistoria de calhas altas, sacos para recolhimento de inservíveis pesados e sobe os morros mais inclinados da sede.
+              </p>
+              <div className="bg-white/80 p-2 rounded-xl border border-amber-100 text-amber-950 text-[11px]">
+                🏔️ <strong>Subidas Críticas:</strong> Dá apoio direto na Pousada Valle do Sol (Morro do Progresso) e na R. Senador Dantas (Morro da Caixa d'Água).
+              </div>
+            </div>
           </div>
         </section>
 
@@ -695,10 +826,19 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
                 </div>
 
                 {/* Linha 2: Equipe e Ação Tática */}
-                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-1.5 text-xs">
+                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-2 text-xs">
                   <div className="font-bold text-slate-700">
                     👤 <strong className="text-slate-900">{alvo.equipe}</strong> • Morador: {alvo.morador}
                   </div>
+                  {alvo.raioPratico && (
+                    <div className="bg-amber-100/80 border border-amber-300 text-amber-950 font-bold p-2.5 rounded-xl text-xs flex items-start gap-2">
+                      <span className="text-base leading-none">📏</span>
+                      <div>
+                        <strong className="text-amber-900 block mb-0.5">Como delimitar na prática (sem trena):</strong>
+                        <span className="font-medium text-amber-950">{alvo.raioPratico}</span>
+                      </div>
+                    </div>
+                  )}
                   <p className="text-slate-600 leading-relaxed">
                     🎯 <strong>Delimitação do Bloqueio:</strong> {alvo.acoes}
                   </p>
