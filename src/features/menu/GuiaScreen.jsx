@@ -42,7 +42,38 @@ export function GuiaScreen({
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
+  // Envio rápido do link do Plano de Ação Semanal no WhatsApp
+  const handleEnviarWhatsAppPlano = (e) => {
+    e.stopPropagation();
+    const urlPlano = typeof window !== 'undefined' ? `${window.location.origin}/plano` : 'https://gps-ovitrampas-demo.pages.dev/plano';
+    const texto = [
+      '🚨 *PLANO DE AÇÃO SEMANAL - OVITRAMPAS CARMO/RJ*',
+      '🎯 *10 Agentes em Campo • Bloqueio por Raio de Ação*',
+      '',
+      'Acesse o plano completo no celular com rotas GPS e cronograma diário:',
+      urlPlano,
+      '',
+      '✅ Raio de ação (100m, 80m, 50m) calibrado por armadilha',
+      '✅ 1 Agente dedicada em Influência + 4 frentes de trabalho',
+      '✅ Roteiro de eliminação e mapas de calor oficiais',
+      '✅ PDF oficial disponível para impressão'
+    ].join('\n');
+
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+  };
+
   const MODULOS = [
+    {
+      rota: '/plano',
+      tag: 'Operação Segunda-Feira • 10 Agentes',
+      tagCor: 'bg-red-100 text-red-900 border-red-300',
+      icone: Flame,
+      iconeBg: 'bg-red-50 text-red-700 border-red-300',
+      titulo: 'Plano Semanal de Bloqueio',
+      descricao: 'Direcionamento tático dos 10 agentes pelo mapa de calor, raio de ação calibrado (100m/80m), rotas GPS para os imóveis e PDF para impressão.',
+      destaque: true,
+      temWhatsAppPlano: true
+    },
     {
       rota: '/campo',
       tag: 'Agente em Campo',
@@ -210,6 +241,21 @@ export function GuiaScreen({
                     >
                       <MessageCircle className="w-4 h-4 shrink-0" />
                       <span>Enviar App para o Agente (WhatsApp)</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* BOTÃO PARA ENVIAR O PLANO DE AÇÃO NO WHATSAPP */}
+                {item.temWhatsAppPlano && (
+                  <div className="pt-2 border-t border-red-200 mt-0.5">
+                    <button
+                      type="button"
+                      onClick={handleEnviarWhatsAppPlano}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
+                      title="Enviar link do Plano de Ação para o WhatsApp da Equipe"
+                    >
+                      <MessageCircle className="w-4 h-4 shrink-0" />
+                      <span>Enviar Plano no WhatsApp da Equipe</span>
                     </button>
                   </div>
                 )}

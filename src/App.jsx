@@ -9,6 +9,7 @@ import { PainelAdminSimples as PainelAdminScreen } from './features/admin/Painel
 import { PainelMapaCalorInterativo } from './features/mapa/PainelMapaCalorInterativo';
 import { PortalPublicoScreen } from './features/publico/PortalPublicoScreen';
 import { PainelDemoScreen } from './features/demo/PainelDemoScreen';
+import { PlanoAcaoAgentesScreen } from './features/plano/PlanoAcaoAgentesScreen';
 import {
   getArmadilhas,
   getLeituras,
@@ -218,6 +219,7 @@ export function App() {
     if (path === '/admin') return 'admin';
     if (path === '/calor' || path === '/mapa-calor' || path === '/planejamento' || path === '/cenario-ideal') return 'calor';
     if (path === '/publico' || path === '/transparencia') return 'publico';
+    if (path === '/plano' || path === '/plano-de-acao' || path === '/acao' || path === '/bloqueio') return 'plano';
     return 'guia';
   };
 
@@ -379,6 +381,13 @@ export function App() {
             campanhaAtiva={campanhaAtiva}
             onMudarCampanha={handleMudarCampanha}
             onVoltar={() => navigate('/guia')}
+          />
+        )}
+
+        {chaveModulo === 'plano' && (
+          <PlanoAcaoAgentesScreen
+            onVoltar={() => navigate('/guia')}
+            onAbrirMapa={() => navigate('/mapa')}
           />
         )}
       </main>

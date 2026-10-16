@@ -246,6 +246,20 @@ export function CentralRelatorios({
           ? 'Versão Demonstração: Endereços e moradores substituídos por XXX com marca d\'água no fundo.'
           : 'Padrão oficial WGS-84 / SIRGAS 2000 com timbres da Prefeitura e Vigilância Ambiental.'
       )}
+
+      {bloco(
+        'Plano Operacional Semanal de Bloqueio Vetorial (10 Agentes)',
+        'Cronograma tático de bloqueio para a próxima semana: distribuição dos 10 agentes (1 fixa em Influência + 4 equipes móveis), raios de ação calibrados (100m, 80m, 50m), mapas de calor oficiais e roteiro de eliminação.',
+        <a
+          href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
+          download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
+          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-1.5"
+        >
+          <Download size={13} />
+          Baixar PDF do Plano
+        </a>,
+        'Oficial: 2 páginas A4 coloridas com timbres e mapas de calor em alta resolução.'
+      )}
     </div>
   );
 }

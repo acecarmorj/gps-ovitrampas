@@ -29,6 +29,10 @@ const INFO_MODULOS = {
   publico: {
     titulo: 'Portal Público de Transparência',
     subtitulo: 'Vigilância Sanitária • Município de Carmo-RJ'
+  },
+  plano: {
+    titulo: 'Plano Semanal de Bloqueio',
+    subtitulo: '10 Agentes em Campo • Raios de Ação & Mapas'
   }
 };
 

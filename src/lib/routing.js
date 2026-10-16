@@ -47,6 +47,11 @@ export function normalizePath(pathname) {
     return '/demo';
   }
 
+  // Plano de Ação Semanal / Bloqueio de Focos (10 Agentes em Campo)
+  if (clean === '/plano' || clean === '/plano-de-acao' || clean === '/acao' || clean === '/bloqueio') {
+    return '/plano';
+  }
+
   // Rota desconhecida volta ao Guia
   return '/guia';
 }
