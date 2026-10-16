@@ -3,6 +3,7 @@ import { PainelMapaCalorInterativo } from '../mapa/PainelMapaCalorInterativo';
 import { CentralRelatorios } from './CentralRelatorios';
 import { CadastroArmadilhas } from './CadastroArmadilhas';
 import { SeletorCampanha } from '../../components/SeletorCampanha';
+import { CICLO_ID_ANTERIOR, CICLO_ID_ATUAL, classificarCampanhaLeitura } from '../../lib/ciclosOvitrampas';
 
 /**
  * Painel do administrador (versao simples, preto no branco):
@@ -73,6 +74,25 @@ export function PainelAdminSimples(props) {
           </div>
         )}
       </nav>
+
+      {aba !== 'mapas' && props.campanhaAtiva === CICLO_ID_ATUAL && (!props.todasLeituras || !props.todasLeituras.some((l) => classificarCampanhaLeitura(l) === CICLO_ID_ATUAL)) && (
+        <div className="bg-amber-100 border-b border-amber-300 px-4 py-2.5 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2 shadow-xs shrink-0 z-30">
+          <div className="flex items-center gap-2">
+            <span className="text-base">ℹ️</span>
+            <span>
+              Você está no <b>Novo Ciclo (2026/2027)</b>, pronto para receber novas coletas (0 leituras até o momento).
+              Para visualizar os dados e relatórios das <b>56 armadilhas (113 leituras)</b>, alterne para o Ano Passado.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => props.onMudarCampanha?.(CICLO_ID_ANTERIOR)}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+          >
+            Voltar ao Ano Passado (Set/2026)
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 overflow-y-auto relative">
         {aba === 'mapas' && (

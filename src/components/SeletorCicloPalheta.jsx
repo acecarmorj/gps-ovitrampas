@@ -11,7 +11,7 @@ import {
 export function SeletorCicloPalheta({
   cicloAtivo = CICLO_AMBAS,
   onMudarCiclo,
-  campanhaAtiva,
+  campanhaAtiva = CICLO_ID_ANTERIOR,
   onMudarCampanha,
   mostrarCampanha = false,
   tamanho = 'normal', // 'compacto' | 'normal' | 'expandido'
@@ -30,6 +30,21 @@ export function SeletorCicloPalheta({
         >
           <button
             type="button"
+            onClick={() => onMudarCampanha(CICLO_ID_ANTERIOR)}
+            className={`flex items-center gap-1 rounded-xl font-black transition-all cursor-pointer ${
+              isCompact ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1 text-xs'
+            } ${
+              campanhaAtiva === CICLO_ID_ANTERIOR
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Ciclo Anterior (Ano Passado - Set/2026)"
+          >
+            <History className="w-3 h-3 text-amber-300" />
+            <span>Ano Passado</span>
+          </button>
+          <button
+            type="button"
             onClick={() => onMudarCampanha(CICLO_ID_ATUAL)}
             className={`flex items-center gap-1 rounded-xl font-black transition-all cursor-pointer ${
               isCompact ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1 text-xs'
@@ -42,21 +57,6 @@ export function SeletorCicloPalheta({
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Novo Ciclo</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onMudarCampanha(CICLO_ID_ANTERIOR)}
-            className={`flex items-center gap-1 rounded-xl font-black transition-all cursor-pointer ${
-              isCompact ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1 text-xs'
-            } ${
-              campanhaAtiva === CICLO_ID_ANTERIOR
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-slate-400 hover:text-white'
-            }`}
-            title="Ciclo Anterior (Ano Passado)"
-          >
-            <History className="w-3 h-3 text-amber-300" />
-            <span>Ano Passado</span>
           </button>
         </div>
       )}

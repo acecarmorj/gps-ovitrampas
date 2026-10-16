@@ -46,10 +46,7 @@ export function App() {
     return CICLO_AMBAS;
   });
   const [campanhaAtiva, setCampanhaAtivaState] = useState(() => {
-    if (typeof window !== 'undefined' && (window.location.pathname.includes('/demo') || window.location.pathname.includes('/apresentacao'))) {
-      return CICLO_ID_ANTERIOR;
-    }
-    return getCampanhaAtiva();
+    return CICLO_ID_ANTERIOR; // Padrão oficial: garante que o painel administrativo sempre abra com os dados consolidados das 56 armadilhas
   });
 
   const handleMudarCiclo = (novoCiclo) => {

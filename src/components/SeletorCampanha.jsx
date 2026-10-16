@@ -3,7 +3,7 @@ import { Calendar, History, Sparkles, Check } from 'lucide-react';
 import { CICLO_ID_ATUAL, CICLO_ID_ANTERIOR, CAMPANHAS_OFICIAIS } from '../lib/ciclosOvitrampas';
 
 export function SeletorCampanha({
-  campanhaAtiva = CICLO_ID_ATUAL,
+  campanhaAtiva = CICLO_ID_ANTERIOR,
   onMudarCampanha,
   tamanho = 'normal', // 'compacto' | 'normal'
   mostrarDescricao = false,
@@ -17,6 +17,24 @@ export function SeletorCampanha({
       role="group"
       aria-label="Seletor de Ciclo Epidemiológico"
     >
+      {/* Botão Ciclo Anterior (Ano Passado - 113 Leituras) */}
+      <button
+        type="button"
+        onClick={() => onMudarCampanha(CICLO_ID_ANTERIOR)}
+        className={`flex items-center gap-1.5 rounded-xl font-black transition-all cursor-pointer ${
+          isCompact ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
+        } ${
+          campanhaAtiva === CICLO_ID_ANTERIOR
+            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-1 ring-amber-400'
+            : 'text-slate-300 hover:text-white hover:bg-slate-800'
+        }`}
+        title="Consultar dados consolidados do Ciclo Anterior (Ano Passado - Set/2026 - 113 leituras)"
+      >
+        <History className="w-3.5 h-3.5 text-amber-300" />
+        <span>Ano Passado</span>
+        {!isCompact && <span className="text-[10px] text-amber-200 font-medium hidden sm:inline">(Set/2026)</span>}
+      </button>
+
       {/* Botão Novo Ciclo (Atual) */}
       <button
         type="button"
@@ -36,24 +54,6 @@ export function SeletorCampanha({
         </span>
         <span>Novo Ciclo</span>
         {!isCompact && <span className="text-[10px] text-emerald-200 font-medium hidden sm:inline">(2026/2027)</span>}
-      </button>
-
-      {/* Botão Ciclo Anterior (Ano Passado) */}
-      <button
-        type="button"
-        onClick={() => onMudarCampanha(CICLO_ID_ANTERIOR)}
-        className={`flex items-center gap-1.5 rounded-xl font-black transition-all cursor-pointer ${
-          isCompact ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
-        } ${
-          campanhaAtiva === CICLO_ID_ANTERIOR
-            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 ring-1 ring-amber-400'
-            : 'text-slate-300 hover:text-white hover:bg-slate-800'
-        }`}
-        title="Consultar dados preservados do Ciclo Anterior (Ano Passado - Set/2026)"
-      >
-        <History className="w-3.5 h-3.5 text-amber-300" />
-        <span>Ano Passado</span>
-        {!isCompact && <span className="text-[10px] text-amber-200 font-medium hidden sm:inline">(Set/2026)</span>}
       </button>
     </div>
   );

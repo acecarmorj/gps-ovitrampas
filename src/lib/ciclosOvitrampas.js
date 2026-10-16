@@ -24,24 +24,24 @@ export const CICLO_ID_TODOS = 'todos';
 
 export const CAMPANHAS_OFICIAIS = [
   {
-    id: CICLO_ID_ATUAL,
-    rotulo: 'Ciclo Atual (2026/2027)',
-    rotuloCurto: 'Novo Ciclo',
-    badge: '2026/2027',
-    ano: '2026/2027',
-    descricao: 'Novo ciclo epidemiológico em andamento',
-    ativo: true,
-    dataCorte: '2026-10-10'
-  },
-  {
     id: CICLO_ID_ANTERIOR,
     rotulo: 'Ciclo Anterior (Ano Passado)',
     rotuloCurto: 'Ano Passado',
     badge: '2025/2026',
     ano: '2025/2026',
     descricao: 'Ciclo consolidado de Setembro/2026 (Preservado)',
-    ativo: false,
+    ativo: true,
     dataCorte: '2026-09-01'
+  },
+  {
+    id: CICLO_ID_ATUAL,
+    rotulo: 'Ciclo Atual (2026/2027)',
+    rotuloCurto: 'Novo Ciclo',
+    badge: '2026/2027',
+    ano: '2026/2027',
+    descricao: 'Novo ciclo epidemiológico em andamento',
+    ativo: false,
+    dataCorte: '2026-10-10'
   }
 ];
 
@@ -53,9 +53,9 @@ const STORAGE_KEY_CAMPANHA_ATIVA = 'ovitrampa_campanha_ativa';
 export function getCampanhaAtiva() {
   if (typeof window !== 'undefined') {
     const salva = localStorage.getItem(STORAGE_KEY_CAMPANHA_ATIVA);
-    if (salva) return salva;
+    if (salva === CICLO_ID_ANTERIOR || salva === CICLO_ID_TODOS) return salva;
   }
-  return CICLO_ID_ATUAL; // Padrão: Novo ciclo para operação de campo e laboratório
+  return CICLO_ID_ANTERIOR; // Padrão seguro: exibe os dados consolidados existentes
 }
 
 /**
@@ -266,7 +266,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map(), a
     positivaA: temLeituraA ? ovosA > 0 : null,
     positivaB: temLeituraB ? ovosB > 0 : null,
     positivaAmbas: (ovosTotal != null && ovosTotal > 0),
-    campanha: anoCiclo || CICLO_ID_ATUAL
+    campanha: anoCiclo || CICLO_ID_ANTERIOR
   };
 }
 
@@ -275,7 +275,7 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map(), a
  * conforme o ciclo selecionado ('A', 'B' ou 'ambas') E o ano/campanha selecionado ('2025_2026', '2026_NOVO', 'todos').
  */
 export function adaptarArmadilhasParaCiclo(armadilhas = [], todasLeituras = [], ciclo = 'ambas', anoCiclo = null) {
-  const campanha = anoCiclo || (typeof window !== 'undefined' ? getCampanhaAtiva() : CICLO_ID_ATUAL);
+  const campanha = anoCiclo || (typeof window !== 'undefined' ? getCampanhaAtiva() : CICLO_ID_ANTERIOR);
   const mapaLeituras = agruparLeiturasPorArmadilha(todasLeituras, campanha);
   const ehNovoCiclo = campanha === CICLO_ID_ATUAL;
 

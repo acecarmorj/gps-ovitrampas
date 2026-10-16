@@ -68,7 +68,7 @@ export function PainelMapaCalorInterativo({
   const fundo = fundoProp ?? fundoInterno; // 'vetorial' (mapa claro) | 'satelite'
   const mudarFundo = onMudarFundoMapa || setFundoInterno;
   const tileRef = useRef(null);
-  const [campanhaMapa, setCampanhaMapa] = useState(() => campanhaAtiva || getCampanhaAtiva());
+  const [campanhaMapa, setCampanhaMapa] = useState(() => campanhaAtiva || CICLO_ID_ANTERIOR);
 
   useEffect(() => {
     if (campanhaAtiva) setCampanhaMapa(campanhaAtiva);
@@ -437,18 +437,6 @@ export function PainelMapaCalorInterativo({
           <button
             type="button"
             className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
-              campanhaMapa === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
-            }`}
-            onClick={() => {
-              setCampanhaMapa(CICLO_ID_ATUAL);
-              onMudarCampanha?.(CICLO_ID_ATUAL);
-            }}
-          >
-            Novo Ciclo
-          </button>
-          <button
-            type="button"
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
               campanhaMapa === CICLO_ID_ANTERIOR ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
             }`}
             onClick={() => {
@@ -456,7 +444,19 @@ export function PainelMapaCalorInterativo({
               onMudarCampanha?.(CICLO_ID_ANTERIOR);
             }}
           >
-            Ano Passado
+            Ano Passado (Set/2026)
+          </button>
+          <button
+            type="button"
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+              campanhaMapa === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+            }`}
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_ATUAL);
+              onMudarCampanha?.(CICLO_ID_ATUAL);
+            }}
+          >
+            Novo Ciclo (2026/2027)
           </button>
         </div>
 
@@ -492,6 +492,35 @@ export function PainelMapaCalorInterativo({
         <div className="rounded-lg border border-black bg-white text-black text-xs font-semibold px-3 py-2">
           Ciclo B parcial: {mB.totalLidas} de {mB.total} palhetas já foram lidas. Os números do B mudam conforme o
           laboratório lança as demais.
+        </div>
+      )}
+
+      {campanhaMapa === CICLO_ID_ATUAL && (!todasDoCiclo.some(temLeitura) || doTerritorio.every((a) => !temLeitura(a))) && (
+        <div className="rounded-xl border-2 border-amber-400 bg-amber-50 text-amber-950 p-3.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start gap-2.5">
+            <span className="text-xl shrink-0 mt-0.5">ℹ️</span>
+            <div>
+              <div className="font-black text-sm text-amber-900 leading-snug">
+                Novo Ciclo (2026/2027) Pronto para Novas Coletas
+              </div>
+              <div className="text-amber-800 mt-0.5 leading-relaxed">
+                O sistema está pronto para receber novas coletas em campo e leituras laboratoriais (nenhuma palheta lida ainda nesta campanha).
+                <br />
+                Para consultar imediatamente as <b>56 armadilhas, 113 leituras oficiais, quarteirões com ovos e gráficos</b>, retorne ao ciclo consolidado:
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_ANTERIOR);
+              onMudarCampanha?.(CICLO_ID_ANTERIOR);
+            }}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-black rounded-lg transition shrink-0 cursor-pointer shadow flex items-center gap-2"
+          >
+            <span>Voltar ao Ano Passado</span>
+            <span className="text-[10px] bg-amber-800/40 px-1.5 py-0.5 rounded font-bold">56 Armadilhas</span>
+          </button>
         </div>
       )}
 
