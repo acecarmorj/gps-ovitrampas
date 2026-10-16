@@ -248,17 +248,31 @@ export function CentralRelatorios({
       )}
 
       {bloco(
-        'Plano Operacional Semanal de Bloqueio Vetorial (10 Agentes)',
-        'Cronograma tático de bloqueio para a próxima semana: distribuição dos 10 agentes (1 fixa em Influência + 4 equipes móveis), raios de ação calibrados (100m, 80m, 50m), mapas de calor oficiais e roteiro de eliminação.',
+        'Plano Operacional Completo Revisado - 8 Páginas (Técnico Oficial)',
+        'Versão técnica aprofundada: matriz de priorização e buffers locais (100m, 80m, 50m, 30m), programação semanal dos 10 agentes, mapas de calor dos dois ciclos (1.017 e 2.665 ovos) com polígonos dos quarteirões Q-xx nas cores das microáreas, Anexo A com as 56 ovitrampas e referências do MS.',
+        <a
+          href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
+          download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
+          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-red-700 bg-red-700 text-white hover:bg-red-800 flex items-center gap-1.5 shadow-xs"
+        >
+          <Download size={13} />
+          Baixar PDF Revisado (8 Págs)
+        </a>,
+        'Oficial: 8 páginas completas com mapas dos dois ciclos, polígonos Q-xx e assinatura institucional da Vigilância em Saúde.'
+      )}
+
+      {bloco(
+        'Plano Operacional Resumido de Campo - 2 Páginas (Ação Rápida)',
+        'Guia prático para prancheta: distribuição diária dos 10 agentes, alvos de segunda a sexta com endereços e moradores, checklist dos 5 passos e mapas de nevoeiro térmico da sede e distritos.',
         <a
           href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
           download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
-          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-1.5"
+          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 flex items-center gap-1.5 shadow-xs"
         >
           <Download size={13} />
-          Baixar PDF do Plano
+          Baixar PDF de Campo (2 Págs)
         </a>,
-        'Oficial: 2 páginas A4 coloridas com timbres e mapas de calor em alta resolução.'
+        'Oficial: 2 páginas A4 compactas prontas para impressão rápida.'
       )}
     </div>
   );

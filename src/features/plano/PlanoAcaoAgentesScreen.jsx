@@ -478,26 +478,36 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
             </div>
           </div>
 
-          {/* BOTÕES DE AÇÃO RÁPIDA (WHATSAPP + PDF) */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* BOTÕES DE AÇÃO RÁPIDA (WHATSAPP + PDFS) */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleCompartilharWhatsApp}
-              className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
               title="Compartilhar cronograma no grupo de WhatsApp da equipe"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Enviar no WhatsApp</span>
+              <span>WhatsApp da Equipe</span>
             </button>
+
+            <a
+              href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
+              download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
+              className="bg-red-700 hover:bg-red-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              title="Baixar PDF Técnico Completo (8 Páginas com polígonos Q-xx e os dois ciclos)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>PDF Completo (8 Págs)</span>
+            </a>
 
             <a
               href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
               download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
-              className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
-              title="Baixar PDF Oficial para Impressão"
+              className="bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              title="Baixar PDF de Campo Rápido (2 Páginas A4 com mapas de nevoeiro)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Baixar PDF</span>
+              <span>PDF Campo (2 Págs)</span>
             </a>
           </div>
 
