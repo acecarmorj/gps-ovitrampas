@@ -1,16 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { MAP_TILE_STANDARD, MAP_TILE_SATELLITE, youDotIcon } from '../../maps/leafletIcons';
-import { Layers, Crosshair, MapPin, ShieldAlert, Info } from 'lucide-react';
+import { Layers, Crosshair, MapPin, Globe, ShieldAlert } from 'lucide-react';
+import trapsOficiaisJson from '../../lib/trapsOficiaisCarmo.json';
 
-export function MapaVistoriaAcao({ alvo, userPos }) {
+export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarAlvo }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
   const circleLayerRef = useRef(null);
-  const markerLayerRef = useRef(null);
+  const targetMarkerLayerRef = useRef(null);
+  const allTrapsLayerRef = useRef(null);
   const userMarkerRef = useRef(null);
-  const [isSatellite, setIsSatellite] = useState(false);
+  const [isSatellite, setIsSatellite] = useState(true);
+
+  // Lista consolidada de todas as 56 armadilhas oficiais
+  const listaArmadilhas = (todasArmadilhas && todasArmadilhas.length > 0)
+    ? todasArmadilhas
+    : trapsOficiaisJson;
 
   // 1. Inicializa o Mapa Leaflet
   useEffect(() => {
@@ -25,15 +32,16 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
 
     mapInstanceRef.current = map;
 
-    // Layer de Tiles (Padrão ou Satélite)
-    tileLayerRef.current = L.tileLayer(MAP_TILE_STANDARD.url, {
-      maxZoom: MAP_TILE_STANDARD.maxZoom,
-      attribution: MAP_TILE_STANDARD.attribution
+    // Layer de Tiles (Padrão ou Satélite ESRI)
+    tileLayerRef.current = L.tileLayer(MAP_TILE_SATELLITE.url, {
+      maxZoom: MAP_TILE_SATELLITE.maxZoom,
+      attribution: MAP_TILE_SATELLITE.attribution
     }).addTo(map);
 
     // Grupos de camadas
     circleLayerRef.current = L.layerGroup().addTo(map);
-    markerLayerRef.current = L.layerGroup().addTo(map);
+    allTrapsLayerRef.current = L.layerGroup().addTo(map);
+    targetMarkerLayerRef.current = L.layerGroup().addTo(map);
 
     return () => {
       map.remove();
@@ -48,13 +56,81 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
     tileLayerRef.current.setUrl(tileConfig.url);
   }, [isSatellite]);
 
-  // 3. Atualiza os Raios Oficiais (100m e 200m) e o Marcador do Foco
+  // 3. RENDERIZA TODAS AS 56 ARMADILHAS DE CARMO NO MAPA
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !circleLayerRef.current || !markerLayerRef.current) return;
+    if (!map || !allTrapsLayerRef.current) return;
+
+    allTrapsLayerRef.current.clearLayers();
+
+    listaArmadilhas.forEach((arm) => {
+      const lat = arm.latitude || arm.lat;
+      const lng = arm.longitude || arm.lng;
+      if (!lat || !lng) return;
+
+      const numStr = String(arm.numero || '').replace(/^OV[-_ ]*/i, '').padStart(2, '0');
+      const codOv = `OV-${numStr}`;
+      const isAlvoAtivo = alvo && (alvo.id === codOv || alvo.id === arm.id || alvo.id === arm.numero);
+
+      // O alvo ativo é renderizado separadamente na camada de destaque
+      if (isAlvoAtivo) return;
+
+      const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? arm.ovos ?? 0);
+      let corFundo = '#10B981'; // Verde (0 ovos)
+      let corTexto = '#FFFFFF';
+
+      if (ovos >= 200) {
+        corFundo = '#DC2626'; // Vermelho crítico
+      } else if (ovos >= 100) {
+        corFundo = '#D97706'; // Âmbar alerta
+      } else if (ovos > 0) {
+        corFundo = '#F59E0B'; // Amarelo moderado
+      }
+
+      const iconPin = L.divIcon({
+        className: '',
+        html: `
+          <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+            <div style="background:${corFundo};color:${corTexto};font-weight:900;font-size:10px;padding:2px 5px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1.5px solid white;display:flex;align-items:center;gap:2px;white-space:nowrap;">
+              <span>${codOv}</span>
+              ${ovos > 0 ? `<span style="font-size:9px;opacity:0.9;">(${ovos})</span>` : ''}
+            </div>
+            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid ${corFundo};"></div>
+          </div>
+        `,
+        iconSize: [60, 26],
+        iconAnchor: [30, 26]
+      });
+
+      const morador = arm.moradorNome || arm.morador_nome || arm.morador || 'Monitorado';
+      const rua = arm.rua || arm.logradouro || arm.endereco || '';
+      const bairro = arm.bairro || arm.microarea || 'Carmo';
+      const quart = arm.quarteirao || '';
+
+      const marker = L.marker([lat, lng], { icon: iconPin });
+      marker.bindPopup(`
+        <div style="font-family:sans-serif;font-size:11.5px;line-height:1.35;min-width:180px;">
+          <div style="font-weight:900;font-size:12.5px;color:#0F172A;display:flex;align-items:center;justify-content:space-between;">
+            <span>🪤 ${codOv}</span>
+            <span style="background:${corFundo};color:white;padding:1px 6px;border-radius:6px;font-size:10px;">${ovos} ovos</span>
+          </div>
+          <div style="font-weight:bold;color:#1E293B;margin-top:2px;">${morador}</div>
+          <div style="color:#64748B;font-size:10.5px;">${rua}</div>
+          <div style="color:#64748B;font-size:10px;margin-top:2px;">${bairro} • Quarteirão <b>${quart}</b></div>
+        </div>
+      `);
+
+      marker.addTo(allTrapsLayerRef.current);
+    });
+  }, [listaArmadilhas, alvo]);
+
+  // 4. ATUALIZA O ALVO ATIVO (COM O RAIO DE 100M E 200M)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !circleLayerRef.current || !targetMarkerLayerRef.current || !alvo) return;
 
     circleLayerRef.current.clearLayers();
-    markerLayerRef.current.clearLayers();
+    targetMarkerLayerRef.current.clearLayers();
 
     // -------------------------------------------------------------
     // CÍRCULO EXTERNO: RAIO DE 200 METROS (DIRETRIZ MINISTÉRIO DA SAÚDE)
@@ -62,22 +138,22 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
     // -------------------------------------------------------------
     const circle200m = L.circle([alvo.lat, alvo.lng], {
       radius: 200,
-      color: '#D97706', // Âmbar / Laranja técnico
+      color: '#D97706',
       fillColor: '#F59E0B',
-      fillOpacity: 0.10,
+      fillOpacity: 0.12,
       weight: 2,
       dashArray: '8, 8'
     });
 
     circle200m.bindTooltip(
-      `<b>Perímetro Oficial MS (Raio 200m):</b><br/>Bloqueio perifocal ampliado e contenção vetorial`,
+      `<b>Perímetro Oficial MS (Raio 200m):</b><br/>Bloqueio perifocal de até 9 quarteirões`,
       { permanent: false, direction: 'top' }
     );
     circle200m.addTo(circleLayerRef.current);
 
     // -------------------------------------------------------------
     // CÍRCULO INTERNO: RAIO DE 100 METROS (NÚCLEO FOCAL PRIORITÁRIO)
-    // Área de dispersão direta e eliminação de 100% dos criadouros
+    // Área de dispersão biológica direta e eliminação de criadouros
     // -------------------------------------------------------------
     const corFoco = alvo.ovos >= 200 ? '#DC2626' : '#E11D48';
     const fillFoco = alvo.ovos >= 200 ? '#EF4444' : '#F43F5E';
@@ -86,33 +162,33 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
       radius: 100,
       color: corFoco,
       fillColor: fillFoco,
-      fillOpacity: 0.24,
+      fillOpacity: 0.26,
       weight: 3,
       dashArray: '5, 5'
     });
 
     circle100m.bindTooltip(
-      `<b>Núcleo Focal (Raio 100m):</b><br/>Eliminação mecânica imediata obrigatória`,
+      `<b>Núcleo Focal (Raio 100m):</b><br/>Eliminação de 100% dos depósitos lindeiros`,
       { permanent: false, direction: 'top' }
     );
     circle100m.addTo(circleLayerRef.current);
 
     // -------------------------------------------------------------
-    // MARCADOR OFICIAL DA OVITRAMPA COM BADGE DE CARGA
+    // MARCADOR DO ALVO ATIVO COM DESTAQUE E BADGE GRANDE
     // -------------------------------------------------------------
     const trapIcon = L.divIcon({
       className: '',
       html: `
-        <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
-          <div style="background:${corFoco};color:white;font-weight:900;font-size:11px;padding:4px 9px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.45);border:2px solid white;display:flex;align-items:center;gap:5px;">
+        <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;animation:bounce 1.5s infinite;">
+          <div style="background:${corFoco};color:white;font-weight:900;font-size:12px;padding:4px 10px;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.6);border:2.5px solid white;display:flex;align-items:center;gap:5px;white-space:nowrap;">
             <span>🪤 ${alvo.id}</span>
             ${alvo.ovos > 0 ? `<span style="background:white;color:${corFoco};padding:1px 6px;border-radius:8px;font-size:11px;font-weight:900;">${alvo.ovos} ovos</span>` : ''}
           </div>
-          <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid ${corFoco};"></div>
+          <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid ${corFoco};"></div>
         </div>
       `,
-      iconSize: [120, 38],
-      iconAnchor: [60, 38]
+      iconSize: [130, 42],
+      iconAnchor: [65, 42]
     });
 
     L.marker([alvo.lat, alvo.lng], { icon: trapIcon })
@@ -128,15 +204,15 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
           </div>
         </div>
       `)
-      .addTo(markerLayerRef.current);
+      .addTo(targetMarkerLayerRef.current);
 
-    // Animação suave para o alvo
+    // Centraliza no alvo atual
     map.flyTo([alvo.lat, alvo.lng], 16.5, {
-      duration: 0.9
+      duration: 0.8
     });
   }, [alvo]);
 
-  // 4. Posição GPS do Agente de Campo (Live Tracking)
+  // 5. POSIÇÃO GPS DO AGENTE EM CAMPO (LIVE TRACKING)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !userPos?.latitude || !userPos?.longitude) return;
@@ -150,9 +226,23 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
     }
   }, [userPos]);
 
-  // Centralizar no Alvo
+  // Centralizar no Alvo Ativo
   const handleCentralizarAlvo = () => {
     mapInstanceRef.current?.flyTo([alvo.lat, alvo.lng], 17);
+  };
+
+  // Ver Todas as 56 Armadilhas no Município
+  const handleVerTodasArmadilhas = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const bounds = L.latLngBounds(
+      listaArmadilhas
+        .filter((a) => (a.latitude || a.lat) && (a.longitude || a.lng))
+        .map((a) => [a.latitude || a.lat, a.longitude || a.lng])
+    );
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
   };
 
   // Centralizar no GPS do Agente
@@ -181,6 +271,9 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
           <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-amber-600 shrink-0"></span>
           <span><b>Raio 200m:</b> Bloqueio Perifocal Oficial</span>
         </div>
+        <div className="flex items-center gap-1.5 text-slate-600 pt-0.5 border-t border-slate-100 text-[10px]">
+          <span>📍 56 Armadilhas Mapeadas em Carmo</span>
+        </div>
       </div>
 
       {/* BOTÕES FLUTUANTES DE CONTROLE DO MAPA (TOPO DIREITA) */}
@@ -202,9 +295,18 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
           type="button"
           onClick={handleCentralizarAlvo}
           className="p-2.5 rounded-2xl shadow-lg border bg-white/95 text-red-600 border-slate-200 hover:bg-slate-100 transition-all active:scale-95"
-          title="Centralizar no Foco da Armadilha"
+          title="Centralizar no Ponto da Vistoria Atual"
         >
           <MapPin className="w-4 h-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleVerTodasArmadilhas}
+          className="p-2.5 rounded-2xl shadow-lg border bg-white/95 text-slate-800 border-slate-200 hover:bg-slate-100 transition-all active:scale-95"
+          title="Ver Todas as 56 Armadilhas no Município"
+        >
+          <Globe className="w-4 h-4" />
         </button>
 
         {userPos && (
@@ -212,7 +314,7 @@ export function MapaVistoriaAcao({ alvo, userPos }) {
             type="button"
             onClick={handleCentralizarGps}
             className="p-2.5 rounded-2xl shadow-lg border bg-white/95 text-blue-600 border-slate-200 hover:bg-slate-100 transition-all active:scale-95"
-            title="Minha Posição GPS"
+            title="Minha Posição GPS em Tempo Real"
           >
             <Crosshair className="w-4 h-4" />
           </button>

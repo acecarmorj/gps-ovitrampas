@@ -387,6 +387,7 @@ export function App() {
 
         {(chaveModulo === 'acao' || chaveModulo === 'plano') && (
           <AcaoAgenteScreen
+            armadilhas={armadilhasAdaptadas}
             userPos={userPos}
             onVoltar={() => navigate('/guia')}
           />
