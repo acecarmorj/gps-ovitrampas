@@ -403,7 +403,7 @@ const ROTEIRO_5_PASSOS = [
   }
 ];
 
-export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
+export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco }) {
   const [diaSelecionado, setDiaSelecionado] = useState('segunda');
   const [modalMapa, setModalMapa] = useState(null); // 'sede' | 'distritos' | null
   const [checklist, setChecklist] = useState(() => {
@@ -567,6 +567,44 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa }) {
                 Este plano organiza os <strong>10 Agentes de Combate às Endemias (ACE)</strong> para agir onde o risco de surto é iminente. O mosquito não voa longe quando tem alimento e água: <strong>a ação de eliminação deve cobrir o raio exato de 100m ou 80m</strong> em volta de cada armadilha crítica.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* BANNER DE ACESSO AO APP FOCADO DO AGENTE (TELA DA LARISSA) */}
+        <div className="bg-gradient-to-r from-slate-900 to-blue-950 border border-blue-700/80 rounded-3xl p-4 sm:p-5 shadow-lg text-white">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <Navigation className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  📱 Modo Celular do Agente
+                </span>
+                <h3 className="text-sm sm:text-base font-black text-white mt-1">
+                  App do Agente de Campo (Tela da Larissa)
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                  Visão focada para o agente na rua: rota GPS direta até o portão, regra prática sem trena, checklists táteis na tela e botão de concluir imóvel.
+                </p>
+              </div>
+            </div>
+            {onAbrirAcaoFoco ? (
+              <button
+                type="button"
+                onClick={onAbrirAcaoFoco}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs py-3 px-5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/50 transition-all border border-blue-400 shrink-0"
+              >
+                <span>Abrir App do Agente ➔</span>
+              </button>
+            ) : (
+              <a
+                href="/acao"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs py-3 px-5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-900/50 transition-all border border-blue-400 shrink-0"
+              >
+                <span>Abrir App do Agente ➔</span>
+              </a>
+            )}
           </div>
         </div>
 

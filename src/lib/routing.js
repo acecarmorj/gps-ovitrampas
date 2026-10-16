@@ -47,8 +47,13 @@ export function normalizePath(pathname) {
     return '/demo';
   }
 
-  // Plano de Ação Semanal / Bloqueio de Focos (10 Agentes em Campo)
-  if (clean === '/plano' || clean === '/plano-de-acao' || clean === '/acao' || clean === '/bloqueio') {
+  // Modo Focado do Agente (Tela da Larissa / Ação Direta no Celular)
+  if (clean === '/acao' || clean === '/larissa' || clean === '/app-agente' || clean === '/celular-agente') {
+    return '/acao';
+  }
+
+  // Plano de Ação Semanal / Bloqueio de Focos (10 Agentes em Campo - Visão Geral)
+  if (clean === '/plano' || clean === '/plano-de-acao' || clean === '/bloqueio') {
     return '/plano';
   }
 

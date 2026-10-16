@@ -10,6 +10,7 @@ import { PainelMapaCalorInterativo } from './features/mapa/PainelMapaCalorIntera
 import { PortalPublicoScreen } from './features/publico/PortalPublicoScreen';
 import { PainelDemoScreen } from './features/demo/PainelDemoScreen';
 import { PlanoAcaoAgentesScreen } from './features/plano/PlanoAcaoAgentesScreen';
+import { AcaoAgenteScreen } from './features/acao/AcaoAgenteScreen';
 import {
   getArmadilhas,
   getLeituras,
@@ -240,8 +241,8 @@ export function App() {
         <GpsGatekeeperModal onGpsAutorizado={(pos) => setUserPos(pos)} />
       )}
       
-      {/* O Guia, o Portal Público e o Modo Demonstração possuem cabeçalhos próprios. Nas telas internas, exibe o Header do agente */}
-      {chaveModulo !== 'guia' && chaveModulo !== 'publico' && chaveModulo !== 'demo' && (
+      {/* O Guia, o Portal Público, Modo Demonstração e Modo Ação possuem cabeçalhos próprios. Nas telas internas, exibe o Header do agente */}
+      {chaveModulo !== 'guia' && chaveModulo !== 'publico' && chaveModulo !== 'demo' && chaveModulo !== 'acao' && (
         <Header
           abaAtual={chaveModulo}
           onMudarAba={(destino) => {
@@ -388,6 +389,13 @@ export function App() {
           <PlanoAcaoAgentesScreen
             onVoltar={() => navigate('/guia')}
             onAbrirMapa={() => navigate('/mapa')}
+            onAbrirAcaoFoco={() => navigate('/acao')}
+          />
+        )}
+
+        {chaveModulo === 'acao' && (
+          <AcaoAgenteScreen
+            onVoltar={() => navigate('/plano')}
           />
         )}
       </main>

@@ -3,7 +3,7 @@ import {
   PlusCircle, Map as MapIcon, FlaskConical,
   ShieldCheck, RefreshCw, Volume2, VolumeX,
   ChevronRight, Check, Cloud, CloudOff,
-  MessageCircle, Compass, Globe, Flame
+  MessageCircle, Compass, Globe, Flame, Navigation
 } from 'lucide-react';
 import { DevCredit } from '../../components/DevCredit';
 import { AcessoEquipe } from '../../components/AcessoEquipe';
@@ -63,6 +63,16 @@ export function GuiaScreen({
   };
 
   const MODULOS = [
+    {
+      rota: '/acao',
+      tag: '📱 Modo Celular do Agente • Ação Focada',
+      tagCor: 'bg-emerald-100 text-emerald-950 border-emerald-400',
+      icone: Navigation,
+      iconeBg: 'bg-emerald-600 text-white border-emerald-500',
+      titulo: 'App do Agente (Tela da Larissa)',
+      descricao: 'Tela ultra simples para o celular: rota GPS direta até o portão, regra sem trena, checklists de criadouros e botão de concluir.',
+      destaque: true
+    },
     {
       rota: '/plano',
       tag: 'Operação Segunda-Feira • 10 Agentes',
