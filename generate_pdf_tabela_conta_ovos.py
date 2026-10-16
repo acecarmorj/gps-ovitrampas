@@ -207,19 +207,13 @@ def gerar_pdf(json_path, pdf_saida, copia_desktop=None, is_demo=False):
     story = []
 
     # ==========================================
-    # CABEÇALHO OFICIAL (Timbres + Brasão)
+    # CABEÇALHO OFICIAL (Único Timbre no Cabeçalho: Brasão de Carmo)
     # ==========================================
     brasao_path = 'public/timbres/brasao_carmo.png'
-    logo_path = 'public/timbres/logo_prefeitura_carmo.png'
 
-    # Se existirem imagens
     img_brasao = None
     if os.path.exists(brasao_path):
-        img_brasao = Image(brasao_path, width=42, height=49.6) # proporção original ~0.8467
-
-    img_logo = None
-    if os.path.exists(logo_path):
-        img_logo = Image(logo_path, width=110, height=45.3) # proporção ~2.42
+        img_brasao = Image(brasao_path, width=40, height=47.2) # proporção original ~0.8467
 
     texto_cabecalho = [
         Paragraph("<font size='9.5'><b>ESTADO DO RIO DE JANEIRO · PREFEITURA MUNICIPAL DE CARMO</b></font>", ParagraphStyle('H1', fontName='Helvetica-Bold', alignment=1, textColor=colors.HexColor('#0F2942'))),
@@ -229,13 +223,14 @@ def gerar_pdf(json_path, pdf_saida, copia_desktop=None, is_demo=False):
         Paragraph("<font size='10.5'><b>TABELA OFICIAL DE COORDENADAS GEOGRÁFICAS — INTEGRAÇÃO SISTEMA CONTA OVOS</b></font>", ParagraphStyle('H5', fontName='Helvetica-Bold', alignment=1, textColor=colors.HexColor('#0A2540')))
     ]
 
+    # Único timbre no cabeçalho (Brasão à esquerda), texto perfeitamente centralizado
     cabecalho_data = [
-        [img_brasao or '', texto_cabecalho, img_logo or '']
+        [img_brasao or '', texto_cabecalho, '']
     ]
 
     tabela_cabecalho = Table(
         cabecalho_data,
-        colWidths=[55, 620, 110]
+        colWidths=[45, 695, 45]
     )
     tabela_cabecalho.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),

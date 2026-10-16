@@ -101,21 +101,12 @@ export async function gerarPdfTabelaContaOvos(armadilhas = [], opcoes = {}) {
   });
 
   const desenharCabecalhoPrincipal = () => {
-    // Brasão à esquerda
+    // Brasão à esquerda (único timbre no cabeçalho conforme solicitação oficial)
     if (timbres.TIMBRE_BRASAO_CARMO) {
       try {
         const alt = 15;
         const larg = alt * PROPORCAO_BRASAO_CARMO;
         doc.addImage(timbres.TIMBRE_BRASAO_CARMO, 'PNG', M, 6.5, larg, alt);
-      } catch (_) {}
-    }
-
-    // Logo da Prefeitura à direita
-    if (timbres.TIMBRE_LOGO_PREFEITURA) {
-      try {
-        const alt = 13;
-        const larg = alt * PROPORCAO_LOGO_PREFEITURA;
-        doc.addImage(timbres.TIMBRE_LOGO_PREFEITURA, 'PNG', W - M - larg, 7.5, larg, alt);
       } catch (_) {}
     }
 

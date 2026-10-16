@@ -269,7 +269,7 @@ export function compressImage(file, maxDimension = 1200, quality = 0.8) {
 // GESTÃO DE ARMADILHAS E PERSISTÊNCIA INQUEBRÁVEL
 // ---------------------------------------------------------------------------
 
-export const VERSAO_AUDITORIA_CADASTRO = '2026-10-15_AUDITORIA_OFICIAL_56_V2';
+export const VERSAO_AUDITORIA_CADASTRO = '2026-10-16_AUDITORIA_OFICIAL_56_V3';
 const VERSAO_AUDITORIA_KEY = 'gps_ovitrampas_auditoria_cadastral_ver';
 
 // Mapa das 56 armadilhas oficiais auditadas de Carmo-RJ (15/10/2026)

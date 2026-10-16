@@ -1,0 +1,172 @@
+==============================================================================
+RELATORIO TECNICO DE AUDITORIA CADASTRAL E HISTORICO DE ALTERACOES
+TABELA OFICIAL DE COORDENADAS GEOGRAFICAS DAS OVITRAMPAS DE CARMO-RJ
+PARA INTEGRACAO COM O SISTEMA CONTA OVOS (FIOCRUZ / MINISTERIO DA SAUDE)
+==============================================================================
+Data da Auditoria: 16 de Outubro de 2026
+Destinatario da Auditoria: GPT (IA Auditora Externa Independente)
+Responsavel Tecnico: Almir Lemgruber (Coordenacao de Vigilancia em Saude)
+Sistema Alvo: GPS Ovitrampas Carmo-RJ (Prefeitura Municipal de Carmo)
+
+******************************************************************************
+*** AVISO MANDATORIO PARA O GPT / AUDITOR:                                 ***
+*** 1. VOCE E EXCLUSIVAMENTE UM AUDITOR DE CONFORMIDADE.                   ***
+*** 2. NAO ALTERE NENHUM ARQUIVO DO PROJETO.                               ***
+*** 3. NAO MODIFIQUE NENHUM DADO, CODIGO OU REGISTRO.                      ***
+*** 4. NAO FACA COMMITS NEM DEPLOYS.                                       ***
+*** 5. SUA MISSAO E CONFERIR, COMPARAR COM OS PRINTS E REPORTAR OS ACHADOS.***
+******************************************************************************
+
+------------------------------------------------------------------------------
+1. LOCALIZACAO DOS PRINTS MANUSCRITOS E ARQUIVOS AUDITADOS
+------------------------------------------------------------------------------
+PRINTS UTILIZADOS COMO FONTE PRIMARIA DE CORRECAO (ANOTACOES DA EQUIPE):
+- Pagina 1 (OV-01 a OV-31 com anotacoes manuscritas nas OVs 01, 12 e 14):
+  * Caminho no Projeto: F:\Desktop\GPS OVITRAMPAS\auditoria_prints\print_correcoes_pagina1_manuscrito.jpg
+  * Caminho de Upload Original: C:\Users\Almir LK\.gemini\antigravity\brain\d5ca7dec-a3d5-4d26-b7fc-36350d92f8ca\.user_uploaded\media_1792154429991_4631e37b.jpg
+
+- Pagina 2 (OV-32 a OV-56 com anotacoes manuscritas nas OVs 35, 37, 42, 50, 51 e 52):
+  * Caminho no Projeto: F:\Desktop\GPS OVITRAMPAS\auditoria_prints\print_correcoes_pagina2_manuscrito.jpg
+  * Caminho de Upload Original: C:\Users\Almir LK\.gemini\antigravity\brain\d5ca7dec-a3d5-4d26-b7fc-36350d92f8ca\.user_uploaded\media_1792154430000_618918d5.jpg
+
+ARQUIVOS CORRIGIDOS E EMITIDOS (DOCUMENTOS FINAIS):
+- PDF Oficial Final (A4 Paisagem, sem marca d'agua, cabecalho com 1 unico timbre):
+  * Raiz do Projeto: F:\Desktop\GPS OVITRAMPAS\TABELA_COORDENADAS_OVITRAMPAS_CONTA_OVOS_CARMO_RJ.pdf
+  * Area de Trabalho do Gestor: C:\Users\Almir LK\Desktop\TABELA_COORDENADAS_OVITRAMPAS_CONTA_OVOS_CARMO_RJ.pdf
+
+- PDF Versao Demonstracao (com marca d'agua e anonimizacao XXX nos dados pessoais):
+  * Raiz do Projeto: F:\Desktop\GPS OVITRAMPAS\TABELA_COORDENADAS_OVITRAMPAS_DEMO_CARMO_RJ.pdf
+  * Area de Trabalho: C:\Users\Almir LK\Desktop\TABELA_COORDENADAS_OVITRAMPAS_DEMO_CARMO_RJ.pdf
+
+- Bases de Dados Oficiais Sincronizadas no Sistema:
+  * F:\Desktop\GPS OVITRAMPAS\src\lib\trapsOficiaisCarmo.json
+  * F:\Desktop\GPS OVITRAMPAS\traps_clean_utf8.json
+  * F:\Desktop\GPS OVITRAMPAS\RELATORIO_AUDITORIA_ENDERECOS_CAMPO.md
+
+- Modulos Geradores de Codigo do PDF:
+  * Python (ReportLab): F:\Desktop\GPS OVITRAMPAS\generate_pdf_tabela_conta_ovos.py
+  * Web React / Vite (jsPDF + autotable): F:\Desktop\GPS OVITRAMPAS\src\lib\pdfRelatorioContaOvos.js
+
+------------------------------------------------------------------------------
+2. HISTORICO DETALHADO DO QUE FOI FEITO ONTEM (15/10) E HOJE (16/10)
+------------------------------------------------------------------------------
+ACOES REALIZADAS ONTEM (15/10/2026):
+1. Criacao do formato e layout oficial da Tabela de Coordenadas Geograficas A4 Paisagem, atendendo aos padroes exigidos pelo Sistema Conta Ovos (Fiocruz / Ministerio da Saude).
+2. Transcricao inicial dos dados manuscritos de campo colhidos pela equipe tecnica.
+3. Inclusao da coluna "Coordenada Completa" (Latitude, Longitude em Graus Decimais WGS 84) com formatacao pronta para copia e colagem rapida no sistema Conta Ovos.
+4. Implementacao de gerador duplo: script Python (ReportLab) e emissao direta pelo navegador no painel web (CentralRelatorios.jsx via pdfRelatorioContaOvos.js).
+5. Reconciliacao do cache do navegador (storage.js) para garantir que as 56 armadilhas oficiais sobreponham cadastros antigos em cache.
+
+ACOES REALIZADAS HOJE (16/10/2026):
+1. Adequacao do Cabecalho Institucional (Solicitacao Expressa do Gestor):
+   - ANTES: O cabecalho exibia dois timbres (Brasao de Carmo na extremidade esquerda e Logo da Prefeitura na extremidade direita).
+   - DEPOIS: Foi removido o segundo logotipo da direita. Agora ha estritamente UM UNICO TIMBRE NO CABECALHO (o Brasao Oficial do Municipio de Carmo a esquerda), mantendo o bloco institucional perfeitamente centralizado e com aspecto formal e limpo.
+
+2. Aplicacao das 9 Correcoes Manuscritas Apontadas nos Prints de Revisao:
+   - As anotacoes manuscritas a caneta azul sobre o documento impresso foram integralmente transcritas para a base de dados oficial e refletidas no PDF.
+   - Atualizacao das chaves cadastrais no storage.js (VERSAO_AUDITORIA_CADASTRO = "2026-10-16_AUDITORIA_OFICIAL_56_V3") para forcar atualizacao imediata nos navegadores.
+
+------------------------------------------------------------------------------
+3. QUADRO COMPARATIVO DAS 9 CORRECOES REALIZADAS (ANTES vs. DEPOIS)
+------------------------------------------------------------------------------
+OV    | CAMPO ALTERADO       | VALOR ANTERIOR (15/10)           | VALOR CORRIGIDO (16/10)          | MOTIVO / EVIDENCIA NO PRINT
+------+----------------------+----------------------------------+----------------------------------+---------------------------------------------------
+OV-01 | Numero Predial       | 123                              | 423                              | Caneta azul corrigiu 123 para 423 (Rua Celso C. Faria)
+OV-12 | Numero Predial       | 70                               | 40                               | Caneta azul riscou 70 e anotou 40 (Lad. Joao Alfredo)
+OV-14 | Numero Predial       | 34                               | 341                              | Caneta azul riscou 34 e anotou 341 (Rua Isaura Maia)
+OV-35 | Numero Predial       | 200                              | 269                              | Caneta azul riscou 200 e anotou 269 (R. Senador Dantas)
+OV-37 | Morador / Resp.      | Aline Reiff                      | Franciane Miguel                 | Caneta azul escreveu Franciane Miguel (Influencia)
+OV-42 | Logradouro           | Rua Gandur R. da Silva, 39       | Rua Djaniro R. da Silva, 39      | Caneta azul corrigiu sobre fita corretiva (P. Velho)
+OV-50 | Morador / Resp.      | Franciane Miguel                 | ESF Influencia                   | Caneta azul escreveu ESF Influencia (Influencia)
+OV-51 | Morador / Resp.      | Leo Jorge                        | Aline Reiff                      | Caneta azul escreveu Aline Reiff (Influencia)
+OV-52 | Morador / Resp.      | ESF Influencia                   | Leo Jorge                        | Caneta azul escreveu Leo Jorge (Influencia)
+
+*NOTA EXPLICATIVA SOBRE O 2º DISTRITO (INFLUENCIA):
+Houve uma rotatividade/ajuste de endereco entre 4 armadilhas do distrito:
+OV-37 (Rua Hermogenio Chaves, 160) passou a ser Franciane Miguel.
+OV-50 (Rua Jose Ferreira Alves, S/N) passou a ser ESF Influencia.
+OV-51 (Rua Maria da Silva Machareth, 182) passou a ser Aline Reiff.
+OV-52 (Rua Antonio N. Leite, 100) passou a ser Leo Jorge.
+Essa redistribuicao alinha com precisao milimetrica a localizacao do imovel fisico e o morador/ponto de apoio.
+
+------------------------------------------------------------------------------
+4. TABELA INTEGRAL DAS 56 ARMADILHAS AUDITADAS E CONSOLIDADAS (OV-01 A OV-56)
+------------------------------------------------------------------------------
+Nº OV  | Palheta | Morador / Responsavel        | Logradouro e Nº                    | Bairro / Distrito      | Quart. | Latitude     | Longitude    | Coord. Completa          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+OV-01  | 01A     | Maria de Fátima              | Rua Celso Carrilho Faria, 423      | Jardim Centenário      | Q-17   | -21.9276071  | -42.6113520  | -21.9276071, -42.6113520 
+OV-02  | 02A     | Glória                       | Rua Padre Angelo Peloso, 158       | Jardim Centenário      | Q-16   | -21.9241407  | -42.6118217  | -21.9241407, -42.6118217 
+OV-03  | 03A     | Samy Soares                  | Rua Carolina França, 30            | Jardim Centenário      | Q-09   | -21.9255506  | -42.6095299  | -21.9255506, -42.6095299 
+OV-04  | 04A     | PA                           | Rua Alceu Mattos, 99               | Jardim Centenário      | Q-11   | -21.9295794  | -42.6090547  | -21.9295794, -42.6090547 
+OV-05  | 05A     | Manoel Ezidio                | Rua Ernesto Wermelinger, 63        | Jardim Centenário      | Q-17   | -21.9283241  | -42.6057119  | -21.9283241, -42.6057119 
+OV-06  | 06A     | Cleyde                       | Rua Raul Fernandes Mesquita Soares | Centro                 | Q-29   | -21.9316639  | -42.6066289  | -21.9316639, -42.6066289 
+OV-07  | 07A     | Lidiane                      | Rua Jair Nunes Macuco, 58          | Boa Ideia              | Q-09/1 | -21.9366873  | -42.6027542  | -21.9366873, -42.6027542 
+OV-08  | 08A     | ESF Botafogo                 | Rua Armando Chaves, 161            | Boa Ideia              | Q-09   | -21.9399999  | -42.6035886  | -21.9399999, -42.6035886 
+OV-09  | 09A     | Marli                        | Rua José Murad Ferreira, 124       | Centro                 | Q-23   | -21.9266590  | -42.6030908  | -21.9266590, -42.6030908 
+OV-10  | 10A     | Clea Suely                   | Rua Oscar de Souza Curty, 42       | Centro                 | Q-13   | -21.9327654  | -42.6111087  | -21.9327654, -42.6111087 
+OV-11  | 11A     | Asilo São Vicente            | Rua José Pinto Pinheiro, 82        | Centro                 | Q-01   | -21.9356087  | -42.6099511  | -21.9356087, -42.6099511 
+OV-12  | 12A     | José Carlos enfermeiro       | Ladeira João Alfredo, 40           | Centro                 | Q-10   | -21.9335936  | -42.6077504  | -21.9335936, -42.6077504 
+OV-13  | 13A     | Lucia Glória                 | Rua Ulisses Lengruber, 618         | Caixa d'Água           | Q-16   | -21.9334224  | -42.6043283  | -21.9334224, -42.6043283 
+OV-14  | 14A     | Chico Cesario                | Rua Isaura Maia, 341               | Boa Ideia              | Q-15   | -21.9392160  | -42.6002811  | -21.9392160, -42.6002811 
+OV-15  | 15A     | Maria das Dores Meneguiti    | Rua Jorge R. do Valle, 290         | Boa Ideia              | Q-15   | -21.9430886  | -42.6035061  | -21.9430886, -42.6035061 
+OV-16  | 16A     | Selma Araújo                 | Rua Soares Brandão, 347            | Botafogo               | Q-10   | -21.9372323  | -42.6056147  | -21.9372323, -42.6056147 
+OV-17  | 17A     | Gilmar Lutero                | Rua Izaura Maia de Souza, 407      | Boa Ideia              | Q-04   | -21.9416529  | -42.6007224  | -21.9416529, -42.6007224 
+OV-18  | 18A     | Cirillo                      | Rua Benjamim Avelino Lopes, 85     | Progresso              | Q-01   | -21.9333346  | -42.6129939  | -21.9333346, -42.6129939 
+OV-19  | 19A     | Clube                        | Avenida Tancredo Neves, 49         | Progresso              | Q-06   | -21.9317481  | -42.6133478  | -21.9317481, -42.6133478 
+OV-20  | 20A     | Roseli Ribeiro               | Rua Silvio Geraldo França, 465     | Progresso              | Q-09   | -21.9284918  | -42.6141385  | -21.9284918, -42.6141385 
+OV-21  | 21A     | Paula Miranda                | Rua Silvio Geraldo França, 753     | Progresso              | Q-09   | -21.9262243  | -42.6149979  | -21.9262243, -42.6149979 
+OV-22  | 22A     | Fátima Regina                | Rua Rui Mesquita Soares, 726       | Caixa d'Água           | Q-06   | -21.9390857  | -42.6078191  | -21.9390857, -42.6078191 
+OV-23  | 23A     | Pousada Valle do sol         | Rua Manoel José de Moraes, 51      | Progresso              | Q-01   | -21.9279386  | -42.6166018  | -21.9279386, -42.6166018 
+OV-24  | 24A     | Marienio Oliveira            | Rua José Cassane, 04               | Progresso              | Q-01   | -21.9259442  | -42.6160519  | -21.9259442, -42.6160519 
+OV-25  | 25A     | Edson Levindo                | RJ-148, S/N                        | Progresso              | Q-12   | -21.9208514  | -42.6162075  | -21.9208514, -42.6162075 
+OV-26  | 26A     | Maxwell Neves                | Rua Adalberto Pires da Silva, 396  | Morro do Estado        | Q-01   | -21.9430366  | -42.6068555  | -21.9430366, -42.6068555 
+OV-27  | 27A     | Pretinho                     | Rua Maria Enelina Cunha Rabello, 4 | Caixa d'Água           | Q-02   | -21.9396656  | -42.6064638  | -21.9396656, -42.6064638 
+OV-28  | 28A     | Vicente                      | Rua Adalberto Pires da Silva, 235  | Morro do Estado        | Q-05   | -21.9423531  | -42.6088396  | -21.9423531, -42.6088396 
+OV-29  | 29A     | ESF Val paraíso              | Rua Manoel Gomes de Araújo, S/N    | Val Paraíso            | Q-02   | -21.9421201  | -42.6117471  | -21.9421201, -42.6117471 
+OV-30  | 30A     | Janine                       | Avenida Edgar Gismonti, 797        | Morro do Estado        | Q-02   | -21.9434643  | -42.6100608  | -21.9434643, -42.6100608 
+OV-31  | 31A     | Rosimeri                     | Rua Roberto Simões de Araújo, 98   | Val Paraíso            | Q-05   | -21.9427123  | -42.6125015  | -21.9427123, -42.6125015 
+OV-32  | 32A     | Regina Azevedo               | Rua Manoel Gomes de Araújo, 365    | Val Paraíso            | Q-05   | -21.9413746  | -42.6143837  | -21.9413746, -42.6143837 
+OV-33  | 33A     | Fernando Sassa               | Rua Emanuel de Moraes, 10          | Val Paraíso            | Q-05   | -21.9399107  | -42.6120440  | -21.9399107, -42.6120440 
+OV-34  | 34A     | Delvania                     | Avenida Edgar Gismonti, 98         | Val Paraíso            | Q-05   | -21.9393970  | -42.6099252  | -21.9393970, -42.6099252 
+OV-35  | 35A     | Almir Lemgruber              | Rua Senador Dantas, 269            | Caixa d'Água           | Q-13   | -21.9350995  | -42.6062633  | -21.9350995, -42.6062633 
+OV-36  | 36A     | Silvana de Oliveira          | Rua Manoel Cirilo da Silva, 116    | Influência             | Q-05   | -21.8758627  | -42.6660048  | -21.8758627, -42.6660048 
+OV-37  | 37A     | Franciane Miguel             | Rua Hermogênio Chaves, 160         | Influência             | Q-03/1 | -21.8737037  | -42.6597379  | -21.8737037, -42.6597379 
+OV-38  | 38A     | Independente                 | BR-116, S/N                        | Influência             | Q-06   | -21.8770524  | -42.6694291  | -21.8770524, -42.6694291 
+OV-39  | 39A     | Jorge Alfredo de Onofre      | Rua Hernane F. Barbosa, 375        | Ilha dos Pombos        | Q-01   | -21.8410296  | -42.5739418  | -21.8410296, -42.5739418 
+OV-40  | 40A     | Meira Lúcia Ferreira Pinheir | Rua Antônio Carlos P. Cabral, 34   | Ilha dos Pombos        | Q-03   | -21.8415155  | -42.5769629  | -21.8415155, -42.5769629 
+OV-41  | 41A     | Dayse Regina Lopes           | Rua Beira Rio, 130                 | Ilha dos Pombos        | Q-01   | -21.8406223  | -42.5806883  | -21.8406223, -42.5806883 
+OV-42  | 42A     | Maria das Graças Corrêa Cunh | Rua Djaniro R. da Silva, 39        | Porto Velho do Cunha   | Q-01   | -21.8273150  | -42.5546281  | -21.8273150, -42.5546281 
+OV-43  | 43A     | Carmem Cunha                 | Rua José Lino da Silveira, 144     | Porto Velho do Cunha   | Q-01   | -21.8257148  | -42.5513794  | -21.8257148, -42.5513794 
+OV-44  | 44A     | ESF Porto Velho              | Rua Major Fajardo, 312             | Porto Velho do Cunha   | Q-10   | -21.8248591  | -42.5481501  | -21.8248591, -42.5481501 
+OV-45  | 45A     | Lindomar Noronha             | Rua Major Fajardo, 601             | Porto Velho do Cunha   | Q-01   | -21.8238244  | -42.5454317  | -21.8238244, -42.5454317 
+OV-46  | 46A     | Olívia                       | Rua Oscar Feuchard de Carvalho, 14 | Porto Velho do Cunha   | Q-10   | -21.8259642  | -42.5487917  | -21.8259642, -42.5487917 
+OV-47  | 47A     | Joselia Correa de Carvalho   | Chácara São José, S/N              | Córrego da Prata       | Q-01   | -21.8656497  | -42.4917339  | -21.8656497, -42.4917339 
+OV-48  | 48A     | ESF Córrego da Prata         | Rua Benfica, 48                    | Córrego da Prata       | Q-01   | -21.8645750  | -42.4863877  | -21.8645750, -42.4863877 
+OV-49  | 49A     | Rosilene Souza Ferreira      | Rua Alfredo Ferreira, S/N          | Córrego da Prata       | Q-01   | -21.8632567  | -42.4828514  | -21.8632567, -42.4828514 
+OV-50  | 50A     | ESF Influência               | Rua José Ferreira Alves, S/N       | Influência             | Q-06   | -21.8719351  | -42.6536530  | -21.8719351, -42.6536530 
+OV-51  | 51A     | Aline Reiff                  | Rua Maria da Silva Machareth, 182  | Influência             | Q-11   | -21.8733495  | -42.6616928  | -21.8733495, -42.6616928 
+OV-52  | 52A     | Léo Jorge                    | Rua Antônio N. Leite, 100          | Influência             | Q-06   | -21.8718113  | -42.6565278  | -21.8718113, -42.6565278 
+OV-53  | 53A     | Colégio Light                | Rua José R. de Souza, 390          | Ilha dos Pombos        | Q-01   | -21.8380783  | -42.5780696  | -21.8380783, -42.5780696 
+OV-54  | 54A     | Sebastião Ferreira           | Rua Sebastião F. da Costa, 389     | Barra de São Francisco | Q-01   | -21.9660768  | -42.6886252  | -21.9660768, -42.6886252 
+OV-55  | 55A     | Solange                      | Rua Antônio R. Serafim, S/N        | Barra de São Francisco | Q-01   | -21.9716954  | -42.6928679  | -21.9716954, -42.6928679 
+OV-56  | 56A     | Escola da Barra              | Rua Sebastião F. da Costa, 10      | Barra de São Francisco | Q-01   | -21.9675433  | -42.6898283  | -21.9675433, -42.6898283 
+
+------------------------------------------------------------------------------
+5. ROTEIRO DE VERIFICACAO PARA O AUDITOR (GPT)
+------------------------------------------------------------------------------
+Ao auditar este documento, verifique especificamente:
+1. [ ] Cabecalho: Certifique que existe apenas 1 timbre (Brasao de Carmo) e que nao ha logo na direita.
+2. [ ] OV-01: Verifique se o endereco e "Rua Celso Carrilho Faria, 423".
+3. [ ] OV-12: Verifique se o endereco e "Ladeira Joao Alfredo, 40".
+4. [ ] OV-14: Verifique se o endereco e "Rua Isaura Maia, 341".
+5. [ ] OV-35: Verifique se o endereco e "Rua Senador Dantas, 269".
+6. [ ] OV-37: Verifique se o morador e "Franciane Miguel".
+7. [ ] OV-42: Verifique se o logradouro e "Rua Djaniro R. da Silva, 39".
+8. [ ] OV-50: Verifique se o morador e "ESF Influencia".
+9. [ ] OV-51: Verifique se o morador e "Aline Reiff".
+10. [ ] OV-52: Verifique se o morador e "Leo Jorge".
+11. [ ] Totalizacao: Certifique que ha exatamente 56 armadilhas, com numeracao de 01 a 56 sem saltos.
+12. [ ] Coordenadas: Certifique que a coluna "Coordenada Completa" possui formato rigoroso "lat, long" com 7 casas decimais.
+
+FIM DO RELATORIO DE AUDITORIA.
+==============================================================================
