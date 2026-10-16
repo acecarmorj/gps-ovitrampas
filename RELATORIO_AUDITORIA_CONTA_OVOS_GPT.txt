@@ -34,10 +34,6 @@ ARQUIVOS CORRIGIDOS E EMITIDOS (DOCUMENTOS FINAIS):
   * Raiz do Projeto: F:\Desktop\GPS OVITRAMPAS\TABELA_COORDENADAS_OVITRAMPAS_CONTA_OVOS_CARMO_RJ.pdf
   * Area de Trabalho do Gestor: C:\Users\Almir LK\Desktop\TABELA_COORDENADAS_OVITRAMPAS_CONTA_OVOS_CARMO_RJ.pdf
 
-- PDF Versao Demonstracao (com marca d'agua e anonimizacao XXX nos dados pessoais):
-  * Raiz do Projeto: F:\Desktop\GPS OVITRAMPAS\TABELA_COORDENADAS_OVITRAMPAS_DEMO_CARMO_RJ.pdf
-  * Area de Trabalho: C:\Users\Almir LK\Desktop\TABELA_COORDENADAS_OVITRAMPAS_DEMO_CARMO_RJ.pdf
-
 - Bases de Dados Oficiais Sincronizadas no Sistema:
   * F:\Desktop\GPS OVITRAMPAS\src\lib\trapsOficiaisCarmo.json
   * F:\Desktop\GPS OVITRAMPAS\traps_clean_utf8.json
