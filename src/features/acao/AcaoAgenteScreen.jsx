@@ -366,96 +366,29 @@ export function AcaoAgenteScreen({ armadilhas, userPos, onVoltar }) {
         />
       </div>
 
-      {/* 2. BARRA SUPERIOR FLUTUANTE (SELETOR DE DIAS E CONTROLE OFFLINE) */}
-      <div className="absolute top-2 left-0 right-0 z-20 px-3 max-w-lg mx-auto pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl p-2 pointer-events-auto space-y-1.5">
+      {/* 2. BARRA SUPERIOR FLUTUANTE ULTRA-COMPACTA (SELETOR DE DIAS E PONTOS) */}
+      <div className="absolute top-2 left-0 right-0 z-20 px-2 sm:px-3 max-w-lg mx-auto pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-lg p-1.5 pointer-events-auto space-y-1">
           
-          {/* Topo do Header: Voltar + Título + Status Conexão + Ações */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              {onVoltar && (
-                <button
-                  type="button"
-                  onClick={onVoltar}
-                  className="p-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all"
-                  title="Voltar ao Início"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-              )}
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-                  <span className="text-[10px] font-black tracking-wider uppercase text-slate-700">
-                    {isOnline ? '10 ACEs em Campo • 2 Semanas (A+B)' : '📡 Modo Offline (Sem sinal)'}
-                  </span>
-                </div>
-                <h1 className="text-xs font-black text-slate-900 leading-tight">
-                  Vistoria & Bloqueio Pós-Ovitrampas
-                </h1>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleBaixarMapasOffline}
-                className="p-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 rounded-xl text-xs font-bold transition-all border border-slate-200"
-                title="Salvar Mapas de Córrego da Prata, Porto Velho, Influência, Barra e Light para usar sem internet"
-              >
-                <Download className="w-4 h-4 text-blue-600" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCompartilharWhatsApp}
-                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-                title="Compartilhar no WhatsApp da equipe"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
-
-              <a
-                href={dadosDia.pdfPlano}
-                download
-                className="px-2 py-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-xl text-[10px] font-black transition-all flex items-center gap-1 shadow-xs"
-                title={`Baixar PDF do Plano de ${dadosDia.diaNome}`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>PDF {dadosDia.diaNome.split('-')[0]}</span>
-              </a>
-
-              <a
-                href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-                download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-                className="px-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-[10px] font-black transition-all flex items-center gap-1"
-                title="Baixar Ficha de Campo por Dia (PDF 5 Dias)"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Fichas Dia</span>
-              </a>
-
-              <a
-                href="/FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
-                download="FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
-                className="px-1.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-800 rounded-xl border border-indigo-200 text-[10px] font-black transition-all flex items-center gap-1"
-                title="Baixar Fichas Individuais por Equipe (Equipes 1 a 5)"
-              >
-                <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Eq 1-5</span>
-              </a>
-            </div>
-          </div>
-
           {/* Banner de download offline se ativo */}
           {statusDownloadOffline && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-900 text-[10.5px] font-bold px-2.5 py-1 rounded-xl text-center animate-pulse">
+            <div className="bg-blue-50 border border-blue-200 text-blue-900 text-[10.5px] font-bold px-2 py-0.5 rounded-lg text-center animate-pulse">
               {statusDownloadOffline}
             </div>
           )}
 
-          {/* Abas dos Dias da Semana (Seg a Sex) */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-xs">
+          {/* Abas dos Dias da Semana com Botão Voltar integrado */}
+          <div className="flex items-center gap-1 overflow-x-auto text-xs">
+            {onVoltar && (
+              <button
+                type="button"
+                onClick={onVoltar}
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shrink-0"
+                title="Voltar ao Início"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </button>
+            )}
             {Object.keys(DIAS_CONFIG_OFICIAL).map((chave) => {
               const d = DIAS_CONFIG_OFICIAL[chave];
               const ativo = diaAtivo === chave;
@@ -467,7 +400,7 @@ export function AcaoAgenteScreen({ armadilhas, userPos, onVoltar }) {
                     setDiaAtivo(chave);
                     setIndiceAlvo(0);
                   }}
-                  className={`flex-1 py-1 px-2 rounded-xl text-[11px] font-black whitespace-nowrap transition-all border text-center ${
+                  className={`flex-1 py-1 px-1.5 rounded-xl text-[11px] font-black whitespace-nowrap transition-all border text-center ${
                     ativo
                       ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -610,24 +543,55 @@ export function AcaoAgenteScreen({ armadilhas, userPos, onVoltar }) {
               </div>
             </div>
 
-            {/* BOTÕES DE DOWNLOAD DO PDF DO DIA E FICHA IMPRESSA */}
-            <div className="flex items-center gap-1.5 pt-0.5">
+            {/* BOTÕES DE DOWNLOAD DO PDF DO DIA, FICHAS, WHATSAPP E OFFLINE */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onClick={handleCompartilharWhatsApp}
+                className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10.5px] font-black py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 transition-all shadow-xs"
+                title="Compartilhar no WhatsApp da equipe"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </button>
+
               <a
                 href={dadosDia.pdfPlano}
                 download
-                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10.5px] font-black py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-[10.5px] font-black py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all text-center"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Baixar PDF de {dadosDia.diaNome}</span>
+                <span>PDF {dadosDia.diaNome.split('-')[0]}</span>
               </a>
+
               <a
                 href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
                 download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10.5px] font-black py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 transition-all shrink-0"
+                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10.5px] font-black py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all shrink-0"
+                title="Baixar Ficha de Campo por Dia (5 Páginas)"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Ficha Impressa</span>
+                <span>Fichas Dia</span>
               </a>
+
+              <a
+                href="/FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
+                download="FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
+                className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-[10.5px] font-black py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 transition-all shrink-0"
+                title="Baixar Fichas Individuais por Equipe (Equipes 1 a 5)"
+              >
+                <FileText className="w-3.5 h-3.5 text-blue-600" />
+                <span>Eq 1-5</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleBaixarMapasOffline}
+                className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shrink-0"
+                title="Salvar Mapas dos Distritos para usar sem internet"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-600" />
+              </button>
             </div>
           </div>
 
