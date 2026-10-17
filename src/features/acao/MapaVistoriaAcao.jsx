@@ -75,11 +75,13 @@ export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarA
       // O alvo ativo é renderizado separadamente na camada de destaque
       if (isAlvoAtivo) return;
 
-      const ovos = Number(arm.ultimosOvos ?? arm.ultimos_ovos ?? arm.ovos ?? 0);
+      const ovosSem1 = Number(arm.ovosSem1 ?? 0);
+      const ovosSem2 = Number(arm.ovosSem2 ?? 0);
+      const ovos = Number(arm.ovosTotal ?? arm.ultimosOvos ?? arm.ultimos_ovos ?? arm.ovos ?? (ovosSem1 + ovosSem2));
       let corFundo = '#10B981'; // Verde (0 ovos)
       let corTexto = '#FFFFFF';
 
-      if (ovos >= 200) {
+      if (ovos >= 150) {
         corFundo = '#DC2626'; // Vermelho crítico
       } else if (ovos >= 100) {
         corFundo = '#D97706'; // Âmbar alerta
@@ -93,7 +95,7 @@ export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarA
           <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;">
             <div style="background:${corFundo};color:${corTexto};font-weight:900;font-size:10px;padding:2px 5px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:1.5px solid white;display:flex;align-items:center;gap:2px;white-space:nowrap;">
               <span>${codOv}</span>
-              ${ovos > 0 ? `<span style="font-size:9px;opacity:0.9;">(${ovos})</span>` : ''}
+              ${ovos > 0 ? `<span style="font-size:9px;opacity:0.95;">(${ovos})</span>` : ''}
             </div>
             <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid ${corFundo};"></div>
           </div>
@@ -109,14 +111,17 @@ export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarA
 
       const marker = L.marker([lat, lng], { icon: iconPin });
       marker.bindPopup(`
-        <div style="font-family:sans-serif;font-size:11.5px;line-height:1.35;min-width:180px;">
+        <div style="font-family:sans-serif;font-size:11.5px;line-height:1.35;min-width:195px;">
           <div style="font-weight:900;font-size:12.5px;color:#0F172A;display:flex;align-items:center;justify-content:space-between;">
             <span>🪤 ${codOv}</span>
-            <span style="background:${corFundo};color:white;padding:1px 6px;border-radius:6px;font-size:10px;">${ovos} ovos</span>
+            <span style="background:${corFundo};color:white;padding:1px 6px;border-radius:6px;font-size:10px;">${ovos} ovos (2 Sem.)</span>
           </div>
           <div style="font-weight:bold;color:#1E293B;margin-top:2px;">${morador}</div>
           <div style="color:#64748B;font-size:10.5px;">${rua}</div>
           <div style="color:#64748B;font-size:10px;margin-top:2px;">${bairro} • Quarteirão <b>${quart}</b></div>
+          <div style="color:#0F172A;font-size:10px;margin-top:4px;background:#F1F5F9;padding:3px 6px;border-radius:6px;font-weight:bold;">
+            Sem A: ${ovosSem1} + Sem B: ${ovosSem2} = ${ovos} ovos
+          </div>
         </div>
       `);
 
@@ -155,8 +160,8 @@ export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarA
     // CÍRCULO INTERNO: RAIO DE 100 METROS (NÚCLEO FOCAL PRIORITÁRIO)
     // Área de dispersão biológica direta e eliminação de criadouros
     // -------------------------------------------------------------
-    const corFoco = alvo.ovos >= 200 ? '#DC2626' : '#E11D48';
-    const fillFoco = alvo.ovos >= 200 ? '#EF4444' : '#F43F5E';
+    const corFoco = alvo.ovos >= 150 ? '#DC2626' : '#E11D48';
+    const fillFoco = alvo.ovos >= 150 ? '#EF4444' : '#F43F5E';
 
     const circle100m = L.circle([alvo.lat, alvo.lng], {
       radius: 100,
@@ -187,16 +192,19 @@ export function MapaVistoriaAcao({ alvo, todasArmadilhas, userPos, onSelecionarA
           <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid ${corFoco};"></div>
         </div>
       `,
-      iconSize: [130, 42],
-      iconAnchor: [65, 42]
+      iconSize: [140, 42],
+      iconAnchor: [70, 42]
     });
 
     L.marker([alvo.lat, alvo.lng], { icon: trapIcon })
       .bindPopup(`
-        <div style="font-family:sans-serif;font-size:12px;line-height:1.4;">
+        <div style="font-family:sans-serif;font-size:12px;line-height:1.4;min-width:210px;">
           <div style="font-weight:900;font-size:13px;color:#0F172A;">${alvo.id} • ${alvo.morador}</div>
-          <div style="color:#475569;margin-top:2px;">${alvo.endereco}</div>
-          <div style="color:#DC2626;font-weight:bold;margin-top:4px;">🚨 Carga: ${alvo.ovos} ovos (${alvo.nivel})</div>
+          <div style="color:#475569;margin-top:2px;">${alvo.endereco} (${alvo.bairro} • ${alvo.quarteirao})</div>
+          <div style="color:#DC2626;font-weight:bold;margin-top:4px;">
+            🚨 2 Semanas: ${alvo.ovos} ovos (Sem A: ${alvo.ovosSem1 ?? 0} + Sem B: ${alvo.ovosSem2 ?? 0})
+          </div>
+          ${alvo.equipeEscalacao ? `<div style="color:#1E40AF;font-weight:bold;font-size:11px;margin-top:3px;">👥 ${alvo.equipeEscalacao}</div>` : ''}
           <hr style="margin:6px 0;border:0;border-top:1px solid #E2E8F0;" />
           <div style="font-size:11px;color:#334155;">
             <b>🔴 Raio 100m:</b> Núcleo Focal de Varredura Imediata<br/>

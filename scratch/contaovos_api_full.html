@@ -1,0 +1,721 @@
+<!DOCTYPE html><html lang="pt-br"><style> :root { --api-primary: #5692f6; --api-primary-dark: #2f5fc7; --api-surface: #ffffff; --api-surface-alt: #f3f6fb; --api-border: #e3e8f0; --api-text: #1f2430; --api-text-muted: #667085; --api-code-bg: #1b2130; --api-code-text: #e7ebf3; } .api-hero { background: linear-gradient(135deg, var(--api-primary), var(--api-primary-dark)); color: #fff; padding: 44px 20px 54px; text-align: center; margin-top: 50px; } .api-hero h1 { margin: 0 0 10px; font-size: 34px; font-weight: 800; } .api-hero p { margin: 0 auto 22px; max-width: 640px; font-size: 17px; opacity: .95; line-height: 1.5; } /* Subpages (Exemplos, Mudanças) reuse the hero but sit one level below the reference page, so they get a shorter band and a smaller title. */ .api-hero-sub { padding: 32px 20px 38px; } .api-hero-sub h1 { font-size: 28px; } .api-hero-meta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; } .api-hero-badge { background: #ffffff26; border: 1px solid #ffffff55; padding: 9px 14px; border-radius: 6px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; } .api-btn { background: #fff; color: var(--api-primary-dark); font-weight: 700; padding: 9px 18px; border-radius: 6px; text-decoration: none !important; font-size: 14px; display: inline-block; } .api-btn:hover { background: #eef3ff; } .api-btn-ghost { background: #ffffff26; border: 1px solid #ffffff55; color: #fff !important; } .api-btn-ghost:hover { background: #ffffff3d; } .api-layout { display: grid; grid-template-columns: 260px 1fr; max-width: 1180px; margin: 0 auto; align-items: start; } .api-sidebar { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; padding: 28px 18px; background: var(--api-surface); border-right: 1px solid var(--api-border); } .api-sidebar-group { margin-bottom: 22px; } .api-sidebar-title { text-transform: uppercase; font-size: 11px; letter-spacing: .06em; color: var(--api-text-muted) !important; margin: 0 0 8px; font-weight: 700; } .api-sidebar a { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; color: var(--api-text) !important; text-decoration: none !important; font-size: 14px; line-height: 1.3; } .api-sidebar a:hover { background: var(--api-surface-alt); } .api-main { padding: 32px 24px 90px; max-width: 820px; } .api-section { margin-bottom: 36px; } .api-section-heading { margin-top: 50px; padding-bottom: 10px; border-bottom: 2px solid var(--api-border); } .api-card { background: var(--api-surface); border: 1px solid var(--api-border); border-radius: 10px; padding: 22px 24px; margin-bottom: 24px; scroll-margin-top: 16px; } .api-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; } .api-path { font-family: "SFMono-Regular", Consolas, monospace; font-size: 15px; background: var(--api-surface-alt); padding: 3px 8px; border-radius: 5px; color: var(--api-text); } .api-badge-get, .api-badge-post, .api-badge-public, .api-badge-private, .api-badge-new, .api-badge-deprecated { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px; letter-spacing: .03em; white-space: nowrap; } .api-badge-get { background: #0d9488; color: #fff !important; } .api-badge-post { background: #c2410c; color: #fff !important; } .api-badge-public, .api-badge-new { background: #1c9d6c22; color: #0d7a4f !important; border: 1px solid #1c9d6c55; } .api-badge-private, .api-badge-deprecated { background: #c2410c22; color: #a3350f !important; border: 1px solid #c2410c55; } /* Scroll container: the parameter tables are 3 columns wide and their "Descrição" cells carry unbreakable <code> tokens, so on a phone they need ~434px against a ~358px usable width. Without this wrapper the table pushed the whole page sideways and the last column was unreachable. Keep the table itself unwrapped-looking: the wrapper only scrolls when the content genuinely doesn't fit. */ .api-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 12px 0 4px; /* room for the scrollbar so it doesn't sit on top of the last row */ padding-bottom: 2px; } .api-table { width: 100%; border-collapse: collapse; margin: 12px 0 4px; font-size: 14px; } .api-table-wrap>.api-table { margin: 0; } .api-table th, .api-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--api-border); color: var(--api-text) !important; /* styles.css sets "td { font-size: 18px }" directly on the element, which beats the 14px declared on .api-table above; repeat it here so the tables keep the size the rest of this page was designed around. */ font-size: 14px; } /* Endpoint paths and parameter names are single unbreakable tokens: without this the widest one sets the column width, pushing the last column out of the card and leaving the row three lines tall. */ .api-table code { overflow-wrap: anywhere; } /* styles.css paints every "thead > tr > th" solid red with white text and a white border, which left this table's muted header unreadable on red. These tables read as documentation, not as a data grid, so the header goes back to the surface color. */ .api-table th { background: var(--api-surface-alt); border-left: none; color: var(--api-text-muted) !important; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; } .api-code { position: relative; background: var(--api-code-bg); border-radius: 8px; margin: 10px 0; } .api-code pre { margin: 0; padding: 16px 44px 16px 18px; overflow-x: auto; } .api-code code { color: var(--api-code-text) !important; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; white-space: pre; } /* Language/label line above a snippet ("Python", "curl", ...). Kept outside .api-code so it doesn't fight the copy button for the top-right corner. */ .api-code-label { display: block; margin: 16px 0 -4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--api-text-muted) !important; } .api-copy { position: absolute; top: 8px; right: 8px; background: #ffffff18; color: #fff; border: 1px solid #ffffff33; font-size: 11px; padding: 4px 8px; border-radius: 5px; cursor: pointer; } .api-copy:hover { background: #ffffff30; } .api-note { background: var(--api-surface-alt); border-left: 4px solid var(--api-primary); padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 14px; margin: 16px 0; color: var(--api-text) !important; } .api-note strong { color: var(--api-text) !important; } .api-note ul { margin: 8px 0 0; padding-left: 20px; } .api-note li { margin-bottom: 4px; } .api-field-list { margin: 10px 0 4px; padding-left: 20px; } .api-field-list li { margin-bottom: 6px; font-size: 15px; } .api-field-list code { background: var(--api-surface-alt); padding: 1px 5px; border-radius: 4px; font-size: 13px; } /* Changelog entries on /api/changes: one .api-card per release date. */ .api-release-date { font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; color: var(--api-text-muted) !important; margin: 0; } .api-release-title { margin: 2px 0 10px; } @media (min-width: 900px) { .api-hero { margin-top: -60px; } } @media (max-width: 900px) { .api-layout { grid-template-columns: 1fr; } /* On a phone the index is 18 links tall (~570px) and pushed "Sobre a API" almost a full screen below the fold. Cap it and let it scroll on its own instead of stacking the whole menu above the content. */ .api-sidebar { position: relative; top: auto; max-height: 40vh; overflow-y: auto; border-right: none; border-bottom: 1px solid var(--api-border); padding: 16px 16px 12px; } .api-main { padding: 24px 16px 60px; } }</style><head> <script id="cookie_js" src="/js/cookies.min.js?1097" data-domain="contaovos.com" data-fechar="Fechar" defer></script><script>var language_locale = "pt-br";</script><script>
+ /* Aplica o tema ANTES do primeiro paint - por isso é inline e fica aqui em
+ cima, sem defer: qualquer coisa assíncrona pisca a cor errada na carga.
+ Sem preferência gravada, o CSS decide sozinho via prefers-color-scheme. */
+ (function () {
+ try {
+ var saved = localStorage.getItem("contaovos-theme");
+ if (saved !== "light" && saved !== "dark") {
+ /* Migração do cookie antigo (user_night_view), para quem já tinha
+ escolhido o modo escuro antes desta mudança. Roda uma vez só. */
+ var m = document.cookie.match(/(?:^|;\s*)user_night_view=([^;]*)/);
+ if (m) {
+ saved = parseInt(decodeURIComponent(m[1]), 10) === 1 ? "dark" : "light";
+ localStorage.setItem("contaovos-theme", saved);
+ }
+ }
+ if (saved === "light" || saved === "dark") {
+ document.documentElement.setAttribute("data-theme", saved);
+ }
+ } catch (e) {
+ /* localStorage bloqueado (modo privado, etc.) - segue o SO pelo CSS. */
+ }
+ })();
+</script> <meta charset="utf-8">  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; ">  <meta name="category" content="Conta Ovos"><meta name="page" content="/pt-b"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="INDEX,FOLLOW"><meta name="robots" content="max-image-preview:large"><link rel="preconnect" href="https://cdn.contaovos.com">  <link rel="preconnect" href="https://cdn.cardsrealm.com" crossorigin><meta name="google-site-verification" content="OlmXaoMCsyQxa8mMKR_K_kE-LU4B4YDew_cX-58y-gQ" /><meta name="facebook-domain-verification" content="dppmqs5vf33r7jqvtj81gqo9j1gv2l" /><meta property="fb:app_id" content="233619160315719"><meta property="fb:pages" content="388434451628919" /><meta name="theme-color" content="#5692f6"/><link rel="apple-touch-icon" href="https://cdn.contaovos.com/images/favicon.png"><link rel="shortcut icon" type="image/png" href="https://cdn.contaovos.com/images/favicon-16.png"><link rel="manifest" href="/manifest.json?3"> <style> .grid-container {max-width: 800px;background-color: var(--surface);color: var(--text);margin: auto;text-align: center;border-radius: 5px;display: grid;grid-gap: 2px 2px;grid-template-columns: auto 100px 100px;vertical-align: middle;padding: 10px;border-style: solid;border-width: 1px;border-color: var(--border);}#name_p {text-align:center;width: 100%;margin-bottom: -30px;background: #5692f6;padding: 30px;position: relative;}#main_name{color: white;font-size: 32px;margin-top: 10px;margin-left: 10px;}.hide{display: none!important;}.ezmob-footer, .ezmob-footer-desktop{background-color: #fff2!important;border-top:none!important}.article_call_to_action{color: #5692f6!important;margin: 0;margin-left: 10px;font-weight: 800;font-size: 16px;margin-bottom: -4px;text-align: left;}.reportline{display: none!important;}.mediaIcon{width: 25px;height: 25px;margin: 3px;opacity: 0.4;}.mediaLink{margin: 8px;display: inline-block;text-align: center;line-height: 40px;}.website_stripe_top{font-weight: 400;text-align: left;margin: 3px;margin-left: 10px;font-size: 16px;}#header_menu_games_button_close{background: none;border: none;} #header_navbar{z-index:200000;}#menu_side_bar { background: #111;position: fixed;height: 100%;z-index: 10000000000;padding: 5px;top: 0;padding-top: 50px;border-right: 2px solid #5692f6;} #menu_side_bar > a {text-align: center;font-size: 22px;display: block;margin: 5px;margin-top: 15px; }.menu_side_bar_img{width: 40px;height: 40px;display: inline;filter: grayscale(1) invert(1);background: #ccc;padding: 5px;border-radius: 20px;border: 1px solid #ccc;}.menu_side_bar_p{ text-transform: uppercase;color: white; font-size: 10px; margin: 0;} .views {position: absolute;right: 0px;top: 8px;font-size: 12px;color: white;background-color: #ca9ed4;min-width: 15px;height: 15px;border-radius: 2px;line-height: 15px;text-align: center;z-index: 2000;display: none;} #bellDIV {display: inline-block;cursor: pointer;position: relative;} .profile_header_p {display: inline;max-width: 120px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis; margin-left: 7px;margin-right: 0;margin-bottom: 0;color: white;} .profile_header_img {width: 30px;height: 30px;border-radius: 10px;} .profile_header_div { border:1px solid #444;background: #333; padding: 7px; margin-left: 5px; margin-right: 5px; border-radius: 20px; display: inline-block;}.google-base, .google-comments, .google-base-2, .google-base-3 {width: 100%;min-height: 250px;}.sets_img {background: #eee;border-radius: 2px;}.google-top-pc{height: 95px; display: block; width: 100%;margin-top: 5px; margin-bottom: 5px;}.google-article {min-height: 200px;max-height: 380px;width: 100%;}#forum_comment > .article_propaganda_a, .article_propaganda_a {background-color: #4441!important;position: relative;display: block;text-align: center;margin-top: 20px;padding: 10px;background: #444;padding-top: 20px;}.informationUser {z-index: 0;padding: 10px;padding-left: 20px;padding-right: 20px;width: 100%;background: var(--surface);color: var(--text);z-index: 200000;margin-bottom: 5px;border-radius: 3px;}.only_cell {display: none;}.pro_top_cell {text-align: center;margin: auto;position: fixed;z-index: 100000;left: calc(50% - 200px);bottom: 0px;width: 100%;max-width: 400px;height: 65px;overflow: hidden;}body,html{font-family:Lato,Roboto,Helvetica,Arial,sans-serif;height:auto;min-height:100%;margin:0!important;padding:0!important;position:relative;overflow-x:hidden;font-size:1rem;line-height:1.5;text-align:left}.header{height:40px;padding:6px;z-index:99999!important}a{color:var(--link);text-decoration:none!important}*,::after,::before{box-sizing:border-box}img{vertical-align:middle;border-style:none}.container{width:100%;padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem}p{margin-top:0;margin-bottom:1rem}@media (min-width:576px){ .container{max-width:540px}.col-sm-1{flex:0 0 8.333333%;max-width:8.333333%}.col-sm-2{flex:0 0 16.666667%;max-width:16.666667%}.col-sm-3{flex:0 0 25%;max-width:25%}.col-sm-4{flex:0 0 33.333333%;max-width:33.333333%}.col-sm-5{flex:0 0 41.666667%;max-width:41.666667%}.col-sm-6{flex:0 0 50%;max-width:50%}.col-sm-7{flex:0 0 58.333333%;max-width:58.333333%}.col-sm-8{flex:0 0 66.666667%;max-width:66.666667%}.col-sm-9{flex:0 0 75%;max-width:75%}.col-sm-10{flex:0 0 83.333333%;max-width:83.333333%}.col-sm-11{flex:0 0 91.666667%;max-width:91.666667%}.col-sm-12{flex:0 0 100%;max-width:100%}}@media (min-width:768px){.pro_top_cell {left: calc(50% - 385px);max-width: 770px;height: 90px;}.google-footer-horizontal{max-height: 120px;}.navbar-nav{display:flex;flex-direction:row;flex-wrap:wrap}.navbar-header_home{display: grid;grid-template-columns: 250px auto;}.container{max-width:720px}}@media (min-width:992px){.container{max-width:960px}}@media (min-width:1200px){.container{max-width:1140px}}@media (min-width:1400px){.container{max-width:1240px}.container-fluid{max-width:1240px!important;}}.container-fluid{width:100%;padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto}.row{display:flex;flex-wrap:wrap;margin-right:-15px;margin-left:-15px}.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9{position:relative;width:100%;padding-right:15px;padding-left:15px}.navbar>.container,.navbar>.container-fluid{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between}.navbar-nav{padding-left:0;margin-bottom:0;list-style:none}.navbar-nav {padding-right:0;padding-left:0}.navbar-nav {position:static;float:none}.navbar-text{display:inline-block;padding-top:.5rem;padding-bottom:.5rem}@media (max-width:575.98px){.profile_header_p{display: none;} #searchNickName {transition: 0.5s ease-out;width:80px!important; width: calc(100% - 230px)!important;margin-left: 5px!important;} }@media (min-width:576px){.navbar-nav{flex-direction:row}.navbar-nav {padding-right:.5rem;padding-left:.5rem}}@media (min-width:768px){ .navbar-nav{flex-direction:row} .navbar-nav {padding-right:.5rem;padding-left:.5rem}}@media (min-width:992px){.navbar-nav{flex-direction:row} .navbar-nav {padding-right:.5rem;padding-left:.5rem} }@media (min-width:1200px){ .navbar-nav{flex-direction:row} .navbar-nav {padding-right:.5rem;padding-left:.5rem} } .navbar-nav{flex-direction:row} .navbar-nav {padding-right:.5rem;padding-left:.5rem} .fa-bell{width: 20px;height: 20px;color: white;display: inline-block;filter:invert(100%);margin-right: 0!important;}.navbar-nav:first-child li{margin-left:auto}.navbar-nav:last-child li{margin-right:auto}.headerIMG{width:25px!important;height:25px!important}.nav>li>a{padding-left:10px;position:relative;display:block;padding:10px 10px}.navbar{margin-bottom:10px}.navbar-nav>li>a{padding-top:10px;padding-bottom:10px;line-height:22px}.navbar-nav{flex-direction:row}.pHeader{font-size:20px;color:#eae393!important;margin-bottom:0;padding-bottom:10px; padding-top: 10px;}#searchCard:hover,#searchIcon:hover{background:#c0b3a0}#searchCard,#searchIcon{display:inline-block;padding:7px;background:var(--field-bg);width:30px;height:30px;border:none;cursor:pointer; margin: 0;margin-left: -2px;margin-bottom: 3px;border-radius:3px}#searchNickName:focus{border:3px #f9b500 solid}#searchNickName{transition:0.2s ease-out;padding-top: 4px;height: 30px;color:var(--field-text);background:var(--field-bg);margin-bottom:10px;width:180px;padding:5px;margin-top:10px;font-size:17px;border:none;border-top-left-radius: 3px;border-bottom-left-radius: 3px;margin-left:0;border:none;margin-left:-2px;margin-right:-3px;}.container-fluid{width:100%;margin-left:-15px;min-height:60px;max-width:1178px;margin:auto}.a_headerCARDSREALM{display: inline-block;text-align:left;padding:0;margin:0;margin-left:5px;margin-bottom:0;margin-top:10px;line-height:initial}.p_headerCARDSREALM{font-size:24px;color:#fff;display:inline-block;padding:0;margin:0;font-weight:800;line-height:initial}#game_select,#language_selector_header{display:inline-block;margin:0;background:none;width:100px;margin-top: 15px; padding:5px;height:32px;border-top-left-radius:3px;border-bottom-left-radius:3px; margin-left: 10px;}.headerCARDSREALM{height:50px;display:inline!important;margin-bottom:5px}.containerMain{position:relative}#notifyHeader,#seeMore{font-size:14px;font-weight:800;color:#495c70!important}.header_navbar_div{border-bottom:2px solid #5692f6;background: #3f3250!important;}.header_nav_search{padding-left: 5px; text-align: left;float:right;width:550px;max-width:100%;padding-top:10px}.navbar-brand{font-size:30px}.navbar-default{ max-width: 1100px;margin: auto;display: grid;grid-template-columns: 300px auto;}@media (max-width:768px){ .container {margin-top: 110px;}#name_p{padding: 10px;}#main_name {font-size: 30px;} .navbar-default{grid-template-columns: 100%!important;}.margin-10 {margin-top: -10px;} #header_menu_games_button {margin-top: -5px;} #profile_header_p{display: none;} #profile_header_div { margin: 5px;padding: 5px;} .navbar-header{display:block!important;}.header_nav_search{padding-top:0;}#header_navbar{position:fixed;width:100%}#header_navbar_space{height:123px}.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-auto{flex:none;max-width:none}.container-fluid{padding-right:0;padding-left:15px;padding-right:15px;min-height:0;position:relative}#toggle{display:block!important;top:50%!important;right:15px!important;transform:translateY(-50%);margin:0!important;}.a_headerCARDSREALM{margin-top:0}.p_headerCARDSREALM{display:inline;margin-left:10px;font-size:20px}#main_seller{margin-top:10px;padding:0}.not_cell_important{display:none!important;}#navbar_menu{display: none;margin-top: 30px; background: var(--surface);}.not_cell{display:none}.only_cell{display:inherit!important}.li_header{width:80%!important}.nav>li{width:100%;display:inline-block}.navbar-nav{display:grid;grid-template-columns:50% 50%;margin:0;text-align:left;width:100%!important}.max-width{margin-left:-15px!important;width:calc(100% + 30px);border-radius:0}.max-75{max-width:100%}.mediaLink{margin:5px}.longword{font-size:14px}}.navbar-nav>li>a{min-height:70px!important}.navbar-nav>li>a{padding-top:10px;padding-bottom:11px;text-align:center;min-height:calc(100% - 2px)!important}#div_to_50{display:none}.deck-info{margin-top:-40px}.navbar-header{margin-top:0;padding:0;width:100%;}.navbar-header_home{margin-top:0;padding:0;width:100%;}.navbar-nav{width:auto;width:max-content;margin:auto;}.home_games{display:inline-flex;width: auto!important; text-align:center}.headerIMG{margin-right:10px;display:block;margin:auto;width:25px!important;height:25px!important}.active>a>p{display:block!important}.card_legal{max-width:50%;display:inline-block;background:#322340;color:#fff;text-transform:uppercase;padding:5px;border-radius:3px;margin-bottom:2px;font-size:9px!important;cursor:pointer;}.cardsImage{margin:0;min-height:150px;padding:0;display:inline-block;width:200px;border-radius:8px;cursor:pointer;max-width:100%;margin-right:2px;margin-bottom:2px}@media (max-width:768px){.margin-10>a{margin:1px;}.max-15{width:calc(100% + 30px)!important;margin-left:-15px!important}.card_div{width:calc(100% + 40px);margin-left:-20px}}.header{background-color:#fff}.little_icons{width:18px;display:inline-block;margin-left:2px;float:right;max-height:22px;margin-top:5px}html{overflow-x:hidden}input{padding:5px;font-size:16px;padding-left:5px;border-style:solid;border-width:1px;border-color:var(--border);background:var(--field-bg);color:var(--field-text)}select,textarea{border-style:solid;border-width:1px;border-color:var(--border);background:var(--field-bg);color:var(--field-text)}.card_div{padding:10px;border-style:solid;border-width:1px;background:var(--surface);background-color:var(--surface);color:var(--text);border-color:var(--border)}.fa,.fas,.far{min-width:10px;width:30px;margin-right:5px;margin-left: 5px;max-height: 30px;}.main_see_more{color:#ddd;font-size:9px;float:right;margin-right:5px;line-height:20px}.main_spoilers_img{width:120px;min-height:100px;border-radius:5px}.main_spoilers_div{text-align:center;display:inline-block;width:120px;margin:5px}.main_spoiler_h{text-transform:uppercase;font-size:18px;padding-left:10px;padding-top:8px;font-weight:800;margin:0;padding-bottom:5px;background:#c1b026!important;color:#333!important;border-top-left-radius:5px;border-top-right-radius:5px}.main_spoiler{padding:5px;margin-bottom:5px}.main_title_division{ transform: skewX(-10deg);color:#322340;font-weight:800;margin:0;text-transform:uppercase;padding:10px;font-size:18px;padding-top:5px;padding-bottom:5px;border-bottom-width:1px;border-top-left-radius:2px;border-top-right-radius:2px;margin-left: 5px;}.most_cards{display: inline-block;max-width: 45%;}.social-share{padding:4px;border-radius:2px;display:inline-block;margin-right:15px}.social-share-icon{width:20px;object-fit:contain;height:20px;filter:invert(1)}.image-send-container{text-align:right!important}.articles_figcapition{border-bottom: 5px solid #5692f6; background: #3331;padding:10px;display:inline-block;text-align:left;max-width:80%;font-size:18px}.ad_pt_img{max-width:100%}.ad_pt_a{text-align:center;display:block;margin:10px;margin-top:10px;} </style>  <link rel="preload" as="style" type="text/css" href="/css/styles.min.css?817" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/css/styles.min.css?817"></noscript><link rel="preload" as="style" type="text/css" media="screen and (max-width: 768px)" href="/css/styles-max-768.min.css?817" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/css/styles-max-768.min.css?817"></noscript><link rel="stylesheet" type="text/css" href="/css/theme.min.css?817"><script>
+ function readCookie(name) {
+ var nameEQ = encodeURIComponent(name) + "=";
+ var ca = document.cookie.split(';');
+ for (var i = 0; i < ca.length; i++) {
+ var c = ca[i];
+ while (c.charAt(0) === ' ')
+ c = c.substring(1, c.length);
+ if (c.indexOf(nameEQ) === 0)
+ return decodeURIComponent(c.substring(nameEQ.length, c.length));
+ }
+ return null;
+ }
+</script> <title>Conte automático com Conta Ovos</title><meta name="description" content="Contagem automática de ovos"><meta name="keywords" content="aedes aegypti"><meta property="og:type" content="website"><meta property="og:title" content="Contagem automática de ovos"><meta property="og:description" content="Contagem automática de ovos"><meta property="og:site_name" content="Conta Ovos"><meta property="og:image" content="https://cdn.contaovos.com/images/uploads/9019-favicon-1777845947.jpg" /><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="350"><meta property="og:image:height" content="250"><meta name="twitter:card" content="summary" /><meta name="twitter:site" content="@contaovos" /><meta name="twitter:title" content="Contagem automática de ovos" /><meta name="twitter:image" content="https://pbs.twimg.com/profile_images/992585108845719552/7G7tdWB5_bigger.jpg" /><meta name="twitter:description" content="Contagem automática de ovos"></head><body> <div id="header_navbar"><div style="margin-bottom: 5px;border-bottom: 5px solid #5692f6;margin-bottom: 60px;"><nav class="navbar navbar-default" style=" max-width: 1100px;margin: auto;display: grid;grid-template-columns: 300px auto;">   <p id="name_p"><a id="main_name" href="/pt-br/" title="Main page">Conta Ovos</a><button type="button" id="toggle" aria-label="Menu" aria-expanded="false" aria-controls="navbar_menu" style="display: none;"><div></div></button></p><div id="navbar_menu" class="container-fluid nav-container"><div class="navbar-header"><ul class="nav navbar-nav"><li class=""><a style=" padding-top: 20px;border-right: 5px solid #5692f622;" href="/pt-br/count" title="Contar ovos"><p style="margin: 0;font-size: 18px;font-weight: 400;">Enviar leitura</p></a></li><li class=""><a style=" padding-top: 20px;border-right: 5px solid #5692f622;" href="/pt-br/" title="Conta Ovos Landing Page"><p style="margin: 0;font-size: 18px;font-weight: 400;">Quem somos</p></a></li>  <li>  <a class="hide_plano_1" style=" padding-top: 20px;border-right: 5px solid #5692f622;" href="/pt-br/login/" title="Login"><p style="margin: 0;font-size: 18px;font-weight: 400;">Conecte-se</p></a>  </li><li><select id="language_selector_header" aria-labelledby="language_selector_header" title="Seletor de idioma"> <option value="en-us" >English</option><option value="pt-br"  selected="selected" >Português</option><option value="es-es" >Español</option><option value="it-it" >Italiano</option><option value="ja-jp" >日本語</option><option value="zh-cn" >中文</option><option value="ko-kr" >한국어</option><option value="de-de" >Deutsch</option><option value="fr-fr" >français</option><option value="ru-ru" >русский</option><option value="ar-sa" >العربية</option> </select></li><li><button type="button" class="theme-toggle" data-theme-toggle aria-label="Alternar tema" title="Alternar tema"><svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg><svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button></li></ul></div></div></nav></div></div><script>
+ window.addEventListener('DOMContentLoaded', function() {
+ 
+ var DURACAO_MENU = 400;
+
+ 
+ 
+ function animarPainel(painel, quadros, aoTerminar) {
+ if (painel.__animacaoMenu) {
+ painel.__animacaoMenu.cancel();
+ clearTimeout(painel.__relogioMenu);
+ }
+ painel.style.overflow = "hidden";
+ var animacao = painel.animate(quadros, { duration: DURACAO_MENU, easing: "ease" });
+ painel.__animacaoMenu = animacao;
+
+ var terminado = false;
+ function terminar() {
+ if (terminado) {
+ return;
+ }
+ terminado = true;
+ clearTimeout(painel.__relogioMenu);
+ 
+ animacao.cancel();
+ painel.__animacaoMenu = null;
+ painel.style.overflow = "";
+ aoTerminar();
+ }
+
+ animacao.onfinish = terminar;
+ painel.__relogioMenu = setTimeout(terminar, DURACAO_MENU + 50);
+ }
+
+ function abrirPainel(painel) {
+ painel.style.display = "block";
+ if (!painel.animate) {
+ return;
+ }
+ var altura = painel.scrollHeight;
+ animarPainel(painel,
+ [{ height: "0px", opacity: 0 }, { height: altura + "px", opacity: 1 }],
+ function () {});
+ }
+
+ function fecharPainel(painel) {
+ 
+ if (!painel.animate) {
+ painel.style.display = "none";
+ return;
+ }
+ var altura = painel.scrollHeight;
+ animarPainel(painel,
+ [{ height: altura + "px", opacity: 1 }, { height: "0px", opacity: 0 }],
+ function () {
+ painel.style.display = "none";
+ });
+ }
+
+ var botaoMenu = document.getElementById("toggle");
+
+ if (botaoMenu) {
+ botaoMenu.addEventListener("click", function (event) {
+ event.preventDefault();
+ var aberto = botaoMenu.classList.contains("on");
+ botaoMenu.classList.toggle("on", !aberto);
+ 
+ botaoMenu.setAttribute("aria-expanded", aberto ? "false" : "true");
+ document.querySelectorAll(".nav-container").forEach(function (painel) {
+ if (aberto) {
+ fecharPainel(painel);
+ } else {
+ abrirPainel(painel);
+ }
+ });
+ });
+ }
+ });
+</script> <div class="api-hero"><h1>API Conta Ovos</h1><p>Consulte e envie dados de ovitrampas, quarteirões e visitas de campo diretamente do seu sistema. Esta página documenta todos os endpoints públicos e privados disponíveis.</p><div class="api-hero-meta"><span class="api-hero-badge">/pt-br/api</span>  <a class="api-btn" href="/pt-br/api/minhachave" rel="nofollow">Solicitar chave de API</a></div></div><div class="api-layout"><nav class="api-sidebar">  <div class="api-sidebar-group"><p class="api-sidebar-title">Introdução</p><a href="/pt-br/api/#introduction">Sobre a API</a><a href="/pt-br/api/#auth">Autenticação e chaves</a><a href="/pt-br/api/#responses">Códigos de resposta</a><a href="/pt-br/api/#body-format">Como enviar o corpo de um POST</a></div><div class="api-sidebar-group"><p class="api-sidebar-title">Endpoints públicos</p><a href="/pt-br/api/#get-lastcountingpublic"><span class="api-badge-get">GET</span> Últimas contagens</a><a href="/pt-br/api/#get-getmunicipalityblocksvisitpublic"><span class="api-badge-get">GET</span> Visitas em quarteirões</a><a href="/pt-br/api/#get-getmunicipalityblockspublic-2"><span class="api-badge-get">GET</span> Quarteirões</a><a href="/pt-br/api/#get-getmunicipalityedlspublic"><span class="api-badge-get">GET</span> EDLs</a><a href="/pt-br/api/#get-getmunicipalityedlmaintenancepublic"><span class="api-badge-get">GET</span> Manutenções de EDLs</a><a href="/pt-br/api/#get-getmunicipalityovitrapspublic"><span class="api-badge-get">GET</span> Ovitrampas</a><a href="/pt-br/api/#get-getmunicipalityplacespublic"><span class="api-badge-get">GET</span> Pontos estratégicos</a></div><div class="api-sidebar-group"><p class="api-sidebar-title">Endpoints privados</p><a href="/pt-br/api/#get-lastcounting"><span class="api-badge-get">GET</span> Últimas contagens</a><a href="/pt-br/api/#get-getmunicipalityblocks"><span class="api-badge-get">GET</span> Visitas em quarteirões</a><a href="/pt-br/api/#get-getmunicipalityedls"><span class="api-badge-get">GET</span> EDLs</a><a href="/pt-br/api/#get-getmunicipalityedlvisits"><span class="api-badge-get">GET</span> Manutenções de EDLs</a><a href="/pt-br/api/#get-getmunicipalityovitraps"><span class="api-badge-get">GET</span> Ovitrampas</a><a href="/pt-br/api/#get-getmunicipalityplaces"><span class="api-badge-get">GET</span> Pontos estratégicos</a><a href="/pt-br/api/#post-postcounting"><span class="api-badge-post">POST</span> Enviar leitura</a><a href="/pt-br/api/#post-postdeletecounting"><span class="api-badge-post">POST</span> Deletar leitura</a><a href="/pt-br/api/#post-postdeleteovitrap"><span class="api-badge-post">POST</span> Deletar ovitrampa</a><a href="/pt-br/api/#post-postaction"><span class="api-badge-post">POST</span> Inserir visita</a><a href="/pt-br/api/#post-postdeleteaction"><span class="api-badge-post">POST</span> Deletar visita</a><a href="/pt-br/api/#post-postdeleteblock"><span class="api-badge-post">POST</span> Deletar quarteirão</a><a href="/pt-br/api/#post-postedl"><span class="api-badge-post">POST</span> Inserir EDL</a><a href="/pt-br/api/#post-postdeleteedl"><span class="api-badge-post">POST</span> Deletar EDL</a><a href="/pt-br/api/#post-postedlmaintenance"><span class="api-badge-post">POST</span> Inserir manutenção de EDL</a><a href="/pt-br/api/#post-postdeleteedlmaintenance"><span class="api-badge-post">POST</span> Deletar manutenção de EDL</a><a href="/pt-br/api/#post-postplace"><span class="api-badge-post">POST</span> Inserir imóvel</a><a href="/pt-br/api/#post-postdeleteplace"><span class="api-badge-post">POST</span> Deletar imóvel</a><a href="/pt-br/api/#post-posteditovitrap"><span class="api-badge-post">POST</span> Editar ovitrampa</a><a href="/pt-br/api/#post-posteditcounting"><span class="api-badge-post">POST</span> Editar leitura</a><a href="/pt-br/api/#post-posteditblock"><span class="api-badge-post">POST</span> Editar quarteirão</a><a href="/pt-br/api/#post-posteditaction"><span class="api-badge-post">POST</span> Editar visita</a><a href="/pt-br/api/#post-posteditedl"><span class="api-badge-post">POST</span> Editar EDL</a><a href="/pt-br/api/#post-posteditedlmaintenance"><span class="api-badge-post">POST</span> Editar manutenção de EDL</a><a href="/pt-br/api/#post-posteditplace"><span class="api-badge-post">POST</span> Editar imóvel</a></div><div class="api-sidebar-group"><p class="api-sidebar-title">Mais</p><a href="/pt-br/api/examples">Exemplos</a><a href="/pt-br/api/changes">Mudanças</a></div> </nav><main class="api-main"><section id="introduction" class="api-section"><h2>Sobre a API</h2><p>Esta API possui endpoints <strong>públicos e privados</strong>. A API pública devolve dados de latitude, longitude e quantidade de ovos de cada município participante ao longo do tempo, sem necessidade de autenticação. A API privada é recomendada apenas para aplicativos que trabalham em parceria com o Conta Ovos, pois ela expõe dados sensíveis e permite inserir, alterar e remover registros.</p></section><section id="auth" class="api-section"><h2>Autenticação e chaves</h2><p>Para utilizar a API privada você precisará de uma chave de acesso (<code>key</code>). Gestores (municipal para cima) geram a própria chave no botão <a href="/pt-br/api/minhachave" rel="nofollow">Solicitar chave de API</a>, logados na conta do município: a chave sai na hora, com o município e o cargo da conta, e fica visível no perfil. Se a chave vazar, troque-a na mesma tela (ou em “Trocar a chave”, no perfil): a nova vale na hora e a anterior deixa de funcionar. Agentes de endemias pedem ao gestor do município. Para outro nível de acesso, envie um e-mail para <strong>contaovosdengue@gmail.com</strong> informando:</p><ul class="api-field-list"><li>Por que você precisa de acesso à API;</li><li>Qual o nível de acesso necessário (municipal, regional, estadual ou país);</li><li>De qual região geográfica você faz parte.</li></ul><p>A chave é composta por <strong>45 letras aleatórias</strong> e deve ser enviada no parâmetro <code>key</code> de cada requisição privada. O escopo geográfico e o plano vinculados à chave (<code>api_access_municipality_id</code>, <code>state_id</code>, <code>region_id</code>, <code>country_id</code>, <code>plan</code>) definem automaticamente quais registros ela pode ler ou alterar — uma chave municipal, por exemplo, só consegue ler ou modificar dados do próprio município.</p><div class="api-note"><strong>Onde enviar a chave:</strong> prefira o cabeçalho <code>Authorization: Bearer SUA_CHAVE</code>. A query string da URL (<code>?key=SUA_CHAVE</code>) continua aceita em todos os endpoints, mas fica gravada em logs de servidor e proxies, e o cabeçalho não. Enviar a chave apenas no corpo do formulário resulta em <code>404 "Wrong key"</code>. Os demais campos do POST continuam indo no corpo da requisição.</div><div class="api-note"><strong>Paginação:</strong> os parâmetros <code>page</code> aceitam no máximo 100 nos endpoints que suportam paginação. Valores inválidos ou ausentes assumem a página 1.</div></section><section id="responses" class="api-section"><h2>Códigos de resposta</h2><p>Todos os endpoints seguem o mesmo padrão de status HTTP:</p><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody><tr><td>200</td><td>Requisição processada com sucesso.</td></tr><tr><td>400</td><td>Parâmetro obrigatório ausente, em formato inválido, ou corpo da requisição ilegível.</td></tr><tr><td>403</td><td>O recurso informado não pertence ao escopo (município/estado/região) da chave utilizada.</td></tr><tr><td>404</td><td>Chave inválida (<em>Wrong key</em>) ou recurso não encontrado.</td></tr><tr><td>409</td><td>Já existe um registro para essa combinação de identificador, ano e semana.</td></tr><tr><td>500</td><td>Erro interno ao processar a requisição.</td></tr></tbody></table></div></section><section id="body-format" class="api-section"><h2>Como enviar o corpo de um POST</h2><p>Todos os endpoints POST aceitam três formatos, e você escolhe o que for mais fácil no seu sistema:</p><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Formato</th><th><code>Content-Type</code></th></tr></thead><tbody><tr><td>Formulário simples</td><td><code>application/x-www-form-urlencoded</code></td></tr><tr><td>Formulário multipart</td><td><code>multipart/form-data</code></td></tr><tr><td>JSON</td><td><code>application/json</code></td></tr></tbody></table></div><p><strong>Não defina o cabeçalho Content-Type à mão</strong> no Postman, no Insomnia ou em bibliotecas de HTTP. Deixe a ferramenta gerá-lo: no multipart ela precisa incluir o boundary, e um Content-Type que não corresponde ao corpo faz todos os campos chegarem vazios.</p><p>Quando isso acontece a resposta é 400 com esta mensagem, e ela é sobre o envelope, não sobre os seus campos:</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "error": "Não consegui ler os campos do corpo da requisição. Envie como form-data, x-www-form-urlencoded ou JSON.",
+  "dica": "Se usa Postman ou Insomnia, apague o cabeçalho Content-Type e deixe a ferramenta gerá-lo sozinha."
+}</code></pre> </div><p>A chave (key) vai sempre na URL, nunca no corpo.</p></section><h2 class="api-section-heading">Endpoints Públicos</h2><article id="get-lastcountingpublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/lastcountingpublic</code><span class="api-badge-public">Público</span></div><h3>Últimas contagens lançadas</h3><p>Retorna as últimas contagens lançadas por localização (municipal, estadual ou país), com o número de ovos e os dados da ovitrampa.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr><tr><td><code>id</code></td><td>int</td><td>Exibe apenas ocorrências a partir do id informado. Exemplo: <code>id=7876</code>.</td></tr><tr><td><code>date</code></td><td>date</td><td>Exibe ocorrências a partir da data de inclusão. Exemplo: <code>date=2025-01-01</code>.</td></tr><tr><td><code>date_collect</code></td><td>date</td><td>Exibe ocorrências a partir da data de coleta. Exemplo: <code>date_collect=2024-12-12</code>.</td></tr><tr><td><code>date_start</code></td><td>date</td><td>Data inicial para filtrar as contagens. Exemplo: <code>date_start=2025-01-01</code>.</td></tr><tr><td><code>date_end</code></td><td>date</td><td>Data final para filtrar as contagens. Exemplo: <code>date_end=2025-12-31</code>.</td></tr></tbody></table></div><p><strong>Obs.:</strong> se nenhum parâmetro de localização for enviado, o endpoint devolve as últimas contagens do Brasil.</p><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li></ul></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Ponta%20Pora" \
+  /pt-br/api/lastcountingpublic
+
+curl -G -d "state=MG" \
+  /pt-br/api/lastcountingpublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "state_name": "Minas Gerais",
+    "state_code": "MG",
+    "municipality": "Ponta Pora",
+    "municipality_code": "5006606",
+    "eggs": 42,
+    "week": 3,
+    "year": 2025,
+    "time": "2025-01-20 14:32:10",
+    "counting_id": 118342,
+    "ovitrap_website_id": 981,
+    "ovitrap_id": "97",
+    "latitude": -7.000000,
+    "longitude": -8.000000,
+    "date": "2025-01-20",
+    "date_collect": "2025-01-27"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityblocksvisitpublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityblocksvisitpublic</code><span class="api-badge-public">Público</span></div><h3>Visitas em Quarteirões</h3><p>Retorna os dados das visitas (ações de tratamento) realizadas em quarteirões — uma linha por visita, não por quarteirão.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Vista%20Alegre" \
+  /pt-br/api/getmunicipalityblocksvisitpublic
+
+curl -G -d "state=MS" \
+  /pt-br/api/getmunicipalityblocksvisitpublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "block_id": 4521,
+    "block_actions_mean": 3.4,
+    "block_coordinates": "[[-7.123, -34.845], [-7.124, -34.846]]",
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS",
+    "action_land_total_total": 21,
+    "action_land_residence_total": 10,
+    "action_land_commercial_total": 5,
+    "action_land_empty_total": 3,
+    "action_land_strategy_total": 1,
+    "action_land_another_total": 2,
+    "action_address_district": "Centro",
+    "action_address_sector": "Setor 04",
+    "action_deposit_a1_quantity": 4,
+    "action_deposit_a2_quantity": 2,
+    "action_deposit_b_quantity": 5,
+    "action_deposit_c_quantity": 1,
+    "action_deposit_d1_quantity": 0,
+    "action_deposit_d2_quantity": 3,
+    "action_deposit_e_quantity": 0,
+    "action_observation": "Foco encontrado em pneus nos fundos do imovel.",
+    "latitude": -7.123456,
+    "longitude": -34.845678
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityblockspublic-2" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityblockspublic-2</code><span class="api-badge-public">Público</span></div><h3>Quarteirões cadastrados</h3><p>Retorna os quarteirões (blocks) cadastrados no município — uma linha por quarteirão, com o polígono, os totais de imóveis por tipo e a média de ações.</p><div class="api-note"><strong>Endpoint novo.</strong> Se você procura as visitas realizadas em quarteirões, use <code>/api/getmunicipalityblocksvisitpublic</code>. Por ser um endpoint público, a resposta não inclui o agente responsável pelo quarteirão nem identificadores de usuário/equipe. </div><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Alta%20Floresta" \
+  /pt-br/api/getmunicipalityblockspublic-2
+
+curl -G -d "state=MT" \
+  /pt-br/api/getmunicipalityblockspublic-2</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "block_id": 118342,
+    "block_group_id": "1",
+    "block_datetime": "Mon, 09 Sep 2024 10:12:41 GMT",
+    "latitude": -9.849042,
+    "longitude": -56.065069,
+    "block_coordinates": "[{\"lat\":-9.849042,\"lng\":-56.065069}, ...]",
+    "block_address_district": "DISTRITO INDUSTRIAL",
+    "block_address_sector": "DISTRITO INDUSTRIAL",
+    "block_municipality_id": 5566,
+    "block_active": 1,
+    "block_actions_mean": 22,
+    "block_land_total": 24,
+    "block_land_residence": 18,
+    "block_land_commercial": 4,
+    "block_land_empty": 2,
+    "block_land_strategy": 0,
+    "block_land_another": 0,
+    "municipality": "Alta Floresta",
+    "municipality_code": "5100250",
+    "state_name": "Mato Grosso",
+    "state_code": "MT"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityedlspublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityedlspublic</code><span class="api-badge-public">Público</span></div><h3>EDLs cadastrados</h3><p>Retorna os dados dos EDLs (pontos estratégicos que recebem manutenção periódica dos agentes) cadastrados por município.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Vista%20Alegre" \
+  /pt-br/api/getmunicipalityedlspublic
+
+curl -G -d "state=MS" \
+  /pt-br/api/getmunicipalityedlspublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "edl_id": 1832,
+    "edl_group_id": "104",
+    "edl_address_datetime": "2025-02-11 09:15:00",
+    "edl_lat": -7.123456,
+    "edl_lng": -34.845678,
+    "edl_municipality_id": 5007117,
+    "group_id": 12,
+    "user_id": 348,
+    "edl_responsable_agent": "João da Silva",
+    "edl_block_group_id": "12",
+    "edl_responsable_home": "Maria Souza",
+    "edl_date": "2025-02-11",
+    "edl_water_mean": 1.8,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityedlmaintenancepublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityedlmaintenancepublic</code><span class="api-badge-public">Público</span></div><h3>Manutenções de EDLs</h3><p>Retorna os dados das manutenções realizadas nos EDLs, incluindo a observação registrada em cada manutenção.</p><div class="api-note"><strong>Substitui</strong><code>/api/getmunicipalityedlvisitspublic</code>. EDLs recebem manutenções, não visitas — os campos passaram de <code>edl_visit_*</code> para <code>edl_maintenance_*</code>. A URL antiga continua funcionando e continua devolvendo os nomes antigos, para não quebrar integrações em produção, mas está descontinuada. </div><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Vista%20Alegre" \
+  /pt-br/api/getmunicipalityedlmaintenancepublic
+
+curl -G -d "state=MS" \
+  /pt-br/api/getmunicipalityedlmaintenancepublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "edl_maintenance_id": 9021,
+    "edl_id": 1832,
+    "edl_maintenance_time_week": 7,
+    "edl_maintenance_time_year": 2025,
+    "edl_maintenance_datetime": "2025-02-11 09:20:00",
+    "edl_maintenance_user_id": 348,
+    "edl_maintenance_observation": "Sem foco encontrado no local.",
+    "edl_maintenance_observation_id": 3,
+    "edl_maintenance_water_level": 0.5,
+    "edl_maintenance_lat": -7.123456,
+    "edl_maintenance_lng": -34.845678,
+    "edl_maintenance_municipality_id": 5007117,
+    "edl_maintenance_region_id": 4,
+    "edl_maintenance_state_id": 24,
+    "edl_maintenance_country_id": 1,
+    "edl_maintenance_date": "2025-02-11",
+    "edl_maintenance_observation_name": "Sem foco",
+    "edl_maintenance_observation_number": 3,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityovitrapspublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityovitrapspublic</code><span class="api-badge-public">Público</span></div><h3>Ovitrampas cadastradas</h3><p>Retorna os dados das ovitrampas (pontos de monitoramento de ovos) cadastradas por município.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Vista%20Alegre" \
+  /pt-br/api/getmunicipalityovitrapspublic
+
+curl -G -d "state=MS" \
+  /pt-br/api/getmunicipalityovitrapspublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "ovitrap_id": 4471,
+    "ovitrap_group_id": "97",
+    "ovitrap_datetime": "2025-01-20 14:32:10",
+    "ovitrap_lat": -7.123456,
+    "ovitrap_lng": -34.845678,
+    "ovitrap_lat_lng_error": 0,
+    "ovitrap_municipality_id": 5007117,
+    "group_id": 12,
+    "user_id": 348,
+    "ovitrap_eggs_mean": 12.5,
+    "ovitrap_block_id": 4521,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityplacespublic" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityplacespublic</code><span class="api-badge-public">Público</span></div><h3>Imóveis (places)</h3><p>Retorna os imóveis (pontos estratégicos e imóveis especiais) cadastrados por município.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>state</code></td><td>string</td><td>Código do estado. Exemplo: <code>state=RJ</code>.</td></tr><tr><td><code>municipality</code></td><td>string</td><td>Nome do município. Exemplo: <code>municipality=Ponta Pora</code></td></tr><tr><td><code>country</code></td><td>string</td><td>Nome do país. Exemplo: <code>country=Brasil</code>. Se omitido, assume "Brasil".</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "municipality=Vista%20Alegre" \
+  /pt-br/api/getmunicipalityplacespublic
+
+curl -G -d "state=MS" \
+  /pt-br/api/getmunicipalityplacespublic</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "place_id": 771,
+    "user_id": 348,
+    "place_address_district": "Centro",
+    "place_address_sector": "Setor 04",
+    "place_datetime": "2025-02-05 10:00:00",
+    "place_address_lat": -7.123456,
+    "place_address_lng": -34.845678,
+    "place_municipality_id": 5007117,
+    "place_region_id": 4,
+    "place_state_id": 24,
+    "place_country_id": 1,
+    "place_type_id": 2,
+    "place_name": "Ferro-velho Bom Preço",
+    "place_coordinates": "[[-7.123, -34.845], [-7.124, -34.846]]",
+    "place_subtype": 5,
+    "place_area": 320.5,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><h2 class="api-section-heading">Endpoints Privados</h2><p>Todos os endpoints abaixo exigem o parâmetro <code>key</code> com a sua chave de API.</p><article id="get-lastcounting" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/lastcounting</code><span class="api-badge-private">Privado</span></div><h3>Últimas contagens lançadas</h3><p>Retorna as últimas contagens lançadas dentro do escopo da chave, com número de ovos, dados da ovitrampa e o usuário responsável.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo das contagens retornadas.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr><tr><td><code>date_start</code></td><td>date</td><td>Data inicial para filtrar as contagens. Exemplo: <code>date_start=2025-01-01</code>.</td></tr><tr><td><code>date_end</code></td><td>date</td><td>Data final para filtrar as contagens. Exemplo: <code>date_end=2025-12-31</code>.</td></tr></tbody></table></div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li></ul></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/lastcounting</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "state_name": "Minas Gerais",
+    "state_code": "MG",
+    "municipality": "Ponta Pora",
+    "municipality_code": "5006606",
+    "eggs": 42,
+    "week": 3,
+    "year": 2025,
+    "time": "2025-01-20 14:32:10",
+    "user": "Joao da Silva",
+    "counting_id": 118342,
+    "ovitrap_website_id": 981,
+    "ovitrap_id": "97",
+    "district": "Centro",
+    "street": "Rua das Flores",
+    "number": "123",
+    "complement": "",
+    "loc_inst": "",
+    "sector": "Setor 04",
+    "latitude": -7.000000,
+    "longitude": -8.000000,
+    "date": "2025-01-20",
+    "date_collect": "2025-01-27"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityedls" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityedls</code><span class="api-badge-private">Privado</span></div><h3>EDLs cadastrados</h3><p>Retorna os dados dos EDLs (pontos estratégicos visitados periodicamente pelos agentes) dentro do escopo geográfico da chave. O escopo é definido automaticamente pelo plano vinculado à chave — municipal, regional, estadual ou país — não sendo necessário informar município, estado ou país na requisição.</p><h4>Parâmetros</h4><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo geográfico dos EDLs retornados.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/getmunicipalityedls</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "edl_id": 1832,
+    "edl_group_id": "104",
+    "edl_address_datetime": "2025-02-11 09:15:00",
+    "edl_lat": -7.123456,
+    "edl_lng": -34.845678,
+    "edl_municipality_id": 5007117,
+    "group_id": 12,
+    "user_id": 348,
+    "edl_responsable_agent": "João da Silva",
+    "edl_block_group_id": "12",
+    "edl_responsable_home": "Maria Souza",
+    "edl_date": "2025-02-11",
+    "edl_water_mean": 1.8,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityedlvisits" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityedlvisits</code><span class="api-badge-private">Privado</span></div><h3>Manutenções de EDLs</h3>  <p class="api-note" style="border-left:3px solid #5692f6;padding:6px 10px;background:#5692f608;">Atenção: os campos da resposta deste endpoint privado continuam com o prefixo <code>edl_visit_*</code>. Apenas o endpoint público equivalente passou a usar <code>edl_maintenance_*</code>.</p><p>Retorna os dados das visitas realizadas aos EDLs dentro do escopo geográfico da chave, incluindo a observação registrada em cada visita. O escopo é definido automaticamente pelo plano vinculado à chave — municipal, regional, estadual ou país — não sendo necessário informar município, estado ou país na requisição.</p><h4>Parâmetros</h4><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo geográfico das visitas retornadas.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/getmunicipalityedlvisits</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "edl_visit_id": 9021,
+    "edl_id": 1832,
+    "edl_visit_time_week": 7,
+    "edl_visit_time_year": 2025,
+    "edl_visit_datetime": "2025-02-11 09:20:00",
+    "edl_visit_user_id": 348,
+    "edl_visit_observation": "Sem foco encontrado no local.",
+    "edl_visit_observation_id": 3,
+    "edl_visit_water_level": 0.5,
+    "edl_visit_lat": -7.123456,
+    "edl_visit_lng": -34.845678,
+    "edl_visit_municipality_id": 5007117,
+    "edl_visit_region_id": 4,
+    "edl_visit_state_id": 24,
+    "edl_visit_country_id": 1,
+    "edl_visit_date": "2025-02-11",
+    "edl_visit_observation_name": "Sem foco",
+    "edl_visit_observation_number": 3,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityblocks" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityblocks</code><span class="api-badge-private">Privado</span></div><h3>Visitas em quarteirões</h3><p>Retorna os dados das ações (visitas de tratamento) realizadas em quarteirões dentro do escopo geográfico da chave. O escopo é definido automaticamente pelo plano vinculado à chave — municipal, regional, estadual ou país — não sendo necessário informar município, estado ou país na requisição.</p><h4>Parâmetros</h4><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo geográfico das ações retornadas.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/getmunicipalityblocks</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "block_id": 4521,
+    "block_actions_mean": 3.4,
+    "block_coordinates": "[[-7.123, -34.845], [-7.124, -34.846]]",
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS",
+    "action_land_total_total": 21,
+    "action_land_residence_total": 10,
+    "action_land_commercial_total": 5,
+    "action_land_empty_total": 3,
+    "action_land_strategy_total": 1,
+    "action_land_another_total": 2,
+    "action_address_district": "Centro",
+    "action_address_sector": "Setor 04",
+    "action_deposit_a1_quantity": 4,
+    "action_deposit_a2_quantity": 2,
+    "action_deposit_b_quantity": 5,
+    "action_deposit_c_quantity": 1,
+    "action_deposit_d1_quantity": 0,
+    "action_deposit_d2_quantity": 3,
+    "action_deposit_e_quantity": 0,
+    "action_observation": "Foco encontrado em pneus nos fundos do imovel.",
+    "latitude": -7.123456,
+    "longitude": -34.845678
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityovitraps" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityovitraps</code><span class="api-badge-private">Privado</span></div><h3>Ovitrampas cadastradas</h3><p>Retorna os dados das ovitrampas (pontos de monitoramento de ovos) dentro do escopo geográfico da chave. O escopo é definido automaticamente pelo plano vinculado à chave — municipal, regional, estadual ou país — não sendo necessário informar município, estado ou país na requisição.</p><h4>Parâmetros</h4><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo geográfico das ovitrampas retornadas.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/getmunicipalityovitraps</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "ovitrap_id": 4471,
+    "ovitrap_group_id": "97",
+    "ovitrap_datetime": "2025-01-20 14:32:10",
+    "ovitrap_lat": -7.123456,
+    "ovitrap_lng": -34.845678,
+    "ovitrap_lat_lng_error": 0,
+    "ovitrap_municipality_id": 5007117,
+    "group_id": 12,
+    "user_id": 348,
+    "ovitrap_eggs_mean": 12.5,
+    "ovitrap_block_id": 4521,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="get-getmunicipalityplaces" class="api-card"><div class="api-card-head"><span class="api-badge-get">GET</span><code class="api-path">/api/getmunicipalityplaces</code><span class="api-badge-private">Privado</span></div><h3>Imóveis (places)</h3><p>Retorna os imóveis (pontos estratégicos e imóveis especiais) dentro do escopo geográfico da chave. O escopo é definido automaticamente pelo plano vinculado à chave — municipal, regional, estadual ou país — não sendo necessário informar município, estado ou país na requisição.</p><h4>Parâmetros</h4><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo geográfico dos pontos retornados.</td></tr><tr><td><code>page</code></td><td>int</td><td>Página de paginação (padrão 1, máximo 100).</td></tr></tbody></table><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -G -d "key=KEY&page=1" \
+  /pt-br/api/getmunicipalityplaces</code></pre> </div><h4>Exemplo de resposta</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>[
+  {
+    "place_id": 771,
+    "user_id": 348,
+    "place_address_district": "Centro",
+    "place_address_sector": "Setor 04",
+    "place_datetime": "2025-02-05 10:00:00",
+    "place_address_lat": -7.123456,
+    "place_address_lng": -34.845678,
+    "place_municipality_id": 5007117,
+    "place_region_id": 4,
+    "place_state_id": 24,
+    "place_country_id": 1,
+    "place_type_id": 2,
+    "place_name": "Ferro-velho Bom Preço",
+    "place_coordinates": "[[-7.123, -34.845], [-7.124, -34.846]]",
+    "place_subtype": 5,
+    "place_area": 320.5,
+    "municipality": "Vista Alegre",
+    "municipality_code": "5007117",
+    "state_name": "Mato Grosso do Sul",
+    "state_code": "MS"
+  }
+]</code></pre> </div></article><article id="post-postcounting" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postcounting</code><span class="api-badge-private">Privado</span></div><h3>Envio de leitura</h3><p>Envia a leitura de uma ovitrampa. É possível enviar dados para uma ovitrampa já existente ou enviar os dados e instalar uma nova ovitrampa ao mesmo tempo.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo do envio.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postcounting?key=KEY"</code></pre> </div><p>O corpo pode ir como <code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code> — veja <a href="/pt-br/api/#body-format">Como enviar o corpo de um POST</a>.</p><p>Para o envio padrão, onde não é preciso instalar uma nova ovitrampa, envie os seguintes campos (<strong>todos obrigatórios</strong>) no corpo da requisição (<code>form</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "ovitrap_group_id": 97,
+  "ovitrap_lat": -7.000000,
+  "ovitrap_lng": -8.000000,
+  "date": "2025-01-20",
+  "counting_observation_id": 1,
+  "counting_observation": "caso o counting_observation_id seja 9",
+  "counting_eggs": 5
+}</code></pre> </div><p>Tabela com os IDs de cada tipo de observação (<code>counting_observation_id</code>):</p><div class="api-table-wrap"><table class="api-table"><thead><tr><th>ID</th><th>Significado</th></tr></thead><tbody><tr><td>1</td><td>Sem observações</td></tr><tr><td>2</td><td>Intervalo entre instalação e coleta maior que o previsto</td></tr><tr><td>3</td><td>Ovitrampa ou paleta desaparecida</td></tr><tr><td>4</td><td>Ovitrampa ou paleta quebrada</td></tr><tr><td>5</td><td>Ovitrampa ou paleta removida</td></tr><tr><td>6</td><td>Ovitrampa seca</td></tr><tr><td>7</td><td>Casa fechada</td></tr><tr><td>8</td><td>Ovitrampa cheia de água</td></tr><tr><td>9</td><td>Ovitrampa com pouca água</td></tr><tr><td>10</td><td>Outra observação</td></tr></tbody></table></div><p>Para instalar uma nova ovitrampa junto do envio, são <strong>obrigatórios</strong> os campos: <code>ovitrap_lat</code>, <code>ovitrap_lng</code>, <code>ovitrap_group_id</code></p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "ovitrap_group_id": 96,
+  "ovitrap_address_district": "Distrito",
+  "ovitrap_address_street": "Rua",
+  "ovitrap_address_number": "Numero",
+  "ovitrap_address_complement": "Complemento",
+  "ovitrap_address_loc_inst": "",
+  "ovitrap_lat": -7.000000,
+  "ovitrap_lng": -8.000000,
+  "ovitrap_address_sector": "Setor",
+  "ovitrap_responsable": "Responsavel",
+  "ovitrap_block_id": "Quarteirao",
+  "ovitrap_type_id": 1,
+  "date": "2025-01-20",
+  "counting_date_collect": "2025-01-27",
+  "counting_observation_id": 1,
+  "counting_observation": "caso o counting_observation_id seja 9",
+  "counting_eggs": 5
+}</code></pre> </div><p>Tabela com os IDs de cada tipo de ovitrampa (<code>ovitrap_type_id</code>): envie 1 para ovitrampa urbana e 2 para ovitrampa rural. O campo é opcional e, quando não enviado, a ovitrampa é instalada como urbana:</p><div class="api-table-wrap"><table class="api-table"><thead><tr><th>ID</th><th>Significado</th></tr></thead><tbody><tr><td>1</td><td>Ovitrampa urbana (padrão)</td></tr><tr><td>2</td><td>Ovitrampa rural</td></tr></tbody></table></div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando algum dos campos obrigatórios não é enviado: <code>ovitrap_lat</code>, <code>ovitrap_lng</code>, <code>ovitrap_group_id</code>, <code>date</code></li><li><code>400</code> — quando a coordenada está fora da faixa geográfica: <code>ovitrap_lat</code> precisa estar entre -90 e 90, e <code>ovitrap_lng</code> entre -180 e 180. O erro mais comum é o ponto decimal se perder na formatação do número — enviar <code>-23374059</code> no lugar de <code>-23.374059</code>. A resposta traz os valores recebidos em <code>ovitrap_lat</code> e <code>ovitrap_lng</code>.</li><li><code>400</code> — quando o <code>ovitrap_type_id</code> enviado não é 1 nem 2.</li><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li><li><code>404</code> — já existe uma contagem para essa ovitrampa, ano e semana.</li></ul></div></article><article id="post-postdeletecounting" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeletecounting</code><span class="api-badge-private">Privado</span></div><h3>Deletar leitura</h3><p>Remove a leitura de uma ovitrampa.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API. Define o escopo da remoção.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeletecounting?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "ovitrap_group_id": 97,
+  "date": "2025-01-20"
+}</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando <code>date</code> não é enviado.</li><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li></ul></div></article><article id="post-postdeleteovitrap" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteovitrap</code><span class="api-badge-private">Privado</span></div><h3>Deletar ovitrampa</h3><p>Remove uma ovitrampa.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteovitrap?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "ovitrap_group_id": 97
+}</code></pre> </div></article><article id="post-postaction" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postaction</code><span class="api-badge-private">Privado</span></div><h3>Inserir visita</h3><div class="api-note"><strong>Mudança de unidade em 23/09/2026:</strong> os campos <code>action_deposit_&lt;grupo&gt;_larvicid</code> passaram a ser em GRAMA, como pede a diretriz nacional. Antes eram miligrama. Se o seu sistema envia miligrama, divida por 1.000 antes de enviar — caso contrário a quantidade chega 1.000 vezes maior. O campo aceita decimais (0,5 g vai como <code>0.5</code>).</div><p>Registra uma visita/ação em um quarteirão. Para adicionar a visita a um quarteirão já existente, envie o campo <code>block_id</code>. Caso ele não exista, use <code>block_group_id</code> — o sistema criará o quarteirão automaticamente. Este endpoint só permite a inserção de quarteirões que estejam dentro do município do solicitante.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postaction?key=KEY"</code></pre> </div><p>Dados enviados em <code>form-data</code>, <code>x-www-form-urlencoded</code>, <code>JSON</code> ou query parameters, usando <code>block_id</code>:</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "block_id": 97,
+  "date": "2025-01-20",
+  "block_land_residence": 10,
+  "action_land_residence_out": 2,
+  "action_land_residence_breedings": 1,
+  "action_land_residence_treated": 1,
+
+  "block_land_commercial": 5,
+  "action_land_commercial_out": 0,
+  "action_land_commercial_breedings": 0,
+  "action_land_commercial_treated": 0,
+
+  "block_land_empty": 3,
+  "action_land_empty_out": 1,
+  "action_land_empty_breedings": 2,
+  "action_land_empty_treated": 1,
+
+  "block_land_strategy": 1,
+  "action_land_strategy_out": 0,
+  "action_land_strategy_breedings": 0,
+  "action_land_strategy_treated": 0,
+
+  "block_land_special": 0,
+  "action_land_special_out": 0,
+  "action_land_special_breedings": 0,
+  "action_land_special_treated": 0,
+
+  "block_land_another": 2,
+  "action_land_another_out": 0,
+  "action_land_another_breedings": 0,
+  "action_land_another_treated": 0,
+
+  "action_deposit_a1_quantity": 4,
+  "action_deposit_a1_eliminated": 2,
+  "action_deposit_a1_treated": 1,
+  "action_deposit_a1_larvicid": 10,
+
+  "action_deposit_a2_quantity": 2,
+  "action_deposit_a2_eliminated": 1,
+  "action_deposit_a2_treated": 0,
+  "action_deposit_a2_larvicid": 0,
+
+  "action_deposit_b_quantity": 5,
+  "action_deposit_b_eliminated": 5,
+  "action_deposit_b_treated": 0,
+  "action_deposit_b_larvicid": 0,
+
+  "action_deposit_c_quantity": 1,
+  "action_deposit_c_eliminated": 0,
+  "action_deposit_c_treated": 1,
+  "action_deposit_c_larvicid": 5,
+
+  "action_deposit_d1_quantity": 0,
+  "action_deposit_d1_eliminated": 0,
+  "action_deposit_d1_treated": 0,
+  "action_deposit_d1_larvicid": 0,
+
+  "action_deposit_d2_quantity": 3,
+  "action_deposit_d2_eliminated": 1,
+  "action_deposit_d2_treated": 2,
+  "action_deposit_d2_larvicid": 1.5,
+
+  "action_deposit_e_quantity": 0,
+  "action_deposit_e_eliminated": 0,
+  "action_deposit_e_treated": 0,
+  "action_deposit_e_larvicid": 0,
+
+  "action_observation": "Visita realizada conforme cronograma. Foco encontrado em pneus nos fundos do imovel."
+}</code></pre> </div><p>Optando por <code>block_group_id</code> (quarteirão ainda não cadastrado), envie também os dados do próprio quarteirão:</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "block_group_id": 97,
+  "date": "2025-01-20",
+  "block_address_district": "Centro Historico",
+  "block_address_sector": "Setor 04 - Norte",
+  "block_coordinates": "[[-7.123, -34.845], [-7.124, -34.846]]",
+  "block_lat": -7.123456,
+  "block_lng": -34.845678,
+  "block_responsable": "Joao da Silva",
+
+  "block_land_residence": 10,
+  "action_land_residence_out": 2,
+  "action_land_residence_breedings": 1,
+  "action_land_residence_treated": 1,
+
+  "block_land_commercial": 5,
+  "action_land_commercial_out": 0,
+  "action_land_commercial_breedings": 0,
+  "action_land_commercial_treated": 0,
+
+  "block_land_empty": 3,
+  "action_land_empty_out": 1,
+  "action_land_empty_breedings": 2,
+  "action_land_empty_treated": 1,
+
+  "block_land_strategy": 1,
+  "action_land_strategy_out": 0,
+  "action_land_strategy_breedings": 0,
+  "action_land_strategy_treated": 0,
+
+  "block_land_special": 0,
+  "action_land_special_out": 0,
+  "action_land_special_breedings": 0,
+  "action_land_special_treated": 0,
+
+  "block_land_another": 2,
+  "action_land_another_out": 0,
+  "action_land_another_breedings": 0,
+  "action_land_another_treated": 0,
+
+  "action_deposit_a1_quantity": 4,
+  "action_deposit_a1_eliminated": 2,
+  "action_deposit_a1_treated": 1,
+  "action_deposit_a1_larvicid": 10,
+
+  "action_deposit_a2_quantity": 2,
+  "action_deposit_a2_eliminated": 1,
+  "action_deposit_a2_treated": 0,
+  "action_deposit_a2_larvicid": 0,
+
+  "action_deposit_b_quantity": 5,
+  "action_deposit_b_eliminated": 5,
+  "action_deposit_b_treated": 0,
+  "action_deposit_b_larvicid": 0,
+
+  "action_deposit_c_quantity": 1,
+  "action_deposit_c_eliminated": 0,
+  "action_deposit_c_treated": 1,
+  "action_deposit_c_larvicid": 5,
+
+  "action_deposit_d1_quantity": 0,
+  "action_deposit_d1_eliminated": 0,
+  "action_deposit_d1_treated": 0,
+  "action_deposit_d1_larvicid": 0,
+
+  "action_deposit_d2_quantity": 3,
+  "action_deposit_d2_eliminated": 1,
+  "action_deposit_d2_treated": 2,
+  "action_deposit_d2_larvicid": 1.5,
+
+  "action_deposit_e_quantity": 0,
+  "action_deposit_e_eliminated": 0,
+  "action_deposit_e_treated": 0,
+  "action_deposit_e_larvicid": 0,
+
+  "action_observation": "Area com alta densidade de recipientes descartaveis."
+}</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando <code>date</code> não é enviado ou quando um dos campos numéricos não é um número válido.</li><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li><li><code>400</code> — quando <code>block_group_id</code> não é enviado ao criar um novo quarteirão.</li><li><code>400</code> — quando a coordenada está fora da faixa geográfica: <code>block_lat</code> precisa estar entre -90 e 90, e <code>block_lng</code> entre -180 e 180. O erro mais comum é o ponto decimal se perder na formatação do número — enviar <code>-23374059</code> no lugar de <code>-23.374059</code>.</li><li><code>400</code> — quando <code>block_coordinates</code> passa de 2000 caracteres. Antes o desenho era gravado pela metade, em silêncio, e o quarteirão abria sem mapa; agora a requisição é recusada e a resposta traz o tamanho enviado em <code>block_coordinates_length</code>.</li><li><code>403</code> — quando o <code>block_id</code> informado não pertence ao município da chave.</li><li><code>409</code> — quando já existe uma visita para esse quarteirão, ano e semana.</li></ul></div></article><article id="post-postdeleteaction" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteaction</code><span class="api-badge-private">Privado</span></div><h3>Deletar visita</h3><p>Remove uma visita de um quarteirão.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteaction?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "block_group_id": 97,
+  "date": "2025-01-20"
+}</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — quando <code>date</code> não é enviado.</li><li><code>400</code> — quando alguma das datas enviadas não está no formato <code>YYYY-MM-DD</code>. A resposta traz a lista dos campos inválidos em <code>invalid_fields</code>.</li></ul></div></article><article id="post-postdeleteblock" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteblock</code><span class="api-badge-private">Privado</span></div><h3>Deletar quarteirão</h3><p>Remove um quarteirão.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteblock?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "block_group_id": 97
+}</code></pre> </div></article><article id="post-postedl" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postedl</code><span class="api-badge-private">Privado</span></div><h3>Inserir EDL</h3><p>Cadastra um EDL (ponto estratégico de vigilância) no município da sua chave. Reenviar o mesmo edl_group_id devolve o EDL já existente em vez de duplicar, então é seguro repetir um lote.</p><p>O município é sempre o da sua chave — não é possível enviá-lo no corpo.</p><p>Obrigatórios: edl_group_id, edl_date (AAAA-MM-DD), edl_lat e edl_lng. Os demais campos são opcionais. Devolve o edl_id.</p><p>Se você usa Postman ou Insomnia, não defina o cabeçalho Content-Type à mão: a ferramenta precisa gerá-lo sozinha. Um Content-Type que não corresponde ao corpo faz os campos chegarem vazios.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postedl?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "edl_group_id": "EDL-014",
+  "edl_date": "2026-09-01",
+  "edl_lat": -23.5505,
+  "edl_lng": -46.6333,
+  "edl_address_district": "Centro",
+  "edl_address_street": "Rua das Palmeiras",
+  "edl_address_number": "128",
+  "edl_address_complement": "Fundos",
+  "edl_address_loc_inst": "Borracharia do Zé",
+  "edl_address_sector": "03",
+  "edl_responsable_agent": "M. Souza",
+  "edl_responsable_home": "J. Pereira",
+  "edl_block_group_id": "Q-22"
+}</code></pre> </div></article><article id="post-postdeleteedl" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteedl</code><span class="api-badge-private">Privado</span></div><h3>Deletar EDL</h3><p>Remove um EDL do município da sua chave, pelo mesmo código que você usou para cadastrá-lo.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteedl?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "edl_group_id": "EDL-014"
+}</code></pre> </div></article><article id="post-postedlmaintenance" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postedlmaintenance</code><span class="api-badge-private">Privado</span></div><h3>Inserir manutenção de EDL</h3><p>Registra uma manutenção em um EDL. Um EDL aceita no máximo uma manutenção por data.</p><p>O município é sempre o da sua chave — não é possível enviá-lo no corpo.</p><p>Obrigatórios: edl_group_id e date (AAAA-MM-DD). A data não pode cair em semana epidemiológica futura. Repetir a mesma EDL e data devolve 409.</p><p>Os nomes antigos edl_visit_observation, edl_visit_observation_id e edl_visit_water_level continuam aceitos.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postedlmaintenance?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "edl_group_id": "EDL-014",
+  "date": "2026-09-01",
+  "edl_maintenance_observation": "Sem larvas, recipiente lavado",
+  "edl_maintenance_observation_id": 1,
+  "edl_maintenance_water_level": 2
+}</code></pre> </div></article><article id="post-postdeleteedlmaintenance" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteedlmaintenance</code><span class="api-badge-private">Privado</span></div><h3>Deletar manutenção de EDL</h3><p>Remove uma manutenção. Ela é identificada pelo EDL mais a data, que juntos são únicos — você não precisa guardar nenhum id interno.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteedlmaintenance?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "edl_group_id": "EDL-014",
+  "date": "2026-09-01"
+}</code></pre> </div></article><article id="post-postplace" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postplace</code><span class="api-badge-private">Privado</span></div><h3>Inserir imóvel</h3><p>Cadastra um imóvel (Ponto Estratégico ou Imóvel Especial) no município da sua chave.</p><p>O município é sempre o da sua chave — não é possível enviá-lo no corpo.</p><p>Região, estado e país saem do município da chave e não são aceitos no corpo: as quatro chaves geográficas precisam concordar entre si.</p><p>Obrigatórios: place_name, place_type_id, place_subtype, place_lat e place_lng. Devolve o place_id.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postplace?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "place_name": "Ferro-velho São Jorge",
+  "place_type_id": 1,
+  "place_subtype": 3,
+  "place_lat": -23.5505,
+  "place_lng": -46.6333,
+  "place_address_district": "Vila Nova",
+  "place_address_sector": "07",
+  "place_area": 350
+}</code></pre> </div></article><article id="post-postdeleteplace" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/postdeleteplace</code><span class="api-badge-private">Privado</span></div><h3>Deletar imóvel</h3><p>Remove um imóvel do município da sua chave.</p><p>Este é o único endpoint que pede um id interno: a tabela de imóveis não tem um código definido por você, ao contrário de ovitrampa, quarteirão e EDL. O place_id vem de /api/getmunicipalityplaces.</p><h4>Parâmetros</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>key</code></td><td>string</td><td>Sua chave de API.</td></tr></tbody></table></div><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST \
+  "/pt-br/api/postdeleteplace?key=KEY"</code></pre> </div><p>Dados necessários no corpo da requisição (<code>form-data</code>, <code>x-www-form-urlencoded</code> ou <code>JSON</code>):</p><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>{
+  "place_id": 142
+}</code></pre> </div></article><article id="post-edicao" class="api-card"><h3>Editar registros</h3><p>Os endpoints <code>/api/postedit*</code> editam ovitrampas, contagens, quarteirões, visitas, EDLs, manutenções e imóveis que já existem. As regras valem para todos:</p><ul class="api-field-list"><li><strong>Escopo:</strong> só registros do município da sua chave, como nos demais POST. Registro de outro município responde <code>404</code>.</li><li><strong>Edição parcial:</strong> só muda o que você envia. Campo ausente fica como está; campo enviado vazio grava vazio (é assim que se apaga um complemento, por exemplo). Números, datas, coordenadas e códigos não aceitam vazio.</li><li><strong>Tudo ou nada:</strong> se um dos campos for inválido, nenhum é gravado e a resposta <code>400</code> diz qual e por quê.</li><li><strong>Mesmos nomes da criação:</strong> os campos têm os nomes que você já usa em <code>/api/postcounting</code>, <code>/api/postaction</code>, <code>/api/postedlmaintenance</code> e <code>/api/postplace</code>.</li><li><strong>Trocar código ou data:</strong><code>new_ovitrap_group_id</code>, <code>new_block_group_id</code>, <code>new_edl_group_id</code> renomeiam; nas leituras, <code>new_date</code> muda a data e recalcula a semana epidemiológica. Se o novo código ou a nova data já existirem, a resposta é <code>409</code> e nada muda.</li><li><strong>Resposta:</strong><code>200</code> com o registro como ficou. Médias, totais e semanas que dependem do registro são recalculados na mesma chamada.</li></ul></article><article id="post-posteditovitrap" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditovitrap</code><span class="api-badge-private">Privado</span></div><h3>Editar ovitrampa</h3><p>Edita o cadastro de uma ovitrampa.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>ovitrap_group_id</code></td><td>string</td><td>Código da ovitrampa no município.</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>new_ovitrap_group_id</code></li><li><code>ovitrap_address_district</code>, <code>ovitrap_address_street</code>, <code>ovitrap_address_number</code>, <code>ovitrap_address_complement</code>, <code>ovitrap_address_loc_inst</code>, <code>ovitrap_address_sector</code></li><li><code>ovitrap_responsable</code>, <code>ovitrap_block_id</code></li><li><code>ovitrap_type_id</code> — 1 urbana, 2 rural</li><li><code>ovitrap_lat</code>, <code>ovitrap_lng</code></li></ul><ul class="api-field-list"><li><code>atualizar_desde</code> — data <code>YYYY-MM-DD</code>. Copia o endereço e a coordenada novos para as leituras a partir dessa data. Sem ele, as leituras antigas continuam com o endereço de quando foram feitas.</li></ul><p>A resposta traz também <code>countings_updated</code>: quantas leituras receberam o endereço novo.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditovitrap" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"ovitrap_group_id": "97", "ovitrap_address_street": "Rua das Flores", "ovitrap_lat": -23.374059, "ovitrap_lng": -46.617245, "atualizar_desde": "2026-08-01"}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe uma ovitrampa com o <code>new_ovitrap_group_id</code> no município.</li></ul></div></article><article id="post-posteditcounting" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditcounting</code><span class="api-badge-private">Privado</span></div><h3>Editar leitura</h3><p>Edita uma leitura (contagem de ovos) de uma ovitrampa.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>ovitrap_group_id</code></td><td>string</td><td>Código da ovitrampa no município.</td></tr><tr><td><code>date</code></td><td>string</td><td>Data da leitura a editar (YYYY-MM-DD).</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>counting_eggs</code></li><li><code>new_date</code>, <code>counting_date_collect</code></li><li><code>counting_observation</code>, <code>counting_observation_id</code> (0 = sem intercorrência)</li><li>Onde a armadilha estava nesta leitura: <code>counting_address_*</code>, <code>counting_address_lat</code>, <code>counting_address_lng</code></li></ul><p>A média histórica de ovos da ovitrampa é recalculada.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditcounting" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"ovitrap_group_id": "97", "date": "2026-09-01", "counting_eggs": 42}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe uma leitura desta ovitrampa na <code>new_date</code>.</li></ul></div></article><article id="post-posteditblock" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditblock</code><span class="api-badge-private">Privado</span></div><h3>Editar quarteirão</h3><p>Edita o cadastro de um quarteirão.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>block_group_id</code></td><td>string</td><td>Código do quarteirão no município.</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>new_block_group_id</code></li><li><code>block_address_district</code>, <code>block_address_sector</code>, <code>block_responsable</code></li><li><code>block_lat</code>, <code>block_lng</code>, <code>block_coordinates</code></li><li>Imóveis existentes: <code>block_land_residence</code>, <code>block_land_commercial</code>, <code>block_land_empty</code>, <code>block_land_strategy</code>, <code>block_land_another</code> (o total é recalculado)</li></ul><ul class="api-field-list"><li><code>atualizar_desde</code> — data <code>YYYY-MM-DD</code>. Copia o endereço e a coordenada novos para as visitas a partir dessa data. Sem ele, as visitas antigas continuam com o endereço de quando foram feitas.</li></ul><p>A resposta traz também <code>actions_updated</code>.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditblock" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"block_group_id": "12-A", "block_land_residence": 38, "block_address_district": "Centro"}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe um quarteirão com o <code>new_block_group_id</code> no município.</li></ul></div></article><article id="post-posteditaction" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditaction</code><span class="api-badge-private">Privado</span></div><h3>Editar visita</h3><p>Edita uma visita a um quarteirão.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>block_group_id</code></td><td>string</td><td>Código do quarteirão no município.</td></tr><tr><td><code>date</code></td><td>string</td><td>Data da visita a editar (YYYY-MM-DD).</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>new_date</code></li><li>Visitados, como em <code>/api/postaction</code>: <code>block_land_residence</code>, <code>block_land_commercial</code>, <code>block_land_empty</code>, <code>block_land_strategy</code>, <code>block_land_special</code>, <code>block_land_another</code></li><li><code>action_land_&lt;tipo&gt;_out</code>, <code>_breedings</code>, <code>_treated</code></li><li><code>action_deposit_&lt;a1|a2|b|c|d1|d2|e&gt;_quantity</code>, <code>_eliminated</code>, <code>_treated</code>, <code>_larvicid</code> (em grama, com decimais, desde 23/09/2026)</li><li><code>action_observation</code>, <code>action_responsable</code></li></ul><p>Os totais da visita (visitados, pendentes, positivos, tratados e larvicida) e a média do quarteirão são recalculados.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditaction" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"block_group_id": "12-A", "date": "2026-09-01", "block_land_residence": 21, "action_deposit_b_eliminated": 3}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe uma visita a este quarteirão na <code>new_date</code>.</li></ul></div></article><article id="post-posteditedl" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditedl</code><span class="api-badge-private">Privado</span></div><h3>Editar EDL</h3><p>Edita o cadastro de uma EDL.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>edl_group_id</code></td><td>string</td><td>Código da EDL no município.</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>new_edl_group_id</code></li><li><code>edl_address_*</code>, <code>edl_responsable_agent</code>, <code>edl_responsable_home</code>, <code>edl_block_group_id</code></li><li><code>edl_date</code>, <code>edl_lat</code>, <code>edl_lng</code></li></ul><ul class="api-field-list"><li><code>atualizar_desde</code> — data <code>YYYY-MM-DD</code>. Copia o endereço e a coordenada novos para as manutenções a partir dessa data. Sem ele, as manutenções antigas continuam com o endereço de quando foram feitas.</li></ul><p>A resposta traz também <code>maintenances_updated</code>.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditedl" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"edl_group_id": "E-07", "edl_responsable_home": "Maria", "atualizar_desde": "2026-08-01"}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe uma EDL com o <code>new_edl_group_id</code> no município.</li></ul></div></article><article id="post-posteditedlmaintenance" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditedlmaintenance</code><span class="api-badge-private">Privado</span></div><h3>Editar manutenção de EDL</h3><p>Edita uma manutenção de EDL.</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>edl_group_id</code></td><td>string</td><td>Código da EDL no município.</td></tr><tr><td><code>date</code></td><td>string</td><td>Data da manutenção a editar (YYYY-MM-DD).</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>new_date</code></li><li><code>edl_maintenance_water_level</code>, <code>edl_maintenance_observation</code>, <code>edl_maintenance_observation_id</code> (os nomes antigos <code>edl_visit_*</code> também valem)</li></ul><p>O nível médio da água da EDL é recalculado.</p><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditedlmaintenance" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"edl_group_id": "E-07", "date": "2026-09-01", "edl_maintenance_water_level": 3}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>409</code> — já existe uma manutenção desta EDL na <code>new_date</code>.</li></ul></div></article><article id="post-posteditplace" class="api-card"><div class="api-card-head"><span class="api-badge-post">POST</span><code class="api-path">/api/posteditplace</code><span class="api-badge-private">Privado</span></div><h3>Editar imóvel</h3><p>Edita um imóvel (ponto estratégico ou imóvel especial).</p><h4>Identificação do registro</h4><div class="api-table-wrap"><table class="api-table"><thead><tr><th>Nome</th><th>Tipo</th><th>Descrição</th></tr></thead><tbody><tr><td><code>place_id</code></td><td>integer</td><td>Id do imóvel, o mesmo de /api/postdeleteplace.</td></tr></tbody></table></div><h4>Campos editáveis</h4><ul class="api-field-list"><li><code>place_name</code></li><li><code>place_type_id</code>, <code>place_subtype</code> (trocar só o tipo realinha o subtipo)</li><li><code>place_address_district</code>, <code>place_address_sector</code></li><li><code>place_lat</code>, <code>place_lng</code>, <code>place_coordinates</code>, <code>place_area</code></li></ul><h4>Exemplo de requisição</h4><div class="api-code"><button class="api-copy" type="button">Copiar</button> <pre><code>curl -X POST "/pt-br/api/posteditplace" \
+  -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"place_id": 142, "place_name": "Borracharia Central", "place_area": 350}'</code></pre> </div><div class="api-note"><strong>Respostas específicas:</strong><ul><li><code>400</code> — algum campo tem valor inválido: nada é alterado, e a resposta lista os campos em <code>invalid_fields</code> e o motivo de cada um em <code>details</code>.</li><li><code>400</code> — nenhum campo editável foi enviado.</li><li><code>404</code> — o registro não existe no município da sua chave.</li><li><code>403</code> — o imóvel é de outro município.</li></ul></div></article></main></div> <footer><div class="clever-core-ads"></div><div id="ezoic-pub-ad-placeholder-101"><div class="google-footer-horizontal" style="margin: auto;"></div></div></footer>  <style> .site-footer { border-top: 1px solid var(--border); margin-top: 30px; padding: 28px 15px 10px; color: var(--text); } .site-footer-cols { max-width: 1140px; margin: auto; display: grid; /* minmax(0,...) e não auto: trilha `auto` respeita a largura mínima do conteúdo e estoura o container em telas estreitas. */ grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 28px; text-align: left; } .site-footer-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 10px; } .site-footer p { margin: 0 0 8px; color: var(--text); } .site-footer-link { display: flex; align-items: center; min-height: 44px; color: var(--link); text-decoration: none; } .site-footer-link:hover { text-decoration: underline; } .site-footer-partners { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; } /* Os logos dos parceiros são PNG/JPEG com fundo branco. Sobre o fundo escuro eles viram dois retângulos brancos, então ganham um quadro claro próprio nos dois modos - inverter com filter() distorceria a marca de terceiro, o que não se faz. */ .site-footer-partner { background: #fff; border-radius: 6px; padding: 6px; display: inline-flex; } .site-footer-partner img { object-fit: contain; width: 88px; height: 88px; display: block; } .site-footer-legal { max-width: 1140px; margin: 24px auto 0; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--text-muted); } </style> <footer class="site-footer"><div class="site-footer-cols"><div><p class="site-footer-title">Contato</p><p class="longword">Para dúvidas ou requisição de melhorias, pedimos para entrar em contato pelo email abaixo:</p><p><a class="site-footer-link" href="mailto:contaovosdengue@gmail.com">contaovosdengue@gmail.com</a></p></div><div><p class="site-footer-title">Navegue</p><a class="site-footer-link" href="/pt-br/">Início</a><a class="site-footer-link" href="/pt-br/heat-map-open">Mapa de calor</a><a class="site-footer-link" href="/pt-br/infograph">Infográficos</a><a class="site-footer-link" href="/pt-br/download/">Baixar dados</a><a class="site-footer-link" href="/pt-br/docs">Documentação</a><a class="site-footer-link" href="/pt-br/api/">API</a><a class="site-footer-link" href="/pt-br/links">Links importantes</a></div><div><p class="site-footer-title">Sobre</p>  <a class="site-footer-link" href="/pt-br/status">Status do sistema</a><a class="site-footer-link" href="/pt-br/terms">Termos de Uso e Privacidade</a><a class="site-footer-link" href="/pt-br/reference">Referências</a></div><div><p class="site-footer-title">Parceiros</p><div class="site-footer-partners"><a class="site-footer-partner" href="https://mosqlimate.org/" rel="noopener" target="_blank" title="Mosqlimate"><img src="https://cdn.contaovos.com/images/uploads/9019-mosq-1777840448.png" alt="Mosqlimate" loading="lazy"/></a><a class="site-footer-partner" href="https://portal.fiocruz.br/" rel="noopener" target="_blank" title="Fiocruz"><img src="https://cdn.contaovos.com/images/uploads/9019-fiocruz-1777840494.jpeg" alt="Fiocruz" loading="lazy"/></a></div> <script>window.__epidbotBadge = { lang: "pt", theme: "light" };</script> <script src="https://epidbot.kwar-ai.com.br/badge.js" async></script> </div></div><div class="site-footer-legal">  &copy; 2026 Conta ovos. Todos os direitos reservados. </div></footer><script id="footer_selectors" src="/js/footer.min.js?1097" defer></script><script async src="https://www.googletagmanager.com/gtag/js?id=G-69HK7KJ7CJ"></script><script>
+ window.dataLayer = window.dataLayer || [];
+ function gtag(){dataLayer.push(arguments);}
+ gtag('js', new Date());
+
+ gtag('config', 'G-69HK7KJ7CJ');
+</script> <script>
+ document.addEventListener('click', function (event) {
+ var button = event.target.closest('.api-copy');
+ if (!button) {
+ return;
+ }
+ var codeEl = button.parentElement.querySelector('code');
+ if (!codeEl || !navigator.clipboard) {
+ return;
+ }
+ navigator.clipboard.writeText(codeEl.innerText).then(function () {
+ var original = button.textContent;
+ button.textContent = 'Copiado!';
+ setTimeout(function () {
+ button.textContent = original;
+ }, 1500);
+ });
+ });
+</script></body></html>

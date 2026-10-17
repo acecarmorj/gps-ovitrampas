@@ -209,8 +209,12 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map(), a
   const ehCicloAnteriorOuLegado = !anoCiclo || anoCiclo === CICLO_ID_ANTERIOR || anoCiclo === CICLO_ID_TODOS;
 
   if (ovosA === null && bruta && ehCicloAnteriorOuLegado) {
+    // 0. Campo auditado explícito da Semana 1 (Ciclo A)
+    if (armadilha.ovosSem1 !== undefined && armadilha.ovosSem1 !== null) {
+      ovosA = Number(armadilha.ovosSem1);
+    }
     // 1. Checa histórico de palhetas
-    if (Array.isArray(armadilha.historicoPalhetas)) {
+    if (ovosA === null && Array.isArray(armadilha.historicoPalhetas)) {
       const itemA = armadilha.historicoPalhetas.find((h) => {
         const palhAnt = (h.palhetaAnterior || '').toUpperCase();
         return palhAnt.endsWith('A') || palhAnt.includes('A');
@@ -232,6 +236,11 @@ export function resolverLeiturasArmadilha(armadilha, mapaLeituras = new Map(), a
   // Palheta B: busca da leitura do Ciclo B
   let leituraB = maisRecente(agrupado.leiturasB);
   let ovosB = leituraB != null ? Number(leituraB.ovos ?? leituraB.qtdOvos ?? 0) : null;
+
+  // 0. Campo auditado explícito da Semana 2 (Ciclo B)
+  if (ovosB === null && bruta && ehCicloAnteriorOuLegado && armadilha.ovosSem2 !== undefined && armadilha.ovosSem2 !== null) {
+    ovosB = Number(armadilha.ovosSem2);
+  }
 
   // Se a armadilha está atualmente com palheta B e foi analisada no laboratório (apenas no ciclo anterior)
   if (ovosB === null && bruta && ehCicloAnteriorOuLegado && (armadilha.palheta || '').toUpperCase().endsWith('B')) {

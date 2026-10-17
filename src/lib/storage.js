@@ -269,7 +269,7 @@ export function compressImage(file, maxDimension = 1200, quality = 0.8) {
 // GESTÃO DE ARMADILHAS E PERSISTÊNCIA INQUEBRÁVEL
 // ---------------------------------------------------------------------------
 
-export const VERSAO_AUDITORIA_CADASTRO = '2026-10-16_AUDITORIA_OFICIAL_56_V3';
+export const VERSAO_AUDITORIA_CADASTRO = '2026-10-17_AUDITORIA_OFICIAL_56_2SEMANAS_V4';
 const VERSAO_AUDITORIA_KEY = 'gps_ovitrampas_auditoria_cadastral_ver';
 
 // Mapa das 56 armadilhas oficiais auditadas de Carmo-RJ (15/10/2026)
@@ -309,7 +309,10 @@ export function reconciliarArmadilhaComBaseOficial(trap) {
   const lat = Number.isFinite(Number(baseOficial.latitude)) && Number(baseOficial.latitude) !== 0 ? Number(baseOficial.latitude) : Number(trap.latitude);
   const lng = Number.isFinite(Number(baseOficial.longitude)) && Number(baseOficial.longitude) !== 0 ? Number(baseOficial.longitude) : Number(trap.longitude);
 
-  const ultOvos = trap.ultimosOvos !== undefined ? trap.ultimosOvos : (trap.ultimos_ovos !== undefined ? trap.ultimos_ovos : baseOficial.ultimos_ovos);
+  const ovosSem1 = baseOficial.ovosSem1 !== undefined ? Number(baseOficial.ovosSem1) : Number(trap.ovosSem1 ?? 0);
+  const ovosSem2 = baseOficial.ovosSem2 !== undefined ? Number(baseOficial.ovosSem2) : Number(trap.ovosSem2 ?? 0);
+  const ovosTotal = baseOficial.ovosTotal !== undefined ? Number(baseOficial.ovosTotal) : (ovosSem1 + ovosSem2);
+  const ultOvos = baseOficial.ovosTotal !== undefined ? Number(baseOficial.ovosTotal) : (trap.ultimosOvos !== undefined ? trap.ultimosOvos : (trap.ultimos_ovos !== undefined ? trap.ultimos_ovos : baseOficial.ultimos_ovos));
   const ultPalheta = trap.ultimaPalheta || trap.ultima_palheta || baseOficial.ultima_palheta || trap.palheta;
   const ultLeitura = trap.ultimaLeituraEm || trap.ultima_leitura_em || baseOficial.ultima_leitura_em || null;
 
@@ -329,6 +332,9 @@ export function reconciliarArmadilhaComBaseOficial(trap) {
     latitude: lat,
     longitude: lng,
     status: trap.status || baseOficial.status || 'instalada',
+    ovosSem1,
+    ovosSem2,
+    ovosTotal,
     ultimosOvos: ultOvos,
     ultimos_ovos: ultOvos,
     ultimaPalheta: ultPalheta,

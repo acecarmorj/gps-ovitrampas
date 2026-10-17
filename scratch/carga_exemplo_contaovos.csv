@@ -1,0 +1,57 @@
+﻿ovitrap_group_id;ovitrap_address_district;ovitrap_address_street;ovitrap_address_number;ovitrap_address_complement;ovitrap_address_loc_inst;ovitrap_lat;ovitrap_lng;ovitrap_address_sector;ovitrap_responsable;ovitrap_block_id;ovitrap_type_id;date;counting_date_collect;counting_observation_id;counting_observation;counting_eggs
+"01";"Jardim Centenário";"Rua Celso Carrilho Faria";"S/N";"";"Quintal / Área Externa";-21.927607;-42.611352;"Jardim Centenário";"Maria de Fátima";"Q-05";1;"2026-09-21";"2026-09-25";1;"";0
+"02";"Jardim Centenário";"Rua Padre Angelo Peloso";"S/N";"";"Quintal / Área Externa";-21.924141;-42.611822;"Jardim Centenário";"Glória";"Q-16";1;"2026-09-21";"2026-09-25";1;"";0
+"03";"Jardim Centenário";"Rua Carolina França";"S/N";"";"Quintal / Área Externa";-21.925551;-42.609530;"Jardim Centenário";"Sany Soares";"Q-09";1;"2026-09-21";"2026-09-25";1;"";5
+"04";"Jardim Centenário";"Rua Alceu Mattos";"S/N";"";"Quintal / Área Externa";-21.929579;-42.609055;"Jardim Centenário";"PA";"Q-1/1";1;"2026-09-21";"2026-09-25";1;"";16
+"05";"Jardim Centenário";"Rua Ernesto Wermelinger";"S/N";"";"Quintal / Área Externa";-21.928324;-42.605712;"Jardim Centenário";"Manoel Ezidio";"Q-17";1;"2026-09-21";"2026-09-25";1;"";6
+"06";"Centro";"Rua Raul Fernandes Mesquita Soares";"S/N";"";"Quintal / Área Externa";-21.931664;-42.606629;"Centro";"Cleyde";"Q-23";1;"2026-09-21";"2026-09-25";1;"";0
+"07";"Boa Ideia";"Rua Jair Nunes Macuco";"S/N";"";"Quintal / Área Externa";-21.936687;-42.602754;"Boa Ideia";"Lidiane";"Q-09/1";1;"2026-09-21";"2026-09-25";1;"";10
+"08";"Boa Ideia";"Rua Nossa Senhora do Carmo";"S/N";"";"Quintal / Área Externa";-21.940000;-42.603589;"Boa Ideia";"ESF Botafogo";"Q-09";1;"2026-09-21";"2026-09-25";1;"";64
+"09";"Centro";"Rua José Murad Ferreira";"S/N";"";"Quintal / Área Externa";-21.926659;-42.603091;"Centro";"Marli";"Q-23";1;"2026-09-21";"2026-09-25";1;"";15
+"10";"Centro";"Rua Oscar de Souza Curty";"S/N";"";"Quintal / Área Externa";-21.932765;-42.611109;"Centro";"Clea Suely";"Q-13";1;"2026-09-21";"2026-09-25";1;"";41
+"11";"Centro";"Rua José Pinto Pinheiro";"S/N";"";"Quintal / Área Externa";-21.935609;-42.609951;"Centro";"Asilo São Vicente";"Q-01";1;"2026-09-21";"2026-09-25";1;"";24
+"12";"Centro";"Ladeira João Alfredo";"S/N";"";"Quintal / Área Externa";-21.933594;-42.607750;"Centro";"José Carlos enfermeiro";"Q-17";1;"2026-09-21";"2026-09-25";1;"";64
+"13";"Caixa d'Água";"Rua José Marciano de Carvalho";"S/N";"";"Quintal / Área Externa";-21.933422;-42.604328;"Caixa d'Água";"Lucia Glória";"Q-16";1;"2026-09-21";"2026-09-25";1;"";48
+"14";"Boa Ideia";"Rua Paraisópolis";"S/N";"";"Quintal / Área Externa";-21.939216;-42.600281;"Boa Ideia";"Chico Cesario";"Q-15";1;"2026-09-21";"2026-09-25";1;"";0
+"15";"Boa Ideia";"Rua Mário Gomes";"S/N";"";"Quintal / Área Externa";-21.943089;-42.603506;"Boa Ideia";"Maria das Dores Meneguiti";"Q-15";1;"2026-09-21";"2026-09-25";1;"";78
+"16";"Caixa d'Água";"Rua Soares Brandão";"S/N";"";"Quintal / Área Externa";-21.937232;-42.605615;"Caixa d'Água";"Selma Araújo";"Q-10";1;"2026-09-21";"2026-09-25";1;"";0
+"17";"Boa Ideia";"Rua Izauna Maia de Souza";"S/N";"";"Quintal / Área Externa";-21.941653;-42.600722;"Boa Ideia";"Gilmar Lutero";"Q-04";1;"2026-09-21";"2026-09-25";1;"";0
+"18";"Progresso";"Rua Benjamim Avelino Lopes";"S/N";"";"Quintal / Área Externa";-21.933335;-42.612994;"Progresso";"Cirillo";"Q-02";1;"2026-09-22";"2026-09-25";1;"";0
+"19";"Progresso";"Rua Papa João Paulo Segundo";"S/N";"";"Quintal / Área Externa";-21.931748;-42.613348;"Progresso";"Clube";"Q-04";1;"2026-09-22";"2026-09-25";1;"";0
+"20";"Progresso";"Rua João Ferraz de Carvalho";"S/N";"";"Quintal / Área Externa";-21.928492;-42.614139;"Progresso";"Roseli Ribeiro";"Q-09";1;"2026-09-22";"2026-09-25";1;"";0
+"21";"Progresso";"Rua Silvio Geraldo França";"S/N";"";"Quintal / Área Externa";-21.926224;-42.614998;"Progresso";"Paula Miranda";"Q-09";1;"2026-09-21";"2026-09-25";1;"";100
+"22";"Caixa d'Água";"Rua Rui Mesquita Soares";"S/N";"";"Quintal / Área Externa";-21.939086;-42.607819;"Caixa d'Água";"Fátima regina";"Q-06";1;"2026-09-21";"2026-09-25";1;"";0
+"23";"Progresso";"Rua Manoel José de Moraes";"S/N";"";"Quintal / Área Externa";-21.927939;-42.616602;"Progresso";"Pousada Valle do sol";"Q-08";1;"2026-09-21";"2026-09-25";1;"";147
+"24";"Progresso";"Rua José Cassane";"S/N";"";"Quintal / Área Externa";-21.925944;-42.616052;"Progresso";"Marienio oliveira";"Q-11";1;"2026-09-21";"2026-09-25";1;"";0
+"25";"Progresso";"RJ-148";"S/N";"";"Quintal / Área Externa";-21.920851;-42.616208;"Progresso";"Edson Levindo";"Q-12";1;"2026-09-21";"2026-09-25";1;"";0
+"26";"Morro do Estado";"Rua Adalberto Pires da Silva";"S/N";"";"Quintal / Área Externa";-21.943037;-42.606856;"Morro do Estado";"Maxwell Neves";"Q-01";1;"2026-09-21";"2026-09-25";1;"";5
+"27";"Caixa d'Água";"Rua Maria Enelina Cunha Rabello";"S/N";"";"Quintal / Área Externa";-21.939666;-42.606464;"Caixa d'Água";"Pretinho";"Q-03";1;"2026-09-21";"2026-09-25";1;"";0
+"28";"Morro do Estado";"Rua Adalberto Pires da Silva";"S/N";"";"Quintal / Área Externa";-21.942353;-42.608840;"Morro do Estado";"Vicente";"Q-04";1;"2026-09-21";"2026-09-25";1;"";86
+"29";"Val Paraíso";"Rua Manoel Gomes de Araújo";"S/N";"";"Quintal / Área Externa";-21.942120;-42.611747;"Val Paraíso";"ESF Val paraíso";"Q-05";1;"2026-09-21";"2026-09-25";1;"";0
+"30";"Morro do Estado";"Avenida Edgar Gismonti";"S/N";"";"Quintal / Área Externa";-21.943464;-42.610061;"Morro do Estado";"Janine";"Q-02";1;"2026-09-21";"2026-09-25";1;"";21
+"31";"Val Paraíso";"Rua Roberto Simões de Araujo";"S/N";"";"Quintal / Área Externa";-21.942712;-42.612502;"Val Paraíso";"Rosimeri";"Q-05";1;"2026-09-21";"2026-09-25";1;"";51
+"32";"Val Paraíso";"Rua Manoel Gomes de Araújo";"S/N";"";"Quintal / Área Externa";-21.941375;-42.614384;"Val Paraíso";"Regina Azevedo";"Q-01";1;"2026-09-21";"2026-09-25";1;"";0
+"33";"Val Paraíso";"Rua Joaquim Simões de Araujo";"S/N";"";"Quintal / Área Externa";-21.939911;-42.612044;"Val Paraíso";"Fernando Sassa";"Q-05";1;"2026-09-21";"2026-09-25";1;"";22
+"34";"Morro do Estado";"Avenida Edgar Gismonti";"S/N";"";"Quintal / Área Externa";-21.939397;-42.609925;"Morro do Estado";"Delvania";"Q-11";1;"2026-09-21";"2026-09-25";1;"";0
+"35";"Caixa d'Água";"Rua Sen Dantas";"269";"";"Quintal / Área Externa";-21.935099;-42.606263;"Caixa d'Água";"Almir Lemgruber";"Q-13";1;"2026-09-21";"2026-09-25";1;"";4
+"36";"Influência";"Estrada Alem Paraíba Carmo";"S/N";"";"Quintal / Área Externa";-21.875863;-42.666005;"Influência";"Silvana de Oliveira";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";53
+"37";"Influência";"Rua Maria da Silva Margaret";"S/N";"";"Quintal / Área Externa";-21.873704;-42.659738;"Influência";"Aline Reiff";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";2
+"38";"Influência";"Rodovia do Aço";"S/N";"";"Quintal / Área Externa";-21.877052;-42.669429;"Influência";"Independente";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";25
+"39";"Ilha dos Pombos";"Rua D";"S/N";"";"Quintal / Área Externa";-21.841030;-42.573942;"Ilha dos Pombos";"Jorge Alfredo de Onofre";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"40";"Ilha dos Pombos";"Rua D";"S/N";"";"Quintal / Área Externa";-21.841516;-42.576963;"Ilha dos Pombos";"Meira Lúcia Ferreira Pinheiro";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";20
+"41";"Ilha dos Pombos";"Rua I";"S/N";"";"Quintal / Área Externa";-21.840622;-42.580688;"Ilha dos Pombos";"Dayse Regina Lopes";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";40
+"42";"Porto Velho do Cunha";"Rua Djaniro Rodrigues da Silva";"S/N";"";"Quintal / Área Externa";-21.827315;-42.554628;"Porto Velho do Cunha";"Maria das Graças Corrêa Cunha";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"43";"Porto Velho do Cunha";"Praça Nestor de Assis";"S/N";"";"Quintal / Área Externa";-21.825715;-42.551379;"Porto Velho do Cunha";"Carmem Cunha";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"44";"Porto Velho do Cunha";"Rua Antônio Fernandes Soares";"S/N";"";"Quintal / Área Externa";-21.824859;-42.548150;"Porto Velho do Cunha";"ESF Porto Velho";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";2
+"45";"Porto Velho do Cunha";"Rua Major Fajardo";"S/N";"";"Quintal / Área Externa";-21.823824;-42.545432;"Porto Velho do Cunha";"Lindomar Noronha";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";35
+"46";"Porto Velho do Cunha";"Rua Joaquim Lourenço de Carvalho";"S/N";"";"Quintal / Área Externa";-21.825964;-42.548792;"Porto Velho do Cunha";"Olívia";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"47";"Córrego da Prata";"Rua José Rodrigues da Silva";"S/N";"";"Quintal / Área Externa";-21.865650;-42.491734;"Córrego da Prata";"Joselia Correa de Carvalho";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"48";"Córrego da Prata";"Rua José Rodrigues da Silva";"S/N";"";"Quintal / Área Externa";-21.864575;-42.486388;"Córrego da Prata";"ESF Córrego da Prata";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";7
+"49";"Córrego da Prata";"Rua Alfredo Ferreira";"S/N";"";"Quintal / Área Externa";-21.863257;-42.482851;"Córrego da Prata";"Rosilene Souza Ferreira";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";2
+"50";"Influência";"Rua José Ferreira Alves";"S/N";"";"Quintal / Área Externa";-21.871935;-42.653653;"Influência";"Franciane Miguel";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"51";"Influência";"Rua Maria da Silva Margaret";"S/N";"";"Quintal / Área Externa";-21.873349;-42.661693;"Influência";"Léo Jorge";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";3
+"52";"Influência";"Rua José Ferreira Alves";"S/N";"";"Quintal / Área Externa";-21.871811;-42.656528;"Influência";"ESF influência";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"53";"Ilha dos Pombos";"Rua P";"S/N";"";"Quintal / Área Externa";-21.838078;-42.578070;"Ilha dos Pombos";"Colégio Ligth";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";0
+"54";"Barra de São Francisco";"Rua Elisa Lemos Curty";"S/N";"";"Quintal / Área Externa";-21.966077;-42.688625;"Barra de São Francisco";"Sebastião ferreira";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";13
+"55";"Barra de São Francisco";"Rua Elisa Lemos Curty";"S/N";"";"Quintal / Área Externa";-21.971695;-42.692868;"Barra de São Francisco";"Solange";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";5
+"56";"Barra de São Francisco";"Rua Elisa Lemos Curty";"S/N";"";"Quintal / Área Externa";-21.967543;-42.689828;"Barra de São Francisco";"Escola da Barra";"Q-Distrito";1;"2026-09-22";"2026-09-25";1;"";3

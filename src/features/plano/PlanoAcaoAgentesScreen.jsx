@@ -1,380 +1,690 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-  Users, MapPin, Navigation, Calendar, Flame, AlertTriangle,
-  CheckCircle2, Circle, Share2, Download, ExternalLink,
-  ChevronRight, ZoomIn, Eye, Sparkles, ArrowLeft, ShieldAlert,
-  HelpCircle, Check, Info, FileText, ChevronDown, ChevronUp
+  Users, MapPin, Navigation, Calendar, Flame,
+  CheckCircle2, Circle, Share2, Download,
+  ZoomIn, Eye, ArrowLeft, ShieldAlert,
+  FileText, Truck
 } from 'lucide-react';
 
 // DADOS OPERACIONAIS DO PLANO SEMANAL DE BLOQUEIO (56 OVITRAMPAS - CARMO/RJ)
+// Acumulado Oficial das 2 Semanas: Semana A (1.017 ovos) + Semana B (2.665 ovos) = 3.682 ovos
+// Efetivo: 10 ACEs 100% em Campo (Serviço interno possui equipe própria)
+// Frota: 1 Carro 5 Lugares + 1 Caminhonete 2 Lugares = Máx. 7 lugares (Sem mutirão > 7 agentes)
 const EQUIPES_DEFINICAO = [
   {
-    id: 'fixa_influencia',
-    nome: 'Agente Fixa 1 (Influência)',
-    efetivo: '1 ACE (Dedicada)',
-    cor: 'border-purple-300 bg-purple-50 text-purple-900',
-    badge: 'bg-purple-600 text-white',
-    area: '2º Distrito (Influência)',
-    descricao: 'Presença permanente no distrito com maior carga (557 ovos). Monitora OVs 36, 37, 38, 50, 51 e 52; atua em quintais e margens da BR-116. Recebe reforço da Equipe Delta na quarta-feira.'
-  },
-  {
-    id: 'alpha',
-    nome: 'Equipe Alpha (Dupla 1)',
-    efetivo: '2 ACEs',
+    id: 'equipe_1',
+    nome: 'Equipe 1 (Dupla 1 • 2 ACEs)',
+    efetivo: '2 ACEs de Campo',
     cor: 'border-red-300 bg-red-50 text-red-900',
     badge: 'bg-red-600 text-white',
-    area: 'Progresso e Centro',
-    descricao: 'Bloqueio nos dois maiores epicentros urbanos: OV-23 (Pousada Valle do Sol - 342 ovos / Raio 100m) e OV-10 (R. Oscar de Souza Curty - 242 ovos / Raio 100m).'
+    area: 'Seg: Barra (OV-55) • Ter: Val Paraíso (OV-31, OV-34) • Qua: Influência (OV-36, OV-51) • Qui: Porto Velho (OV-45) • Sex: Resgate Sede',
+    descricao: 'Atua nos epicentros distritais e de encosta: OV-55 (125 ovos), OV-31 (192 ovos), OV-36 (222 ovos) e OV-45 (241 ovos) nas 2 semanas.'
   },
   {
-    id: 'beta',
-    nome: 'Equipe Beta (Dupla 2)',
-    efetivo: '2 ACEs',
+    id: 'equipe_2',
+    nome: 'Equipe 2 (Dupla 2 • 2 ACEs)',
+    efetivo: '2 ACEs de Campo',
     cor: 'border-amber-300 bg-amber-50 text-amber-900',
     badge: 'bg-amber-600 text-white',
-    area: 'Jardim Centenário e Boa Ideia',
-    descricao: 'Bloqueio na OV-05 (R. Ernesto Wermelinger - 173 ovos / Raio 100m) e quarteirões vizinhos da Celso Carrilho Faria e Jorge Ramos do Valle.'
+    area: 'Seg: Barra (OV-54, OV-56) • Ter: Jd. Centenário (OV-05) • Qua: Influência BR-116 (OV-38) • Qui: Porto Velho (OV-44) • Sex: Resgate Sede',
+    descricao: 'Cobre Barra de São Francisco (OV-54: 74 e OV-56: 69 ovos), Jardim Centenário (OV-05: 173 ovos), BR-116 em Influência (OV-38: 210 ovos) e ESF Porto Velho (OV-44: 102 ovos).'
   },
   {
-    id: 'gama',
-    nome: 'Equipe Gama (Dupla 3)',
-    efetivo: '2 ACEs',
+    id: 'equipe_3',
+    nome: 'Equipe 3 (Dupla 3 • 2 ACEs)',
+    efetivo: '2 ACEs de Campo',
     cor: 'border-orange-300 bg-orange-50 text-orange-900',
     badge: 'bg-orange-600 text-white',
-    area: 'Val Paraíso, Morro do Estado e Caixa d\'Água',
-    descricao: 'Bloqueio na OV-31 (R. Roberto Simões - 192 ovos / Raio 80m), OV-35 (R. Senador Dantas - 121 ovos / Raio 80m) e encostas críticas.'
+    area: 'Seg: Progresso (OV-23) • Ter: Caixa d\'Água (OV-35, OV-13) • Qua: Usina Light (OV-41, OV-40) • Qui: Prata (OV-48, OV-49) • Sex: Resgate Sede',
+    descricao: 'Lidera o bloqueio no maior foco municipal (OV-23 Pousada Valle do Sol: 342 ovos), Caixa d\'Água (OV-35: 121 e OV-13: 71 ovos), Light (OV-41: 203 e OV-40: 66 ovos) e Prata (OV-48: 121 e OV-49: 62 ovos).'
   },
   {
-    id: 'delta',
-    nome: 'Equipe Delta (Volante Distrital)',
-    efetivo: '3 ACEs (Viatura)',
+    id: 'equipe_4',
+    nome: 'Equipe 4 (Dupla 4 • 2 ACEs)',
+    efetivo: '2 ACEs de Campo',
     cor: 'border-blue-300 bg-blue-50 text-blue-900',
     badge: 'bg-blue-600 text-white',
-    area: 'Porto Velho, Ilha dos Pombos, Barra e Prata',
-    descricao: 'Viatura motorizada para cobrir os distritos distantes: Major Fajardo (343 ovos / Raio 100m), Beira Rio (203 ovos / Raio 100m) e reforço do mutirão em Influência.'
+    area: 'Seg: Centro (OV-10) • Ter: Morro do Estado (OV-28) • Qua: Resgate Progresso/Centenário • Qui: Jd. Centenário (OV-03, OV-04) • Sex: Resgate Distritos',
+    descricao: 'Bloqueio pesado no Centro (OV-10: 242 ovos), Morro do Estado (OV-28: 95 ovos), varredura complementar em Jd. Centenário (OV-03: 53 e OV-04: 53 ovos) e resgate distrital na sexta.'
+  },
+  {
+    id: 'equipe_5',
+    nome: 'Equipe 5 (Dupla 5 • 2 ACEs)',
+    efetivo: '2 ACEs de Campo',
+    cor: 'border-purple-300 bg-purple-50 text-purple-900',
+    badge: 'bg-purple-600 text-white',
+    area: 'Seg: Progresso (OV-21) • Ter: Botafogo/Centro (OV-16, OV-12) • Qua: Boa Ideia (OV-08, OV-15) • Qui: Revisão Caixa d\'Água/Botafogo • Sex: Resgate Distritos',
+    descricao: 'Cobre Progresso (OV-21: 100 ovos), Botafogo (OV-16: 89 ovos), Ladeira João Alfredo (OV-12: 84 ovos), Boa Ideia (OV-08: 93 e OV-15: 78 ovos) e resgate distrital na sexta.'
   }
 ];
 
 const METODOLOGIA_RAIOS = [
   {
-    raio: '100 Metros',
-    nivel: 'Crítico Máximo (>150 ovos)',
+    raio: '100m / 200m',
+    nivel: 'Crítico Máximo (≥150 ovos nas 2 sem.)',
     cor: 'bg-red-600 text-white',
     borda: 'border-red-400 bg-red-50 text-red-950',
-    acoes: 'Bloqueio total do quarteirão sede + quarteirões confrontantes e vizinhos em 360º. Varredura completa em ralos, caixas d\'água, calhas e piscinas.'
+    acoes: 'Núcleo Focal 100m + Perímetro Oficial MS 200m (até 9 quarteirões). Varredura 100% em ralos, caixas d\'água, calhas e piscinas.'
   },
   {
-    raio: '80 Metros',
-    nivel: 'Alerta Alto (100 a 149 ovos)',
+    raio: '80m / 200m',
+    nivel: 'Alerta Alto (100 a 149 ovos nas 2 sem.)',
     cor: 'bg-amber-600 text-white',
     borda: 'border-amber-400 bg-amber-50 text-amber-950',
-    acoes: 'Vistoria em todas as residências do quarteirão da armadilha e toda a face frontal da rua. Foco em tonéis, calhas e garrafas.'
+    acoes: 'Vistoria em todas as residências do quarteirão da armadilha e faces confrontantes no raio de 80m a 200m. Foco em tonéis e calhas.'
   },
   {
-    raio: '50 Metros',
-    nivel: 'Risco Médio (50 a 99 ovos)',
+    raio: '50m / 200m',
+    nivel: 'Risco Médio (50 a 99 ovos nas 2 sem.)',
     cor: 'bg-emerald-600 text-white',
     borda: 'border-emerald-400 bg-emerald-50 text-emerald-950',
-    acoes: 'Inspeção no imóvel foco e nas 6 a 8 residências vizinhas mais próximas. Orientação do morador e remoção de pratos de plantas.'
+    acoes: 'Inspeção no imóvel foco e nos vizinhos laterais/frontais (6 a 8 imóveis no núcleo + quarteirão). Remoção mecânica e larvicida.'
   },
   {
-    raio: '30 Metros',
-    nivel: 'Vigilância (<50 ovos)',
+    raio: '30m / Vigilância',
+    nivel: 'Vigilância (<50 ovos nas 2 sem.)',
     cor: 'bg-slate-600 text-white',
     borda: 'border-slate-300 bg-slate-50 text-slate-800',
-    acoes: 'Ação preventiva no imóvel parceiro e nos 2 vizinhos imediatos.'
+    acoes: 'Ação preventiva no imóvel parceiro e nos vizinhos imediatos para impedir formação de novos focos.'
   }
 ];
 
 const CRONOGRAMA_DIARIO = {
   segunda: {
     diaNome: 'Segunda-Feira',
-    subtitulo: 'Abertura da Semana • Bloqueio nos 2 Maiores Epicentros Urbanos',
-    destaque: 'Progresso e Centro',
+    pdfDia: '/PLANO_DE_CAMPO_SEGUNDA_FEIRA.pdf',
+    subtitulo: 'Horário Corrido 08h00 (Saída do P.A.) às 13h00 • 10 ACEs em Campo (5 Duplas) • Carro 5L (4 ACEs na Barra) + 6 ACEs na Sede (Apoio Caminhonete 2L)',
+    destaque: 'Carmo Sede (Progresso e Centro) + Barra de São Francisco (08h00 às 13h00)',
     alvos: [
       {
         id: 'OV-23',
-        equipe: 'Equipe Alpha (2 ACEs • Apoio da Caminhonete)',
+        equipe: 'Equipe 3 (2 ACEs na Sede • Apoio Caminhonete 2L)',
         bairro: 'Progresso',
         quarteirao: 'Q-01',
-        morador: 'Pousada Valle do Sol',
+        morador: 'Pousada Valle do sol',
         endereco: 'Rua Manoel José de Moraes, 51',
         ovos: 342,
-        raio: '100 Metros',
+        ovosSem1: 147,
+        ovosSem2: 195,
+        raio: '100m / 200m MS',
         raioCor: 'bg-red-600',
-        raioPratico: 'Pousada + Quarteirão Completo: Vistoriar a pousada e cerca de 6 a 8 casas vizinhas para a direita, 6 a 8 para a esquerda, casas de frente e fundos (na José Cassane).',
-        lat: -21.9333333,
-        lng: -42.6083333,
-        acoes: 'Todo o Q-01 e início da Rua José Cassane. Inspecionar ralos externos, piscinas desativadas, reservatórios de chuva e bebedouros de animais.',
+        raioPratico: 'Pousada + Quarteirão Completo: Vistoriar a pousada e 6 a 8 casas vizinhas para cada lado, frente e fundos (R. José Cassane).',
+        lat: -21.9279386,
+        lng: -42.6166018,
+        acoes: 'Todo o Q-01 e início da Rua José Cassane. Inspecionar ralos externos, piscinas desativadas, reservatórios de chuva e bebedouros.',
         focos: ['Piscinas desativadas', 'Ralos de quintal', 'Reservatórios de chuva', 'Bebedouros de animais']
       },
       {
         id: 'OV-10',
-        equipe: 'Equipe Alpha (2 ACEs a pé)',
+        equipe: 'Equipe 4 (2 ACEs na Sede • Centro a pé)',
         bairro: 'Centro',
         quarteirao: 'Q-13',
-        morador: 'Morador Local',
+        morador: 'Clea Suely',
         endereco: 'Rua Oscar de Souza Curty, 42',
         ovos: 242,
-        raio: '100 Metros',
+        ovosSem1: 41,
+        ovosSem2: 201,
+        raio: '100m / 200m MS',
         raioCor: 'bg-red-600',
-        raioPratico: 'Imóvel-Foco + Quarteirão Comercial: Vistoriar entre a Oscar Curty e Celso C. Faria (foco em calhas prediais, marquises e lajes com água empoçada).',
-        lat: -21.9333333,
-        lng: -42.6083333,
+        raioPratico: 'Imóvel-Foco + Quarteirão Comercial: Vistoriar entre a Oscar Curty e Celso C. Faria (calhas prediais, marquises e lajes).',
+        lat: -21.9327654,
+        lng: -42.6111087,
         acoes: 'Trecho entre Rua Oscar Curty e encontro com Celso C. Faria. Foco em calhas prediais, marquises comerciais e lajes com água empoçada.',
         focos: ['Calhas prediais', 'Marquises comerciais', 'Lajes com empoçamento', 'Pratos de plantas']
       },
       {
         id: 'OV-21',
-        equipe: 'Equipe Alpha (2 ACEs)',
+        equipe: 'Equipe 5 (2 ACEs na Sede • Progresso a pé)',
         bairro: 'Progresso',
         quarteirao: 'Q-09',
         morador: 'Paula Miranda',
         endereco: 'Rua Silvio Geraldo França, 753',
         ovos: 100,
-        raio: '80 Metros',
+        ovosSem1: 100,
+        ovosSem2: 0,
+        raio: '80m / 200m MS',
         raioCor: 'bg-amber-600',
-        raioPratico: 'Imóvel-Foco + Vizinhos da Rua: Vistoriar a casa da Paula Miranda e cerca de 4 casas para cada lado (nº 700 ao 800).',
-        lat: -21.9333333,
-        lng: -42.6083333,
+        raioPratico: 'Imóvel-Foco + Vizinhos da Rua: Vistoriar a casa da Paula Miranda e cerca de 4 a 6 casas para cada lado (nº 700 ao 800).',
+        lat: -21.9262243,
+        lng: -42.6149979,
         acoes: 'Rua Silvio Geraldo França (nº 700 a 800). Varrer fundos de vale, entulhos de obras e tambores no nível do solo.',
         focos: ['Fundos de vale', 'Entulho de construção', 'Tambores no solo', 'Baldes de quintal']
       },
       {
-        id: 'FIXA-INF',
-        equipe: 'Agente Fixa (1 ACE)',
-        bairro: 'Influência (2º Distrito)',
-        quarteirao: 'Setor Rural / BR-116',
-        morador: 'Monitoramento Contínuo',
-        endereco: 'Trecho da BR-116 e vias de acesso',
-        ovos: 557,
-        raio: 'Inspeção Prévia',
-        raioCor: 'bg-purple-600',
-        raioPratico: 'Reconhecimento prévio dos criadouros nas margens da BR-116 e quintais rurais para preparar o grande mutirão de quarta-feira.',
-        lat: -21.9056157,
-        lng: -42.6393661,
-        acoes: 'Reconhecimento prévio dos criadouros nas margens da BR-116 e articulação com moradores para o grande mutirão de quarta-feira.',
-        focos: ['Borracharias da BR', 'Carcaças de veículos', 'Galpões agrícolas']
+        id: 'OV-55',
+        equipe: 'Equipe 1 (2 ACEs na Barra • Carro 5 Lugares)',
+        bairro: 'Barra de São Francisco',
+        quarteirao: 'Q-01',
+        morador: 'Solange',
+        endereco: 'Rua Antônio R. Serafim, S/N',
+        ovos: 125,
+        ovosSem1: 5,
+        ovosSem2: 120,
+        raio: '80m / 200m MS',
+        raioCor: 'bg-amber-600',
+        raioPratico: 'Quintais Rurais da Barra: Vistoriar a Rua Antônio R. Serafim e propriedades confrontantes.',
+        lat: -21.9716954,
+        lng: -42.6928679,
+        acoes: 'Rua Antônio R. Serafim. Bebedouros de animais de porte rural, tambores de 200L e recipientes em quintais amplos.',
+        focos: ['Bebedouros de animais', 'Tambores rurais 200L', 'Pneus de maquinário', 'Caixas no solo']
+      },
+      {
+        id: 'OV-54',
+        equipe: 'Equipe 2 (2 ACEs na Barra • Carro 5 Lugares)',
+        bairro: 'Barra de São Francisco',
+        quarteirao: 'Q-01',
+        morador: 'Sebastião Ferreira',
+        endereco: 'Rua Sebastião F. da Costa, 389',
+        ovos: 74,
+        ovosSem1: 13,
+        ovosSem2: 61,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Eixo Sebastião F. da Costa (parte alta): Vistoriar o nº 389 e vizinhos laterais/frontais.',
+        lat: -21.9660768,
+        lng: -42.6886252,
+        acoes: 'Vistoria completa nos quintais, tonéis de captação de chuva e depósitos agrícolas na Rua Sebastião F. da Costa.',
+        focos: ['Tonéis de chuva', 'Galinheiros e bebedouros', 'Garrafas e latas', 'Calhas']
+      },
+      {
+        id: 'OV-56',
+        equipe: 'Equipe 2 (2 ACEs na Barra • Carro 5 Lugares)',
+        bairro: 'Barra de São Francisco',
+        quarteirao: 'Q-01',
+        morador: 'Escola da Barra',
+        endereco: 'Rua Sebastião F. da Costa, 10',
+        ovos: 69,
+        ovosSem1: 3,
+        ovosSem2: 66,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Entorno da Escola da Barra: Vistoriar o prédio escolar e residências vizinhas no Q-01.',
+        lat: -21.9675433,
+        lng: -42.6898283,
+        acoes: 'Inspeção de calhas escolares, ralos pluviais, caixas d\'água e residências confrontantes.',
+        focos: ['Calhas da escola', 'Ralos externos', 'Caixas d\'água', 'Pátio externo']
       }
     ]
   },
   terca: {
     diaNome: 'Terça-Feira',
-    subtitulo: 'Bloqueio Vetorial em Encostas e Áreas Elevadas da Sede',
-    destaque: 'Jardim Centenário, Val Paraíso e Caixa d\'Água',
+    pdfDia: '/PLANO_DE_CAMPO_TERCA_FEIRA.pdf',
+    subtitulo: 'Horário Corrido 08h00 (Saída do P.A.) às 13h00 • 10 ACEs em Campo (5 Duplas a pé na Sede) • Apoio Caminhonete 2L',
+    destaque: 'Sede Urbana: Val Paraíso, Jd. Centenário, Caixa d\'Água, Morro do Estado e Botafogo (08h00 às 13h00)',
     alvos: [
       {
-        id: 'OV-05',
-        equipe: 'Equipe Beta (2 ACEs a pé)',
-        bairro: 'Jardim Centenário',
-        quarteirao: 'Q-17',
-        morador: 'Morador Local',
-        endereco: 'Rua Ernesto Wermelinger, 63',
-        ovos: 173,
-        raio: '100 Metros',
-        raioCor: 'bg-red-600',
-        raioPratico: 'Imóvel-Foco + Quarteirão Completo: Vistoriar a residência e cerca de 6 a 8 vizinhos no encontro com a Celso Carrilho Faria.',
-        lat: -21.9351048,
-        lng: -42.6097103,
-        acoes: 'Rua Ernesto Wermelinger e encontro com Celso Carrilho Faria. Vistoria minuciosa em tambores de lavanderia, bromélias e pratos de vasos.',
-        focos: ['Tambores de lavar roupa', 'Bromélias em jardins', 'Pratos de vasos', 'Caixas d\'água']
-      },
-      {
         id: 'OV-31',
-        equipe: 'Equipe Gama (2 ACEs)',
+        equipe: 'Equipe 1 (2 ACEs • Val Paraíso)',
         bairro: 'Val Paraíso',
         quarteirao: 'Q-05',
-        morador: 'Morador Local',
+        morador: 'Rosimeri',
         endereco: 'Rua Roberto Simões de Araújo, 98',
         ovos: 192,
-        raio: '80 Metros',
-        raioCor: 'bg-amber-600',
-        raioPratico: 'Imóvel-Foco + Vizinhos da Rua: Vistoriar a residência e vizinhos da Rua Roberto Simões e Emanuel de Moraes (quintais inclinados).',
-        lat: -21.9372100,
-        lng: -42.6045300,
-        acoes: 'Rua Roberto Simões e Rua Emanuel de Moraes. Foco em caixas d\'água destampadas, tonéis de água de chuva e quintais acidentados.',
+        ovosSem1: 51,
+        ovosSem2: 141,
+        raio: '100m / 200m MS',
+        raioCor: 'bg-red-600',
+        raioPratico: 'Encosta de Val Paraíso: Vistoriar a Rua Roberto Simões e Rua Emanuel de Moraes (quintais inclinados).',
+        lat: -21.9427123,
+        lng: -42.6125015,
+        acoes: 'Rua Roberto Simões e Emanuel de Moraes. Foco em caixas d\'água destampadas, tonéis de chuva e lavanderias.',
         focos: ['Caixas d\'água sem tampa', 'Tonéis de chuva', 'Potes de animais', 'Ralos sem tela']
       },
       {
+        id: 'OV-05',
+        equipe: 'Equipe 2 (2 ACEs • Jardim Centenário)',
+        bairro: 'Jardim Centenário',
+        quarteirao: 'Q-17',
+        morador: 'Manoel Ezidio',
+        endereco: 'Rua Ernesto Wermelinger, 63',
+        ovos: 173,
+        ovosSem1: 6,
+        ovosSem2: 167,
+        raio: '100m / 200m MS',
+        raioCor: 'bg-red-600',
+        raioPratico: 'Quarteirão Q-17 Completo: Vistoriar a residência e vizinhos no encontro com a Celso Carrilho Faria.',
+        lat: -21.9283241,
+        lng: -42.6057119,
+        acoes: 'Rua Ernesto Wermelinger e encontro com Celso Carrilho Faria. Tambores de lavanderia, bromélias e pratos de vasos.',
+        focos: ['Tambores de lavar roupa', 'Bromélias em jardins', 'Pratos de vasos', 'Caixas d\'água']
+      },
+      {
         id: 'OV-35',
-        equipe: 'Equipe Gama (2 ACEs • Apoio da Caminhonete)',
+        equipe: 'Equipe 3 (2 ACEs • Caixa d\'Água com Apoio Caminhonete 2L)',
         bairro: 'Caixa d\'Água',
         quarteirao: 'Q-13',
         morador: 'Almir Lemgruber',
         endereco: 'Rua Senador Dantas, 269',
         ovos: 121,
-        raio: '80 Metros',
+        ovosSem1: 4,
+        ovosSem2: 117,
+        raio: '80m / 200m MS',
         raioCor: 'bg-amber-600',
-        raioPratico: 'Imóvel-Foco + Vizinhos Altos: Vistoriar a residência do Almir Lemgruber e vizinhos da parte alta da Senador Dantas (terrenos baldios e calhas).',
-        lat: -21.9389100,
-        lng: -42.6031200,
-        acoes: 'Rua Senador Dantas (trecho superior). Terrenos baldios com descarte clandestino de inservíveis e calhas de telhado obstruídas por folhas.',
+        raioPratico: 'Parte Alta da Senador Dantas: Vistoriar o nº 269, terrenos baldios e calhas altas com escada da caminhonete.',
+        lat: -21.9350995,
+        lng: -42.6062633,
+        acoes: 'Rua Senador Dantas (trecho superior). Terrenos baldios com descarte de inservíveis e calhas obstruídas.',
         focos: ['Terrenos baldios', 'Calhas obstruídas', 'Garrafas viradas para cima', 'Pneus']
+      },
+      {
+        id: 'OV-28',
+        equipe: 'Equipe 4 (2 ACEs • Morro do Estado)',
+        bairro: 'Morro do Estado',
+        quarteirao: 'Q-05',
+        morador: 'Vicente',
+        endereco: 'Rua Adalberto Pires da Silva, 235',
+        ovos: 95,
+        ovosSem1: 86,
+        ovosSem2: 9,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Morro do Estado Q-05: Vistoriar a Rua Adalberto Pires da Silva (nº 200 a 280) e encosta adjacente.',
+        lat: -21.9423531,
+        lng: -42.6088396,
+        acoes: 'Vistoria de manutenção e bloqueio de focos persistentes da Semana A no Morro do Estado.',
+        focos: ['Caixas d\'água em lajes', 'Tambores de encosta', 'Baldes e bacias', 'Entulhos']
+      },
+      {
+        id: 'OV-16',
+        equipe: 'Equipe 5 (2 ACEs • Botafogo e Ladeira do Centro)',
+        bairro: 'Botafogo',
+        quarteirao: 'Q-10',
+        morador: 'Selma Araújo',
+        endereco: 'Rua Soares Brandão, 347',
+        ovos: 89,
+        ovosSem1: 0,
+        ovosSem2: 89,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Foco Explosivo em Botafogo: Saltou de 0 para 89 ovos na Semana B. Varrer o Q-10 na Rua Soares Brandão.',
+        lat: -21.9372323,
+        lng: -42.6056147,
+        acoes: 'Bloqueio imediato na Rua Soares Brandão (Q-10) para eliminar o criadouro recém-ativado na Semana B.',
+        focos: ['Tonéis destampados', 'Ralos externos', 'Pratos de plantas', 'Calhas']
+      },
+      {
+        id: 'OV-12',
+        equipe: 'Equipe 5 (2 ACEs • Botafogo e Ladeira do Centro)',
+        bairro: 'Centro',
+        quarteirao: 'Q-10',
+        morador: 'José Carlos enfermeiro',
+        endereco: 'Ladeira João Alfredo, 40',
+        ovos: 84,
+        ovosSem1: 64,
+        ovosSem2: 20,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Ladeira João Alfredo: Vistoriar o nº 40 e imóveis lindeiros na subida da ladeira.',
+        lat: -21.9335936,
+        lng: -42.6077504,
+        acoes: 'Inspeção de calhas, muros de contenção, ralos pluviais e reservatórios domésticos.',
+        focos: ['Calhas e marquises', 'Ralos de quintal', 'Vasos e bromélias', 'Caixas d\'água']
+      },
+      {
+        id: 'OV-13',
+        equipe: 'Equipe 3 (2 ACEs • Caixa d\'Água com Apoio Caminhonete 2L)',
+        bairro: 'Caixa d\'Água',
+        quarteirao: 'Q-16',
+        morador: 'Lucia Glória',
+        endereco: 'Rua Ulisses Lengruber, 618',
+        ovos: 71,
+        ovosSem1: 48,
+        ovosSem2: 23,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Rua Ulisses Lengruber: Vistoriar o nº 618 e vizinhos imediatos do Q-16 na Caixa d\'Água.',
+        lat: -21.9334224,
+        lng: -42.6043283,
+        acoes: 'Positiva nas duas semanas (48 + 23 = 71 ovos). Eliminar criadouros fixos em quintais e lavanderias.',
+        focos: ['Tanques e tambores', 'Caixas d\'água no solo', 'Garrafas', 'Ralos']
+      },
+      {
+        id: 'OV-34',
+        equipe: 'Equipe 1 (2 ACEs • Val Paraíso)',
+        bairro: 'Val Paraíso',
+        quarteirao: 'Q-05',
+        morador: 'Delvania',
+        endereco: 'Avenida Edgar Gismonti, 98',
+        ovos: 66,
+        ovosSem1: 0,
+        ovosSem2: 66,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Av. Edgar Gismonti: Novo foco na Semana B (66 ovos). Vistoriar o nº 98 e quarteirão Q-05.',
+        lat: -21.9393970,
+        lng: -42.6099252,
+        acoes: 'Varredura integrada com a OV-31 no Q-05 de Val Paraíso.',
+        focos: ['Reservatórios no solo', 'Piscinas plásticas', 'Calhas', 'Pratos de vasos']
       }
     ]
   },
   quarta: {
     diaNome: 'Quarta-Feira',
-    subtitulo: 'Grande Mutirão de Bloqueio Vetorial no Distrito Crítico',
-    destaque: '2º Distrito (Influência) • 557 Ovos Acumulados',
+    pdfDia: '/PLANO_DE_CAMPO_QUARTA_FEIRA.pdf',
+    subtitulo: 'Horário Corrido 08h00 (Saída do P.A.) às 13h00 • 10 ACEs em Campo • 6 ACEs nas Viaturas (Carro 5L + Caminhonete 2L) + 4 ACEs a pé na Sede',
+    destaque: 'Influência (2º Dist.) + Usina Light / Ilha dos Pombos (3º Dist.) + Campo Sede (08h00 às 13h00)',
     alvos: [
       {
         id: 'OV-36',
-        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
-        bairro: 'Influência (2º Distrito)',
+        equipe: 'Equipe 1 (2 ACEs • Viatura em Influência)',
+        bairro: 'Influência',
         quarteirao: 'Q-05',
-        morador: 'Morador Local',
+        morador: 'Silvana de Oliveira',
         endereco: 'Rua Manoel Cirilo da Silva, 116',
         ovos: 222,
-        raio: '100 Metros',
+        ovosSem1: 53,
+        ovosSem2: 169,
+        raio: '100m / 200m MS',
         raioCor: 'bg-red-600',
-        raioPratico: 'Mutirão em Conjunto: Extensão completa da Rua Manoel Cirilo (Q-05 inteiro com a força-tarefa). Pneus agrícolas e tonéis de horta.',
-        lat: -21.9056157,
-        lng: -42.6393661,
-        acoes: 'Extensão completa da Rua Manoel Cirilo (Q-05). Agente fixa + reforço de 3 agentes da equipe Delta. Pneus velhos e tonéis de uso agrícola.',
+        raioPratico: 'Extensão da R. Manoel Cirilo (Q-05): Vistoriar quintais rurais, pneus agrícolas e tonéis de horta.',
+        lat: -21.8758627,
+        lng: -42.6660048,
+        acoes: 'Extensão completa da Rua Manoel Cirilo (Q-05) em Influência. Pneus velhos, tonéis de uso agrícola e galinheiros.',
         focos: ['Pneus velhos', 'Tonéis agrícolas', 'Baldes de horta', 'Caixas d\'água baixas']
       },
       {
         id: 'OV-38',
-        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
-        bairro: 'Influência (2º Distrito)',
+        equipe: 'Equipe 2 (2 ACEs • Viatura em Influência / BR-116)',
+        bairro: 'Influência',
         quarteirao: 'Q-06',
         morador: 'Independente',
         endereco: 'Rodovia BR-116, S/N',
         ovos: 210,
-        raio: '100 Metros',
+        ovosSem1: 25,
+        ovosSem2: 185,
+        raio: '100m / 200m MS',
         raioCor: 'bg-red-600',
-        raioPratico: 'Mutirão na Rodovia: Margens da BR-116 (todas as borracharias, oficinas mecânicas, carcaças de veículos e galpões).',
-        lat: -21.9062300,
-        lng: -42.6385100,
-        acoes: 'Margens da Rodovia BR-116. Vistoria intensiva em borracharias, oficinas mecânicas, carcaças de veículos e galpões de implementos.',
+        raioPratico: 'Margens da BR-116: Borracharias, oficinas mecânicas, carcaças de veículos e galpões.',
+        lat: -21.8770524,
+        lng: -42.6694291,
+        acoes: 'Margens da Rodovia BR-116 em Influência. Vistoria intensiva em borracharias, oficinas, sucatas e pátios.',
         focos: ['Borracharias', 'Oficinas mecânicas', 'Carcaças de veículos', 'Galpões abertos']
       },
       {
         id: 'OV-51',
-        equipe: 'Agente Fixa + Força-Tarefa da Sede (7 ACEs em Conjunto • Carro + Caminhonete)',
-        bairro: 'Influência (2º Distrito)',
+        equipe: 'Equipe 1 (2 ACEs • Viatura em Influência)',
+        bairro: 'Influência',
         quarteirao: 'Q-11',
-        morador: 'Morador Local',
+        morador: 'Aline Reiff',
         endereco: 'Rua Maria da Silva Machareth, 182',
         ovos: 109,
-        raio: '80 Metros',
+        ovosSem1: 3,
+        ovosSem2: 106,
+        raio: '80m / 200m MS',
         raioCor: 'bg-amber-600',
-        raioPratico: 'Mutirão na Machareth: Rua Maria da Silva Machareth (casas vizinhas, tonéis de captação de água de chuva e caixas d\'água baixas).',
-        lat: -21.9071500,
-        lng: -42.6402100,
-        acoes: 'Rua Maria da Silva Machareth. Tambores de captação de água de chuva, caixas d\'água baixas e recipientes sombreados em quintais úmidos.',
-        focos: ['Captação de água de chuva', 'Tanques sem vedação', 'Bacias de animais']
+        raioPratico: 'R. Maria da Silva Machareth: Casas vizinhas, tonéis de captação de chuva e caixas d\'água baixas.',
+        lat: -21.8733495,
+        lng: -42.6616928,
+        acoes: 'Rua Maria da Silva Machareth (Q-11). Tambores de captação de água de chuva e recipientes sombreados.',
+        focos: ['Captação de água de chuva', 'Tanques sem vedação', 'Bacias de animais', 'Calhas']
+      },
+      {
+        id: 'OV-41',
+        equipe: 'Equipe 3 (2 ACEs • Viatura na Usina Light / Ilha dos Pombos)',
+        bairro: 'Ilha dos Pombos (Light)',
+        quarteirao: 'Q-01',
+        morador: 'Dayse Regina Lopes',
+        endereco: 'Rua Beira Rio, 130',
+        ovos: 203,
+        ovosSem1: 40,
+        ovosSem2: 163,
+        raio: '100m / 200m MS',
+        raioCor: 'bg-red-600',
+        raioPratico: 'Orla Ribeirinha da Light: Toda a extensão da Rua Beira Rio (canoas, embarcações e lonas de pesca).',
+        lat: -21.8406223,
+        lng: -42.5806883,
+        acoes: 'Ao longo da orla do rio na Rua Beira Rio. Canoas com água de chuva, lonas plásticas e depósitos de pesca.',
+        focos: ['Canoas com água de chuva', 'Lonas plásticas dobradas', 'Tambores', 'Tranqueiras de pesca']
+      },
+      {
+        id: 'OV-40',
+        equipe: 'Equipe 3 (2 ACEs • Viatura na Usina Light / Ilha dos Pombos)',
+        bairro: 'Ilha dos Pombos (Light)',
+        quarteirao: 'Q-03',
+        morador: 'Meira Lúcia Ferreira Pinheiro',
+        endereco: 'Rua Antônio Carlos P. Cabral, 34',
+        ovos: 66,
+        ovosSem1: 20,
+        ovosSem2: 46,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Vila da Light (Q-03): Vistoriar o nº 34 e residências do entorno arborizado da Usina Light.',
+        lat: -21.8415155,
+        lng: -42.5769629,
+        acoes: 'Inspeção de calhas, bromélias, ralos externos e caixas d\'água na Vila da Light.',
+        focos: ['Calhas com folhas', 'Bromélias e jardins', 'Ralos pluviais', 'Caixas d\'água']
+      },
+      {
+        id: 'OV-08',
+        equipe: 'Equipe 5 (2 ACEs a pé na Sede) + Equipe 4 (2 ACEs: Resgate Progresso/Centenário)',
+        bairro: 'Boa Ideia',
+        quarteirao: 'Q-09',
+        morador: 'ESF Botafogo',
+        endereco: 'Rua Armando Chaves, 161',
+        ovos: 93,
+        ovosSem1: 64,
+        ovosSem2: 29,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Entorno da ESF Botafogo / Boa Ideia: Vistoriar a Rua Armando Chaves e quarteirão Q-09 a pé.',
+        lat: -21.9399999,
+        lng: -42.6035886,
+        acoes: 'Enquanto 6 ACEs estão nas viaturas em Influência e Light, os 4 ACEs da Sede cobrem Boa Ideia (OV-08 e OV-15) e resgatam imóveis fechados do Progresso/Centenário.',
+        focos: ['Calhas do posto e vizinhos', 'Tambores domésticos', 'Pratos de plantas', 'Imóveis fechados']
+      },
+      {
+        id: 'OV-15',
+        equipe: 'Equipe 5 (2 ACEs a pé na Sede) + Equipe 4 (2 ACEs: Resgate Progresso/Centenário)',
+        bairro: 'Boa Ideia',
+        quarteirao: 'Q-15',
+        morador: 'Maria das Dores Meneguiti',
+        endereco: 'Rua Jorge R. do Valle, 290',
+        ovos: 78,
+        ovosSem1: 78,
+        ovosSem2: 0,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Rua Jorge R. do Valle (Q-15): Vistoriar o nº 290 e vizinhos para consolidar o zeramento da Semana B.',
+        lat: -21.9430886,
+        lng: -42.6035061,
+        acoes: 'Revisão fina no Q-15 de Boa Ideia e retorno a imóveis pendentes no Centro.',
+        focos: ['Caixas d\'água', 'Lavanderias externas', 'Ralos', 'Vasilhames no quintal']
       }
     ]
   },
   quinta: {
     diaNome: 'Quinta-Feira',
-    subtitulo: 'Bloqueio Vetorial nos Distritos do Eixo Leste e Usina',
-    destaque: 'Porto Velho do Cunha e Ilha dos Pombos',
+    pdfDia: '/PLANO_DE_CAMPO_QUINTA_FEIRA.pdf',
+    subtitulo: 'Horário Corrido 08h00 (Saída do P.A.) às 13h00 • 10 ACEs em Campo • 6 ACEs nas Viaturas (Carro 5L + Caminhonete 2L) + 4 ACEs a pé na Sede',
+    destaque: 'Porto Velho do Cunha (3º Dist.) + Córrego da Prata (4º Dist.) + Campo Sede (08h00 às 13h00)',
     alvos: [
       {
         id: 'OV-45',
-        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
-        bairro: 'Porto Velho do Cunha (5º Dist.)',
+        equipe: 'Equipe 1 (2 ACEs • Viatura em Porto Velho do Cunha)',
+        bairro: 'Porto Velho do Cunha',
         quarteirao: 'Q-01',
-        morador: 'Morador Local',
+        morador: 'Lindomar Noronha',
         endereco: 'Rua Major Fajardo, 601',
         ovos: 241,
-        raio: '100 Metros',
+        ovosSem1: 35,
+        ovosSem2: 206,
+        raio: '100m / 200m MS',
         raioCor: 'bg-red-600',
-        raioPratico: 'Imóvel-Foco + Trecho Beira-Rio: Rua Major Fajardo (altura nº 550 ao 650) e faixa ribeirinha (caçambas, carretas e recipientes plásticos).',
-        lat: -21.8791200,
-        lng: -42.5482300,
-        acoes: 'Rua Major Fajardo (altura do nº 550 ao 650). Caçambas, carretas com água parada, recipientes plásticos e quintais na beira do rio.',
-        focos: ['Carretas e caçambas', 'Recipientes plásticos', 'Fundos de quintal ribeirinho']
+        raioPratico: 'Imóvel-Foco + Trecho Beira-Rio: Rua Major Fajardo (altura nº 550 ao 650) e faixa ribeirinha.',
+        lat: -21.8238244,
+        lng: -42.5454317,
+        acoes: 'Rua Major Fajardo (nº 550 ao 650). Caçambas, carretas com água parada, recipientes plásticos e quintais na beira do rio.',
+        focos: ['Carretas e caçambas', 'Recipientes plásticos', 'Fundos de quintal ribeirinho', 'Tambores']
       },
       {
         id: 'OV-44',
-        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
-        bairro: 'Porto Velho do Cunha (5º Dist.)',
+        equipe: 'Equipe 2 (2 ACEs • Viatura em Porto Velho do Cunha)',
+        bairro: 'Porto Velho do Cunha',
         quarteirao: 'Q-10',
-        morador: 'Morador Local',
-        endereco: 'Rua Major Fajardo, 312 (ESF)',
+        morador: 'ESF Porto Velho',
+        endereco: 'Rua Major Fajardo, 312',
         ovos: 102,
-        raio: '80 Metros',
+        ovosSem1: 2,
+        ovosSem2: 100,
+        raio: '80m / 200m MS',
         raioCor: 'bg-amber-600',
-        raioPratico: 'Imóvel-Foco + Entorno da ESF: Rua Major Fajardo (nº 280 ao 350 ao redor do Posto de Saúde, calhas e caixas d\'água).',
-        lat: -21.8784500,
-        lng: -42.5491100,
-        acoes: 'Rua Major Fajardo (nº 280 ao 350 - entorno da ESF Porto Velho). Calhas prediais, caixas d\'água sem tampa e garrafas retornáveis.',
+        raioPratico: 'Entorno da ESF Porto Velho: Rua Major Fajardo (nº 280 ao 350 ao redor do Posto de Saúde).',
+        lat: -21.8248591,
+        lng: -42.5481501,
+        acoes: 'Rua Major Fajardo (entorno da ESF Porto Velho). Calhas prediais, caixas d\'água sem tampa e garrafas retornáveis.',
         focos: ['Entorno do Posto de Saúde', 'Calhas prediais', 'Caixas d\'água', 'Garrafas']
       },
       {
-        id: 'OV-41',
-        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
-        bairro: 'Ilha dos Pombos',
+        id: 'OV-48',
+        equipe: 'Equipe 3 (2 ACEs • Viatura em Córrego da Prata)',
+        bairro: 'Córrego da Prata',
         quarteirao: 'Q-01',
-        morador: 'Morador Local',
-        endereco: 'Rua Beira Rio, 130',
-        ovos: 203,
-        raio: '100 Metros',
-        raioCor: 'bg-red-600',
-        raioPratico: 'Orla Ribeirinha Completa: Toda a extensão da Rua Beira Rio (canoas, embarcações e lonas plásticas de pesca com água de chuva).',
-        lat: -21.8456100,
-        lng: -42.5891200,
-        acoes: 'Ao longo da orla do rio na Rua Beira Rio. Canoas e embarcações com acúmulo de água de chuva, lonas plásticas e recipientes de pesca.',
-        focos: ['Canoas com água de chuva', 'Lonas plásticas dobradas', 'Tambores de óleo', 'Tranqueiras de pesca']
+        morador: 'ESF Córrego da Prata',
+        endereco: 'Rua Benfica, 48',
+        ovos: 121,
+        ovosSem1: 7,
+        ovosSem2: 114,
+        raio: '80m / 200m MS',
+        raioCor: 'bg-amber-600',
+        raioPratico: 'Entorno da ESF Prata: Rua Benfica e caixas d\'água no nível do solo em Córrego da Prata.',
+        lat: -21.8645750,
+        lng: -42.4863877,
+        acoes: 'Rua Benfica e entorno do posto de saúde em Córrego da Prata. Calhas de telhado, descartáveis e caixas no solo.',
+        focos: ['Caixas d\'água no solo', 'Calhas obstruídas', 'Descarte de embalagens', 'Tonéis']
+      },
+      {
+        id: 'OV-49',
+        equipe: 'Equipe 3 (2 ACEs • Viatura em Córrego da Prata)',
+        bairro: 'Córrego da Prata',
+        quarteirao: 'Q-01',
+        morador: 'Rosilene Souza Ferreira',
+        endereco: 'Rua Alfredo Ferreira, S/N',
+        ovos: 62,
+        ovosSem1: 2,
+        ovosSem2: 60,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'R. Alfredo Ferreira em Córrego da Prata: Vistoriar o imóvel foco e propriedades vizinhas.',
+        lat: -21.8632567,
+        lng: -42.4828514,
+        acoes: 'Complementa o bloqueio de Córrego da Prata no mesmo deslocamento de quinta-feira junto com Porto Velho.',
+        focos: ['Bebedouros rurais', 'Tambores de horta', 'Pneus', 'Caixas d\'água']
+      },
+      {
+        id: 'OV-03',
+        equipe: 'Equipe 4 (2 ACEs a pé na Sede) + Equipe 5 (2 ACEs: Caixa d\'Água/Botafogo)',
+        bairro: 'Jardim Centenário',
+        quarteirao: 'Q-09',
+        morador: 'Samy Soares',
+        endereco: 'Rua Carolina França, 30',
+        ovos: 53,
+        ovosSem1: 5,
+        ovosSem2: 48,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Rua Carolina França (Q-09): Varredura a pé nas encostas do Jardim Centenário.',
+        lat: -21.9255506,
+        lng: -42.6095299,
+        acoes: 'Enquanto 6 ACEs cobrem Porto Velho e Prata nas 2 viaturas, 4 ACEs permanecem em campo na Sede varrendo OV-03, OV-04 e Caixa d\'Água/Botafogo.',
+        focos: ['Vasos e pratinhos', 'Tonéis de água', 'Calhas', 'Ralos externos']
+      },
+      {
+        id: 'OV-04',
+        equipe: 'Equipe 4 (2 ACEs a pé na Sede) + Equipe 5 (2 ACEs: Caixa d\'Água/Botafogo)',
+        bairro: 'Jardim Centenário',
+        quarteirao: 'Q-11',
+        morador: 'PA',
+        endereco: 'Rua Alceu Mattos, 99',
+        ovos: 53,
+        ovosSem1: 16,
+        ovosSem2: 37,
+        raio: '50m / 200m MS',
+        raioCor: 'bg-emerald-600',
+        raioPratico: 'Rua Alceu Mattos (Q-11): Vistoriar entorno do PA e residências confrontantes.',
+        lat: -21.9295794,
+        lng: -42.6090547,
+        acoes: 'Bloqueio complementar no Jardim Centenário (positiva nas duas semanas: 16 + 37 = 53 ovos).',
+        focos: ['Calhas prediais', 'Caixas d\'água', 'Ralos pluviais', 'Descartáveis']
       }
     ]
   },
   sexta: {
     diaNome: 'Sexta-Feira',
-    subtitulo: 'Bloqueio nos Distritos Limítrofes e Fechamento Semanal',
-    destaque: 'Barra de São Francisco, Córrego da Prata e Revisão Geral',
+    pdfDia: '/PLANO_DE_CAMPO_SEXTA_FEIRA.pdf',
+    subtitulo: '08h00 às 12h00: 10 ACEs em Campo (3 Duplas Sede + 2 Duplas Distritos) • 12h00 às 13h00: Reunião Geral no P.A. (Ponto de Apoio)',
+    destaque: '08h00 às 12h00: Resgate de Fechados (Sede e Distritos) + 12h00 às 13h00: Reunião no P.A.',
     alvos: [
       {
-        id: 'OV-55',
-        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
-        bairro: 'Barra de São Francisco',
+        id: 'OV-23',
+        equipe: 'Equipes 1, 2 e 3 (6 ACEs na Sede das 08h00 às 12h00)',
+        bairro: 'Progresso (Sede)',
         quarteirao: 'Q-01',
-        morador: 'Morador Local',
-        endereco: 'Rua Antônio R. Serafim, S/N',
-        ovos: 125,
-        raio: '80 Metros',
-        raioCor: 'bg-amber-600',
-        raioPratico: 'Quintais Rurais: Rua Antônio R. Serafim e Sebastião F. Costa (bebedouros de animais rurais, tonéis e recipientes em quintais amplos).',
-        lat: -21.8214500,
-        lng: -42.5123400,
-        acoes: 'Rua Antônio R. Serafim e Sebastião Ferreira Costa. Bebedouros de animais de porte rural, tambores e recipientes em quintais amplos.',
-        focos: ['Bebedouros de animais', 'Tambores rurais', 'Pneus de maquinário']
+        morador: 'Pousada Valle do sol (Resgate)',
+        endereco: 'Rua Manoel José de Moraes, 51',
+        ovos: 342,
+        ovosSem1: 147,
+        ovosSem2: 195,
+        raio: 'Resgate 100m/200m',
+        raioCor: 'bg-red-600',
+        raioPratico: '08h00 às 12h00 (Saída do P.A. às 08h00): Retorno obrigatório às casas fechadas no Progresso (OV-23) e Centro (OV-10: 242 ovos).',
+        lat: -21.9279386,
+        lng: -42.6166018,
+        acoes: 'Reabertura e vistoria de 100% dos imóveis pendentes da segunda-feira nos dois maiores focos urbanos. Às 12h00: Retorno ao P.A. (Ponto de Apoio).',
+        focos: ['Imóveis fechados na 2ª feira', 'Casas de veraneio/pousada', 'Terrenos murados', 'Lajes e piscinas']
       },
       {
-        id: 'OV-48',
-        equipe: 'Equipe Delta (3 ACEs • Carro de Passeio 5 Lugares)',
-        bairro: 'Córrego da Prata',
-        quarteirao: 'Q-01',
-        morador: 'Morador Local',
-        endereco: 'Rua Benfica, 48 (ESF)',
-        ovos: 121,
-        raio: '80 Metros',
-        raioCor: 'bg-amber-600',
-        raioPratico: 'Entorno do Posto de Saúde: Rua Benfica e caixas d\'água no nível do solo na ESF Prata.',
-        lat: -21.9891200,
-        lng: -42.6789100,
-        acoes: 'Rua Benfica e entorno do posto de saúde. Calhas de telhado, recipientes descartáveis e caixas d\'água no nível do solo.',
-        focos: ['Caixas d\'água no solo', 'Calhas obstruídas', 'Descarte de embalagens']
+        id: 'OV-31',
+        equipe: 'Equipes 1, 2 e 3 (6 ACEs na Sede das 08h00 às 12h00)',
+        bairro: 'Val Paraíso & Jd. Centenário (Sede)',
+        quarteirao: 'Q-05 / Q-17',
+        morador: 'Rosimeri / Manoel Ezidio (Resgate)',
+        endereco: 'R. Roberto Simões, 98 e R. Ernesto Wermelinger, 63',
+        ovos: 192,
+        ovosSem1: 51,
+        ovosSem2: 141,
+        raio: 'Resgate 100m/200m',
+        raioCor: 'bg-red-600',
+        raioPratico: '08h00 às 12h00 (Saída do P.A. às 08h00): Resgate de fechados em Val Paraíso (OV-31: 192 ovos), Jd. Centenário (OV-05: 173 ovos) e Caixa d\'Água (OV-35: 121 ovos).',
+        lat: -21.9427123,
+        lng: -42.6125015,
+        acoes: 'Garantir cobertura integral dos quarteirões de encosta trabalhados na terça-feira. Às 12h00: Retorno ao P.A. (Ponto de Apoio).',
+        focos: ['Imóveis fechados na 3ª feira', 'Caixas d\'água sem vedação', 'Tonéis de chuva', 'Calhas']
       },
       {
-        id: 'SEDE-REVISAO',
-        equipe: 'Equipes Alpha, Beta e Gama (6 ACEs)',
-        bairro: 'Sede Urbana (Geral)',
-        quarteirao: 'Revisão',
-        morador: 'Imóveis Pendentes',
-        endereco: 'Progresso, Centro e Jd. Centenário',
-        ovos: 0,
-        raio: 'Varredura',
+        id: 'OV-36',
+        equipe: 'Equipes 4 e 5 (4 ACEs nas Viaturas das 08h00 às 12h00)',
+        bairro: 'Influência e Usina Light (Distritos)',
+        quarteirao: 'Q-05 / Q-01',
+        morador: 'Resgate Distrital Eixo Sul/Oeste',
+        endereco: 'R. Manoel Cirilo, 116 (Influência) e R. Beira Rio, 130 (Light)',
+        ovos: 222,
+        ovosSem1: 53,
+        ovosSem2: 169,
+        raio: 'Resgate Distrital',
+        raioCor: 'bg-amber-600',
+        raioPratico: '08h00 às 12h00 (Saída do P.A. às 08h00): Resgate motorizado de pendentes em Influência (OV-36: 222, OV-38: 210, OV-51: 109) e Light (OV-41: 203).',
+        lat: -21.8758627,
+        lng: -42.6660048,
+        acoes: 'Vistoria final nos imóveis rurais, borracharias e propriedades ribeirinhas que estavam fechadas na quarta-feira.',
+        focos: ['Sítios e galpões fechados', 'Borracharias da BR-116', 'Embarcações na Light', 'Tonéis']
+      },
+      {
+        id: 'OV-45',
+        equipe: 'Equipes 4 e 5 (4 ACEs nas Viaturas das 08h00 às 12h00 • 12h00 às 13h00 Reunião no P.A.)',
+        bairro: 'Porto Velho, Prata e Barra (Distritos)',
+        quarteirao: 'Q-01',
+        morador: 'Resgate Distrital + Reunião 12h00 no P.A.',
+        endereco: 'R. Major Fajardo, 601 (Porto Velho) / R. Benfica, 48 (Prata)',
+        ovos: 241,
+        ovosSem1: 35,
+        ovosSem2: 206,
+        raio: 'Resgate + 12h P.A.',
         raioCor: 'bg-blue-600',
-        raioPratico: 'Retorno a todos os imóveis que estavam fechados ou com recusa inicial durante a semana para atingir 100% de cobertura.',
-        lat: -21.9333333,
-        lng: -42.6083333,
-        acoes: 'Retorno aos imóveis que estavam fechados ou desocupados no início da semana. Tabulação dos focos eliminados com a Coordenação.',
-        focos: ['Imóveis fechados', 'Terrenos murados', 'Consolidação de dados']
+        raioPratico: '08h00 às 12h00 em campo nos distritos (OV-45: 241, OV-55: 125, OV-48: 121). Das 12h00 às 13h00: Reunião Geral de Avaliação e Fechamento com os 10 ACEs no P.A. (Ponto de Apoio).',
+        lat: -21.8238244,
+        lng: -42.5454317,
+        acoes: 'Fechamento de pendências distritais até 12h00 e retorno ao P.A. (Ponto de Apoio) para a Reunião Semanal das 12h00 às 13h00 (entrega de boletins à equipe interna).',
+        focos: ['Imóveis pendentes nos distritos', 'Entrega de fichas às 12h00 no P.A.', 'Avaliação semanal no P.A. (12h às 13h)']
       }
     ]
   }
@@ -383,7 +693,7 @@ const CRONOGRAMA_DIARIO = {
 const ROTEIRO_5_PASSOS = [
   {
     passo: '1. Abordagem Padronizada',
-    texto: '"Bom dia! A equipe da Saúde detectou alta proliferação do mosquito da Dengue nesta rua pelo nosso monitoramento. Viemos vistoriar seu quintal para eliminar os focos antes que as pessoas adoeçam."'
+    texto: '"Bom dia! A equipe da Saúde detectou alta proliferação do mosquito da Dengue nesta rua nas duas últimas semanas de monitoramento. Viemos vistoriar seu quintal para eliminar os focos antes que as pessoas adoeçam."'
   },
   {
     passo: '2. Varredura do Chão',
@@ -432,26 +742,25 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
   const handleCompartilharWhatsApp = () => {
     const urlPlano = typeof window !== 'undefined' ? `${window.location.origin}/plano` : 'https://gps-ovitrampas-demo.pages.dev/plano';
     const texto = [
-      '🚨 *PLANO DE AÇÃO SEMANAL - OVITRAMPAS CARMO/RJ*',
-      '🎯 *10 Agentes em Campo • Bloqueio por Raio de Ação*',
+      '🚨 *PLANO DE AÇÃO SEMANAL (2 SEMANAS: SEM A + SEM B) - OVITRAMPAS CARMO/RJ*',
+      '🎯 *10 ACEs 100% em Campo • Horário Corrido 08h00 às 13h00 (Saída do P.A.)*',
       '',
       `📅 *Dia em Destaque: ${dadosDia.diaNome}*`,
       `📍 *Território:* ${dadosDia.destaque}`,
+      `👥 *Escala:* ${dadosDia.subtitulo}`,
       '',
-      '📌 *Armadilhas Críticas a Bloquear:*',
-      ...dadosDia.alvos.map((a) => `• ${a.id} (${a.bairro}): ${a.ovos > 0 ? a.ovos + ' ovos' : 'Vistoria'} ➔ Raio ${a.raio}`),
+      '📌 *Armadilhas Críticas a Bloquear (Soma das 2 Semanas):*',
+      ...dadosDia.alvos.map((a) => `• ${a.id} (${a.bairro}): ${a.ovos} ovos (Sem A: ${a.ovosSem1} + Sem B: ${a.ovosSem2}) ➔ ${a.equipe}`),
       '',
-      '📲 *Acesse o plano completo no celular com rotas GPS:*',
-      urlPlano,
-      '',
-      '📄 *PDF Oficial disponível para impressão no mesmo link.*'
+      '📲 *Acesse o plano completo e o App de Campo no celular:*',
+      urlPlano
     ].join('\n');
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
   // Abrir GPS no Google Maps
-  const handleAbrirGps = (lat, lng, label) => {
+  const handleAbrirGps = (lat, lng) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     window.open(url, '_blank');
   };
@@ -477,19 +786,19 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
             )}
 
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-900 border border-red-200 flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-red-600" /> Operação Segunda-Feira
+                  <Flame className="w-3 h-3 text-red-600" /> 2 Semanas (A+B): 3.682 Ovos
                 </span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                  10 Agentes em Campo
+                <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  10 ACEs em Campo • 08h00 às 13h00 (P.A.)
                 </span>
               </div>
               <h1 className="text-base sm:text-lg font-black text-slate-900 leading-tight mt-0.5">
                 Plano Semanal de Bloqueio Vetorial
               </h1>
               <p className="text-xs text-slate-500">
-                Direcionamento por Mapa de Calor & Raio de Ação • Carmo/RJ
+                Consolidado Semana 1 (1.017) + Semana 2 (2.665) • Horário Corrido 08h00 às 13h00 (Saída do P.A.)
               </p>
             </div>
           </div>
@@ -507,43 +816,43 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
             </button>
 
             <a
+              href={dadosDia.pdfDia}
+              download
+              className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              title={`Baixar PDF do Plano de ${dadosDia.diaNome}`}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>PDF {dadosDia.diaNome}</span>
+            </a>
+
+            <a
               href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
               download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
               className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all border border-indigo-700"
-              title="Baixar Ficha de Campo para Prancheta em Papel (5 Páginas A4 - 1 dia por folha)"
+              title="Baixar Ficha de Campo para Prancheta por Dia (5 Páginas A4 - 1 dia por folha)"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Ficha Papel (5 Págs)</span>
+              <span>Fichas por Dia (5 Págs)</span>
             </a>
 
             <a
-              href="/GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
-              download="GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
+              href="/FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
+              download="FICHAS_DE_CAMPO_POR_EQUIPE_1_A_5.pdf"
               className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all border border-blue-700"
-              title="Baixar Guia Rápido de Bolso/Prancheta (1 Página A4 com todos os alvos e raios)"
+              title="Baixar Fichas de Campo Individuais por Equipe (5 Páginas A4 - Equipe 1 a Equipe 5)"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Prancheta (1 Pág)</span>
+              <span>Fichas por Equipe (1 a 5)</span>
             </a>
 
             <a
-              href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
-              download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ_REVISADO.pdf"
-              className="bg-red-700 hover:bg-red-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
-              title="Baixar PDF Técnico Completo (8 Páginas com polígonos Q-xx e os dois ciclos)"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>PDF Completo (8 Págs)</span>
-            </a>
-
-            <a
-              href="/PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
-              download="PLANO_DE_ACAO_OPERACIONAL_OVITRAMPAS_CARMO_RJ.pdf"
+              href="/PLANO_GERAL_SEMANAL_COORDENACAO_SUPERVISAO.pdf"
+              download="PLANO_GERAL_SEMANAL_COORDENACAO_SUPERVISAO.pdf"
               className="bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs py-2 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs transition-all"
-              title="Baixar PDF de Campo Rápido (2 Páginas A4 com mapas de nevoeiro)"
+              title="Baixar Plano Geral Semanal da Coordenação e Supervisão (1 Página A4)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>PDF Campo (2 Págs)</span>
+              <span>Plano Coordenação</span>
             </a>
           </div>
 
@@ -561,16 +870,18 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-black text-amber-950">
-                Coordenação de Vigilância Ambiental: Missão Operacional
+                Diretrizes Operacionais Consolidadas (Semanas A + B = 3.682 Ovos)
               </h2>
               <p className="text-xs text-amber-900 mt-1 leading-relaxed">
-                Este plano organiza os <strong>10 Agentes de Combate às Endemias (ACE)</strong> para agir onde o risco de surto é iminente. O mosquito não voa longe quando tem alimento e água: <strong>a ação de eliminação deve cobrir o raio exato de 100m ou 80m</strong> em volta de cada armadilha crítica.
+                <strong>1. Equipe 100% de Campo e Ponto de Encontro no P.A.:</strong> Os <strong>10 ACEs (5 Duplas)</strong> reúnem-se diariamente no <strong>P.A. (Ponto de Apoio)</strong> e atuam em <strong>Horário Corrido das 08h00 às 13h00</strong> (o serviço interno já possui equipe própria).<br />
+                <strong>2. Limite Real de Frota (Máx. 7 Lugares):</strong> 1 Carro de Passeio (5 lugares) + 1 Caminhonete (2 lugares). Nenhum deslocamento distrital ultrapassa 6 ACEs motorizados.<br />
+                <strong>3. Rotas Casadas por Eixo (08h00 às 13h00):</strong> Seg (Carmo Sede + Barra), Ter (Encostas da Sede), Qua (Influência + Light + Sede), Qui (Porto Velho + Prata + Sede), Sex (08h00 às 12h00: Resgate de Fechados em Campo + 12h00 às 13h00: Reunião Geral de Avaliação no P.A.).
               </p>
             </div>
           </div>
         </div>
 
-        {/* BANNER DE ACESSO AO APP FOCADO DO AGENTE (TELA DA LARISSA) */}
+        {/* BANNER DE ACESSO AO APP FOCADO DO AGENTE (/acao) */}
         <div className="bg-gradient-to-r from-slate-900 to-blue-950 border border-blue-700/80 rounded-3xl p-4 sm:p-5 shadow-lg text-white">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -579,13 +890,13 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  📱 Modo Celular do Agente
+                  📱 Modo Celular do Agente (/acao)
                 </span>
                 <h3 className="text-sm sm:text-base font-black text-white mt-1">
-                  App do Agente de Campo (Tela da Larissa)
+                  App Interativo de Vistoria & Bloqueio em Campo
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                  Visão focada para o agente na rua: rota GPS direta até o portão, regra prática sem trena, checklists táteis na tela e botão de concluir imóvel.
+                  Sincronizado 100% com o acumulado das 2 semanas, escala das 5 duplas, raios de 100m/200m no mapa de satélite e checklists PNCD.
                 </p>
               </div>
             </div>
@@ -608,54 +919,17 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
           </div>
         </div>
 
-        {/* BANNER: TRABALHO EM PAPEL / PRANCHETA */}
-        <div className="bg-indigo-50 border border-indigo-200 rounded-3xl p-4 sm:p-5 shadow-xs">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-black text-indigo-950">
-                  Prefere trabalhar no papel ou acabou a bateria do celular?
-                </h3>
-                <p className="text-xs text-indigo-900 mt-0.5 leading-relaxed">
-                  Geramos uma <strong>Ficha de Campo Oficial Idêntica ao Aplicativo</strong> em PDF (1 página por dia, Segunda a Sexta). Os agentes levam na prancheta com caneta e marcam os mesmos quadrinhos de criadouros e alvos.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
-              <a
-                href="/FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-                download="FICHA_DE_CAMPO_IMPRESSA_AGENTE_OVITRAMPAS.pdf"
-                className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
-              >
-                <Download className="w-4 h-4" />
-                <span>Baixar Ficha Papel (5 Págs)</span>
-              </a>
-              <a
-                href="/GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
-                download="GUIA_DE_CAMPO_PRANCHETA_1_PAGINA.pdf"
-                className="flex-1 sm:flex-none bg-white hover:bg-indigo-50 active:scale-95 text-indigo-700 font-extrabold text-xs py-2.5 px-4 rounded-2xl border border-indigo-300 flex items-center justify-center gap-2 shadow-xs transition-all"
-              >
-                <Download className="w-4 h-4" />
-                <span>Guia 1 Pág (Bolso)</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. DISTRIBUIÇÃO DOS 10 AGENTES */}
+        {/* 2. DISTRIBUIÇÃO DOS 10 AGENTES (5 DUPLAS DE CAMPO) */}
         <section className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-slate-800" />
               <h2 className="text-sm sm:text-base font-black text-slate-900">
-                Distribuição da Equipe (10 Agentes em Campo)
+                Escala dos 10 Agentes de Campo (5 Duplas Operacionais)
               </h2>
             </div>
-            <span className="text-xs font-bold text-slate-500">
-              5 Frentes de Trabalho
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              100% Efetivo de Rua
             </span>
           </div>
 
@@ -672,7 +946,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                       {eq.efetivo}
                     </span>
                   </div>
-                  <div className="text-[11px] font-bold text-slate-700 mt-0.5">
+                  <div className="text-[11px] font-bold text-slate-800 mt-1">
                     📍 {eq.area}
                   </div>
                   <p className="text-[11px] text-slate-600 mt-1 leading-snug">
@@ -684,60 +958,55 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
           </div>
         </section>
 
-        {/* LOGÍSTICA DE VIATURAS DO MUNICÍPIO */}
+        {/* LOGÍSTICA DE VIATURAS DO MUNICÍPIO (MÁX 7 LUGARES) */}
         <section className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Navigation className="w-5 h-5 text-indigo-600" />
+              <Truck className="w-5 h-5 text-indigo-600" />
               <div>
                 <h2 className="text-sm sm:text-base font-black text-slate-900">
-                  Logística das 2 Viaturas Municipais
+                  Logística Real de Frota (Máximo 7 Lugares Simultâneos)
                 </h2>
                 <p className="text-xs text-slate-500">
-                  1 Carro de Passeio (5 Lugares) + 1 Caminhonete de Apoio (2 Lugares) para 10 Agentes
+                  1 Carro de Passeio (5 Lugares) + 1 Caminhonete de Apoio (2 Lugares) • Zero Mutirão &gt; 7 Agentes
                 </p>
               </div>
             </div>
             <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
-              Frota Dedicada
+              5L + 2L = 7 Lugares
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {/* Viatura 1: Carro 5 Lugares */}
             <div className="p-3.5 rounded-2xl border border-blue-200 bg-blue-50/60 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-blue-950 flex items-center gap-1.5">
                   🚗 Carro de Passeio (5 Lugares)
                 </span>
                 <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                  Deslocamento de Pessoal
+                  Eixos Distritais
                 </span>
               </div>
               <p className="text-blue-900 leading-relaxed">
-                <strong>Equipe Delta (3 ACEs nos Distritos):</strong> Transporta a equipe volante para Porto Velho do Cunha, Ilha dos Pombos, Barra de São Francisco e Córrego da Prata.
+                <strong>Segunda:</strong> Leva 4 ACEs (Equipes 1 e 2) para Barra de São Francisco.<br />
+                <strong>Quarta:</strong> Opera junto à Caminhonete levando ao todo 6 ACEs (Equipes 1, 2 e 3) para Influência + Usina Light.<br />
+                <strong>Quinta:</strong> Opera junto à Caminhonete levando 6 ACEs (Equipes 1, 2 e 3) para Porto Velho + Córrego da Prata.
               </p>
-              <div className="bg-white/80 p-2 rounded-xl border border-blue-100 text-blue-950 text-[11px]">
-                ⚡ <strong>Quarta-feira (Mutirão):</strong> Transporta 4 agentes urbanos da sede até Influência (2º Distrito) para somar forças com a Agente Fixa local.
-              </div>
             </div>
 
-            {/* Viatura 2: Caminhonete 2 Lugares */}
             <div className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-amber-950 flex items-center gap-1.5">
                   🛻 Caminhonete (2 Lugares)
                 </span>
                 <span className="text-[10px] font-black bg-amber-600 text-white px-2 py-0.5 rounded-full">
-                  Apoio Pesado & Terreno Difícil
+                  Apoio Pesado & Distritos
                 </span>
               </div>
               <p className="text-amber-900 leading-relaxed">
-                <strong>Apoio Tático & Encostas Íngremes:</strong> Conduzida pelo motorista/supervisor. Transporta escadas de vistoria de calhas altas, sacos para recolhimento de inservíveis pesados e sobe os morros mais inclinados da sede.
+                <strong>Segunda e Terça:</strong> Apoio pesado na Sede (escadas para calhas, recolhimento de inservíveis e subidas no Progresso e Caixa d'Água).<br />
+                <strong>Quarta, Quinta e Sexta:</strong> Soma 2 lugares ao Carro de 5 lugares para garantir deslocamento dos distritos sem jamais exceder o limite de 7 lugares.
               </p>
-              <div className="bg-white/80 p-2 rounded-xl border border-amber-100 text-amber-950 text-[11px]">
-                🏔️ <strong>Subidas Críticas:</strong> Dá apoio direto na Pousada Valle do Sol (Morro do Progresso) e na R. Senador Dantas (Morro da Caixa d'Água).
-              </div>
             </div>
           </div>
         </section>
@@ -748,10 +1017,10 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
             <MapPin className="w-5 h-5 text-red-600" />
             <div>
               <h2 className="text-sm sm:text-base font-black text-slate-900">
-                Raios de Ação Calibrados por Densidade de Ovos
+                Raios de Ação Calibrados pela Soma das 2 Semanas
               </h2>
               <p className="text-xs text-slate-500">
-                Padrão Ministério da Saúde & Fiocruz (Bioecologia do <i>Aedes aegypti</i>)
+                Padrão Ministério da Saúde & SES-RJ (Núcleo Focal 100m + Perímetro Perifocal 200m)
               </p>
             </div>
           </div>
@@ -783,7 +1052,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
               </h2>
             </div>
             <span className="text-xs text-slate-500 hidden sm:inline">
-              Toque no dia para ver os alvos
+              Toque no dia para ver os alvos e baixar o PDF diário
             </span>
           </div>
 
@@ -810,7 +1079,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
           </div>
 
           {/* CABEÇALHO DO DIA ATIVO */}
-          <div className="bg-slate-900 text-white rounded-3xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="bg-slate-900 text-white rounded-3xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/20 text-white">
                 {dadosDia.diaNome}
@@ -818,12 +1087,19 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
               <h3 className="text-sm sm:text-base font-black mt-1">
                 {dadosDia.destaque}
               </h3>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-300 mt-0.5">
                 {dadosDia.subtitulo}
               </p>
             </div>
-            <div className="text-xs text-slate-300">
-              <strong className="text-white font-bold">{dadosDia.alvos.length}</strong> armadilha(s) / ponto(s) de ação
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={dadosDia.pdfDia}
+                download
+                className="bg-red-600 hover:bg-red-500 text-white font-black text-xs px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Baixar PDF de {dadosDia.diaNome}</span>
+              </a>
             </div>
           </div>
 
@@ -837,48 +1113,46 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                 {/* Linha 1: Identificação e Badges */}
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-black bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200 text-slate-900">
+                    <span className="text-sm font-black bg-slate-900 text-white px-2.5 py-1 rounded-xl">
                       {alvo.id}
                     </span>
                     <div>
                       <div className="text-xs font-black text-slate-900">
                         {alvo.bairro} • Quarteirão {alvo.quarteirao}
                       </div>
-                      <div className="text-[11px] text-slate-500 font-medium">
-                        {alvo.endereco}
+                      <div className="text-[11px] text-slate-600 font-medium">
+                        {alvo.endereco} • <strong>{alvo.morador}</strong>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {alvo.ovos > 0 && (
-                      <span className="text-xs font-black bg-red-100 text-red-900 px-2 py-1 rounded-xl border border-red-200 flex items-center gap-1">
-                        <Flame className="w-3.5 h-3.5 text-red-600" />
-                        {alvo.ovos} ovos
-                      </span>
-                    )}
-                    <span className={`text-xs font-black text-white px-2 py-1 rounded-xl ${alvo.raioCor}`}>
-                      Raio {alvo.raio}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs font-black bg-red-100 text-red-900 px-2.5 py-1 rounded-xl border border-red-200 flex items-center gap-1">
+                      <Flame className="w-3.5 h-3.5 text-red-600" />
+                      🚨 {alvo.ovos} ovos nas 2 Sem. (Sem A: {alvo.ovosSem1} + Sem B: {alvo.ovosSem2})
+                    </span>
+                    <span className={`text-xs font-black text-white px-2.5 py-1 rounded-xl ${alvo.raioCor}`}>
+                      {alvo.raio}
                     </span>
                   </div>
                 </div>
 
                 {/* Linha 2: Equipe e Ação Tática */}
                 <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-2 text-xs">
-                  <div className="font-bold text-slate-700">
-                    👤 <strong className="text-slate-900">{alvo.equipe}</strong> • Morador: {alvo.morador}
+                  <div className="font-bold text-slate-800">
+                    👥 <strong className="text-blue-900">{alvo.equipe}</strong>
                   </div>
                   {alvo.raioPratico && (
                     <div className="bg-amber-100/80 border border-amber-300 text-amber-950 font-bold p-2.5 rounded-xl text-xs flex items-start gap-2">
                       <span className="text-base leading-none">📏</span>
                       <div>
-                        <strong className="text-amber-900 block mb-0.5">Como delimitar na prática (sem trena):</strong>
+                        <strong className="text-amber-900 block mb-0.5">Como delimitar na prática (Raio 100m / 200m MS):</strong>
                         <span className="font-medium text-amber-950">{alvo.raioPratico}</span>
                       </div>
                     </div>
                   )}
                   <p className="text-slate-600 leading-relaxed">
-                    🎯 <strong>Delimitação do Bloqueio:</strong> {alvo.acoes}
+                    🎯 <strong>Ação Operacional:</strong> {alvo.acoes}
                   </p>
                 </div>
 
@@ -916,7 +1190,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                 <div className="pt-1 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleAbrirGps(alvo.lat, alvo.lng, alvo.endereco)}
+                    onClick={() => handleAbrirGps(alvo.lat, alvo.lng)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
                   >
                     <Navigation className="w-4 h-4" />
@@ -951,7 +1225,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                   Cartografia Oficial: Mapas de Calor de Infestação
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Nevoeiro Térmico da Sede Urbana e dos Distritos
+                  Nevoeiro Térmico da Sede Urbana e dos Distritos (Acumulado 2 Semanas)
                 </p>
               </div>
             </div>
@@ -983,7 +1257,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                   Mapa 1: Sede Urbana
                 </span>
                 <p className="text-xs text-slate-700 leading-snug">
-                  Epicentros nos bairros <strong>Progresso (OV-23 - 342 ovos)</strong>, <strong>Centro (OV-10 - 242 ovos)</strong>, Jardim Centenário e Val Paraíso. Prioridade para segunda e terça-feira.
+                  Epicentros nos bairros <strong>Progresso (OV-23: 342 ovos)</strong>, <strong>Centro (OV-10: 242 ovos)</strong>, <strong>Val Paraíso (OV-31: 192 ovos)</strong> e <strong>Jd. Centenário (OV-05: 173 ovos)</strong>.
                 </p>
               </div>
             </div>
@@ -1009,7 +1283,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
                   Mapa 2: Distritos Municipais
                 </span>
                 <p className="text-xs text-slate-700 leading-snug">
-                  Destaque para o <strong>2º Distrito (Influência: 557 ovos)</strong>, <strong>Porto Velho (Major Fajardo: 343 ovos)</strong> e Ilha dos Pombos. Área da agente fixa e da volante Delta.
+                  Rotas casadas: <strong>Seg (Barra: 268 ovos)</strong>, <strong>Qua (Influência: 557 ovos + Light: 320 ovos)</strong> e <strong>Qui (Porto Velho: 343 ovos + Prata: 183 ovos)</strong>.
                 </p>
               </div>
             </div>
@@ -1078,7 +1352,7 @@ export function PlanoAcaoAgentesScreen({ onVoltar, onAbrirMapa, onAbrirAcaoFoco 
           Prefeitura Municipal de Carmo - RJ • Secretaria Municipal de Saúde • Vigilância Ambiental
         </p>
         <p className="text-[11px] text-slate-400">
-          Plano Operacional Semanal de Bloqueio Vetorial • Monitoramento Oficial das 56 Ovitrampas
+          Plano Operacional Semanal de Bloqueio Vetorial • Consolidado das 2 Semanas (56 Ovitrampas • 3.682 Ovos)
         </p>
       </footer>
 

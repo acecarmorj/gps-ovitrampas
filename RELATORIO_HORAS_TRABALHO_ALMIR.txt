@@ -1,0 +1,172 @@
+====================================================================================================
+RELATO TÉCNICO INFORMATIVO — CONTRIBUIÇÃO VOLUNTÁRIA E ESPONTÂNEA
+REGISTRO HISTÓRICO E PRESTAÇÃO DE INFORMAÇÕES TÉCNICAS À CHEFIA
+AUTOR DO DESENVOLVIMENTO: ALMIR LEMGRUBER (INICIATIVA PRÓPRIA E ESPONTÂNEA / RECURSOS PESSOAIS)
+PLATAFORMA: CEDIDA TEMPORARIAMENTE PARA USO DO MUNICÍPIO (PERÍODO: 01/09/2026 A 01/01/2027)
+MUNICÍPIO / ÂMBITO: PREFEITURA MUNICIPAL DE CARMO - RJ • SECRETARIA MUNICIPAL DE SAÚDE
+PERÍODO DE DESENVOLVIMENTO: 29/07/2026 A 24/09/2026
+ESCOPO: ENGENHARIA DE SOFTWARE, ARQUITETURA WEB, MODELAGEM DE DADOS E LABORATÓRIO (BANCADA/LUPA)
+OBSERVAÇÃO DE ESCOPO: CÔMPUTO RESTRITO AO DESENVOLVIMENTO E LABORATÓRIO; NÃO INCLUI CAMPO OU RUAS.
+====================================================================================================
+
+****************************************************************************************************
+AVISO FUNDAMENTAL: CARÁTER ESTRITAMENTE VOLUNTÁRIO, ESPONTÂNEO E INFORMATIVO
+(ISENÇÃO TOTAL E IRREVOGÁVEL DE QUALQUER CARÁTER DE COBRANÇA OU BANCO DE HORAS)
+****************************************************************************************************
+1. ESPONTANEIDADE ABSOLUTA (SEM PEDIDO DE NINGUÉM):
+   O desenvolvimento de todo o sistema partiu de iniciativa 100% pessoal, espontânea e voluntária
+   de Almir Lemgruber. Em momento algum houve qualquer ordem, solicitação, demanda, encargo ou
+   pedido por parte da chefia ou de qualquer autoridade da Prefeitura.
+
+2. AUSÊNCIA TOTAL E INCONDICIONAL DE COBRANÇA:
+   Registra-se com total clareza que este documento NÃO É e JAMAIS SERÁ cobrança financeira, fatura,
+   requerimento de horas extras, adicional noturno, gratificação ou compensação financeira. Trata-se
+   unicamente de um relato informativo para registro de memória técnica e transparência institucional.
+
+3. RECURSOS PARTICULARES E AMBIENTE DE EXECUÇÃO:
+   O desenvolvimento de software ocorreu na residência particular do autor, com seus próprios
+   computadores, internet particular e energia elétrica, durante períodos de folga, fins de semana
+   e descanso, sem utilizar bens públicos. As etapas laboratoriais de testes e microscopia sob lupa
+   (totalizando 3h 40min: dia 17/09 das 13:50 às 16:00 e dia 24/09 das 15:30 às 17:00) foram realizadas
+   durante o expediente funcional no ambiente de trabalho, utilizando, contudo, o tablet pessoal do autor.
+
+4. CESSÃO TEMPORÁRIA DA PLATAFORMA (01/09/2026 A 01/01/2027):
+   A plataforma tecnológica não foi doada definitivamente, mas sim CEDIDA temporariamente e a
+   título gratuito (custo zero aos cofres públicos) para uso exclusivo da Vigilância em Saúde no
+   período delimitado de 01/09/2026 a 01/01/2027, viabilizando com excelência o Programa de Ovitrampas
+   na sede e em todos os distritos.
+****************************************************************************************************
+
+
+RESUMO GERAL CONSOLIDADO (TEMPO ESTIMADO DEDICADO VOLUNTARIAMENTE E EM BANCADA):
+----------------------------------------------------------------------------------------------------
+1. FASE 1: CONCEPÇÃO BASE E PROJETO DE ORIGEM (D:\ALL\Ovitrampas — Jul/Ago)        :  20h 50min
+2. FASE 2: SISTEMA GEORREFERENCIADO AVANÇADO (F:\GPS OVITRAMPAS — Setembro)        :  24h 58min
+3. LABORATÓRIO E BANCADA (Microscopia sob Lupa, Testes e Calibração Fina)          :  03h 40min
+----------------------------------------------------------------------------------------------------
+TEMPO TOTAL ESTIMADO DE DEDICAÇÃO TÉCNICA E BANCADA (SEM ÔNUS AO MUNICÍPIO)        :  49h 28min
+====================================================================================================
+
+
+====================================================================================================
+DETALHAMENTO CRONOLÓGICO POR DIA, HORÁRIO E ATIVIDADE
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+FASE 1: CONCEPÇÃO INICIAL E PROJETO DE ORIGEM (D:\ALL\Ovitrampas) — JULHO A AGOSTO DE 2026
+----------------------------------------------------------------------------------------------------
+
+* 29/07/2026 (Quarta) | 17:04 às 23:59 (Dedicação: 06h 55min)
+  - Concepção do Sistema Base: Arquitetura do Ovitrampas Carmo, integração das primeiras malhas 
+    de logradouros, fluxo de QR Code (recipiente/palheta) e deploy Cloudflare.
+
+* 30/07/2026 (Quinta) | 00:00 às 00:30 (Dedicação: 00h 30min)
+  - Testes de Build e Router: Validação de proxy local, empacotamento de componentes e rotas da API.
+
+* 02/08/2026 (Domingo) | 20:10 às 21:30 (Dedicação: 01h 20min)
+  - Segurança, LGPD e Perfil ACE: Blindagem de dados sensíveis de moradores, observabilidade 
+    e isolamento do perfil de Agente de Combate às Endemias.
+
+* 12/08/2026 (Quarta) | 12:25 às 13:30 (Dedicação: 01h 05min)
+  - Planejamento Operacional: Estruturação do piloto municipal, rotas de consulta pública 
+    e checklist pré-campo (TESTE_AMANHA.md).
+
+* 12/08 a 13/08/2026 (Quarta/Quinta) | 23:30 às 01:45 (Dedicação: 02h 15min)
+  - Usabilidade Solar e Laboratório: Botão amarelo 'Onde estou' com radar pulsante, captura GPS <10m, 
+    fila de leitura laboratorial, modo escuro e backup D1.
+
+* 18/08/2026 (Terça) | 17:45 às 21:30 (Dedicação: 03h 45min)
+  - Demonstração Curso SES-RJ: Testes com fotos reais (dois-ovos-zoom), parametrização de sensibilidade, 
+    grade de 300m e layouts responsivos.
+
+* 19/08/2026 (Quarta) | 20:00 às 21:00 (Dedicação: 01h 00min)
+  - Validação Territorial: Geração de geodados vetoriais de Carmo e elaboração do documento 
+    de base técnica (BASE_TECNICA.md).
+
+* 20/08/2026 (Quinta) | 14:45 às 16:30 (Dedicação: 01h 45min)
+  - Etapas 1 a 4 (Arquitetura Avançada): Autenticação de rodadas, mutações de sincronização offline, 
+    armazenamento R2 para fotos e inteligência operacional.
+
+* 21/08/2026 (Sexta) | 01:30 às 02:15 (Dedicação: 00h 45min)
+  - Madrugada - Etapas 5 a 8: Histórico territorial, planejamento de rodadas, identidade individual 
+    de armadilhas e painel de operação em tempo real.
+
+* 21/08/2026 (Sexta) | 09:15 às 10:45 (Dedicação: 01h 30min)
+  - Manhã - Etapas 9 a 12: Controle de acesso RBAC, calibração de laboratório inteligente, 
+    relatórios de transparência e homologação técnica final.
+
+>>> SUBTOTAL FASE 1 (Origem, Base Técnica e Etapas 1 a 12): 20h 50min
+
+
+----------------------------------------------------------------------------------------------------
+FASE 2: SISTEMA GEORREFERENCIADO E LABORATÓRIO (F:\Desktop\GPS OVITRAMPAS) — SETEMBRO DE 2026
+----------------------------------------------------------------------------------------------------
+
+* 15/09/2026 (Terça) | 19:13 às 23:59 (Dedicação: 04h 46min)
+  - Concepção do Sistema Offline-First: Definição de regras de negócio, inclusão obrigatória do morador, 
+    malhas vetoriais de Carmo, banco local resiliente e painel em tempo real.
+
+* 16/09/2026 (Quarta) | 00:00 às 02:30 (Dedicação: 02h 30min)
+  - Madrugada de Desenvolvimento: Resolução de gargalos de GPS no tablet, validação de permissões 
+    e blindagem contra perda de dados.
+
+* 16/09/2026 (Quarta) | 11:57 às 13:30 (Dedicação: 01h 33min)
+  - Segurança Operacional: Análise dos primeiros registros e implementação da trava tripla de confirmação 
+    no botão de zerar dados.
+
+* 16/09/2026 (Quarta) | 18:01 às 23:30 (Dedicação: 05h 29min)
+  - Módulo Cenário Ideal e Rotas: Criação da grade geoespacial de 300m, rastreamento de múltiplos agentes 
+    (ACE 1, ACE 2), roteirização OSRM offline e filtros do mapa.
+
+* 17/09/2026 (Quinta) | 02:00 às 02:30 (Dedicação: 00h 30min)
+  - Auditoria de Código: Revisão técnica e publicação em produção na Cloudflare.
+
+* 17/09/2026 (Quinta) | 13:50 às 16:00 (Dedicação: 02h 10min)
+  - Laboratório e Assistente: Resolução de erro de conexão, testes com fotos reais de palhetas, 
+    remoção do limite de 80 ovos e validação do fluxo laboratorial.
+    NOTA OPERACIONAL: Atividade realizada durante o expediente funcional no ambiente de trabalho, 
+    utilizando o tablet pessoal do autor.
+
+* 17/09/2026 (Quinta) | 23:15 às 23:55 (Dedicação: 00h 40min)
+  - Ciclo Epidemiológico e Relatórios: Regra de permanência de ciclo no app e automatização do cálculo 
+    das datas de retirada nos relatórios.
+
+* 20/09/2026 (Domingo) | 21:45 às 23:00 (Dedicação: 01h 15min)
+  - Auditoria Pré-Distritos: Persistência de troca de palhetas no banco D1, tratamento de dados nulos 
+    e preenchimento de laboratório.
+
+* 21/09/2026 (Segunda) | 11:30 às 13:00 (Dedicação: 01h 30min)
+  - Modo Troca Rápida: Ajuste do ciclo para 5 dias; concepção, especificação técnica e aprovação 
+    do seletor por proximidade GPS no tablet/celular.
+
+* 22/09/2026 (Terça) | 20:30 às 23:45 (Dedicação: 03h 15min)
+  - Renumeração e Mapas Técnicos em PDF: Reordenação oficial das armadilhas 1 a 56 no banco e mapas 
+    distritais em PDF com raios de 175m e satélite.
+
+* 23/09/2026 (Quarta) | 21:30 às 22:30 (Dedicação: 01h 00min)
+  - Auditoria de Dados: Conferência dos registros de banco de dados, alinhamento técnico e validação de consistência.
+
+* 24/09/2026 (Quinta) | 15:30 às 17:00 (Dedicação: 01h 30min)
+  - Bancada e Microscopia (Lupa): Contagem manual detalhada sob lupa na palheta 2.jpeg (gabarito de 103 ovos 
+    e quadrante isolado de 20 ovos). 
+    NOTA OPERACIONAL: Atividade realizada durante o expediente funcional no local de trabalho, 
+    utilizando o tablet pessoal do autor.
+
+* 24/09/2026 (Quinta) | 17:00 às 19:30 (Dedicação: 02h 30min)
+  - Calibração Fina do Detector (Home): Confrontação do algoritmo contra a contagem manual sob lupa, 
+    implementação do filtro de 'miolo preto' (madeira) e deploy da v16.
+
+>>> SUBTOTAL FASE 2 (Sistema GPS Georreferenciado e Laboratório): 28h 38min
+
+====================================================================================================
+CONSOLIDAÇÃO FINAL DE DEDICAÇÃO TÉCNICA E BANCADA
+====================================================================================================
+- FASE 1: ORIGEM, BASE TÉCNICA E ETAPAS 1 A 12 (D:\ALL\Ovitrampas)   :   20 horas e 50 minutos
+- FASE 2: SISTEMA GEORREFERENCIADO AVANÇADO (F:\GPS OVITRAMPAS)      :   24 horas e 58 minutos
+- LABORATÓRIO E BANCADA (Microscopia sob Lupa e Calibração Fina)    :   03 horas e 40 minutos
+----------------------------------------------------------------------------------------------------
+TOTAL GERAL CONSOLIDADO (SEM ÔNUS / ISENÇÃO TOTAL DE COBRANÇA)       :   49 HORAS E 28 MINUTOS
+====================================================================================================
+DOCUMENTO PURAMENTE INFORMATIVO — REGISTRO HISTÓRICO DE CONTRIBUIÇÃO TÉCNICA VOLUNTÁRIA
+PLATAFORMA CEDIDA PARA USO DE 01/09/2026 A 01/01/2027 A TÍTULO GRATUITO
+AUTOR: ALMIR LEMGRUBER • CARMO - RJ

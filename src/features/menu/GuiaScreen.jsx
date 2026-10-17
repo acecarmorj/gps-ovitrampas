@@ -42,6 +42,26 @@ export function GuiaScreen({
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
+  // Envio rápido do link do App do Agente (/acao) no WhatsApp
+  const handleEnviarWhatsAppAcao = (e) => {
+    e.stopPropagation();
+    const urlAcao = typeof window !== 'undefined' ? `${window.location.origin}/acao` : 'https://gps-ovitrampas.pages.dev/acao';
+    const texto = [
+      '🚨 *GPS OVITRAMPAS - APP DE CAMPO DO AGENTE*',
+      '🎯 *Vistoria, Raio de Ação e Bloqueio Perifocal*',
+      '',
+      'Acesse o aplicativo de vistoria no seu celular:',
+      urlAcao,
+      '',
+      '✅ Raio de 100m (Núcleo Focal) e 200m (Perímetro MS)',
+      '✅ Rotas GPS automáticas até o portão do morador',
+      '✅ Manchas de calor territoriais oficiais (A + B)',
+      '✅ Funciona mesmo sem internet (Modo Offline)'
+    ].join('\n');
+
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+  };
+
   // Envio rápido do link do Plano de Ação Semanal no WhatsApp
   const handleEnviarWhatsAppPlano = (e) => {
     e.stopPropagation();
@@ -53,8 +73,7 @@ export function GuiaScreen({
       'Acesse o plano completo no celular com rotas GPS e cronograma diário:',
       urlPlano,
       '',
-      '✅ Raio de ação (100m, 80m, 50m) calibrado por armadilha',
-      '✅ 1 Agente dedicada em Influência + 4 frentes de trabalho',
+      '✅ Raio de ação (100m e 200m) calibrado por armadilha',
       '✅ Roteiro de eliminação e mapas de calor oficiais',
       '✅ PDF oficial disponível para impressão'
     ].join('\n');
@@ -71,7 +90,8 @@ export function GuiaScreen({
       iconeBg: 'bg-emerald-600 text-white border-emerald-500',
       titulo: 'App de Vistoria do Agente',
       descricao: 'Mapa interativo com raio de 100m (núcleo focal) e 200m (perímetro oficial MS), rota GPS direta ao portão, checklist tátil e conclusão ágil.',
-      destaque: true
+      destaque: true,
+      temWhatsAppAcao: true
     },
     {
       rota: '/campo',
@@ -228,6 +248,21 @@ export function GuiaScreen({
                 <p className="text-xs text-slate-500 leading-snug">
                   {item.descricao}
                 </p>
+
+                {/* BOTÃO PARA ENVIAR O APP DE VISTORIA DO AGENTE NO WHATSAPP */}
+                {item.temWhatsAppAcao && (
+                  <div className="pt-2 border-t border-emerald-200 mt-0.5">
+                    <button
+                      type="button"
+                      onClick={handleEnviarWhatsAppAcao}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs transition-all"
+                      title="Enviar link do App de Vistoria para o WhatsApp do Agente"
+                    >
+                      <MessageCircle className="w-4 h-4 shrink-0" />
+                      <span>Enviar App de Vistoria no WhatsApp</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* BOTÃO ÚNICO E ULTRA SIMPLES: SÓ PARA O APP DO AGENTE */}
                 {item.temWhatsApp && (

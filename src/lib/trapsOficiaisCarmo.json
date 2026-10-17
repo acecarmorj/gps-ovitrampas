@@ -19,7 +19,10 @@
     "moradorNome": "Maria de Fátima",
     "ultimosOvos": 0,
     "ultimaPalheta": "01A",
-    "ultimaLeituraEm": "2026-09-25T12:14:41.286Z"
+    "ultimaLeituraEm": "2026-09-25T12:14:41.286Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789561937247-gzcx",
@@ -34,14 +37,17 @@
     "latitude": -21.9241407,
     "longitude": -42.6118217,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 19,
     "ultima_palheta": "02A",
     "ultima_leitura_em": "2026-09-25T12:17:10.958Z",
     "numeroImovel": "158",
     "moradorNome": "Glória",
-    "ultimosOvos": 0,
+    "ultimosOvos": 19,
     "ultimaPalheta": "02A",
-    "ultimaLeituraEm": "2026-09-25T12:17:10.958Z"
+    "ultimaLeituraEm": "2026-09-25T12:17:10.958Z",
+    "ovosSem1": 0,
+    "ovosSem2": 19,
+    "ovosTotal": 19
   },
   {
     "id": "arm-1789562877903-w5qs",
@@ -56,14 +62,17 @@
     "latitude": -21.9255506,
     "longitude": -42.6095299,
     "status": "analisada",
-    "ultimos_ovos": 5,
+    "ultimos_ovos": 53,
     "ultima_palheta": "03A",
     "ultima_leitura_em": "2026-09-25T12:23:49.334Z",
     "numeroImovel": "30",
     "moradorNome": "Samy Soares",
-    "ultimosOvos": 5,
+    "ultimosOvos": 53,
     "ultimaPalheta": "03A",
-    "ultimaLeituraEm": "2026-09-25T12:23:49.334Z"
+    "ultimaLeituraEm": "2026-09-25T12:23:49.334Z",
+    "ovosSem1": 5,
+    "ovosSem2": 48,
+    "ovosTotal": 53
   },
   {
     "id": "arm-1789563555407-8ndn",
@@ -78,14 +87,17 @@
     "latitude": -21.9295794,
     "longitude": -42.6090547,
     "status": "analisada",
-    "ultimos_ovos": 16,
+    "ultimos_ovos": 53,
     "ultima_palheta": "04A",
     "ultima_leitura_em": "2026-09-25T12:29:43.323Z",
     "numeroImovel": "99",
     "moradorNome": "PA",
-    "ultimosOvos": 16,
+    "ultimosOvos": 53,
     "ultimaPalheta": "04A",
-    "ultimaLeituraEm": "2026-09-25T12:29:43.323Z"
+    "ultimaLeituraEm": "2026-09-25T12:29:43.323Z",
+    "ovosSem1": 16,
+    "ovosSem2": 37,
+    "ovosTotal": 53
   },
   {
     "id": "arm-1789564207632-4c49",
@@ -100,14 +112,17 @@
     "latitude": -21.9283241,
     "longitude": -42.6057119,
     "status": "analisada",
-    "ultimos_ovos": 6,
+    "ultimos_ovos": 173,
     "ultima_palheta": "05A",
     "ultima_leitura_em": "2026-09-25T12:34:29.743Z",
     "numeroImovel": "63",
     "moradorNome": "Manoel Ezidio",
-    "ultimosOvos": 6,
+    "ultimosOvos": 173,
     "ultimaPalheta": "05A",
-    "ultimaLeituraEm": "2026-09-25T12:34:29.743Z"
+    "ultimaLeituraEm": "2026-09-25T12:34:29.743Z",
+    "ovosSem1": 6,
+    "ovosSem2": 167,
+    "ovosTotal": 173
   },
   {
     "id": "arm-1789564774129-hoej",
@@ -129,7 +144,10 @@
     "moradorNome": "Cleyde",
     "ultimosOvos": 0,
     "ultimaPalheta": "06A",
-    "ultimaLeituraEm": "2026-09-25T12:37:20.560Z"
+    "ultimaLeituraEm": "2026-09-25T12:37:20.560Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789565248182-pxpc",
@@ -151,7 +169,10 @@
     "moradorNome": "Lidiane",
     "ultimosOvos": 10,
     "ultimaPalheta": "07A",
-    "ultimaLeituraEm": "2026-09-25T12:41:52.130Z"
+    "ultimaLeituraEm": "2026-09-25T12:41:52.130Z",
+    "ovosSem1": 10,
+    "ovosSem2": 0,
+    "ovosTotal": 10
   },
   {
     "id": "arm-1789565947179-8ffe",
@@ -166,14 +187,17 @@
     "latitude": -21.93999988189676,
     "longitude": -42.60358864838972,
     "status": "analisada",
-    "ultimos_ovos": 64,
+    "ultimos_ovos": 93,
     "ultima_palheta": "08A",
     "ultima_leitura_em": "2026-09-25T12:57:09.558Z",
     "numeroImovel": "161",
     "moradorNome": "ESF Botafogo",
-    "ultimosOvos": 64,
+    "ultimosOvos": 93,
     "ultimaPalheta": "08A",
-    "ultimaLeituraEm": "2026-09-25T12:57:09.558Z"
+    "ultimaLeituraEm": "2026-09-25T12:57:09.558Z",
+    "ovosSem1": 64,
+    "ovosSem2": 29,
+    "ovosTotal": 93
   },
   {
     "id": "arm-1789566623464-vl0c",
@@ -195,7 +219,10 @@
     "moradorNome": "Marli",
     "ultimosOvos": 15,
     "ultimaPalheta": "09A",
-    "ultimaLeituraEm": "2026-09-25T13:03:15.192Z"
+    "ultimaLeituraEm": "2026-09-25T13:03:15.192Z",
+    "ovosSem1": 15,
+    "ovosSem2": 0,
+    "ovosTotal": 15
   },
   {
     "id": "arm-1789567342828-u911",
@@ -210,14 +237,17 @@
     "latitude": -21.932765365119025,
     "longitude": -42.61110867464551,
     "status": "analisada",
-    "ultimos_ovos": 41,
+    "ultimos_ovos": 242,
     "ultima_palheta": "10A",
     "ultima_leitura_em": "2026-09-25T13:05:27.843Z",
     "numeroImovel": "42",
     "moradorNome": "Clea Suely",
-    "ultimosOvos": 41,
+    "ultimosOvos": 242,
     "ultimaPalheta": "10A",
-    "ultimaLeituraEm": "2026-09-25T13:05:27.843Z"
+    "ultimaLeituraEm": "2026-09-25T13:05:27.843Z",
+    "ovosSem1": 41,
+    "ovosSem2": 201,
+    "ovosTotal": 242
   },
   {
     "id": "arm-1789568139987-a2jn",
@@ -239,7 +269,10 @@
     "moradorNome": "Asilo São Vicente",
     "ultimosOvos": 24,
     "ultimaPalheta": "11A",
-    "ultimaLeituraEm": "2026-09-25T13:34:12.173Z"
+    "ultimaLeituraEm": "2026-09-25T13:34:12.173Z",
+    "ovosSem1": 24,
+    "ovosSem2": 0,
+    "ovosTotal": 24
   },
   {
     "id": "arm-1789568755975-0cfo",
@@ -254,14 +287,17 @@
     "latitude": -21.933593641281078,
     "longitude": -42.60775037192061,
     "status": "analisada",
-    "ultimos_ovos": 64,
+    "ultimos_ovos": 84,
     "ultima_palheta": "12A",
     "ultima_leitura_em": "2026-09-25T13:41:16.899Z",
     "numeroImovel": "40",
     "moradorNome": "José Carlos enfermeiro",
-    "ultimosOvos": 64,
+    "ultimosOvos": 84,
     "ultimaPalheta": "12A",
-    "ultimaLeituraEm": "2026-09-25T13:41:16.899Z"
+    "ultimaLeituraEm": "2026-09-25T13:41:16.899Z",
+    "ovosSem1": 64,
+    "ovosSem2": 20,
+    "ovosTotal": 84
   },
   {
     "id": "arm-1789577379305-fc9z",
@@ -276,14 +312,17 @@
     "latitude": -21.933422423700183,
     "longitude": -42.60432834087796,
     "status": "analisada",
-    "ultimos_ovos": 48,
+    "ultimos_ovos": 71,
     "ultima_palheta": "13A",
     "ultima_leitura_em": "2026-09-25T13:47:56.494Z",
     "numeroImovel": "618",
     "moradorNome": "Lucia Glória",
-    "ultimosOvos": 48,
+    "ultimosOvos": 71,
     "ultimaPalheta": "13A",
-    "ultimaLeituraEm": "2026-09-25T13:47:56.494Z"
+    "ultimaLeituraEm": "2026-09-25T13:47:56.494Z",
+    "ovosSem1": 48,
+    "ovosSem2": 23,
+    "ovosTotal": 71
   },
   {
     "id": "arm-1789577970728-do7m",
@@ -305,7 +344,10 @@
     "moradorNome": "Chico Cesario",
     "ultimosOvos": 0,
     "ultimaPalheta": "14A",
-    "ultimaLeituraEm": "2026-09-25T13:51:10.624Z"
+    "ultimaLeituraEm": "2026-09-25T13:51:10.624Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789578853243-y1i8",
@@ -327,7 +369,10 @@
     "moradorNome": "Maria das Dores Meneguiti",
     "ultimosOvos": 78,
     "ultimaPalheta": "15A",
-    "ultimaLeituraEm": "2026-09-25T13:55:34.517Z"
+    "ultimaLeituraEm": "2026-09-25T13:55:34.517Z",
+    "ovosSem1": 78,
+    "ovosSem2": 0,
+    "ovosTotal": 78
   },
   {
     "id": "arm-1789579761774-upz5",
@@ -342,14 +387,17 @@
     "latitude": -21.937232261756172,
     "longitude": -42.60561470469265,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 89,
     "ultima_palheta": "16A",
     "ultima_leitura_em": "2026-09-25T13:57:51.768Z",
     "numeroImovel": "347",
     "moradorNome": "Selma Araújo",
-    "ultimosOvos": 0,
+    "ultimosOvos": 89,
     "ultimaPalheta": "16A",
-    "ultimaLeituraEm": "2026-09-25T13:57:51.768Z"
+    "ultimaLeituraEm": "2026-09-25T13:57:51.768Z",
+    "ovosSem1": 0,
+    "ovosSem2": 89,
+    "ovosTotal": 89
   },
   {
     "id": "arm-1789580518068-8y8t",
@@ -371,7 +419,10 @@
     "moradorNome": "Gilmar Lutero",
     "ultimosOvos": 0,
     "ultimaPalheta": "17A",
-    "ultimaLeituraEm": "2026-09-25T14:01:16.994Z"
+    "ultimaLeituraEm": "2026-09-25T14:01:16.994Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789567706600-zzcl",
@@ -393,7 +444,10 @@
     "moradorNome": "Cirillo",
     "ultimosOvos": 0,
     "ultimaPalheta": "18A",
-    "ultimaLeituraEm": "2026-09-25T14:07:36.270Z"
+    "ultimaLeituraEm": "2026-09-25T14:07:36.270Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789567857833-7cec",
@@ -415,7 +469,10 @@
     "moradorNome": "Clube",
     "ultimosOvos": 0,
     "ultimaPalheta": "19A",
-    "ultimaLeituraEm": "2026-09-25T14:09:30.423Z"
+    "ultimaLeituraEm": "2026-09-25T14:09:30.423Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789567983536-p42n",
@@ -437,7 +494,10 @@
     "moradorNome": "Roseli Ribeiro",
     "ultimosOvos": 0,
     "ultimaPalheta": "20A",
-    "ultimaLeituraEm": "2026-09-25T14:11:41.291Z"
+    "ultimaLeituraEm": "2026-09-25T14:11:41.291Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789568061794-knwe",
@@ -459,7 +519,10 @@
     "moradorNome": "Paula Miranda",
     "ultimosOvos": 100,
     "ultimaPalheta": "21A",
-    "ultimaLeituraEm": "2026-09-25T14:18:06.882Z"
+    "ultimaLeituraEm": "2026-09-25T14:18:06.882Z",
+    "ovosSem1": 100,
+    "ovosSem2": 0,
+    "ovosTotal": 100
   },
   {
     "id": "arm-1789575715858-0msp",
@@ -481,7 +544,10 @@
     "moradorNome": "Fátima Regina",
     "ultimosOvos": 0,
     "ultimaPalheta": "22A",
-    "ultimaLeituraEm": "2026-09-25T14:19:51.649Z"
+    "ultimaLeituraEm": "2026-09-25T14:19:51.649Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789568231030-smdm",
@@ -496,14 +562,17 @@
     "latitude": -21.927938586062655,
     "longitude": -42.61660181237798,
     "status": "analisada",
-    "ultimos_ovos": 147,
+    "ultimos_ovos": 342,
     "ultima_palheta": "23A",
     "ultima_leitura_em": "2026-09-25T12:09:00.249Z",
     "numeroImovel": "51",
     "moradorNome": "Pousada Valle do sol",
-    "ultimosOvos": 147,
+    "ultimosOvos": 342,
     "ultimaPalheta": "23A",
-    "ultimaLeituraEm": "2026-09-25T12:09:00.249Z"
+    "ultimaLeituraEm": "2026-09-25T12:09:00.249Z",
+    "ovosSem1": 147,
+    "ovosSem2": 195,
+    "ovosTotal": 342
   },
   {
     "id": "arm-1789568310168-va5i",
@@ -525,7 +594,10 @@
     "moradorNome": "Marienio Oliveira",
     "ultimosOvos": 0,
     "ultimaPalheta": "24A",
-    "ultimaLeituraEm": "2026-09-25T14:21:36.746Z"
+    "ultimaLeituraEm": "2026-09-25T14:21:36.746Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789568683927-f22l",
@@ -540,14 +612,17 @@
     "latitude": -21.92085143646404,
     "longitude": -42.61620752517378,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 15,
     "ultima_palheta": "25A",
     "ultima_leitura_em": "2026-09-25T14:24:36.269Z",
     "numeroImovel": "S/N",
     "moradorNome": "Edson Levindo",
-    "ultimosOvos": 0,
+    "ultimosOvos": 15,
     "ultimaPalheta": "25A",
-    "ultimaLeituraEm": "2026-09-25T14:24:36.269Z"
+    "ultimaLeituraEm": "2026-09-25T14:24:36.269Z",
+    "ovosSem1": 0,
+    "ovosSem2": 15,
+    "ovosTotal": 15
   },
   {
     "id": "arm-1789575430572-q218",
@@ -569,7 +644,10 @@
     "moradorNome": "Maxwell Neves",
     "ultimosOvos": 5,
     "ultimaPalheta": "26A",
-    "ultimaLeituraEm": "2026-09-25T16:26:30.427Z"
+    "ultimaLeituraEm": "2026-09-25T16:26:30.427Z",
+    "ovosSem1": 5,
+    "ovosSem2": 0,
+    "ovosTotal": 5
   },
   {
     "id": "arm-1789577359108-cl2d",
@@ -584,14 +662,17 @@
     "latitude": -21.93966555614246,
     "longitude": -42.60646379636183,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 6,
     "ultima_palheta": "27A",
     "ultima_leitura_em": "2026-09-25T16:27:28.773Z",
     "numeroImovel": "40",
     "moradorNome": "Pretinho",
-    "ultimosOvos": 0,
+    "ultimosOvos": 6,
     "ultimaPalheta": "27A",
-    "ultimaLeituraEm": "2026-09-25T16:27:28.773Z"
+    "ultimaLeituraEm": "2026-09-25T16:27:28.773Z",
+    "ovosSem1": 0,
+    "ovosSem2": 6,
+    "ovosTotal": 6
   },
   {
     "id": "arm-1789578298866-zsqb",
@@ -606,14 +687,17 @@
     "latitude": -21.942353109997164,
     "longitude": -42.608839578535445,
     "status": "analisada",
-    "ultimos_ovos": 86,
+    "ultimos_ovos": 95,
     "ultima_palheta": "28A",
     "ultima_leitura_em": "2026-09-25T16:34:15.744Z",
     "numeroImovel": "235",
     "moradorNome": "Vicente",
-    "ultimosOvos": 86,
+    "ultimosOvos": 95,
     "ultimaPalheta": "28A",
-    "ultimaLeituraEm": "2026-09-25T16:34:15.744Z"
+    "ultimaLeituraEm": "2026-09-25T16:34:15.744Z",
+    "ovosSem1": 86,
+    "ovosSem2": 9,
+    "ovosTotal": 95
   },
   {
     "id": "arm-1789578871641-x5lo",
@@ -635,7 +719,10 @@
     "moradorNome": "ESF Val paraíso",
     "ultimosOvos": 0,
     "ultimaPalheta": "29A",
-    "ultimaLeituraEm": "2026-09-25T16:34:38.119Z"
+    "ultimaLeituraEm": "2026-09-25T16:34:38.119Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789579285624-b2ie",
@@ -657,7 +744,10 @@
     "moradorNome": "Janine",
     "ultimosOvos": 21,
     "ultimaPalheta": "30A",
-    "ultimaLeituraEm": "2026-09-25T16:36:18.596Z"
+    "ultimaLeituraEm": "2026-09-25T16:36:18.596Z",
+    "ovosSem1": 21,
+    "ovosSem2": 0,
+    "ovosTotal": 21
   },
   {
     "id": "arm-1789579965238-d44c",
@@ -672,14 +762,17 @@
     "latitude": -21.942712250512713,
     "longitude": -42.612501539311495,
     "status": "analisada",
-    "ultimos_ovos": 51,
+    "ultimos_ovos": 192,
     "ultima_palheta": "31A",
     "ultima_leitura_em": "2026-09-25T16:38:05.220Z",
     "numeroImovel": "98",
     "moradorNome": "Rosimeri",
-    "ultimosOvos": 51,
+    "ultimosOvos": 192,
     "ultimaPalheta": "31A",
-    "ultimaLeituraEm": "2026-09-25T16:38:05.220Z"
+    "ultimaLeituraEm": "2026-09-25T16:38:05.220Z",
+    "ovosSem1": 51,
+    "ovosSem2": 141,
+    "ovosTotal": 192
   },
   {
     "id": "arm-1789580583652-fak6",
@@ -694,14 +787,17 @@
     "latitude": -21.941374620991414,
     "longitude": -42.614383689389726,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 22,
     "ultima_palheta": "32A",
     "ultima_leitura_em": "2026-09-25T16:38:53.108Z",
     "numeroImovel": "365",
     "moradorNome": "Regina Azevedo",
-    "ultimosOvos": 0,
+    "ultimosOvos": 22,
     "ultimaPalheta": "32A",
-    "ultimaLeituraEm": "2026-09-25T16:38:53.108Z"
+    "ultimaLeituraEm": "2026-09-25T16:38:53.108Z",
+    "ovosSem1": 0,
+    "ovosSem2": 22,
+    "ovosTotal": 22
   },
   {
     "id": "arm-1789581470771-xcnu",
@@ -723,7 +819,10 @@
     "moradorNome": "Fernando Sassa",
     "ultimosOvos": 22,
     "ultimaPalheta": "33A",
-    "ultimaLeituraEm": "2026-09-25T16:40:39.589Z"
+    "ultimaLeituraEm": "2026-09-25T16:40:39.589Z",
+    "ovosSem1": 22,
+    "ovosSem2": 0,
+    "ovosTotal": 22
   },
   {
     "id": "arm-1789581932254-btj4",
@@ -738,14 +837,17 @@
     "latitude": -21.93939695791891,
     "longitude": -42.60992515274612,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 66,
     "ultima_palheta": "34A",
     "ultima_leitura_em": "2026-09-25T16:42:15.184Z",
     "numeroImovel": "98",
     "moradorNome": "Delvania",
-    "ultimosOvos": 0,
+    "ultimosOvos": 66,
     "ultimaPalheta": "34A",
-    "ultimaLeituraEm": "2026-09-25T16:42:15.184Z"
+    "ultimaLeituraEm": "2026-09-25T16:42:15.184Z",
+    "ovosSem1": 0,
+    "ovosSem2": 66,
+    "ovosTotal": 66
   },
   {
     "id": "arm-1789582843622-ovb2",
@@ -760,14 +862,17 @@
     "latitude": -21.935099495109874,
     "longitude": -42.60626333706884,
     "status": "analisada",
-    "ultimos_ovos": 4,
+    "ultimos_ovos": 121,
     "ultima_palheta": "35A",
     "ultima_leitura_em": "2026-09-25T14:04:53.918Z",
     "numeroImovel": "269",
     "moradorNome": "Almir Lemgruber",
-    "ultimosOvos": 4,
+    "ultimosOvos": 121,
     "ultimaPalheta": "35A",
-    "ultimaLeituraEm": "2026-09-25T14:04:53.918Z"
+    "ultimaLeituraEm": "2026-09-25T14:04:53.918Z",
+    "ovosSem1": 4,
+    "ovosSem2": 117,
+    "ovosTotal": 121
   },
   {
     "id": "arm-1789649655962-wbig",
@@ -782,14 +887,17 @@
     "latitude": -21.8758627,
     "longitude": -42.6660048,
     "status": "analisada",
-    "ultimos_ovos": 53,
+    "ultimos_ovos": 222,
     "ultima_palheta": "36A",
     "ultima_leitura_em": "2026-09-25T16:47:13.668Z",
     "numeroImovel": "116",
     "moradorNome": "Silvana de Oliveira",
-    "ultimosOvos": 53,
+    "ultimosOvos": 222,
     "ultimaPalheta": "36A",
-    "ultimaLeituraEm": "2026-09-25T16:47:13.668Z"
+    "ultimaLeituraEm": "2026-09-25T16:47:13.668Z",
+    "ovosSem1": 53,
+    "ovosSem2": 169,
+    "ovosTotal": 222
   },
   {
     "id": "arm-1789649907101-86z4",
@@ -811,7 +919,10 @@
     "moradorNome": "Franciane Miguel",
     "ultimosOvos": 2,
     "ultimaPalheta": "37A",
-    "ultimaLeituraEm": "2026-09-25T16:48:18.064Z"
+    "ultimaLeituraEm": "2026-09-25T16:48:18.064Z",
+    "ovosSem1": 2,
+    "ovosSem2": 0,
+    "ovosTotal": 2
   },
   {
     "id": "arm-1789651010207-bjvg",
@@ -826,14 +937,17 @@
     "latitude": -21.8770524,
     "longitude": -42.6694291,
     "status": "analisada",
-    "ultimos_ovos": 25,
+    "ultimos_ovos": 210,
     "ultima_palheta": "38A",
     "ultima_leitura_em": "2026-09-25T16:49:26.641Z",
     "numeroImovel": "S/N",
     "moradorNome": "Independente",
-    "ultimosOvos": 25,
+    "ultimosOvos": 210,
     "ultimaPalheta": "38A",
-    "ultimaLeituraEm": "2026-09-25T16:49:26.641Z"
+    "ultimaLeituraEm": "2026-09-25T16:49:26.641Z",
+    "ovosSem1": 25,
+    "ovosSem2": 185,
+    "ovosTotal": 210
   },
   {
     "id": "arm-1789652488204-4qs0",
@@ -848,14 +962,17 @@
     "latitude": -21.841029573604594,
     "longitude": -42.57394175166772,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 30,
     "ultima_palheta": "39A",
     "ultima_leitura_em": "2026-09-25T16:50:20.922Z",
     "numeroImovel": "375",
     "moradorNome": "Jorge Alfredo de Onofre",
-    "ultimosOvos": 0,
+    "ultimosOvos": 30,
     "ultimaPalheta": "39A",
-    "ultimaLeituraEm": "2026-09-25T16:50:20.922Z"
+    "ultimaLeituraEm": "2026-09-25T16:50:20.922Z",
+    "ovosSem1": 0,
+    "ovosSem2": 30,
+    "ovosTotal": 30
   },
   {
     "id": "arm-1789653356097-3ftk",
@@ -870,14 +987,17 @@
     "latitude": -21.841515515462255,
     "longitude": -42.576962941212535,
     "status": "analisada",
-    "ultimos_ovos": 20,
+    "ultimos_ovos": 66,
     "ultima_palheta": "40A",
     "ultima_leitura_em": "2026-09-25T16:51:56.729Z",
     "numeroImovel": "34",
     "moradorNome": "Meira Lúcia Ferreira Pinheiro",
-    "ultimosOvos": 20,
+    "ultimosOvos": 66,
     "ultimaPalheta": "40A",
-    "ultimaLeituraEm": "2026-09-25T16:51:56.729Z"
+    "ultimaLeituraEm": "2026-09-25T16:51:56.729Z",
+    "ovosSem1": 20,
+    "ovosSem2": 46,
+    "ovosTotal": 66
   },
   {
     "id": "arm-1789654076912-66mo",
@@ -892,14 +1012,17 @@
     "latitude": -21.8406223262746,
     "longitude": -42.58068827790986,
     "status": "analisada",
-    "ultimos_ovos": 40,
+    "ultimos_ovos": 203,
     "ultima_palheta": "41A",
     "ultima_leitura_em": "2026-09-25T16:53:20.801Z",
     "numeroImovel": "130",
     "moradorNome": "Dayse Regina Lopes",
-    "ultimosOvos": 40,
+    "ultimosOvos": 203,
     "ultimaPalheta": "41A",
-    "ultimaLeituraEm": "2026-09-25T16:53:20.801Z"
+    "ultimaLeituraEm": "2026-09-25T16:53:20.801Z",
+    "ovosSem1": 40,
+    "ovosSem2": 163,
+    "ovosTotal": 203
   },
   {
     "id": "arm-1789655238325-xmp9",
@@ -921,7 +1044,10 @@
     "moradorNome": "Maria das Graças Corrêa Cunha",
     "ultimosOvos": 0,
     "ultimaPalheta": "42A",
-    "ultimaLeituraEm": "2026-09-25T16:53:59.221Z"
+    "ultimaLeituraEm": "2026-09-25T16:53:59.221Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789655953076-xua5",
@@ -943,7 +1069,10 @@
     "moradorNome": "Carmem Cunha",
     "ultimosOvos": 0,
     "ultimaPalheta": "43A",
-    "ultimaLeituraEm": "2026-09-25T16:55:13.403Z"
+    "ultimaLeituraEm": "2026-09-25T16:55:13.403Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789656430052-2ws0",
@@ -958,14 +1087,17 @@
     "latitude": -21.82485907109985,
     "longitude": -42.54815005878469,
     "status": "analisada",
-    "ultimos_ovos": 2,
+    "ultimos_ovos": 102,
     "ultima_palheta": "44A",
     "ultima_leitura_em": "2026-09-25T16:56:44.319Z",
     "numeroImovel": "312",
     "moradorNome": "ESF Porto Velho",
-    "ultimosOvos": 2,
+    "ultimosOvos": 102,
     "ultimaPalheta": "44A",
-    "ultimaLeituraEm": "2026-09-25T16:56:44.319Z"
+    "ultimaLeituraEm": "2026-09-25T16:56:44.319Z",
+    "ovosSem1": 2,
+    "ovosSem2": 100,
+    "ovosTotal": 102
   },
   {
     "id": "arm-1789656911576-qlln",
@@ -980,14 +1112,17 @@
     "latitude": -21.82382437647019,
     "longitude": -42.545431677038074,
     "status": "analisada",
-    "ultimos_ovos": 35,
+    "ultimos_ovos": 241,
     "ultima_palheta": "45A",
     "ultima_leitura_em": "2026-09-25T16:58:59.164Z",
     "numeroImovel": "601",
     "moradorNome": "Lindomar Noronha",
-    "ultimosOvos": 35,
+    "ultimosOvos": 241,
     "ultimaPalheta": "45A",
-    "ultimaLeituraEm": "2026-09-25T16:58:59.164Z"
+    "ultimaLeituraEm": "2026-09-25T16:58:59.164Z",
+    "ovosSem1": 35,
+    "ovosSem2": 206,
+    "ovosTotal": 241
   },
   {
     "id": "arm-1789657544974-g3v5",
@@ -1009,7 +1144,10 @@
     "moradorNome": "Olívia",
     "ultimosOvos": 0,
     "ultimaPalheta": "46A",
-    "ultimaLeituraEm": "2026-09-25T17:00:18.156Z"
+    "ultimaLeituraEm": "2026-09-25T17:00:18.156Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789659487219-s0p7",
@@ -1031,7 +1169,10 @@
     "moradorNome": "Joselia Correa de Carvalho",
     "ultimosOvos": 0,
     "ultimaPalheta": "47A",
-    "ultimaLeituraEm": "2026-09-25T17:01:16.803Z"
+    "ultimaLeituraEm": "2026-09-25T17:01:16.803Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789660058814-w64h",
@@ -1046,14 +1187,17 @@
     "latitude": -21.864574958020345,
     "longitude": -42.4863877160588,
     "status": "analisada",
-    "ultimos_ovos": 7,
+    "ultimos_ovos": 121,
     "ultima_palheta": "48A",
     "ultima_leitura_em": "2026-09-25T17:02:29.957Z",
     "numeroImovel": "48",
     "moradorNome": "ESF Córrego da Prata",
-    "ultimosOvos": 7,
+    "ultimosOvos": 121,
     "ultimaPalheta": "48A",
-    "ultimaLeituraEm": "2026-09-25T17:02:29.957Z"
+    "ultimaLeituraEm": "2026-09-25T17:02:29.957Z",
+    "ovosSem1": 7,
+    "ovosSem2": 114,
+    "ovosTotal": 121
   },
   {
     "id": "arm-1789660517578-qbax",
@@ -1068,14 +1212,17 @@
     "latitude": -21.86325670086373,
     "longitude": -42.48285138766572,
     "status": "analisada",
-    "ultimos_ovos": 2,
+    "ultimos_ovos": 62,
     "ultima_palheta": "PL-49",
     "ultima_leitura_em": "2026-09-25T17:03:03.104Z",
     "numeroImovel": "S/N",
     "moradorNome": "Rosilene Souza Ferreira",
-    "ultimosOvos": 2,
+    "ultimosOvos": 62,
     "ultimaPalheta": "PL-49",
-    "ultimaLeituraEm": "2026-09-25T17:03:03.104Z"
+    "ultimaLeituraEm": "2026-09-25T17:03:03.104Z",
+    "ovosSem1": 2,
+    "ovosSem2": 60,
+    "ovosTotal": 62
   },
   {
     "id": "arm-1789648785158-n77z",
@@ -1090,14 +1237,17 @@
     "latitude": -21.87193514039126,
     "longitude": -42.653653031135335,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 14,
     "ultima_palheta": "50A",
     "ultima_leitura_em": "2026-09-25T17:04:12.183Z",
     "numeroImovel": "S/N",
     "moradorNome": "ESF Influência",
-    "ultimosOvos": 0,
+    "ultimosOvos": 14,
     "ultimaPalheta": "50A",
-    "ultimaLeituraEm": "2026-09-25T17:04:12.183Z"
+    "ultimaLeituraEm": "2026-09-25T17:04:12.183Z",
+    "ovosSem1": 0,
+    "ovosSem2": 14,
+    "ovosTotal": 14
   },
   {
     "id": "arm-1789651701198-4nf0",
@@ -1112,14 +1262,17 @@
     "latitude": -21.873349450044728,
     "longitude": -42.661692805615075,
     "status": "analisada",
-    "ultimos_ovos": 3,
+    "ultimos_ovos": 109,
     "ultima_palheta": "51A",
     "ultima_leitura_em": "2026-09-25T17:06:19.214Z",
     "numeroImovel": "182",
     "moradorNome": "Aline Reiff",
-    "ultimosOvos": 3,
+    "ultimosOvos": 109,
     "ultimaPalheta": "51A",
-    "ultimaLeituraEm": "2026-09-25T17:06:19.214Z"
+    "ultimaLeituraEm": "2026-09-25T17:06:19.214Z",
+    "ovosSem1": 3,
+    "ovosSem2": 106,
+    "ovosTotal": 109
   },
   {
     "id": "arm-1789647987554-zjii",
@@ -1141,7 +1294,10 @@
     "moradorNome": "Léo Jorge",
     "ultimosOvos": 0,
     "ultimaPalheta": "52A",
-    "ultimaLeituraEm": "2026-09-25T17:06:53.796Z"
+    "ultimaLeituraEm": "2026-09-25T17:06:53.796Z",
+    "ovosSem1": 0,
+    "ovosSem2": 0,
+    "ovosTotal": 0
   },
   {
     "id": "arm-1789653322932-pzmw",
@@ -1156,14 +1312,17 @@
     "latitude": -21.838078302295052,
     "longitude": -42.57806957268186,
     "status": "analisada",
-    "ultimos_ovos": 0,
+    "ultimos_ovos": 21,
     "ultima_palheta": "53A",
     "ultima_leitura_em": "2026-09-25T17:07:35.634Z",
     "numeroImovel": "390",
     "moradorNome": "Colégio Light",
-    "ultimosOvos": 0,
+    "ultimosOvos": 21,
     "ultimaPalheta": "53A",
-    "ultimaLeituraEm": "2026-09-25T17:07:35.634Z"
+    "ultimaLeituraEm": "2026-09-25T17:07:35.634Z",
+    "ovosSem1": 0,
+    "ovosSem2": 21,
+    "ovosTotal": 21
   },
   {
     "id": "arm-1789663844322-9ghv",
@@ -1178,14 +1337,17 @@
     "latitude": -21.96607675923016,
     "longitude": -42.68862517033214,
     "status": "analisada",
-    "ultimos_ovos": 13,
+    "ultimos_ovos": 74,
     "ultima_palheta": "54A",
     "ultima_leitura_em": "2026-09-25T17:08:45.228Z",
     "numeroImovel": "389",
     "moradorNome": "Sebastião Ferreira",
-    "ultimosOvos": 13,
+    "ultimosOvos": 74,
     "ultimaPalheta": "54A",
-    "ultimaLeituraEm": "2026-09-25T17:08:45.228Z"
+    "ultimaLeituraEm": "2026-09-25T17:08:45.228Z",
+    "ovosSem1": 13,
+    "ovosSem2": 61,
+    "ovosTotal": 74
   },
   {
     "id": "arm-1789664588078-jet3",
@@ -1200,14 +1362,17 @@
     "latitude": -21.971695372830347,
     "longitude": -42.69286789233353,
     "status": "analisada",
-    "ultimos_ovos": 5,
+    "ultimos_ovos": 125,
     "ultima_palheta": "55A",
     "ultima_leitura_em": "2026-09-25T17:12:02.949Z",
     "numeroImovel": "S/N",
     "moradorNome": "Solange",
-    "ultimosOvos": 5,
+    "ultimosOvos": 125,
     "ultimaPalheta": "55A",
-    "ultimaLeituraEm": "2026-09-25T17:12:02.949Z"
+    "ultimaLeituraEm": "2026-09-25T17:12:02.949Z",
+    "ovosSem1": 5,
+    "ovosSem2": 120,
+    "ovosTotal": 125
   },
   {
     "id": "arm-1789665779499-29i4",
@@ -1222,13 +1387,16 @@
     "latitude": -21.96754328102264,
     "longitude": -42.68982833470543,
     "status": "analisada",
-    "ultimos_ovos": 3,
+    "ultimos_ovos": 69,
     "ultima_palheta": "56A",
     "ultima_leitura_em": "2026-09-25T17:12:52.375Z",
     "numeroImovel": "10",
     "moradorNome": "Escola da Barra",
-    "ultimosOvos": 3,
+    "ultimosOvos": 69,
     "ultimaPalheta": "56A",
-    "ultimaLeituraEm": "2026-09-25T17:12:52.375Z"
+    "ultimaLeituraEm": "2026-09-25T17:12:52.375Z",
+    "ovosSem1": 3,
+    "ovosSem2": 66,
+    "ovosTotal": 69
   }
 ]

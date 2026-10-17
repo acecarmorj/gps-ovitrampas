@@ -1,0 +1,284 @@
+==============================================================================
+RELATORIO DE DESCOBERTAS DA AUDITORIA (SECAO 138 / SECAO 139)
+Data: 01/10/2026
+Autor: Gemini (IA Auditora)
+Destinatario: Claude (Sonnet 5.5) & Almir Lemgruber
+Diretrizes: Estritamente leitura e relato de fatos. Zero edicoes em codigo existente, zero commits, zero deploys.
+==============================================================================
+
+------------------------------------------------------------------------------
+ITEM: a) Totais oficiais e comparacao com o banco/backup (Ciclo A, Ciclo B, Ambas e OV-51B)
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Arquivo de backup do banco de producao Cloudflare D1: backups/d1_emissao_SES_20261001_1217.sql (tabelas "traps" e "readings").
+- Codigo de classificacao de ciclo e desempate de leituras: src/lib/ciclosOvitrampas.js:17-30 (funcao classificarCiclo) e linhas 63-67 (funcao maisRecente).
+- Codigo de metricas: src/lib/ciclosOvitrampas.js:211-283 (calcularMetricasCiclo) e src/lib/mapaPoligonos.js:148-180 (metricasAmbas).
+
+O QUE ENCONTROU:
+1. Registros totais no dump oficial D1:
+   - Total de armadilhas na tabela traps: 56.
+   - Total de leituras na tabela readings: 113.
+   - Todos os 113 registros de leitura possuem tecnico_nome = 'Almir' (conferido via SELECT DISTINCT tecnico_nome FROM readings).
+2. Leituras da armadilha 51, palheta B:
+   Foram encontradas 2 leituras no banco para a palheta 51B:
+   - ID 'leit-1790860767367-a5do' | lida_em: '2026-10-01T13:19:27.367Z' | ovos: 106 | tecnico: 'Almir'
+   - ID 'leit-1790787268456-0jxg' | lida_em: '2026-09-30T16:54:28.456Z' | ovos: 108 | tecnico: 'Almir'
+   Trecho exato de desempate em src/lib/ciclosOvitrampas.js:63-67:
+   ```javascript
+   // Se a mesma palheta foi lida mais de uma vez (recontagem), vale a leitura MAIS RECENTE.
+   function maisRecente(lista = []) {
+     if (lista.length === 0) return null;
+     return lista.reduce((m, l) => (String(l.lidaEm || l.lida_em || '') >= String(m.lidaEm || m.lida_em || '') ? l : m), lista[0]);
+   }
+   ```
+   A funcao seleciona a leitura de 01/10/2026 com 106 ovos, descartando a contagem de 108 ovos do dia anterior.
+3. Calculo exato das metricas por ciclo (aplicando maisRecente):
+   - Ciclo A:
+     * Lidas: 56 de 56 (100%)
+     * Positivas: 32 armadilhas
+     * Total de ovos: 1.017 ovos
+     * IPO: 32 / 56 * 100 = 57,1428...% -> 57,1%
+     * IDO: 1017 / 32 = 31,78125 -> 31,8
+     * IDV: 1017 / 56 = 18,1607... -> 18,2
+   - Ciclo B:
+     * Lidas: 56 de 56 (100%)
+     * Positivas: 32 armadilhas
+     * Total de ovos: 2.665 ovos
+     * IPO: 32 / 56 * 100 = 57,1428...% -> 57,1%
+     * IDO: 2665 / 32 = 83,28125 -> 83,3
+     * IDV: 2665 / 56 = 47,5892... -> 47,6
+   - Ambas (A + B somados):
+     * Armadilhas examinadas (lidas em A ou B): 56
+     * Armadilhas positivas (positivas em A ou B): 41
+     * Total de ovos somados: 1.017 + 2.665 = 3.682 ovos
+     * IPO Ambas: 41 / 56 * 100 = 73,214...% -> 73,2%
+     * Palhetas examinadas: 112 (56 de A + 56 de B)
+     * Palhetas positivas: 64 (32 de A + 32 de B)
+     * IDO Ambas: 3682 / 64 = 57,53125 -> 57,5
+     * IDV Ambas: 3682 / 112 = 32,875 -> 32,9
+   Todos os totais batem 100% com os numeros citados na Secao 138.
+
+DUVIDA OU SUSPEITA:
+- No Ciclo B, a OV-51 com 106 ovos passou a integrar o rol de focos criticos (>100 ovos), que totalizam exatamente 12 armadilhas criticas no Ciclo B (OV-05: 167, OV-10: 201, OV-12: 120, OV-15: 128, OV-23: 195, OV-36: 169, OV-38: 185, OV-44: 100 [ou 45: 206], OV-48: 114, OV-51: 106, OV-53: 108, OV-55: 120). Todos os indicadores refletem com exatidão a recontagem de 106.
+
+NAO CONSEGUI VERIFICAR:
+- Nao verifiquei o banco de dados Cloudflare D1 em tempo real via terminal wrangler ao vivo (a consulta foi feita diretamente no dump oficial executado as 12:17 do dia 01/10/2026 em backups/d1_emissao_SES_20261001_1217.sql).
+
+------------------------------------------------------------------------------
+ITEM: b) Os numeros 23 / 9 / 9 / 41 batem com os dados?
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Arquivo src/lib/pdfRelatorioSesRjLimpo.js:391-396:
+  ```javascript
+  const nosDois = AB.filter((a) => a.ovosA > 0 && a.ovosB > 0).length;
+  const soA = AB.filter((a) => a.ovosA > 0 && !(a.ovosB > 0)).length;
+  const soB = AB.filter((a) => a.ovosB > 0 && !(a.ovosA > 0)).length;
+  ```
+- Dados das 56 armadilhas pareadas entre Ciclo A e Ciclo B do backup D1.
+
+O QUE ENCONTROU:
+1. Armadilhas positivas nos dois ciclos (ovosA > 0 E ovosB > 0):
+   Total observado: exatamente 23 armadilhas.
+   Armadilhas: 03, 04, 05, 08, 10, 12, 13, 15, 23, 27, 28, 30, 31, 32, 34, 36, 38, 41, 44, 45, 53, 54, 55.
+2. Armadilhas positivas apenas no Ciclo A (ovosA > 0 E ovosB == 0):
+   Total observado: exatamente 9 armadilhas.
+   Armadilhas: 07, 09, 11, 21, 26, 35, 40, 42, 52.
+3. Armadilhas positivas apenas no Ciclo B (ovosB > 0 E ovosA == 0):
+   Total observado: exatamente 9 armadilhas.
+   Armadilhas: 22, 25, 29, 39, 43, 48, 49, 50, 51.
+4. Total de armadilhas positivas em pelo menos um ciclo (A ou B):
+   23 + 9 + 9 = 41 armadilhas.
+   O somatorio coincide com a contagem total de armadilhas positivas de Ambas (iAB.pos = 41).
+
+DUVIDA OU SUSPEITA:
+- Nenhuma duvida sobre os numeros. A coincidencia matematica exata de 9 armadilhas novas no B e 9 armadilhas negativadas no B mantem o total de positivas em 32 nos dois ciclos (23 + 9 = 32), explicando de forma irrefutavel o IPO identico de 57,1%.
+
+NAO CONSEGUI VERIFICAR:
+- Nao houve limitacao na verificacao deste item.
+
+------------------------------------------------------------------------------
+ITEM: c) O SES-RJ e realmente anonimo?
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Codigo de src/lib/pdfRelatorioSesRjLimpo.js (linhas 37-41, 304-306, 595-608).
+- Codigo de src/lib/pdfEstrategia.js (linhas 31-50, 97-100).
+- Arquivo emitido: emissoes/RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf (24 paginas, inspecao do texto extraido).
+
+O QUE ENCONTROU:
+1. No gerador src/lib/pdfRelatorioSesRjLimpo.js:
+   - Linhas 37-38:
+     ```javascript
+     let PREFIXO_CODIGO = 'P'; // 'P' no relatorio SES-RJ (anonimo); 'OV' no relatorio de resultados (interno)
+     const codigoP = (a) => `${PREFIXO_CODIGO}-${String(a.numero).padStart(2, '0')}`;
+     ```
+   - Linhas 304-305:
+     ```javascript
+     const interno = opcoes.variante === 'resultados';
+     PREFIXO_CODIGO = interno ? 'OV' : 'P';
+     ```
+   - Na tabela do Anexo C (Inventario das 56 ovitrampas), linhas 600-607, os unicos campos renderizados por linha sao:
+     ```javascript
+     codigoP(a),
+     bairroDe(a),
+     a.quarteirao && !/distrito/i.test(a.quarteirao) ? a.quarteirao : '-',
+     valor(a),
+     faixaDeOvos(a.ultimosOvos).label,
+     b ? valor(b) : 'Aguardando',
+     b ? faixaDeOvos(b.ultimosOvos).label : 'Sem leitura'
+     ```
+   - Nao ha nenhuma referencia a morador_nome, rua, numero_imovel, observacoes, contato ou telefone em pdfRelatorioSesRjLimpo.js ou pdfEstrategia.js.
+2. No PDF emitido emissoes/RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf:
+   - Foram extraidas as 24 paginas.
+   - Foram encontrados exatamente os 56 codigos P-01 a P-56.
+   - Nao foi encontrada nenhuma ocorrencia do prefixo "OV-".
+   - Nao foi encontrado nenhum nome de morador, nenhum nome de rua ou numero predial.
+   - O documento cumpre integralmente a regra de anonimizacao sanitária e LGPD.
+
+DUVIDA OU SUSPEITA:
+- No Anexo C (pagina 22 e 23), a coluna de Quarteirao exibe "-" para os distritos (conforme a regra `!/distrito/i.test(a.quarteirao)`). Na sede urbana, exibe codigos como "Q-05", "Q-16", etc. Essa informacao e puramente territorial/setorial e nao identifica residencias.
+
+NAO CONSEGUI VERIFICAR:
+- Nao houve limitacao na verificacao deste item.
+
+------------------------------------------------------------------------------
+ITEM: d) Assinatura na pagina 24, cargos neutros e referencias a "Almir"
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Codigo de assinaturas: src/lib/pdfRelatorioSesRjLimpo.js:664-680.
+- Busca por "Almir" em todos os geradores src/lib/pdf*.js.
+- Arquivo emitido emissoes/RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf (pagina 24) e emissoes/RELATORIO_RESULTADOS_INTERNO_CARMO_2026-10-01.pdf (pagina 24).
+- Rastreamento de chamadas a pdfRelatorioFinalSesRJ.js e pdfRelatorioConsolidado*.js em todo o projeto src/.
+
+O QUE ENCONTROU:
+1. Posicionamento e margens das assinaturas na pagina 24:
+   Trecho literal em src/lib/pdfRelatorioSesRjLimpo.js:664-680:
+   ```javascript
+   const ys = Math.max(ym + 24, 215);
+   doc.setDrawColor(...PRETO);
+   doc.setLineWidth(0.3);
+   const assinaturas = [
+     ['Almir Lemgruber', 'Responsável Técnico'],
+     ['Larissa Araujo', 'Responsável Técnico'],
+     ['Joice Gama Lopes', 'Coordenação'],
+     ['Paula Adriana de Miranda', 'Coordenação']
+   ];
+   const colA = (W - 2 * M - 3 * 4) / 4;
+   assinaturas.forEach(([nome, cargo], i) => {
+     const x0 = M + i * (colA + 4);
+     doc.line(x0, ys, x0 + colA, ys);
+     texto(doc, nome, x0 + colA / 2, ys + 5, { size: 8.5, bold: true, align: 'center' });
+     texto(doc, cargo, x0 + colA / 2, ys + 9, { size: 7.5, cor: CINZA, align: 'center' });
+     texto(doc, 'Vigilância Entomológica · Carmo/RJ', x0 + colA / 2, ys + 12.5, { size: 6.5, cor: CINZA, align: 'center' });
+   });
+   ```
+   - No PDF emitido, as coordenadas reais extraidas mostram:
+     * Linha de assinatura: Y = 246,4 mm
+     * Nomes: Y = 251,4 mm
+     * Cargos: Y = 255,4 mm
+     * Linha complementar: Y = 258,9 mm
+     * Linha do rodape: Y = 285,0 mm
+     * Texto do rodape: Y = 290,0 mm
+     Distancia entre o fim das assinaturas (258,9 mm) e a linha do rodape (285,0 mm): folga de 26,1 mm. As assinaturas nao invadem o rodape.
+   - Largura das colunas:
+     Cada coluna tem largura colA = 42 mm.
+     O nome mais extenso ("Paula Adriana de Miranda") mede 36,52 mm na tipografia Helvetica Bold 8.5 pt. Como a renderizacao usa `align: 'center'` no ponto medio `x0 + colA / 2`, o texto fica perfeitamente enquadrado dentro da largura da sua coluna, com cerca de 2,7 mm de respiro nas bordas. Nao ha sobreposicao entre nomes adjacentes.
+2. Neutralidade dos cargos:
+   - Almir Lemgruber: 'Responsável Técnico'
+   - Larissa Araujo: 'Responsável Técnico'
+   - Joice Gama Lopes: 'Coordenação'
+   - Paula Adriana de Miranda: 'Coordenação'
+   Todos grafados com designacoes institucionais neutras.
+3. Referencias a "Almir" no documento e no codigo:
+   - No documento oficial emitido (RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf): o nome "Almir" aparece exatamente UMA VEZ em todo o arquivo de 24 paginas, estritamente na sua posicao de assinatura na pagina 24. Nao e citado isoladamente como unico responsavel em nenhum outro ponto.
+   - Nos arquivos em src/lib/pdf*.js:
+     Aparece em src/lib/pdfRelatorioSesRjLimpo.js:668 no array de assinaturas.
+     Aparece em src/lib/pdfRelatorioFinalSesRJ.js:427 e 2235 (arquivo legado).
+4. Verificacao de botoes e chamadas aos geradores antigos:
+   - Os arquivos pdfRelatorioFinalSesRJ.js e pdfRelatorioConsolidado*.js sao importados apenas por PainelAdminScreen.jsx e PainelRelatorios.jsx.
+   - Em src/App.jsx:8, o sistema importa PainelAdminSimples com o alias PainelAdminScreen:
+     `import { PainelAdminSimples as PainelAdminScreen } from './features/admin/PainelAdminSimples';`
+   - PainelAdminScreen.jsx e PainelRelatorios.jsx nao sao importados por nenhum arquivo ativo do projeto.
+   - O painel administrativo em producao utiliza CentralRelatorios.jsx, que aciona exclusivamente gerarRelatorioSesRjLimpo, gerarPdfMapaCalor e gerarRelatorioEntomologicoLimpo. Nenhum botao ativo chama os geradores antigos.
+
+DUVIDA OU SUSPEITA:
+- Os arquivos pdfRelatorioFinalSesRJ.js, pdfRelatorioConsolidado.js, PainelAdminScreen.jsx e PainelRelatorios.jsx continuam fisicamente na pasta src/ como codigo morto. Nao causam impacto na execucao do sistema nem no build (o tree-shaking do Vite os descarta do bundle de producao).
+
+NAO CONSEGUI VERIFICAR:
+- Nao houve limitacao na verificacao deste item.
+
+------------------------------------------------------------------------------
+ITEM: e) Texto "Como comparar A e B" (coerencia tecnica e Nota Tecnica MS 3/2025 item 4.27)
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Trecho literal em src/lib/pdfRelatorioSesRjLimpo.js:394-396:
+  ```javascript
+  const comparacaoCiclos = !parcialB && iA.lidas === iA.total
+    ? `Como comparar A e B: o IPO conta quantas armadilhas tiveram ovos, não quantos ovos. ${iA.pos === iB.pos ? `Os dois ciclos têm ${iA.pos} armadilhas positivas e, por isso, o mesmo IPO (${n1(iA.ipo)}%); ` : `IPO de ${n1(iA.ipo)}% no A e ${n1(iB.ipo)}% no B; `}o IDO (ovos por armadilha positiva) mostra a diferença de intensidade: ${n1(iA.ido)} no A e ${n1(iB.ido)} no B. As positivas não são as mesmas armadilhas: ${nosDois} foram positivas nos dois ciclos, ${soA} só no A e ${soB} só no B (${iAB.pos} em A ou B).`
+    : null;
+  ```
+- Texto impresso na pagina 3 do relatorio emitido:
+  "Como comparar A e B: o IPO conta quantas armadilhas tiveram ovos, não quantos ovos. Os dois ciclos têm 32 armadilhas positivas e, por isso, o mesmo IPO (57,1%); o IDO (ovos por armadilha positiva) mostra a diferença de intensidade: 31,8 no A e 83,3 no B. As positivas não são as mesmas armadilhas: 23 foram positivas nos dois ciclos, 9 só no A e 9 só no B (41 em A ou B)."
+- Item 4.27 da Nota Tecnica MS nº 3/2025 (SEI 25000.004576/2025-33).
+
+O QUE ENCONTROU:
+1. O item 4.27 da Nota Tecnica define:
+   - IPO = (Armadilhas Positivas / Armadilhas Examinadas) * 100 -> indicador de presenca/dispersao vetorial espacial.
+   - IDO = Total de Ovos / Armadilhas Positivas -> indicador de densidade/intensidade da postura.
+   - IDV = Total de Ovos / Armadilhas Examinadas -> densidade global media no territorio.
+2. A redacao em comparacaoCiclos atende com rigor a esses conceitos:
+   - Evita a conclusao precipitada de que os ciclos foram identicos ao esclarecer que o IPO mede a taxa de armadilhas com ovos e nao o volume;
+   - Destaca que o salto no IDO de 31,8 para 83,3 ovos/armadilha positiva reflete uma multiplicacao na carga biológica de fêmeas;
+   - Apresenta a dinamica espacial real demonstrando que 23 armadilhas mantiveram a positividade em ambos os ciclos, enquanto 9 deixaram de apresentar ovos e 9 novas armadilhas positivaram.
+
+DUVIDA OU SUSPEITA:
+- A frase "As positivas não são as mesmas armadilhas" pode soar levemente coloquial, mas expressa com clareza o fato epidemiologico de rotatividade dos focos vetoriais.
+
+NAO CONSEGUI VERIFICAR:
+- Nao houve limitacao na verificacao deste item.
+
+------------------------------------------------------------------------------
+ITEM: f) Ortografia e acentuacao nos PDFs gerados
+------------------------------------------------------------------------------
+O QUE VOCE OLHOU:
+- Arquivos emitidos emissoes/RELATORIO_TECNICO_SES-RJ_CARMO_2026-10-01.pdf e emissoes/RELATORIO_RESULTADOS_INTERNO_CARMO_2026-10-01.pdf.
+- Textos de cabecalho, tabelas, graficos, plano de acao, manual estrategico, inventario e metodologia.
+- Codificacao de caracteres acentuados no jsPDF.
+
+O QUE ENCONTROU:
+1. Acentuacao e caracteres especiais:
+   - Todos os caracteres acentuados em portugues ('á', 'â', 'ã', 'ç', 'é', 'ê', 'í', 'ó', 'õ', 'ú', 'É') estao presentes nos pontos esperados (ex.: 'Vigilância', 'Técnico', 'Secretaria', 'Saúde', 'Córrego da Prata', 'Influência', 'Ação', 'Índice', 'Estratégico').
+   - Os caracteres especiais utilizados ('·' ponto mediano, 'º' ordinal, '×' multiplicacao, '÷' divisao) estao codificados sem substituicao por caracteres corrompidos.
+   - Nao foi detectado nenhum caractere de substituicao unicode (\ufffd) nem sequencias de mojibake (como 'Ã¡', 'Ã©', etc.).
+2. Observacoes pontuais de texto:
+   - Na pagina 24, bloco "Limitações":
+     `O Ambas soma os ovos de A e de B; a faixa de risco usa a média por palheta.`
+     O uso do termo "O Ambas" trata o identificador do modo consolidado como substantivo masculino.
+   - Na pagina 4, no Plano de acao (tabela de prioridades):
+     A coluna de tendencia mostra "Elevação (+N ovos)" ou "Queda (N ovos)". Todas as palavras estao grafadas com acentos corretos.
+   - No rodape de todas as paginas:
+     `Página X de 24` grafado com acento agudo correto em "Página".
+   - No Sumario (pagina 2):
+     Os títulos e a numeracao de pagina estao sincronizados com a ordem real dos anexos.
+
+DUVIDA OU SUSPEITA:
+- Nenhuma falha de acentuacao ou ortografia que comprometa a validade oficial do documento.
+
+NAO CONSEGUI VERIFICAR:
+- Nao verifiquei a renderizacao em visualizadores legados de PDF que nao suportem fontes Type 1 / WinAnsiEncoding padrao do jsPDF (em navegadores modernos Chromium/WebKit/Firefox e no Adobe Acrobat a leitura e padrao).
+
+------------------------------------------------------------------------------
+OUTRAS OBSERVACOES E ACHADOS ENCONTRADOS NO CAMINHO
+------------------------------------------------------------------------------
+1. No quadro AMBAS da pagina 3 do relatorio (src/lib/pdfRelatorioSesRjLimpo.js:382):
+   O rotulo anteriormente auditado como "Palhetas lidas 56 de 56" na secao 134 agora esta corrigido para:
+   `'Armadilhas lidas (A ou B)'` exibindo `56 de 56`.
+2. No arquivo de backup d1_emissao_SES_20261001_1217.sql:
+   Na tabela traps, para a armadilha '04' (linha 34), o historico_palhetas possui dois registros de recolhimento duplicados com a mesma data e observacao:
+   `[{"tipo":"recolhimento","palhetaRecolhida":"04B","recolhidaEm":"2026-09-28T17:13:00.000Z"...},{"tipo":"recolhimento","palhetaRecolhida":"04B","recolhidaEm":"2026-09-28T16:45:00.000Z"...}]`
+   Trata-se de evento historico de sincronizacao de campo que nao afeta a contagem de ovos nem os indicadores.
+3. Nome de arquivos para download (src/lib/pdfRelatorioSesRjLimpo.js:720):
+   `doc.save(`${interno ? 'RELATORIO_RESULTADOS_INTERNO_CARMO' : 'RELATORIO_TECNICO_SES-RJ_CARMO'}_${new Date().toISOString().slice(0, 10)}.pdf`);`
+   Os nomes agora sao completamente distintos entre a versao tecnica SES-RJ e a versao interna de Resultados, prevenindo sobrescrita acidental em sistemas operacionais que utilizem a mesma pasta padrao de downloads.
+4. Integridade do build:
+   Executado `npm run build` localmente: compilacao finalizada com sucesso (codigo 0, 1897 modulos transformados em 6.50s, 0 erros).
+==============================================================================
