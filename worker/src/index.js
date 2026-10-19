@@ -304,6 +304,58 @@ async function listReadings(request, env) {
 }
 
 
+// Historico de campanhas anteriores (somente leitura). Exige a chave da equipe porque traz o ponto
+// exato (latitude/longitude) de cada armadilha de campanhas antigas. Formato igual ao do app:
+// armadilhas (1 por numero) + leituras com cicloId = campanha, lidaEm = data de COLETA da palheta.
+async function listHistorico(request, env) {
+  if (!equipeAutorizada(request, env)) {
+    return json({ error: "equipe_necessaria", message: "Historico exige a chave da equipe." }, 401);
+  }
+  const campanha = new URL(request.url).searchParams.get("campanha") || "";
+  if (!/^[A-Za-z0-9_]{3,40}$/.test(campanha)) return badRequest("campanha invalida");
+
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM historical_readings WHERE campanha_id = ? ORDER BY numero_armadilha, ciclo_semana, coletada_em"
+  ).bind(campanha).all();
+  const linhas = results || [];
+
+  const porNumero = new Map();
+  for (const r of linhas) {
+    if (!porNumero.has(r.numero_armadilha)) {
+      porNumero.set(r.numero_armadilha, {
+        id: `hist-${campanha}-${r.numero_armadilha}`,
+        numero: r.numero_armadilha,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        bairro: r.bairro || null,
+        quarteirao: r.quarteirao || null,
+        status: "analisada",
+        historico: true,
+        campanhaId: campanha,
+        instaladaEm: r.instalada_em,
+      });
+    }
+  }
+
+  const leituras = linhas.map((r) => ({
+    id: r.id,
+    armadilhaId: `hist-${campanha}-${r.numero_armadilha}`,
+    numeroArmadilha: r.numero_armadilha,
+    numeroPalheta: `${r.numero_armadilha}${r.ciclo_semana}`,
+    ovos: r.ovos,
+    positiva: r.ovos > 0 ? 1 : 0,
+    tecnicoNome: "Conta Ovos",
+    lidaEm: `${r.coletada_em}T12:00:00.000Z`,
+    instaladaEm: r.instalada_em,
+    coletadaEm: r.coletada_em,
+    semanaEpi: r.semana_epi,
+    cicloId: campanha,
+    historico: true,
+  }));
+
+  return json({ campanha, armadilhas: [...porNumero.values()], leituras });
+}
+
 async function handleAgentHeartbeat(request, env) {
   const body = await request.json().catch(() => null);
   if (!body) return badRequest("json invalido");
@@ -449,6 +501,9 @@ export default {
       }
       if (path === "/api/readings" && request.method === "GET") {
         return await listReadings(request, env);
+      }
+      if (path === "/api/historico" && request.method === "GET") {
+        return await listHistorico(request, env);
       }
       return json({ error: "not_found" }, 404);
     } catch (err) {

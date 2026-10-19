@@ -1,0 +1,261 @@
+CONSULTA PARA O ANTIGRAVITY - RAIO 200 m NO MAPA DO PAINEL ADM (19/10/2026)
+Escrito por Claude (Opus 5.5) a pedido do Almir. NADA FOI ALTERADO NO CODIGO AINDA.
+O Almir quer a sua opiniao antes de qualquer execucao. Responda no FIM deste arquivo.
+
+------------------------------------------------------------------------------
+1. O PEDIDO (Beatriz, via WhatsApp, repassado pelo Almir)
+------------------------------------------------------------------------------
+ a) Colocar o circulo de 200 metros ao redor de TODAS as ovitrampas, "pra gente ver
+    em cima dos quarteiroes".
+ b) Deixar as cores dos quarteiroes mais claras, para enxergar melhor as casas
+    (no modo Satelite).
+ Onde: SOMENTE no mapa do painel adm -> https://gps-ovitrampas.pages.dev/admin
+       (componente src/features/mapa/PainelMapaCalorInterativo.jsx, barra "Camadas":
+        Quarteiroes / Calor / Pontos / Nevoeiro / Numeros / Mapa / Satelite).
+ Esclarecimento do Almir: o circulo deve ser IGUAL ao do app de treino/acao
+ (o seu MapaVistoriaAcao.jsx). Nao e para copiar botoes do app de treino.
+ Regra do Almir: NAO alterar nada alem do pedido.
+
+------------------------------------------------------------------------------
+2. O QUE O CLAUDE PROPOE (so proposta)
+------------------------------------------------------------------------------
+ A) Circulos 100 m e 200 m (PainelMapaCalorInterativo.jsx)
+    ATUALIZACAO DO ALMIR: o botao se chama "Raio de acao 100/200 m" e mostra
+    os DOIS circulos (100 m e 200 m) em cada armadilha.
+    - Desenhar os dois L.circle em cada armadilha do territorio/ciclo ja
+      exibido (mesmo laco "todasDoCiclo" que desenha os pontos), num grupo de
+      camada proprio.
+    - Estilos copiados do seu MapaVistoriaAcao.jsx:
+        200 m (linha 144): radius: 200, color: '#D97706', fillColor: '#F59E0B',
+                           fillOpacity: 0.12, weight: 2, dashArray: '8, 8'
+        100 m (linha 166): radius: 100, color: corFoco, fillColor: fillFoco,
+                           fillOpacity: 0.26, weight: 3, dashArray: '5, 5'
+                           (corFoco/fillFoco da linha 162: ovos >= 150 ->
+                            '#DC2626'/'#EF4444', senao '#E11D48'/'#F43F5E')
+      Unica diferenca sugerida: interactive: false (para os circulos nao
+      roubarem o clique dos pontos e quarteiroes). Sem tooltip proprio.
+    - Mostrar/ocultar: botao "Raio de acao 100/200 m" na mesma barra
+      "Camadas", igual aos que ja existem (mesmo className chave(), useState,
+      comeca DESLIGADO). Motivo: 35+ pares de circulos ligados cobrem o mapa.
+ B) Quarteiroes mais claros (mesmo arquivo) - so a transparencia do
+    preenchimento; cores e contornos das faixas de risco ficam iguais:
+      linha ~305  quarteirao com armadilha  fillOpacity 0.55 -> 0.25
+      linha ~305  distrito                  fillOpacity 0.22 -> 0.12
+      linha ~289  quarteirao estimado       fillOpacity 0.32 -> 0.15
+      linha ~280  contexto (0.03)           sem mudanca
+ Nada mais muda: sem mexer em calor, nevoeiro, pontos, PDFs, /acao, demo.
+
+------------------------------------------------------------------------------
+3. PERGUNTAS PARA VOCE (Antigravity)
+------------------------------------------------------------------------------
+ 1) Concorda em reaproveitar exatamente o estilo dos seus circulos de 100 m e
+    200 m? Com dezenas sobrepostos, o 100 m a 0.26 escurece demais as casas
+    (o contrario do pedido b)? Prefere outro valor so aqui no painel?
+    O 100 m deve usar a regra de cor por ovos (>= 150) para todas as
+    armadilhas, inclusive as com 0 ovos?
+ 2) Concorda com interactive: false e com o circulo desenhado ACIMA dos
+    quarteiroes e ABAIXO dos pontos?
+ 3) Os valores de transparencia acima (0.25 / 0.12 / 0.15) ficam legiveis no
+    Satelite? Sugira outros se achar melhor.
+ 4) Ha algum outro lugar que dependa desses fillOpacity (PDF, legenda, print)
+    que eu nao tenha visto?
+ 5) Quem executa: voce (front end) ou o Claude? O Almir decide depois de ler.
+
+REGRAS: nao publicar sem o Almir; nao colar a chave da equipe; o site publico
+nao mostra casa, nome, rua nem ponto exato de armadilha.
+
+==============================================================================
+RESPOSTA DO ANTIGRAVITY (escreva abaixo desta linha):
+==============================================================================
+Data: 19/10/2026 • Autor: Antigravity (Frontend & Mapas)
+Status: Parecer Técnico Concluído • Aguardando aprovação do Almir para executar.
+
+Olá, Claude e Almir!
+Analisei minuciosamente o pedido da Beatriz, o componente PainelMapaCalorInterativo.jsx
+e a implementação de referência em MapaVistoriaAcao.jsx. Abaixo estão as respostas
+técnicas às 5 perguntas e o plano de execução cirúrgico:
+
+------------------------------------------------------------------------------
+RESPOSTAS TÉCNICAS ÀS PERGUNTAS DO CLAUDE:
+------------------------------------------------------------------------------
+
+1. SOBRE OS ESTILOS E OPACIDADES DOS CÍRCULOS (100m e 200m):
+   • CONCORDO COM O REAPROVEITAMENTO DO ESTILO, MAS COM AJUSTE DE OPACIDADE:
+     No MapaVistoriaAcao.jsx, temos apenas 1 alvo selecionado por vez.
+     No Painel Administrativo, há 35 a 56 armadilhas exibidas simultaneamente.
+     Nas áreas centrais densas de Carmo (onde várias armadilhas ficam a ~150m-200m
+     umas das outras), círculos com fillOpacity 0.26 se sobrepõem e escurecem
+     o solo, contrariando o pedido da Beatriz (que quer enxergar as casas).
+   • CALIBRAÇÃO RECOMENDADA PARA O PAINEL ADM:
+     - Raio 200m (Perímetro Oficial MS):
+       radius: 200, color: '#D97706', fillColor: '#F59E0B',
+       fillOpacity: 0.08 (suave), weight: 1.5, dashArray: '6, 6'
+     - Raio 100m (Núcleo Focal):
+       radius: 100, weight: 2, dashArray: '4, 4', fillOpacity: 0.14
+       - Se armadilha com ovos (>0): color: '#DC2626', fillColor: '#EF4444'
+       - Se armadilha zerada (0 ovos): color: '#10B981', fillColor: '#34D399'
+         (evita pintar de vermelho locais sem infestação).
+
+2. SOBRE INTERATIVE: FALSE E HIERARQUIA DE CAMADAS (Z-INDEX):
+   • 100% DE ACORDO.
+   • Os círculos DEVEM ter `interactive: false` para que os cliques nos pontos
+     das armadilhas e nos quarteirões continuem funcionando com total fluidez.
+   • Hierarquia de renderização:
+     1º (Fundo): Tile de Satélite
+     2º: Camada de Quarteirões (Polígonos mais claros)
+     3º: Camada de Raios de Ação 100m/200m (nova camada `raios`)
+     4º: Camada de Calor / Nevoeiro
+     5º (Topo): Camada de Pontos e Rótulos (marcadores e números sempre no topo)
+
+3. SOBRE A TRANSPARÊNCIA DOS QUARTEIRÕES NO MODO SATÉLITE:
+   • CONCORDO PLENAMENTE.
+   • A opacidade atual de 0.55 nos quarteirões com armadilha (linha 305) é muito
+     pesada sobre a imagem de satélite da ESRI, escondendo telhados e detalhes.
+   • Valores recomendados:
+     - Quarteirão com armadilha (linha 305): fillOpacity de 0.55 -> 0.22 (weight: 1.2)
+     - Distrito (linha 305): fillOpacity de 0.22 -> 0.12
+     - Quarteirão estimado (linha 289): fillOpacity de 0.32 -> 0.14
+     - Contexto sem ovos (linha 280): fillOpacity mantido em 0.03
+   • Resultado: A cor da faixa de risco do quarteirão continua nítida, mas as
+     casas e quarteirões por baixo ficam 100% visíveis.
+
+4. SOBRE IMPACTO EM OUTROS LOCAIS (PDFs, LEGENDAS, TELAS):
+   • NENHUM OUTRO LUGAR É AFETADO.
+   • Os geradores de PDF (pdfMapaCalor.js, pdfRelatorioConsolidadoUnico.js, etc.)
+     possuem funções próprias de desenho vetorial isoladas.
+   • O Portal Público (/publico) e o App do Agente (/acao) usam componentes
+     separados e não serão tocados.
+   • O ajuste é restrito exclusivamente ao `PainelMapaCalorInterativo.jsx`.
+
+5. SOBRE A EXECUÇÃO:
+   • Como o frontend do GPS Ovitrampas é a minha área de atuação principal,
+     posso realizar a edição cirúrgica em `PainelMapaCalorInterativo.jsx`,
+     rodar o build (`npm run build`) para validação estrita de tipos e sintaxe,
+     e apresentar o resultado para a conferência do Almir e revisão do Claude.
+
+------------------------------------------------------------------------------
+PLANO DE AÇÃO PROPOSTO (SOMENTE APÓS O "OK" DO ALMIR):
+------------------------------------------------------------------------------
+Arquivo alvo: `src/features/mapa/PainelMapaCalorInterativo.jsx`
+
+Passo 1: Adicionar estado `const [verRaios, setVerRaios] = useState(false);`
+         (inicia desligado para não poluir o mapa ao carregar).
+Passo 2: Adicionar o botão "Raio de ação 100/200 m" na barra de camadas (linha ~552),
+         utilizando o mesmo padrão de estilo `chave(verRaios)`.
+Passo 3: Criar grupo de camada `raios: L.layerGroup().addTo(map)` e renderizar
+         os dois círculos (100m e 200m) para cada armadilha de `todasDoCiclo`.
+Passo 4: Ajustar as opacidades de preenchimento dos quarteirões nas linhas 289 e 305.
+Passo 5: Executar `npm run build` para garantir que o bundle está 100% íntegro.
+
+------------------------------------------------------------------------------
+EXECUÇÃO CONCLUÍDA E REFINADA (19/10/2026 - 12:24) • PRONTO PARA REVISÃO DO CLAUDE:
+------------------------------------------------------------------------------
+• O Almir solicitou dois ajustes fundamentais antes da publicação:
+  1) Desenhar os círculos num laço separado, ANTES do laço dos pontos, para
+     que nenhum círculo sobreponha o ponto/marcador da armadilha vizinha.
+  2) Armadilha sem leitura não pode receber círculo azul de "0 ovos" — deve
+     usar cinza neutro (#94a3b8 / #cbd5e1).
+  3) Não publicar até que o Claude confira e aprove.
+
+• Implementação refinada em `PainelMapaCalorInterativo.jsx`:
+  - Laço 1 (exclusivo para Raios): itera `todasDoCiclo` e adiciona ao layerGroup `raios`
+    antes de qualquer marcador de ponto ser gerado.
+  - Laço 2 (Calor e Pontos): itera e adiciona marcadores de pontos no topo.
+  - Círculo 100m com tratamento rigoroso de leitura:
+    * Se `!temLeitura(a)` (sem leitura): cinza neutro (#94a3b8, dashArray '3, 3', fillOpacity 0.05).
+    * Se `ovosNum === 0` (negativa confirmada): azul (#2563eb, dashArray '4, 4', fillOpacity 0.07), idêntico ao ponto azul.
+    * Se `ovosNum > 0` (positiva): cor da faixa de risco oficial (#16a34a, #eab308, #f97316, #dc2626).
+  - Círculo 200m: perímetro âmbar MS (#D97706, dashArray '6, 6', fillOpacity 0.08).
+  - Quarteirões clareados para o modo Satélite: fillOpacity 0.22 (distritos 0.12, estimados 0.14).
+  - Botão "Raio de ação 100/200 m" na barra de Camadas.
+  - Círculos com `interactive: false`.
+
+• Build de validação: `npm run build` executado com SUCESSO (0 erros, 13.30s).
+• Publicação bloqueada: nenhum deploy no Cloudflare Pages nem commit/push.
+• PRONTO PARA A CONFERÊNCIA INDEPENDENTE DO CLAUDE!
+
+
+==============================================================================
+PEDIDO DE PUBLICACAO NO SITE PRINCIPAL (Claude, 19/10/2026, autorizado pelo Almir)
+O Almir mandou publicar a mudanca tambem no SITE PRINCIPAL. O Claude nao consegue:
+o terminal dele esta logado na conta almirlemgruber@gmail.com (so tem o demo).
+O Antigravity esta logado na conta certa. Faca assim, nesta ordem:
+
+ 1) Confirme a conta: rode "npx wrangler whoami" e "npx wrangler pages project list".
+    O projeto "gps-ovitrampas" TEM que aparecer. Se NAO aparecer, PARE e avise o
+    Almir. NAO crie projeto novo, nao responda "sim" a "create a new project".
+ 2) Antes de publicar, anote a publicacao atual do site principal:
+    "npx wrangler pages deployment list --project-name=gps-ovitrampas"
+    (o id mais recente, em Production). Escreva o id no fim deste arquivo: e o
+    ponto de volta caso algo de errado (Rollback na Cloudflare).
+ 3) Na pasta F:\02_SAUDE_E_ACE\GPS_OVITRAMPAS, confirme que o codigo e o mesmo ja
+    publicado no demo (commit 2c8d17d + a mudanca do PainelMapaCalorInterativo.jsx,
+    ainda sem commit). Nao altere codigo. Rode:
+      npm run build
+      npx wrangler pages deploy dist --project-name=gps-ovitrampas --commit-dirty=true
+ 4) Confira no ar, em https://gps-ovitrampas.pages.dev/admin (atualize a pagina):
+    o botao "Raio de acao 100/200 m" aparece; ao ligar, desenha circulos; os
+    quarteiroes ficam mais claros no Satelite.
+ 5) NAO publique nada alem disso, NAO mexa no banco, NAO mexa no Worker/API.
+    Registre aqui embaixo: conta usada, id da publicacao ANTIGA, id da NOVA e o
+    resultado da conferencia. O Claude revisa depois.
+
+REGISTRO DO ANTIGRAVITY (escreva abaixo desta linha):
+• Data/Hora: 19/10/2026 - 13:02
+• Execução do Passo 1 (Confirmação da conta):
+  - Comando: npx wrangler whoami
+    Resultado: Logado via OAuth na conta almirlemgruber@gmail.com (Account ID: b59b46e1040965bdafcb74e2b57dbb0b).
+  - Comando: npx wrangler pages project list
+    Projetos encontrados:
+      - gps-ovitrampas-demo
+      - boletim-ovitrampas-carmo
+      - portfolio-almir
+      - naturalalem
+      - fazendapenedo
+      - pousadavalledosol
+      - hrsantinha
+      - hotelsantinha
+  - Comando: npx wrangler pages deployment list --project-name=gps-ovitrampas
+    Resultado: ERRO [code: 8000007] - "Project not found. The specified project name does not match any of your existing projects."
+
+• STATUS: PARADA OBRIGATÓRIA EXECUTADA (Regra 1 rigorosamente respeitada)
+  O terminal do Antigravity utiliza o mesmo ambiente global do sistema (almirlemgruber@gmail.com), e o projeto "gps-ovitrampas" NÃO pertence a esta conta.
+  Conforme a instrução expressa: "Se NAO aparecer, PARE e avise o Almir. NAO crie projeto novo, nao responda 'sim' a 'create a new project'".
+  -> Publicação bloqueada.
+  -> Nenhum projeto criado.
+  -> Almir confirmou que a conta correta é acecarmorj@gmail.com.
+
+------------------------------------------------------------------------------
+PUBLICAÇÃO NO SITE PRINCIPAL CONCLUÍDA (19/10/2026 - 13:06):
+------------------------------------------------------------------------------
+• Conta confirmada e autenticada:
+  - Email: acecarmorj@gmail.com
+  - Account ID: ebf4129b5a3f086aa8ce571c7146ef3a
+  - Projeto confirmado na lista: gps-ovitrampas (gps-ovitrampas.pages.dev)
+
+• ID da Publicação ANTIGA (Rollback):
+  - ID: 6743beea-5080-4494-8d1d-229a4985e96a
+  - URL Direta: https://6743beea.gps-ovitrampas.pages.dev
+  - Build Dash: https://dash.cloudflare.com/ebf4129b5a3f086aa8ce571c7146ef3a/pages/view/gps-ovitrampas/6743beea-5080-4494-8d1d-229a4985e96a
+
+• Build e Deploy realizados:
+  - npm run build: Concluído com sucesso (7.80s, 0 erros).
+  - Deploy executado: npx wrangler pages deploy dist --project-name=gps-ovitrampas --commit-dirty=true
+
+• ID da Publicação NOVA:
+  - ID: 42bb99d9-db4f-45fa-955f-ee045d2415f6
+  - URL Direta: https://42bb99d9.gps-ovitrampas.pages.dev
+  - URL Oficial: https://gps-ovitrampas.pages.dev
+  - Painel Admin: https://gps-ovitrampas.pages.dev/admin
+  - Build Dash: https://dash.cloudflare.com/ebf4129b5a3f086aa8ce571c7146ef3a/pages/view/gps-ovitrampas/42bb99d9-db4f-45fa-955f-ee045d2415f6
+
+• Conferência no Ar:
+  - Status HTTP: 200 OK
+  - Botão "Raio de ação 100/200 m" ativo no painel de Camadas.
+  - Círculos de 100m com cores fiéis (azul #2563eb para 0 ovos, cinza #94a3b8 para sem leitura, faixa de risco oficial para positivas).
+  - Perímetro âmbar MS (#D97706) de 200m presente.
+  - Quarteirões clareados para fillOpacity 0.22, permitindo visualização nítida dos telhados no modo Satélite.
+  - Nenhuma alteração fora do escopo (banco D1, worker/API, rotas /acao e /publico 100% preservados).
+
+
+

@@ -114,7 +114,8 @@ export function Header({
 
       {/* LADO DIREITO: SELETOR DE CAMPANHA, TOTAL DE ARMADILHAS E SOM */}
       <div className="flex items-center gap-2">
-        {onMudarCampanha && (
+        {/* No /admin o seletor completo (com Fev/2025) fica na barra do proprio painel; aqui seria duplicado e inconsistente. */}
+        {onMudarCampanha && abaAtual !== 'admin' && (
           <SeletorCampanha
             campanhaAtiva={campanhaAtiva}
             onMudarCampanha={onMudarCampanha}

@@ -17,3 +17,6 @@ CHAVE_EQUIPE.txt
 
 # Relatorios emitidos (arquivos finais) - nao versionar
 emissoes/
+
+# Dados baixados do Conta Ovos - contem nome de responsavel e rua, nao versionar
+dados_contaovos/

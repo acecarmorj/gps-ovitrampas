@@ -3,6 +3,8 @@ import L from 'leaflet';
 import { ArrowLeft, Search, Flame, Layers, MapPin, Download } from 'lucide-react';
 import { gerarPdfMapaCalor, gerarNevoeiroDaVisao } from '../../lib/pdfMapaCalor';
 import { classificarTerritorio } from '../../lib/pdfRelatorioEntomologico';
+import { carregarHistoricoCampanha } from '../../lib/historicoCampanhas';
+import { normalizarNumeroArmadilha } from '../../lib/storage';
 import {
   adaptarArmadilhasParaCiclo,
   calcularMetricasCiclo,
@@ -10,6 +12,8 @@ import {
   CICLO_SEMANA_2,
   CICLO_ID_ATUAL,
   CICLO_ID_ANTERIOR,
+  CICLO_ID_FEV2025,
+  classificarCiclo,
   getCampanhaAtiva
 } from '../../lib/ciclosOvitrampas';
 import {
@@ -54,11 +58,23 @@ function noTerritorio(arm, territorio) {
   return t === territorio;
 }
 
+const VAZIO = []; // referencia estavel enquanto o historico carrega (evita recalcular memos a cada render)
+
+function formatarDataCurta(dStr) {
+  if (!dStr) return '?';
+  const parte = String(dStr).split(/[T ]/)[0];
+  const pedacos = parte.split('-');
+  if (pedacos.length === 3) return `${pedacos[2]}/${pedacos[1]}`;
+  return parte;
+}
+
 export function PainelMapaCalorInterativo({
   armadilhas = [],
   armadilhasBrutas = [],
   todasLeituras = [],
   campanhaAtiva,
+  campanhaHistorica: campanhaHistoricaProp,
+  onMudarCampanhaHistorica,
   onMudarCampanha,
   onVoltar,
   fundoMapa: fundoProp,
@@ -68,11 +84,65 @@ export function PainelMapaCalorInterativo({
   const fundo = fundoProp ?? fundoInterno; // 'vetorial' (mapa claro) | 'satelite'
   const mudarFundo = onMudarFundoMapa || setFundoInterno;
   const tileRef = useRef(null);
-  const [campanhaMapa, setCampanhaMapa] = useState(() => campanhaAtiva || CICLO_ID_ANTERIOR);
+  const [campanhaMapa, setCampanhaMapa] = useState(
+    () => campanhaHistoricaProp || campanhaAtiva || CICLO_ID_ANTERIOR
+  );
+  const [historicoCarregando, setHistoricoCarregando] = useState(false);
+  const [historicoErro, setHistoricoErro] = useState(null);
+  const [dadosHistorico, setDadosHistorico] = useState(null);
 
   useEffect(() => {
-    if (campanhaAtiva) setCampanhaMapa(campanhaAtiva);
-  }, [campanhaAtiva]);
+    if (campanhaHistoricaProp) {
+      setCampanhaMapa(campanhaHistoricaProp);
+    } else if (onMudarCampanhaHistorica) {
+      // Controlado pelo painel admin: sem historico escolhido, o mapa segue a campanha ativa (tambem ao sair de Fev/2025).
+      if (campanhaAtiva) setCampanhaMapa(campanhaAtiva);
+    } else if (campanhaAtiva && campanhaMapa !== CICLO_ID_FEV2025) {
+      // Uso solto (rotas /mapa e /calor): Fev/2025 escolhida no proprio mapa fica so no estado local.
+      setCampanhaMapa(campanhaAtiva);
+    }
+  }, [campanhaHistoricaProp, campanhaAtiva]);
+
+  // Troca feita no seletor do Header do app (Set/2026 | Novo Ciclo): o mapa sai de Fev/2025 mesmo quando a
+  // campanha ativa nao mudou de valor (ex.: ja era Set/2026). O botao Fev/2025 nao dispara este evento.
+  useEffect(() => {
+    const seguirCampanha = (e) => {
+      if (e.detail) setCampanhaMapa(e.detail);
+    };
+    window.addEventListener('ovitrampa_campanha_alterada', seguirCampanha);
+    return () => window.removeEventListener('ovitrampa_campanha_alterada', seguirCampanha);
+  }, []);
+
+  // Carrega histórico quando Fev/2025 é selecionado
+  useEffect(() => {
+    if (campanhaMapa !== CICLO_ID_FEV2025) {
+      setHistoricoErro(null);
+      return;
+    }
+    let ativo = true;
+    setHistoricoCarregando(true);
+    setHistoricoErro(null);
+    carregarHistoricoCampanha(CICLO_ID_FEV2025)
+      .then((res) => {
+        if (!ativo) return;
+        if (res.ok) {
+          setDadosHistorico({ armadilhas: res.armadilhas, leituras: res.leituras });
+          setHistoricoErro(null);
+        } else {
+          setHistoricoErro(res.mensagem || 'Não foi possível carregar o histórico.');
+        }
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setHistoricoErro('Erro ao carregar histórico da campanha.');
+      })
+      .finally(() => {
+        if (ativo) setHistoricoCarregando(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [campanhaMapa]);
 
   const [ciclo, setCiclo] = useState(CICLO_SEMANA_1);
   const [territorio, setTerritorio] = useState('sede');
@@ -80,6 +150,7 @@ export function PainelMapaCalorInterativo({
   const [verPoligonos, setVerPoligonos] = useState(false);
   const [verCalor, setVerCalor] = useState(false);
   const [verPontos, setVerPontos] = useState(true);
+  const [verRaios, setVerRaios] = useState(false);
   const [verNevoeiro, setVerNevoeiro] = useState(true);
   const [verNumeros, setVerNumeros] = useState(true);
   const [zoomNevoeiro, setZoomNevoeiro] = useState(false); // nevoeiro liberado com zoom de cidade, mesmo no municipio
@@ -89,16 +160,23 @@ export function PainelMapaCalorInterativo({
 
   const mapaDivRef = useRef(null);
   const mapaRef = useRef(null);
-  const camadasRef = useRef({ poligonos: null, calor: null, pontos: null });
+  const camadasRef = useRef({ poligonos: null, raios: null, calor: null, pontos: null });
+
+  const ehHistorico = campanhaMapa === CICLO_ID_FEV2025;
+  const armadilhasBase = ehHistorico
+    ? (dadosHistorico?.armadilhas || VAZIO)
+    : (armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas);
+  const leiturasBase = ehHistorico
+    ? (dadosHistorico?.leituras || VAZIO)
+    : todasLeituras;
 
   // Cada ciclo e calculado sozinho. Nunca somamos A + B.
   const porCiclo = useMemo(() => {
-    const base = armadilhasBrutas && armadilhasBrutas.length > 0 ? armadilhasBrutas : armadilhas;
     return {
-      A: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_1, campanhaMapa),
-      B: adaptarArmadilhasParaCiclo(base, todasLeituras, CICLO_SEMANA_2, campanhaMapa)
+      A: adaptarArmadilhasParaCiclo(armadilhasBase, leiturasBase, CICLO_SEMANA_1, campanhaMapa),
+      B: adaptarArmadilhasParaCiclo(armadilhasBase, leiturasBase, CICLO_SEMANA_2, campanhaMapa)
     };
-  }, [armadilhas, armadilhasBrutas, todasLeituras, campanhaMapa]);
+  }, [armadilhasBase, leiturasBase, campanhaMapa]);
 
   const doTerrA = useMemo(() => porCiclo.A.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
   const doTerrB = useMemo(() => porCiclo.B.filter((a) => noTerritorio(a, territorio)), [porCiclo, territorio]);
@@ -158,6 +236,7 @@ export function PainelMapaCalorInterativo({
     const map = L.map(mapaDivRef.current, { center: [-21.9339, -42.6089], zoom: 13, zoomControl: true });
     camadasRef.current = {
       poligonos: L.layerGroup().addTo(map),
+      raios: L.layerGroup().addTo(map),
       calor: L.layerGroup().addTo(map),
       pontos: L.layerGroup().addTo(map)
     };
@@ -246,9 +325,10 @@ export function PainelMapaCalorInterativo({
   // Desenha as camadas quando dados ou chaves mudam
   useEffect(() => {
     const map = mapaRef.current;
-    const { poligonos, calor, pontos } = camadasRef.current;
+    const { poligonos, raios, calor, pontos } = camadasRef.current;
     if (!map || !poligonos) return;
     poligonos.clearLayers();
+    raios?.clearLayers();
     calor.clearLayers();
     pontos.clearLayers();
 
@@ -286,7 +366,7 @@ export function PainelMapaCalorInterativo({
           weight: 0.8,
           dashArray: '3 3',
           fillColor: f.cor,
-          fillOpacity: 0.32
+          fillOpacity: 0.14
         })
           .bindTooltip(`${nomePoligono(p)}<br/>sem armadilha · estimado pelas armadilhas próximas ≈ ${Math.round(est.valor)} ovos`, { sticky: true })
           .addTo(poligonos);
@@ -302,7 +382,7 @@ export function PainelMapaCalorInterativo({
           color: faixa.cor,
           weight: distrito ? 1.5 : 1.2,
           fillColor: faixa.cor,
-          fillOpacity: distrito ? 0.22 : 0.55
+          fillOpacity: distrito ? 0.12 : 0.22
         }).addTo(poligonos);
         poly.bindTooltip(
           `${nomePoligono(g.poly)}<br/>${g.lidas} de ${g.armadilhas.length} lida(s) · ${g.ovos} ovos`,
@@ -311,11 +391,66 @@ export function PainelMapaCalorInterativo({
       });
     }
 
+    // 1. Camada dos Raios de Ação 100m e 200m (desenhada em laço separado ANTES dos pontos para nunca sobrepor marcadores)
+    if (verRaios) {
+      todasDoCiclo.forEach((a) => {
+        const lat = Number(a.latitude);
+        const lng = Number(a.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        const lida = temLeitura(a);
+        const ovosNum = Number(a.ultimosOvos ?? 0);
+        const faixa = faixaDeOvos(a.ultimosOvos);
+
+        // Círculo 200m: Perímetro Oficial do Ministério da Saúde (Bloqueio Perifocal)
+        L.circle([lat, lng], {
+          radius: 200,
+          color: '#D97706',
+          fillColor: '#F59E0B',
+          fillOpacity: 0.08,
+          weight: 1.5,
+          dashArray: '6, 6',
+          interactive: false
+        }).addTo(raios);
+
+        // Círculo 100m: Núcleo Focal Prioritário
+        // - Sem leitura: cinza neutro (#94a3b8)
+        // - 0 ovos (negativa confirmada): azul (#2563eb), idêntico ao ponto azul
+        // - Com ovos (>0): cor oficial da faixa de risco (verde, amarelo, laranja, vermelho)
+        let cor100, fill100, fillOp100;
+        if (!lida) {
+          cor100 = '#94a3b8';
+          fill100 = '#cbd5e1';
+          fillOp100 = 0.05;
+        } else if (ovosNum === 0) {
+          cor100 = '#2563eb';
+          fill100 = '#3b82f6';
+          fillOp100 = 0.07;
+        } else {
+          cor100 = faixa.cor;
+          fill100 = faixa.cor;
+          fillOp100 = 0.14;
+        }
+
+        L.circle([lat, lng], {
+          radius: 100,
+          color: cor100,
+          fillColor: fill100,
+          fillOpacity: fillOp100,
+          weight: 2,
+          dashArray: !lida ? '3, 3' : '4, 4',
+          interactive: false
+        }).addTo(raios);
+      });
+    }
+
+    // 2. Camadas de Calor e Pontos/Marcadores (desenhadas no topo)
     todasDoCiclo.forEach((a) => {
       const lat = Number(a.latitude);
       const lng = Number(a.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const faixa = faixaDeOvos(a.ultimosOvos);
+
       if (verCalor && temLeitura(a) && Number(a.ultimosOvos) > 0) {
         L.circle([lat, lng], {
           radius: RAIO_CALOR_METROS,
@@ -333,19 +468,64 @@ export function PainelMapaCalorInterativo({
           fillColor: faixa.cor,
           fillOpacity: 1
         }).addTo(pontos);
-        const vA = rotuloOvos.get(String(a.numero));
-        const txt = (v) => (v === null || v === undefined ? '-' : v);
-        marcador.bindTooltip(
-          modoRotulo === 'compacto' ? `<b>${a.numero}</b>` : `<b>${a.numero}</b> A ${txt(vA?.a)} · B ${txt(vA?.b)}`,
-          modoRotulo === 'nenhum'
-            ? { direction: 'top', className: 'rotulo-ovo' }
-            : { permanent: true, direction: 'bottom', offset: [0, 5], className: modoRotulo === 'compacto' ? 'rotulo-ovo rotulo-num' : 'rotulo-ovo' }
-        );
-        marcador.on('click', () => setSelecionada(a.id ?? a.numero));
+
+        if (ehHistorico) {
+          const num = normalizarNumeroArmadilha(a.numero);
+          const leitsDaArm = (dadosHistorico?.leituras || []).filter(
+            (l) => normalizarNumeroArmadilha(l.numeroArmadilha || l.numero_armadilha) === num
+          );
+          const leitsA = leitsDaArm.filter(
+            (l) => classificarCiclo(l.numeroPalheta || l.numero_palheta, l.lidaEm || l.lida_em) === CICLO_SEMANA_1
+          );
+          const leitsB = leitsDaArm.filter(
+            (l) => classificarCiclo(l.numeroPalheta || l.numero_palheta, l.lidaEm || l.lida_em) === CICLO_SEMANA_2
+          );
+          leitsA.sort((x, y) => String(x.lidaEm || '').localeCompare(String(y.lidaEm || '')));
+          leitsB.sort((x, y) => String(x.lidaEm || '').localeCompare(String(y.lidaEm || '')));
+
+          const partesA = leitsA.length > 0
+            ? leitsA.map((l) => `Palheta A: ${l.ovos ?? 0} ovos (${formatarDataCurta(l.instaladaEm)} → ${formatarDataCurta(l.coletadaEm || l.lidaEm)})`).join('<br/>')
+            : 'Palheta A: sem leitura';
+
+          const partesB = leitsB.length > 0
+            ? leitsB.map((l, idx) => {
+                const sufixo = leitsB.length > 1 ? ` (${idx + 1}ª coleta ${formatarDataCurta(l.coletadaEm || l.lidaEm)})` : '';
+                return `Palheta B${sufixo}: ${l.ovos ?? 0} ovos (${formatarDataCurta(l.instaladaEm)} → ${formatarDataCurta(l.coletadaEm || l.lidaEm)})`;
+              }).join('<br/>')
+            : 'Palheta B: sem leitura';
+
+          const conteudoHistorico = `<b>OV-${a.numero}</b>${a.bairro ? ` · ${a.bairro}` : ''}<br/>${partesA}<br/>${partesB}`;
+
+          marcador.bindTooltip(
+            modoRotulo === 'compacto'
+              ? `<b>${a.numero}</b>`
+              : conteudoHistorico,
+            modoRotulo === 'nenhum'
+              ? { direction: 'top', className: 'rotulo-ovo' }
+              : {
+                  permanent: true,
+                  direction: 'bottom',
+                  offset: [0, 5],
+                  className: modoRotulo === 'compacto' ? 'rotulo-ovo rotulo-num' : 'rotulo-ovo'
+                }
+          );
+          marcador.bindPopup(conteudoHistorico);
+          marcador.on('click', () => setSelecionada(a.id ?? a.numero));
+        } else {
+          const vA = rotuloOvos.get(String(a.numero));
+          const txt = (v) => (v === null || v === undefined ? '-' : v);
+          marcador.bindTooltip(
+            modoRotulo === 'compacto' ? `<b>${a.numero}</b>` : `<b>${a.numero}</b> A ${txt(vA?.a)} · B ${txt(vA?.b)}`,
+            modoRotulo === 'nenhum'
+              ? { direction: 'top', className: 'rotulo-ovo' }
+              : { permanent: true, direction: 'bottom', offset: [0, 5], className: modoRotulo === 'compacto' ? 'rotulo-ovo rotulo-num' : 'rotulo-ovo' }
+          );
+          marcador.on('click', () => setSelecionada(a.id ?? a.numero));
+        }
       }
     });
 
-  }, [grupos, todasDoCiclo, verPoligonos, verCalor, verPontos, modoRotulo, rotuloOvos, verNevoeiro, territorio, zoomNevoeiro, fundo]);
+  }, [grupos, todasDoCiclo, verPoligonos, verCalor, verPontos, verRaios, modoRotulo, rotuloOvos, verNevoeiro, territorio, zoomNevoeiro, fundo, ehHistorico, dadosHistorico]);
 
   // Enquadra o mapa ao clicar num botao de local (e na primeira vez que ha pontos).
   // Os dados recarregam sozinhos de tempos em tempos e isso NAO pode mexer no zoom do usuario.
@@ -436,27 +616,41 @@ export function PainelMapaCalorInterativo({
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-300">
           <button
             type="button"
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition cursor-pointer ${
+              campanhaMapa === CICLO_ID_FEV2025 ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
+            }`}
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_FEV2025);
+              onMudarCampanhaHistorica?.(CICLO_ID_FEV2025);
+            }}
+          >
+            Fev/2025
+          </button>
+          <button
+            type="button"
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition cursor-pointer ${
               campanhaMapa === CICLO_ID_ANTERIOR ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
             }`}
             onClick={() => {
               setCampanhaMapa(CICLO_ID_ANTERIOR);
+              onMudarCampanhaHistorica?.(null);
               onMudarCampanha?.(CICLO_ID_ANTERIOR);
             }}
           >
-            Ano Passado (Set/2026)
+            Set/2026
           </button>
           <button
             type="button"
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition ${
+            className={`px-2.5 py-1 text-xs font-bold rounded-md transition cursor-pointer ${
               campanhaMapa === CICLO_ID_ATUAL ? 'bg-black text-white' : 'text-slate-600 hover:text-black'
             }`}
             onClick={() => {
               setCampanhaMapa(CICLO_ID_ATUAL);
+              onMudarCampanhaHistorica?.(null);
               onMudarCampanha?.(CICLO_ID_ATUAL);
             }}
           >
-            Novo Ciclo (2026/2027)
+            Novo Ciclo
           </button>
         </div>
 
@@ -467,8 +661,9 @@ export function PainelMapaCalorInterativo({
         </div>
         <button
           onClick={baixarPdf}
-          disabled={gerandoPdf}
-          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white text-black disabled:opacity-50 flex items-center gap-1"
+          disabled={gerandoPdf || ehHistorico}
+          title={ehHistorico ? 'PDF só para Set/2026 e Novo Ciclo' : undefined}
+          className="px-3 py-1.5 text-xs font-bold rounded-lg border border-black bg-white text-black disabled:opacity-50 flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
         >
           <Download size={13} /> {gerandoPdf ? 'Gerando...' : 'Baixar PDF (A, B e Ambas)'}
         </button>
@@ -487,6 +682,45 @@ export function PainelMapaCalorInterativo({
           </button>
         ))}
       </div>
+
+      {ehHistorico && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-900 text-xs font-semibold px-3 py-2 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">📅</span>
+            <span>Fev/2025 · palhetas A: coletas 17 a 21/02 · palhetas B: coletas 24 a 28/02</span>
+          </div>
+          <span className="text-[11px] text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 font-bold">
+            PDF só para Set/2026 e Novo Ciclo
+          </span>
+        </div>
+      )}
+
+      {ehHistorico && historicoCarregando && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-900 text-xs font-semibold px-3 py-2 flex items-center gap-2">
+          <span className="animate-spin">⏳</span>
+          <span>Carregando histórico de Fev/2025...</span>
+        </div>
+      )}
+
+      {ehHistorico && historicoErro && (
+        <div className="rounded-lg border border-red-300 bg-red-50 text-red-900 text-xs font-semibold px-3 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{historicoErro}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCampanhaMapa(CICLO_ID_ANTERIOR);
+              onMudarCampanhaHistorica?.(null);
+              onMudarCampanha?.(CICLO_ID_ANTERIOR);
+            }}
+            className="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-bold hover:bg-red-700 cursor-pointer"
+          >
+            Voltar a Set/2026
+          </button>
+        </div>
+      )}
 
       {mostrarParcialB && (
         <div className="rounded-lg border border-black bg-white text-black text-xs font-semibold px-3 py-2">
@@ -514,11 +748,12 @@ export function PainelMapaCalorInterativo({
             type="button"
             onClick={() => {
               setCampanhaMapa(CICLO_ID_ANTERIOR);
+              onMudarCampanhaHistorica?.(null);
               onMudarCampanha?.(CICLO_ID_ANTERIOR);
             }}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-black rounded-lg transition shrink-0 cursor-pointer shadow flex items-center gap-2"
           >
-            <span>Voltar ao Ano Passado</span>
+            <span>Voltar a Set/2026</span>
             <span className="text-[10px] bg-amber-800/40 px-1.5 py-0.5 rounded font-bold">56 Armadilhas</span>
           </button>
         </div>
@@ -540,7 +775,7 @@ export function PainelMapaCalorInterativo({
 
       {ehAmbas && (
         <div className="text-[11px] text-slate-600">
-          Ambas soma os ovos de A e de B de cada armadilha (coluna A + B); é positiva se foi positiva em A ou em B. A cor usa a média por palheta. O Ciclo B ainda é parcial, então Ambas muda conforme o laboratório lança as demais palhetas.
+          Ambas soma os ovos de A e de B de cada armadilha (coluna A + B); é positiva se foi positiva em A ou em B. A cor usa a média por palheta.{!ehHistorico && ' O Ciclo B ainda é parcial, então Ambas muda conforme o laboratório lança as demais palhetas.'}
         </div>
       )}
 
@@ -549,6 +784,7 @@ export function PainelMapaCalorInterativo({
         <button className={chave(verPoligonos)} onClick={() => setVerPoligonos((v) => !v)}>Quarteirões</button>
         <button className={chave(verCalor)} onClick={() => setVerCalor((v) => !v)}><Flame size={12} className="inline -mt-0.5" /> Calor</button>
         <button className={chave(verPontos)} onClick={() => setVerPontos((v) => !v)}><MapPin size={12} className="inline -mt-0.5" /> Pontos</button>
+        <button className={chave(verRaios)} onClick={() => setVerRaios((v) => !v)}>Raio de ação 100/200 m</button>
         <button className={chave(verNevoeiro)} onClick={() => setVerNevoeiro((v) => !v)}>Nevoeiro</button>
         <button className={chave(verNumeros)} onClick={() => setVerNumeros((v) => !v)}>Números</button>
         <span className="mx-1 h-4 w-px bg-slate-300" />

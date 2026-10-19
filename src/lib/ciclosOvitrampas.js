@@ -21,6 +21,8 @@ export const CICLO_AMBAS = 'ambas';
 export const CICLO_ID_ANTERIOR = '2025_2026';
 export const CICLO_ID_ATUAL = '2026_NOVO';
 export const CICLO_ID_TODOS = 'todos';
+// Campanha historica (somente leitura), vinda do Conta Ovos: Fev/2025, 40 armadilhas em pontos diferentes dos de 2026.
+export const CICLO_ID_FEV2025 = '2025_FEV';
 
 export const CAMPANHAS_OFICIAIS = [
   {
@@ -42,8 +44,24 @@ export const CAMPANHAS_OFICIAIS = [
     descricao: 'Novo ciclo epidemiológico em andamento',
     ativo: false,
     dataCorte: '2026-10-10'
+  },
+  {
+    id: CICLO_ID_FEV2025,
+    rotulo: 'Fev/2025 (histórico)',
+    rotuloCurto: 'Fev/2025',
+    badge: 'Fev/2025',
+    ano: '2025',
+    descricao: 'Campanha de fevereiro de 2025 (Conta Ovos, somente leitura). Semanas epidemiológicas 7 e 8.',
+    ativo: false,
+    historico: true,
+    periodo: '10 a 28/02/2025'
   }
 ];
+
+/** Campanhas historicas sao so para consulta: nunca gravam leitura e nunca viram a campanha ativa do campo/laboratorio. */
+export function ehCampanhaHistorica(campanhaId) {
+  return campanhaId === CICLO_ID_FEV2025;
+}
 
 const STORAGE_KEY_CAMPANHA_ATIVA = 'ovitrampa_campanha_ativa';
 
